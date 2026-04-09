@@ -7,3 +7,4 @@ Pasos a hacer al migrar:
     5. Cambiar el flujo de masivas
     6. Cambiar el flujo de masivas con los ANS cuando envien las categorias
 
+ 
