@@ -1,0 +1,243 @@
+/* =========================
+   TOKENS (modo oscuro por defecto)
+   ========================= */
+:root{
+  /* Superficies / texto */
+  --bg: #0b1220;
+  --bg-2: #0e1526;
+  --ink: #e6eefc;
+  --muted: #a7b6d6;
+
+  /* Tarjetas / bordes */
+  --card: #101a2f;
+  --card-bd: rgba(255,255,255,0.08);
+
+  /* Acción principal */
+  --primary: #6bbefc;
+  --primary-ink: #07101e;
+
+  /* Sombra / radios / gaps */
+  --shadow: 0 24px 60px rgba(0,0,0,.35);
+  --radius: 16px;
+  --gap: 18px;
+
+  /* ===== Fondo izquierdo (oscuro) — tokens del degradé azul → blanco ===== */
+  --left-wash-start: #ffffff;               /* color del borde izquierdo */
+  --left-wash-stop: rgba(255,255,255,0.0);  /* se desvanece a transparente */
+  --left-wash-width: 22%;                   /* ancho de “lavado” blanco */
+
+  --left-blue-1: #17376d;           /* antes: #14274d */
+  --left-blue-2: #1d56a0;           /* antes: #183a72 */
+  --left-base-1: #0a1020;           /* base un pelín más oscura para contraste */
+  --left-base-2: #0c1b3a;
+  --left-base-3: #0d2552;  /* gradiente base (fin) */
+}
+
+/* =========================
+   Modo CLARO explícito
+   ========================= */
+:root[data-theme="light"], [data-theme="light"] :root, [data-theme="light"]{
+  --bg: #f4f7fb;
+  --bg-2: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+
+  --card: #ffffff;
+  --card-bd: rgba(15,23,42,0.08);
+
+  --primary: #2563eb;
+  --primary-ink: #ffffff;
+
+  --shadow: 0 12px 28px rgba(2,6,23,.08);
+
+  /* Fondo izquierdo (claro) */
+  --left-blue-1: #cfe1ff;
+  --left-blue-2: #d9e7ff;
+  --left-base-1: #e8f0ff;
+  --left-base-2: #eaf2ff;
+  --left-base-3: #eef5ff;
+}
+
+/* =========================
+   Modo OSCURO explícito
+   ========================= */
+:root[data-theme="dark"], [data-theme="dark"] :root, [data-theme="dark"]{
+  --bg: #0b1220;
+  --bg-2: #0e1526;
+  --ink: #e6eefc;
+  --muted: #a7b6d6;
+
+  --card: #101a2f;
+  --card-bd: rgba(255,255,255,0.08);
+
+  --primary: #6bbefc;
+  --primary-ink: #07101e;
+
+  --shadow: 0 24px 60px rgba(0,0,0,.35);
+
+  /* Fondo izquierdo (oscuro) */
+  --left-blue-1: #14274d;
+  --left-blue-2: #183a72;
+  --left-base-1: #0b1220;
+  --left-base-2: #0d1832;
+  --left-base-3: #0e1e41;
+}
+
+/* =========================
+   Layout principal
+   ========================= */
+.solvi-auth{
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* =========================
+   Panel izquierdo
+   ========================= */
+.solvi-left{
+  position: relative;
+  background:
+    /* Capas decorativas existentes */
+    radial-gradient(1200px 600px at -10% -10%, var(--left-blue-1) 0%, transparent 55%),
+    radial-gradient(800px 500px at 60% 20%, var(--left-blue-2) 0%, transparent 60%),
+    linear-gradient(120deg, var(--left-base-1), var(--left-base-2) 45%, var(--left-base-3));
+}
+
+.solvi-left__inner{
+  padding: 56px;
+  max-width: 720px;
+}
+
+.brand{
+  font-size: clamp(36px, 6vw, 72px);
+  letter-spacing: 3px;
+  margin: 0 0 12px;
+  font-weight: 800;
+}
+
+.tagline{
+  margin: 0 0 60px;
+  color: var(--muted);
+  font-size: 16px;
+  max-width: 52ch;
+}
+
+.cards{ display: grid; gap: 12px; margin-right: 50px;}
+
+.card{
+  display:grid;
+  grid-template-columns: 44px 1fr;   /* icono | cuerpo */
+  column-gap:12px;
+  align-items:center;
+  background: var(--card);
+  border:1px solid var(--card-bd);
+  border-radius: var(--radius);
+  padding:12px 14px;
+  box-shadow: var(--shadow);
+  margin-inline:auto;
+  width:600px;
+  /* 🔴 importante: NO centres los ítems aquí */
+  justify-items: stretch; 
+}
+
+.card__icon{
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  color: #79c6ff;
+  background: rgba(123,195,255,0.12);
+  border-radius: 12px;
+}
+
+.card__title{ font-weight: 700; }
+.card__subtitle{ color: var(--muted); font-size: 14px; }
+
+/* =========================
+   Panel derecho
+   ========================= */
+.solvi-right{
+  display: grid;
+  place-items: center;
+  background: var(--bg-2);
+}
+
+.solvi-right__inner{
+  width: min(520px, 88%);
+  margin-inline: auto;
+  display: grid;
+  gap: 16px;
+}
+
+.welcome .kicker{ color: var(--muted); font-size: 13px; }
+.welcome .title{ margin: 2px 0 6px; font-size: clamp(22px, 3.2vw, 30px); }
+.welcome .subtitle{ color: var(--muted); margin: 0 0 10px; }
+
+.btn-primary{
+  appearance: none;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: var(--shadow);
+  transition: transform .08s ease, filter .2s ease;
+}
+.btn-primary:hover{ filter: brightness(1.05); }
+.btn-primary:active{ transform: translateY(1px); }
+
+.remember{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.aux{ display: flex; justify-content: flex-end; }
+.aux a{ color: var(--muted); text-decoration: none; font-size: 14px; }
+.aux a:hover{ text-decoration: underline; }
+
+.footer{
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* =========================
+   Responsivo
+   ========================= */
+@media (max-width: 960px){
+  .solvi-auth{ grid-template-columns: 1fr; }
+  .solvi-left__inner{ padding: 28px; }
+  .solvi-right__inner{ width: min(560px, 92%); padding: 28px 0; }
+}
+
+/* Panel izquierdo: centra el bloque (brand + tagline + cards) en vertical */
+.solvi-left{
+  /* …tu background… */
+  display: grid;                 /* activamos grid aquí */
+  align-content: center;         /* centra VERTICALMENTE el contenido */
+  justify-content: start;        /* mantiene alineación a la izquierda */
+}
+
+.solvi-left__inner{
+  /* reduce padding superior para que el centrado sea real */
+  padding: 32px 56px;            /* antes 56px en todos los lados */
+  margin-block: auto;            /* backup: asegura centrado vertical */
+  width: min(720px, 95%);
+}
+
+/* Opcional: en móviles volvemos a layout “normal” con padding arriba */
+@media (max-width: 960px){
+  .solvi-left{
+    align-content: start;        
+  }
+  .solvi-left__inner{
+    padding: 28px;              
+    margin-block: 0;
+  }
+}
