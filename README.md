@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -71,3 +72,7 @@ export default defineConfig([
   },
 ])
 ```
+=======
+# Prisma_tickets
+Repositorio donde se aloja codigo para la creacion de sistema de tickets, crm, front, sistemas de informacion, 
+>>>>>>> 4e88ed8c2e93798c692e33997e2e0138f06651dd
