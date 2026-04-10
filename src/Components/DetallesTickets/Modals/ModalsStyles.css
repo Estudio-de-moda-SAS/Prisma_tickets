@@ -1,0 +1,123 @@
+/* =========================================================
+   REASIGNAR TICKET — tokens-only (oscuro/claro)
+   ========================================================= */
+.reasignar-form{
+  background: var(--surface);
+  color: var(--ink);
+  overflow: visible;
+  container-type: inline-size; /* responsive por espacio real */
+}
+
+.rf-title{
+  margin: 0 0 6px 0;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--ink);
+}
+
+/* ===== Grid principal (reusa .dta-grid) ===== */
+.dta-form .dta-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: var(--gap);
+  height: auto;
+}
+
+/* Cada CAMPO es una FILA */
+.dta-field{
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.dta-col-2{ grid-column: 1 / -1; }
+
+/* Etiquetas */
+.dta-label{
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ===== Textarea / inputs nativos ===== */
+.dta-textarea{
+  width: auto;
+  background: var(--field-bg);
+  color: black;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.rf-textarea:focus{
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--bd) 45%);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* Ayudas y contador */
+.rf-help{
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.rf-counter{
+  margin-top: 2px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  justify-self: end;
+  font-size: .9rem;
+}
+
+/* Errores */
+.error{
+  color: color-mix(in oklab, var(--primary) 40%, var(--ink) 60%);
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+.rf-field:has([aria-invalid="true"]) .rf-textarea{
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--bd) 60%);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+
+/* =========================================================
+   Acciones
+   ========================================================= */
+.rf-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+.rf-submit{
+  appearance: none;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .06s ease, filter .15s ease, box-shadow .18s ease;
+}
+.rf-submit:hover{ box-shadow: 0 0 0 6px var(--ring); filter: brightness(1.03); }
+.rf-submit:active{ transform: translateY(1px); }
+.rf-submit[disabled]{ opacity: .6; cursor: not-allowed; }
+
+/* =========================================================
+   Responsive (container queries por espacio real)
+   ========================================================= */
+@container (max-width: 840px){
+  .reasignar-form .dta-grid{ grid-template-columns: 1fr; }
+  .rf-actions{ justify-content: stretch; }
+  .rf-submit{ width: 100%; }
+}
+
+@container (max-width: 560px){
+  .reasignar-form{ --pad: 12px; }
+  .rs__control{ min-height: 40px !important; }
+  .rf-textarea{ min-height: 110px; }
+}

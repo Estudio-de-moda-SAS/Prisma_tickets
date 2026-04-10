@@ -1,0 +1,208 @@
+/* Tabs */
+.th-tab {
+  border: none;
+  background: #a3a3a3;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.th-tab--active {
+  background: #6bbbe2; /* azul suave como en la captura */
+  color: #0b2b3a;
+}
+
+.th-left.th-left--stack{
+  display: flex;
+  flex-direction: column;
+  align-items: center;     
+  text-align: center;       
+  gap: 8px;
+}
+
+/* Volver */
+.th-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #c7cbd1;
+  background: #f7f9fb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.th-back-icon { font-weight: 700; }
+
+/* Caja principal */
+.th-box {
+  border: 2px solid #c7cbd1;
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 16px;
+  min-height: 320px;
+}
+
+/* Fila */
+.th-row {
+  display: grid;
+  grid-template-columns: 180px 1fr; 
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+.th-row:last-child{ border-bottom: 0; }
+
+/* Columna izquierda */
+.th-left { display: flex; gap: 12px; align-items: flex-start; }
+.th-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e6eefc;        /* azulito suave */
+  display: grid;
+  place-items: center;
+}
+.th-avatar-img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.th-avatar-fallback{
+  font-size: 34px;
+  line-height: 1;
+}
+.th-meta { display: flex; flex-direction: column; }
+.th-nombre{
+  font-weight: 800;
+  color: #0b2b6a;            /* tu primario */
+}
+.th-fecha{
+  color: #374151;            /* slate-700 */
+  font-size: .92rem;
+}
+
+/* Columna derecha */
+.th-right { position: relative; }
+.th-bubble {
+  background: #78c38a; /* verde similar */
+  color: #0b2b0b;
+  border-radius: 6px;
+  padding: 12px 14px;
+  max-width: 860px;
+}
+.th-title { font-weight: 800; margin-bottom: 6px; }
+.th-text { line-height: 1.45; }
+
+/* Acciones flotantes (solo admin/tecnico) */
+.th-actions {
+  position: absolute;
+  right: -6px;
+  top: -10px;
+  display: flex;
+  gap: 8px;
+}
+.th-action-btn {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid #2e2a8a;
+  background: #ffffff;
+  color: #2e2a8a;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.th-action-btn:hover { background: #eef2ff; }
+
+/* Link inferior */
+.th-history-link {
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: #2b6cb0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.th-bubble{
+  background: #c2c3c4;            /* slate-50 */
+  border: 1px solid #c2c3c4;      /* slate-200 */
+  border-left: 4px solid #c2c3c4; /* slate-300 */
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+/* tipos */
+.th-bubble.th-creacion{
+  background: #bbf7d0;            /* sky-50 */
+  border-color: #bbf7d0;
+  border-left-color: #bbf7d0;     /* sky-400 */
+}
+
+.th-bubble.th-solucion{
+  background: #38bdf8;            /* green-50 */
+  border-color: #38bdf8;
+  border-left-color: #38bdf8;     /* emerald-400 */
+}
+
+@media (max-width: 780px){
+  .th-row{ grid-template-columns: 1fr; }
+  .th-left.th-left--stack{ flex-direction: row; gap: 12px; text-align: left; align-items: center; }
+  .th-nombre, .th-fecha{ text-align: left; }
+}
+
+.tabla-tickets{
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.tabla-tickets > .detalle-ticket{
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.detalle-ticket--bleed{
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Base neutra (se mantiene) */
+.th-bubble{
+  background: color-mix(in oklab, var(--surface, #fff) 94%, var(--field-bg, #f6f7f9));
+  border: 1px solid var(--bd, #c2c3c4);
+  border-left: 4px solid color-mix(in oklab, var(--primary, #3b82f6) 35%, var(--bd, #c2c3c4));
+  color: var(--ink, #0f172a);
+}
+
+/* === Tipos ======================================================= */
+/* Seguimiento — gris pastel */
+.th-bubble.th-default{
+  --th-gray: var(--primary, #e6e8ec);
+  background: color-mix(in oklab, #9c9e9d 55%, var(--surface, #fff));
+  border-color: color-mix(in oklab, var(--bd, #e5e7eb) 70%, var(--surface, #fff));
+  border-left-color: color-mix(in oklab, var(--bd, #e5e7eb) 90%, var(--surface, #fff));
+  color: var(--ink, #0f172a);
+}
+
+/* Solución — azul pastel (usa --primary si existe) */
+.th-bubble.th-solucion{
+  --th-blue: var(--primary, #3b82f6);
+  background: #ccf0d8;
+  border-color: color-mix(in oklab, var(--th-blue) 38%, var(--bd, #e5e7eb));
+  border-left-color: color-mix(in oklab, var(--th-blue) 65%, var(--bd, #e5e7eb));
+  color: var(--ink, #0f172a);
+}
+
+/* Creación — verde pastel (usa --success si lo tienes; si no, #22c55e) */
+.th-bubble.th-creacion{
+ --th-blue: var(--primary, #3b82f6);
+   background: color-mix(in oklab, var(--th-blue) 18%, var(--surface, #fff));
+  border-color: color-mix(in oklab, --th-green 38%, var(--bd, #e5e7eb));
+  border-left-color: rgb(104, 104, 206);
+  color: var(--ink, #0f172a);
+}
+

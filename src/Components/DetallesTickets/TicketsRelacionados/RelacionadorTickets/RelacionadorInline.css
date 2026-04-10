@@ -1,0 +1,130 @@
+/* ====== Contenedor principal ====== */
+
+.relc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-elev);
+  color: var(--ink);
+  margin: 0 auto;
+}
+
+/* Fila principal: combo modo + ticket / archivo */
+.relc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Campo genérico */
+.relc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.relc-field--grow {
+  flex: 1;
+}
+
+/* Etiquetas */
+.relc-field__label,
+.relc-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Select nativo (modo, input file) */
+.relc-native {
+  min-width: 140px;
+  border-radius: 999px;
+  border: 1px solid var(--bd);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+  appearance: none;
+}
+
+.relc-native:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--ring);
+}
+
+/* Contenedor del combobox / react-select */
+.relc-combobox {
+  width: 100%;
+}
+
+/* Link para limpiar archivo */
+.relc-link {
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.relc-link:hover {
+  opacity: 0.85;
+}
+
+/* ====== Acciones (botones circulares) ====== */
+
+.relc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Botones circulares reutilizando tus clases base */
+.btn.btn-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Colores, asumiendo que ya tienes btn-primary-final / secundarios
+   si no, puedes usar esto como base: */
+
+.btn.btn-circle.btn-primary {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border: 1px solid var(--primary);
+}
+
+.btn.btn-circle.btn-secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--bd);
+}
+
+.btn.btn-circle:hover {
+  filter: brightness(1.05);
+}
+
+
+.form-header {
+  display: flex;
+  align-items: center;       /* centra verticalmente */
+  justify-content: space-between;  /* deja el título a la izquierda y el botón a la derecha */
+  width: 100%;
+  margin-bottom: 12px;       /* opcional */
+}
+
+.form-header .tf-title {
+  margin: 0;                 /* quita espacio extra del h2 */
+}

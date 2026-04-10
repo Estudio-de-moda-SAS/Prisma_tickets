@@ -1,0 +1,700 @@
+/* ==========================================================================
+   1) BASE / LAYOUT
+   ========================================================================== */
+
+/* ======================================================================
+   BASE (compartido por light y dark)
+   ====================================================================== */
+:root{
+
+  --brand-700:#6e2b00;
+  --brand-600:#8a3a00;
+  --brand-500:#c9551f;
+  --brand-400:#ff8a3d; 
+
+  /* Fondo general (oscuro con tinte cálido muy sutil) */
+  --page-bg:
+    radial-gradient(1200px 800px at 18% -10%, rgba(255,138,61,.14) 0%, transparent 60%),
+    radial-gradient(900px 650px at 90% 110%, rgba(0,0,0,.35) 0%, transparent 55%),
+    linear-gradient(180deg, #0b0f14 0%, #0a1116 100%);
+
+  /* Superficies */
+  --surface:#0f161c;
+  --surface-elev:#121c23;
+  --field-bg:#0b1319;
+
+  /* Texto */
+  --ink:#eaf2ff;
+  --muted:rgba(234,242,255,.68);
+
+  /* Bordes y ring */
+  --border:rgba(255,255,255,.10);
+  --ring:rgba(34,197,175,.28);
+
+  /* Sombras */
+  --shadow:0 18px 46px rgba(0,0,0,.55);
+
+  /* Sidebar (misma lógica, mejor contraste en dark) */
+  --sb-text:#fff7f0;
+  --sb-muted:rgba(255,247,240,.72);
+  --sb-pill:rgba(255,255,255,.10);
+  --sb-hover:rgba(255,255,255,.08);
+  --sb-shadow:0 18px 44px rgba(0,0,0,.45);
+  --sb-pill-bd:rgba(255,255,255,.14);
+
+  /* Charts */
+  --chart-grid: rgba(234,242,255,.10);
+  --chart-axis: rgba(234,242,255,.60);
+  --chart-tooltip-bg: var(--surface-elev);
+  --chart-tooltip-bd: rgba(255,255,255,.14);
+  --chart-tooltip-ink: var(--ink);
+
+  /* Scrollbar (dark) */
+  --sb-radius: 10px;
+  --sb-track: rgba(255,255,255,.06);
+  --sb-thumb: rgba(255,255,255,.22);
+  --sb-thumb-hover: rgba(255,255,255,.35);
+
+  /* Alias */
+  --bd: var(--border);
+
+  /* Sidebar (base) */
+  --sb-bg:var(--brand-600);
+  --sb-bg-2:var(--brand-700);
+  --sb-text:#eaf6f6;
+  --sb-muted:#c7d4d3;
+  --sb-pill:rgba(255,255,255,.12);
+  --sb-hover:rgba(255,255,255,.10);
+  --sb-shadow:0 14px 30px rgba(2,6,23,.10);
+  --sb-pill-bd:rgba(255,255,255,.18);
+
+  /* Primary (mint/teal) */
+  --primary:#22c5af;
+  --primary-ink:#053131;
+
+  /* Layout */
+  --page-pad: clamp(14px, 2.4vw, 28px);
+  --page-max: 1920px;
+
+  --radius:18px;
+  --radius-xl:22px;
+  --radius-3xl:26px;
+
+  --sb-w-open:280px;
+  --sb-w-closed:72px;
+
+  /* Charts (se ajustan en cada tema si quieres) */
+  --chart-tooltip-bg: var(--surface);
+  --chart-tooltip-bd: var(--border);
+  --chart-tooltip-ink: var(--ink);
+
+  /* Alias */
+  --bd: var(--border);
+}
+
+/* ======================================================================
+   LIGHT (manteniendo tus colores tal cual)
+   ====================================================================== */
+:root[data-theme="light"]{
+  /* Fondo general con degradé suave */
+
+  /* Brand (naranja) */
+  --brand-700:#8f3a00;   /* fondo profundo (zonas hundidas) */
+  --brand-600:#a84300;   /* sidebar base */
+  --brand-500:#d45a1a;   /* botones / hover */
+  --brand-400:#ff8a3d;   /* acentos sutiles */
+  --page-bg: linear-gradient(180deg, #fff2e8 0%, #fde9db 100%);
+
+  /* Superficies del contenido */
+  --surface:#ffffff;
+  --surface-elev:#ffffff;
+  --field-bg:#f7fbfb;
+
+  /* Texto */
+  --ink:#0f172a;
+  --muted:#6b7b80;
+
+  /* Bordes y ring */
+  --border:#7a7d7e;
+  --ring:rgba(35,163,163,.22);
+
+  /* Sombras */
+  --shadow:0 12px 28px rgba(2,6,23,.12);
+
+  /* Charts */
+  --chart-grid: color-mix(in oklab, var(--ink) 12%, transparent);
+  --chart-axis: color-mix(in oklab, var(--ink) 58%, transparent);
+
+  /* Scrollbar (light) */
+  --sb-radius: 10px;
+  --sb-track: rgba(0,0,0,.08);
+  --sb-thumb: rgba(0,0,0,.28);
+  --sb-thumb-hover: rgba(0,0,0,.45);
+}
+
+html, body{
+  block-size:100%;
+  overflow:scroll;
+  background: var(--page-bg);
+  color: var(--ink);
+  font-synthesis-weight: none;
+}
+
+.layout{
+  min-height:90dvh;
+  background: var(--page-bg);
+  overflow:hidden;
+}
+
+.layout--withSidebar{
+  display:grid;
+  grid-template-columns: var(--sb-w, var(--sb-w-open)) minmax(0,1fr);
+  grid-template-areas:"sidebar content";
+  gap:16px;
+  min-height:90dvh;
+  align-items:stretch;
+  transition:grid-template-columns .22s ease;
+}
+.layout--withSidebar.is-collapsed{ --sb-w: var(--sb-w-closed); }
+
+.content--withSidebar{
+  grid-area:content;
+  display:grid;
+
+  min-width:0; min-height:0;
+  overflow:hidden;
+  padding-inline: var(--page-pad);    /* gutters */
+  box-sizing: border-box;
+}
+
+.page-viewport{
+  width: min(100%, var(--page-max));
+  min-height: calc(90dvh - 32px);
+  display:grid;
+
+  min-width:0;
+  padding: 20px 0;                    /* top/bottom */
+  padding-inline: var(--page-pad);    /* gutters */
+  overflow:auto;
+  background: transparent;
+  margin-inline: auto;                /* centrado */
+  box-sizing: border-box;
+}
+
+/* 0) Gutter global reutilizable */
+:root{
+  --page-pad: clamp(14px, 2.4vw, 28px);
+  --page-max: 1920px;
+}
+
+/* 1) Si tu layout principal es el grid con sidebar (.msb-layout) */
+.msb-layout{ gap: var(--gap, 14px); }
+
+/* 1.a) Padding solo a la columna de contenido (2da columna) */
+.msb-layout > *:last-child{
+  padding-inline: var(--page-pad);
+  width: min(100%, var(--page-max));
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+/* 2) Páginas/sections sueltas */
+.page,
+.dashboard-page,
+.pz-page,
+.detalle-ticket-page{
+  padding-inline: var(--page-pad);
+  width: min(100%, var(--page-max));
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+/* 3) Header/toolbar alineado al container */
+.header-inner{
+  width: min(100%, var(--page-max));
+  padding-inline: var(--page-pad);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+/* 4) Evita que algún wrapper anule los gutters */
+.app-content, main{
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 5) En pantallas pequeñas no quites gutters */
+@media (max-width: 720px){
+  :root{ --page-pad: clamp(10px, 4vw, 16px); }
+}
+
+/* ==========================================================================
+   2) SIDEBAR
+   ========================================================================== */
+.sidebar{
+  grid-area:sidebar;
+  display:flex; flex-direction:column;
+  background:var(--sb-bg); color:var(--sb-text);
+  border-radius:var(--radius-3xl);
+  box-shadow:var(--sb-shadow);
+  padding:14px 14px 8px;
+  position:sticky; top: var(--page-pad);
+  margin-block-end: var(--page-pad);
+  height: auto;
+  margin-top: 10px;
+}
+
+.sidebar__header{
+  display:grid; grid-template-columns:1fr auto;
+  gap:8px; align-items:center;
+  padding:8px 10px 14px 10px;
+  font-weight:700; letter-spacing:.3px;
+}
+
+.sb-brand{ display:flex; align-items:center; gap:8px; min-width:0; }
+.sb-logo{ font-size:18px; }
+.sb-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--sb-text); }
+
+.sidebar__nav{
+  overflow:auto; padding:4px; flex:1;
+  scrollbar-width:thin; scrollbar-color:var(--sb-hover) transparent;
+}
+.sidebar__nav::-webkit-scrollbar{ width:8px; }
+.sidebar__nav::-webkit-scrollbar-thumb{ background:var(--sb-hover); border-radius:999px; }
+
+.sb-ul{ list-style:none; margin:0; padding:0; }
+.sb-li + .sb-li{ margin-top:2px; }
+
+.sideItem{
+  width:100%;
+  display:flex; align-items:center; gap:10px;
+  padding:12px 12px;
+  border:0; background:transparent; color:var(--sb-text);
+  border-radius:14px; cursor:pointer;
+  transition:background .2s ease, transform .04s ease;
+  text-align:left;
+}
+.sideItem:hover{ background:var(--sb-hover); }
+.sideItem:active{ transform:translateY(1px); }
+.sideItem--active{ background:var(--sb-pill); outline:2px solid rgba(255,255,255,.08); }
+.sideItem__icon{ width:22px; display:inline-flex; justify-content:center; opacity:.94; }
+.sideItem__label{ font-size:15px; }
+.caret{ margin-right:6px; opacity:.85; transition:transform .2s ease; }
+.caret.rot{ transform:rotate(90deg); }
+
+.sidebar__footer{
+  background:rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:10px 12px;
+  display:flex; align-items:center; gap:10px;
+  color:var(--sb-muted); margin-bottom:10px;
+}
+.sb-prof__avatar{
+  width:28px; height:28px; border-radius:999px;
+  background:var(--sb-bg-2); color:white; display:grid; place-items:center; font-weight:800;
+}
+.sb-prof__info{ display:grid; }
+.sb-prof__mail{ font-size:12px; opacity:.95; }
+
+.sb-toggle{
+  border:0; background:var(--sb-pill); color:var(--sb-text);
+  padding:8px 10px; border-radius:10px; cursor:pointer;
+  box-shadow:var(--sb-shadow);
+}
+.layout--withSidebar.is-collapsed .sideItem{ gap:0; padding-inline:10px; justify-content:center; }
+.layout--withSidebar.is-collapsed .sb-icon-wrap{ margin-right:0; }
+.layout--withSidebar.is-collapsed .sidebar__footer,
+.layout--withSidebar.is-collapsed .sb-prof__info,
+.layout--withSidebar.is-collapsed .sidebar__header .sb-title,
+.layout--withSidebar.is-collapsed .sideItem__label,
+.layout--withSidebar.is-collapsed .caret{ display:none !important; }
+
+/* ==========================================================================
+   3) HEADER / TOOLBAR SUPERIOR
+   ========================================================================== */
+.headerRow{
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent), var(--surface));
+  border:1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: var(--radius);
+}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand h1{ margin:0; font-size:18px; font-weight:800; color:var(--ink); }
+
+/* ===== Toolbar en flujo normal (no fijo ni sticky) ===== */
+.content-toolbar{
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: auto !important;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  row-gap: 10px;
+
+  background: transparent !important;
+  color: var(--sb-text);
+  border: 1px solid transparent;
+
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  height: 45px;
+}
+
+/* ==========================================================================
+   4) TARJETAS / FORM / BOTONES
+   ========================================================================== */
+.card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card--elev{ background: var(--surface-elev); }
+
+input, select, textarea{
+  background: var(--field-bg);
+  color: var(--ink);
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+::placeholder{ color: color-mix(in oklab, var(--muted) 88%, transparent); }
+
+/* ===============================
+   BASE
+   =============================== */
+.btn{
+  --btn-bg: transparent;
+  --btn-fg: var(--ink);
+  --btn-bd: var(--bd);
+  --btn-ring: var(--ring);
+
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 10px 14px;
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--radius, 18px);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: .2px;
+  text-decoration: none;
+  cursor: pointer;
+
+  transition: background .18s ease, color .18s ease,
+              border-color .18s ease, box-shadow .18s ease,
+              transform .06s ease;
+  min-height: 40px;
+  max-width: 200px !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn2{
+  --btn-bg: transparent;
+  --btn-fg: var(--ink);
+  --btn-bd: var(--bd);
+  --btn-ring: var(--ring);
+
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 10px 14px;
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--radius, 18px);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: .2px;
+  text-decoration: none;
+  cursor: pointer;
+
+  transition: background .18s ease, color .18s ease,
+              border-color .18s ease, box-shadow .18s ease,
+              transform .06s ease;
+  min-height: 40px;
+  max-width: 500px !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-final:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 4px var(--btn-ring);
+}
+.btn-final:active{ transform: translateY(1px); }
+.btn-final[disabled]{
+  opacity: .55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.btn:active{border-color: transparent;}
+
+/* Icono opcional dentro del botón */
+.btn .i{ inline-size:18px; block-size:18px; display:inline-block; }
+
+/* ===============================
+   TAMAÑOS
+   =============================== */
+.btn-xs{ padding: 6px 10px !important; font-weight: 600; border-radius: calc(var(--radius,18px) - 6px); min-height: 32px; }
+.btn-m { padding: 10px 14px; } /* default */
+.btn-xl{ padding: 14px 22px; font-size: 1.05rem; }
+
+/* Full width opcional */
+.btn-block{ width: 100%; }
+
+/* ===============================
+   VARIANTES
+   =============================== */
+
+/* Primario (usa tokens de marca) */
+.btn-primary-final{
+  --btn-bg: var(--primary);
+  --btn-fg: var(--primary-ink, var(--ink));
+  --btn-bd: color-mix(in oklab, var(--primary) 70%, var(--bd) 30%);
+}
+.btn-primary-final:hover{
+  --btn-bg: color-mix(in oklab, var(--primary) 88%, var(--surface) 12%);
+  --btn-bd: color-mix(in oklab, var(--primary) 80%, var(--bd) 20%);
+}
+.btn-primary-final:active{
+  --btn-bg: color-mix(in oklab, var(--primary) 78%, var(--surface) 22%);
+}
+
+
+/* Secundario sólido (contraste neutro) */
+.btn-secondary-final{
+  --btn-bg: var(--surface-elev);
+  --btn-fg: var(--ink);
+  --btn-bd: var(--bd);
+}
+.btn-secondary-final:hover{
+  --btn-bg: color-mix(in oklab, var(--surface-elev) 85%, var(--ink) 15%);
+
+}
+.btn-secondary-final:active{
+  --btn-bg: color-mix(in oklab, var(--surface-elev) 78%, var(--ink) 22%);
+}
+
+
+/* Transparente (ghost) — sin fondo, con tinta de marca */
+.btn-transparent-final{
+  --btn-bg: transparent;
+  --btn-fg: color-mix(in oklab, var(--primary) 86%, var(--ink) 14%);
+  --btn-bd: color-mix(in oklab, var(--primary) 45%, var(--bd) 55%);
+  border-color: transparent;
+}
+.btn-transparent-final:hover{
+  --btn-bg: color-mix(in oklab, var(--primary) 14%, transparent);
+}
+.btn-transparent-final:active{
+  --btn-bg: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+.btn-terciary{
+  /* Default ter*/
+  --btn-bg: color-mix(in oklab, rgb(138, 136, 136) 12%, var(--surface) 88%);
+  --btn-fg: color-mix(in oklab, var(--ink) 96%, var(--muted) 4%);
+  --btn-bd: color-mix(in oklab, var(--bd) 70%, var(--ink) 30%);
+}
+
+.btn-terciary:not([disabled]):hover{
+  --btn-bg: color-mix(in oklab, var(--ink) 18%, var(--surface) 82%);
+  --btn-bd: color-mix(in oklab, var(--bd) 65%, var(--ink) 35%);
+}
+
+.btn-terciary:not([disabled]):active{
+  --btn-bg: color-mix(in oklab, var(--ink) 24%, var(--surface) 76%);
+  border-color: transparent;
+}
+
+/* =========================================
+   BOTÓN CIRCULAR (icon button)
+   Mezclar con: .btn-final + variante + tamaño
+   Ej: .btn-final btn-primary-final btn-circle btn-circle--lg
+   ========================================= */
+.btn-circle{
+  /* hereda variables de .btn-final / variantes */
+  padding: 0;                 /* el tamaño lo dan width/height */
+  border-radius: 999px;       /* círculo perfecto */
+  width: 35px; height: 25px;  /* tamaño por defecto (md) */
+  aspect-ratio: 1;            /* por seguridad */
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;             /* centra el icono */
+}
+
+/* Tamaños */
+.btn-circle--sm{ width: 20px; height: 20px; }
+.btn-circle--md{ width: 42px; height: 42px; }   /* default */
+.btn-circle--lg{ width: 52px; height: 52px; }
+.btn-circle--xl{ width: 60px; height: 60px; }
+
+/* Icono interior (SVG o img) */
+.btn-circle .i{
+  inline-size: 18px;
+  block-size: 18px;
+  pointer-events: none;
+}
+
+/* Accesibilidad: ring claro */
+.btn-circle:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 4px var(--btn-ring);
+}
+
+
+
+/* ==========================================================================
+   5) TABLAS Y TEXTO
+   ========================================================================== */
+.table{ width:100%; border-collapse:separate; border-spacing:0; }
+.table thead th{
+  text-align:left; font-weight:700; color:var(--ink);
+  background: var(--surface);
+  border-bottom:2px solid var(--border);
+  padding:12px;
+}
+.table tbody td{
+  color:var(--ink); padding:12px; border-bottom:1px solid var(--border);
+}
+.table tbody tr:nth-child(odd){
+  background: color-mix(in oklab, var(--surface) 96%, var(--border));
+}
+
+/* ==========================================================================
+   6) CHARTS (Recharts)
+   ========================================================================== */
+.recharts-cartesian-grid line{ stroke: var(--chart-grid) !important; }
+.recharts-cartesian-axis-tick text{ fill: var(--chart-axis) !important; }
+.recharts-legend-item text{ fill: var(--ink) !important; }
+.recharts-tooltip-wrapper .recharts-default-tooltip{
+  background: var(--chart-tooltip-bg) !important;
+  border:1px solid var(--chart-tooltip-bd) !important;
+  color: var(--chart-tooltip-ink) !important;
+}
+
+/* ==========================================================================
+   7) RESPONSIVE
+   ========================================================================== */
+@media (max-width:960px){
+  .layout--withSidebar{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 1fr;
+    grid-template-areas:
+      "sidebar"
+      "content";
+  }
+  .sidebar{ position:relative; top:auto; height:auto; margin-block-end: var(--page-pad); }
+  .page-viewport{ min-height: calc(100dvh - var(--page-pad)); }
+}
+@media (max-width:640px){
+  .brand h1{ font-size:16px; }
+  .theme-btn{ padding:6px 10px; }
+}
+
+
+/* ==========================================================================
+   RESETS ESPECÍFICOS (última versión)
+   ========================================================================== */
+.msb-layout,
+.msb-content,
+.dash,
+.panel,
+.ticket-form,
+.tf-grid { box-shadow: none !important; filter: none !important; }
+
+.tf-submit { box-shadow: none !important; }
+.tf-input:focus,
+.rtb-box:focus-within,
+select.tf-input:focus{
+  box-shadow: none !important;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.ql-toolbar,
+.rs__control,
+.rs__menu { box-shadow: none !important; }
+
+.ticket-form, .cajeros-pos{ --ring: transparent; }
+
+/* ==========================================================================
+   PAGINACIÓN
+   ========================================================================== */
+.pager{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid color-mix(in oklab, var(--bd) 70%, transparent);
+  background: color-mix(in oklab, var(--surface-elev) 92%, transparent);
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.flex-spacer{ flex: 1 1 auto; }
+
+.pager-right{
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 10px;
+  align-items: center;
+}
+.pager-right > button{
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, var(--bd));
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+.pager-right > button:disabled{ opacity: .55; cursor: not-allowed; }
+.pager-right > select{
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--bd) 75%, transparent);
+  background: var(--field-bg);
+  color: var(--ink);
+  padding: 0 10px;
+}
+
+/* Fuerza que ningún wrapper imponga max-widths */
+#root, .app, .page, .content, .container {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* El slot del icono: tamaño fijo */
+.sideItem__icon,
+.sb-icon-wrap{
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* El <img> del icono: no puede crecer */
+.sb-icon{
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
