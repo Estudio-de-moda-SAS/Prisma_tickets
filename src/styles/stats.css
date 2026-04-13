@@ -1,0 +1,466 @@
+/* ============================================================
+   Panel de estadísticas — Estilos completos v2
+   Vista general + vista por equipo / board
+   ============================================================ */
+
+.stats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.stats-section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  margin-bottom: -8px;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.stats-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-page__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-page__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.stats-page__username {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--txt);
+}
+
+.stats-page__role-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: rgba(0, 229, 160, 0.08);
+  border: 1px solid rgba(0, 229, 160, 0.2);
+  border-radius: 10px;
+  color: var(--success);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.stats-page__date {
+  font-size: 11px;
+  color: var(--txt-muted);
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+
+/* ── Tabs de vista (General / Por equipo) ───────────────────── */
+.stats-view-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.stats-view-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-subtle);
+  color: var(--txt-muted);
+  transition: all 0.12s;
+}
+
+.stats-view-tab:last-child { border-right: none; }
+
+.stats-view-tab:hover {
+  background: var(--bg-hover);
+  color: var(--txt);
+}
+
+.stats-view-tab--active {
+  background: var(--bg-surface);
+  color: var(--txt);
+  font-weight: 500;
+}
+
+/* ── Tabs de rango ──────────────────────────────────────────── */
+.stats-range-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.stats-tab {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--txt-muted);
+  transition: all 0.12s;
+}
+
+.stats-tab:hover {
+  border-color: var(--border);
+  color: var(--txt);
+  background: var(--bg-hover);
+}
+
+.stats-tab--active {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ── Tabs de equipo (vista por board) ───────────────────────── */
+.stats-team-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stats-team-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--txt-muted);
+  transition: all 0.12s;
+}
+
+.stats-team-tab:hover {
+  border-color: var(--border);
+  color: var(--txt);
+  background: var(--bg-hover);
+}
+
+.stats-team-tab--active { font-weight: 500; }
+
+.stats-team-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── KPI Grid ───────────────────────────────────────────────── */
+.stats-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.12s;
+}
+
+.stats-kpi-card:hover { border-color: var(--border); }
+
+.stats-kpi-card__accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stats-kpi-card__label {
+  display: block;
+  font-size: 11px;
+  color: var(--txt-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.stats-kpi-card__value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--txt);
+  letter-spacing: 0.5px;
+}
+
+.stats-kpi-card__sub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+/* ── Grids ──────────────────────────────────────────────────── */
+.stats-mid-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+}
+
+/* ── Comparativa por equipos ────────────────────────────────── */
+.stats-comp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-comp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  border-top: 2px solid transparent;
+  padding: 12px;
+  transition: border-color 0.12s;
+}
+
+.stats-comp-card:hover { border-color: var(--border); }
+
+.stats-comp-card__name {
+  font-size: 10px;
+  color: var(--txt-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.stats-comp-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.stats-comp-stat:last-child { border-bottom: none; }
+
+.stats-comp-stat > span:first-child { color: var(--txt-muted); }
+.stats-comp-stat > span:last-child  { font-weight: 500; color: var(--txt); }
+
+/* ── Panel card ─────────────────────────────────────────────── */
+.stats-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: border-color 0.12s;
+}
+
+.stats-panel:hover { border-color: var(--border); }
+
+.stats-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.stats-panel__title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--txt);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Leyenda de gráficas ────────────────────────────────────── */
+.stats-chart-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.stats-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--txt-muted);
+}
+
+.stats-legend-sq {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Barras horizontales ────────────────────────────────────── */
+.stats-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stats-bar-row:last-child { margin-bottom: 0; }
+
+.stats-bar-row__label {
+  font-size: 12px;
+  color: var(--txt-muted);
+  min-width: 72px;
+}
+
+.stats-bar-row__track {
+  flex: 1;
+  height: 5px;
+  background: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stats-bar-row__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.stats-bar-row__val {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--txt);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Actividad ──────────────────────────────────────────────── */
+.stats-activity-list { display: flex; flex-direction: column; gap: 10px; }
+
+.stats-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.stats-activity-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.stats-activity-text {
+  flex: 1;
+  font-size: 12px;
+  color: var(--txt);
+  line-height: 1.5;
+}
+
+.stats-activity-time {
+  font-size: 10px;
+  color: var(--txt-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Resolutores ────────────────────────────────────────────── */
+.stats-resolutores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.stats-resolutor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.12s;
+}
+
+.stats-resolutor:hover { border-color: var(--border); }
+
+.stats-resolutor__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.stats-resolutor__name  { font-size: 12px; font-weight: 500; color: var(--txt); text-align: center; }
+.stats-resolutor__count { font-size: 11px; color: var(--success); }
+
+/* ── Quick links ────────────────────────────────────────────── */
+.stats-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: var(--txt-muted);
+  transition: all 0.12s;
+}
+
+.stats-quick-link:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  .stats-kpi-grid  { grid-template-columns: repeat(2, 1fr); }
+  .stats-mid-grid  { grid-template-columns: 1fr; }
+  .stats-comp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .stats-kpi-grid  { grid-template-columns: 1fr 1fr; }
+  .stats-comp-grid { grid-template-columns: 1fr 1fr; }
+  .stats-view-tab  { padding: 5px 10px; font-size: 11px; }
+}

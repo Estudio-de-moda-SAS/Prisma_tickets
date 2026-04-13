@@ -1,0 +1,300 @@
+/* ──────────────────────────────────────────────
+   Prisma · Login Page
+   Palette: deep charcoal + violet accent + slate
+────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* Root */
+.lp-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0e12;
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+}
+
+/* ── Background ── */
+.lp-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-bg__grid {
+  position: absolute;
+  inset: 0;
+  color: rgba(255, 255, 255, 0.04);
+}
+
+.lp-bg__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+.lp-bg__orb--1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, #6c4ef5 0%, transparent 70%);
+  top: -120px;
+  left: -100px;
+  animation: lp-drift 18s ease-in-out infinite alternate;
+}
+.lp-bg__orb--2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #1e3a8a 0%, transparent 70%);
+  bottom: -80px;
+  right: -60px;
+  animation: lp-drift 22s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes lp-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, 20px) scale(1.08); }
+}
+
+/* ── Card ── */
+.lp-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(880px, 92vw);
+  min-height: 460px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(108, 78, 245, 0.15),
+    0 40px 80px rgba(0, 0, 0, 0.6);
+  animation: lp-appear 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes lp-appear {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Brand panel (left) ── */
+.lp-card__brand {
+  flex: 1;
+  padding: 48px 44px;
+  background: linear-gradient(145deg, #1a1040 0%, #120d30 60%, #0d1a2e 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-card__brand::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 10%;
+  height: 80%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent);
+}
+
+/* Logo */
+.lp-brand__logo {
+  width: 56px;
+  height: 56px;
+  background: rgba(108, 78, 245, 0.2);
+  border: 1px solid rgba(108, 78, 245, 0.4);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.lp-brand__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 28px;
+}
+
+.lp-brand__name {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.lp-brand__product {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lp-brand__divider {
+  width: 36px;
+  height: 2px;
+  background: linear-gradient(90deg, #6c4ef5, #a78bfa);
+  border-radius: 2px;
+  margin-bottom: 24px;
+}
+
+.lp-brand__tagline {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 32px;
+  max-width: 280px;
+}
+
+.lp-brand__features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.lp-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.lp-feature__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6c4ef5;
+  flex-shrink: 0;
+}
+
+/* ── Auth panel (right) ── */
+.lp-card__auth {
+  width: 360px;
+  flex-shrink: 0;
+  padding: 52px 44px;
+  background: #0f1018;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+}
+
+.lp-auth__header {
+  margin-bottom: 36px;
+}
+
+.lp-auth__eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6c4ef5;
+  margin: 0 0 10px;
+}
+
+.lp-auth__title {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 10px;
+  line-height: 1.1;
+}
+
+.lp-auth__sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Microsoft button */
+.lp-auth__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #fff;
+  color: #1a1a2e;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+  margin-bottom: 20px;
+}
+
+.lp-auth__btn:hover {
+  background: #f0f0f8;
+  box-shadow: 0 4px 24px rgba(108, 78, 245, 0.25);
+  transform: translateY(-1px);
+}
+
+.lp-auth__btn:active {
+  transform: scale(0.98);
+}
+
+.lp-auth__btn-icon {
+  flex-shrink: 0;
+}
+
+/* Security notice */
+.lp-auth__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.5;
+}
+
+.lp-auth__notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Footer ── */
+.lp-footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.03em;
+  z-index: 1;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .lp-card {
+    flex-direction: column;
+    width: 92vw;
+    min-height: unset;
+  }
+  .lp-card__brand {
+    padding: 36px 32px 28px;
+  }
+  .lp-card__brand::after { display: none; }
+  .lp-brand__tagline,
+  .lp-brand__features { display: none; }
+  .lp-card__auth {
+    width: auto;
+    padding: 32px 32px 40px;
+  }
+}
