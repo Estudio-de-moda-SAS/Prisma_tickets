@@ -166,6 +166,19 @@ a { text-decoration: none; color: inherit; }
 
 .sidebar__nav-label--top { margin-top: 12px; }
 
+/* Separador de sección — modo colapsado */
+.sidebar__nav-sep {
+  display: block;
+  height: 1px;
+  margin: 8px 10px 6px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.25;
+}
+
+.sidebar__nav-sep--top {
+  margin-top: 14px;
+}
+
 .sidebar__nav-item {
   display: flex;
   align-items: center;

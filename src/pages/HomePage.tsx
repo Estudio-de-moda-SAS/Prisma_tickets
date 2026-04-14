@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
-import { useBoardStore } from '@/store/boardStore';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/Sidebar';
 import { EQUIPOS } from '@/features/requests/types';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
@@ -50,6 +49,133 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
+/* ── useMyRequestsForEquipo ──────────────────────────────────── */
+function useMyRequests(equipo: Equipo, userName: string) {
+  const { data: board, isLoading } = useBoardEquipo(equipo);
+  const firstName = userName.split(' ')[0]?.toLowerCase() ?? '';
+  const requests: Request[] = board
+    ? Object.values(board).flat().filter((r) =>
+        firstName ? r.solicitante.toLowerCase().includes(firstName) : true
+      )
+    : [];
+  return { requests, isLoading };
+}
+
+/* ── EquipoSummaryCard ───────────────────────────────────────── */
+function EquipoSummaryCard({ equipo, label, userName, onClick }: {
+  equipo: Equipo;
+  label: string;
+  userName: string;
+  onClick: () => void;
+}) {
+  const c    = EQUIPO_COLORS[equipo];
+  const Icon = EQUIPO_ICONS[equipo];
+  const { requests, isLoading } = useMyRequests(equipo, userName);
+
+  const active = requests.filter((r) => r.columna !== 'hecho').length;
+  const done   = requests.filter((r) => r.columna === 'hecho').length;
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: '1 1 0', minWidth: 0, textAlign: 'left',
+        background: 'var(--surface-1)',
+        border: '1px solid var(--border)',
+        borderRadius: 12, padding: '16px 18px',
+        cursor: 'pointer', transition: 'all 0.18s',
+        position: 'relative', overflow: 'hidden',
+        boxShadow: 'none',
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = c.dot + '55';
+        el.style.background  = c.glow;
+        el.style.transform   = 'translateY(-2px)';
+        el.style.boxShadow   = `0 8px 24px ${c.dot}1A`;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = 'var(--border)';
+        el.style.background  = 'var(--surface-1)';
+        el.style.transform   = 'translateY(0)';
+        el.style.boxShadow   = 'none';
+      }}
+    >
+      {/* Accent top line */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`,
+      }} />
+
+      {/* Icon row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 8,
+          background: c.dot + '18', border: `1px solid ${c.dot}30`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <Icon size={15} style={{ color: c.dot }} />
+        </div>
+        <ArrowRight size={12} style={{ color: c.dot, opacity: 0.45, marginTop: 3, flexShrink: 0 }} />
+      </div>
+
+      {/* Label + desc */}
+      <div style={{ marginTop: 12 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, color: c.dot,
+          fontFamily: 'var(--font-display)', letterSpacing: '0.5px',
+          textTransform: 'uppercase', display: 'block',
+        }}>
+          {label}
+        </span>
+        <span style={{
+          fontSize: 11, color: 'var(--txt-muted)', display: 'block',
+          marginTop: 4, lineHeight: 1.45,
+        }}>
+          {EQUIPO_DESCRIPTIONS[equipo]}
+        </span>
+      </div>
+
+      {/* Stats */}
+      <div style={{
+        display: 'flex', gap: 14, marginTop: 14,
+        paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        {isLoading ? (
+          <Loader2 size={11} style={{ color: 'var(--txt-muted)', animation: 'spin 1s linear infinite' }} />
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{
+                fontSize: 20, fontWeight: 700, color: c.dot,
+                lineHeight: 1, fontFamily: 'var(--font-display)',
+              }}>
+                {active}
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.3px' }}>
+                activas
+              </span>
+            </div>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{
+                fontSize: 20, fontWeight: 700, color: '#4CAF50',
+                lineHeight: 1, fontFamily: 'var(--font-display)',
+              }}>
+                {done}
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.3px' }}>
+                resueltas
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </button>
+  );
+}
+
 /* ── TicketRow ───────────────────────────────────────────────── */
 function TicketRow({ r, isLast }: { r: Request; isLast: boolean }) {
   return (
@@ -58,8 +184,7 @@ function TicketRow({ r, isLast }: { r: Request; isLast: boolean }) {
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 18px',
         borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.035)',
-        transition: 'background 0.12s',
-        cursor: 'default',
+        transition: 'background 0.12s', cursor: 'default',
       }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -110,20 +235,22 @@ function TicketRow({ r, isLast }: { r: Request; isLast: boolean }) {
 }
 
 /* ── EquipoSection ───────────────────────────────────────────── */
-function EquipoSection({ equipo, label, onVerMas }: {
-  equipo: Equipo; label: string; onVerMas: () => void;
+function EquipoSection({ equipo, label, userName, onVerMas }: {
+  equipo: Equipo;
+  label: string;
+  userName: string;
+  onVerMas: () => void;
 }) {
   const c    = EQUIPO_COLORS[equipo];
   const Icon = EQUIPO_ICONS[equipo];
-  const { data: board, isLoading } = useBoardEquipo(equipo);
+  const { requests: myRequests, isLoading } = useMyRequests(equipo, userName);
 
-  const requests: Request[] = board
-    ? Object.entries(board).filter(([col]) => col !== 'hecho').flatMap(([, rows]) => rows)
-    : [];
-  const visible = requests.slice(0, 4);
+  const visible = myRequests.slice(0, 4);
+  const extra   = myRequests.length - 4;
 
   return (
     <div
+      id={`equipo-${equipo}`}
       style={{
         position: 'relative', background: 'var(--surface-1)',
         border: '1px solid var(--border)', borderRadius: 12,
@@ -132,17 +259,14 @@ function EquipoSection({ equipo, label, onVerMas }: {
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = c.dot + '50'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
     >
-      {/* Accent top line */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 2,
         background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`,
       }} />
 
-      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 18px',
-        borderBottom: '1px solid var(--border)',
+        padding: '12px 18px', borderBottom: '1px solid var(--border)',
         background: `linear-gradient(90deg, ${c.dot}08 0%, transparent 60%)`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -165,7 +289,7 @@ function EquipoSection({ equipo, label, onVerMas }: {
                 fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
                 background: c.dot + '18', color: c.dot, border: `1px solid ${c.dot}30`,
               }}>
-                {isLoading ? '…' : requests.length}
+                {isLoading ? '…' : myRequests.length}
               </span>
             </div>
             <span style={{ fontSize: 11, color: 'var(--txt-muted)', display: 'block', marginTop: 1 }}>
@@ -186,20 +310,19 @@ function EquipoSection({ equipo, label, onVerMas }: {
           onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: c.dot + '20', borderColor: c.dot + '60' })}
           onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: c.dot + '0C', borderColor: c.dot + '35' })}
         >
-          Ver board <ArrowRight size={11} />
+          Ver más <ArrowRight size={11} />
         </button>
       </div>
 
-      {/* Body */}
       {isLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
           <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
           <span>Cargando...</span>
         </div>
-      ) : requests.length === 0 ? (
+      ) : myRequests.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '18px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
           <CheckCircle2 size={13} style={{ color: '#4CAF50' }} />
-          <span>Sin solicitudes activas</span>
+          <span>No tienes solicitudes en este equipo</span>
         </div>
       ) : (
         <>
@@ -217,10 +340,10 @@ function EquipoSection({ equipo, label, onVerMas }: {
           </div>
 
           {visible.map((r, i) => (
-            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1 && requests.length <= 4} />
+            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1 && extra <= 0} />
           ))}
 
-          {requests.length > 4 && (
+          {extra > 0 && (
             <button
               onClick={onVerMas}
               style={{
@@ -234,7 +357,7 @@ function EquipoSection({ equipo, label, onVerMas }: {
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.75'; }}
             >
-              <span>Ver {requests.length - 4} más en el board</span>
+              <span>Ver {extra} más</span>
               <ArrowRight size={11} />
             </button>
           )}
@@ -248,15 +371,28 @@ function EquipoSection({ equipo, label, onVerMas }: {
    HomePage
    ══════════════════════════════════════════════════════════════════ */
 export function HomePage() {
-  const { account }         = useAuth();
-  const { setEquipoActivo } = useBoardStore();
-  const navigate            = useNavigate();
+  const { account } = useAuth();
+  const navigate    = useNavigate();
 
-  const firstName = account?.name?.split(' ')[0] ?? 'Usuario';
+  const userName  = account?.name ?? '';
+  const firstName = userName.split(' ')[0] ?? 'Usuario';
 
   function handleVerMas(eq: Equipo) {
-    setEquipoActivo(eq);
-    navigate('/');
+    navigate(`/requests/team/${eq}`);
+  }
+
+  function handleCardClick(eq: Equipo) {
+    const el = document.getElementById(`equipo-${eq}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const c = EQUIPO_COLORS[eq];
+      el.style.transition = 'box-shadow 0.3s, border-color 0.2s';
+      el.style.boxShadow  = `0 0 0 2px ${c.dot}60`;
+      setTimeout(() => {
+        el.style.boxShadow  = '';
+        el.style.transition = '';
+      }, 1200);
+    }
   }
 
   const now = new Date().toLocaleDateString('es-CO', {
@@ -269,10 +405,8 @@ export function HomePage() {
       padding: '4px 0 48px', maxWidth: 1060, margin: '0 auto', width: '100%',
     }}>
 
-      {/* ── Hero ─────────────────────────────────────────── */}
+      {/* ── Hero ────────────────────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-        {/* Saludo */}
         <div>
           <h1 style={{
             margin: 0, fontSize: 32, fontWeight: 700,
@@ -280,10 +414,7 @@ export function HomePage() {
             letterSpacing: '-0.5px', lineHeight: 1.15,
           }}>
             Bienvenido,{' '}
-            <span style={{
-              color: 'var(--accent)',
-              textShadow: '0 0 28px rgba(0,200,255,0.35)',
-            }}>
+            <span style={{ color: 'var(--accent)', textShadow: '0 0 28px rgba(0,200,255,0.35)' }}>
               {firstName}
             </span>
           </h1>
@@ -292,40 +423,32 @@ export function HomePage() {
           </p>
         </div>
 
-        {/* CTA — debajo del saludo, alineado a la izquierda */}
         <button
           onClick={() => navigate('/new')}
           style={{
             alignSelf: 'flex-start',
             display: 'flex', alignItems: 'center', gap: 12,
             padding: '12px 24px',
-            border: '1px solid rgba(0,200,255,0.35)',
-            borderRadius: 10,
-            background: 'rgba(0,200,255,0.07)',
-            color: 'var(--accent)',
-            cursor: 'pointer', fontSize: 14, fontWeight: 600,
-            letterSpacing: '0.3px',
+            border: '1px solid rgba(0,200,255,0.35)', borderRadius: 10,
+            background: 'rgba(0,200,255,0.07)', color: 'var(--accent)',
+            cursor: 'pointer', fontSize: 14, fontWeight: 600, letterSpacing: '0.3px',
             boxShadow: '0 0 20px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.08)',
-            transition: 'all 0.18s ease',
-            fontFamily: 'var(--font-display)',
+            transition: 'all 0.18s ease', fontFamily: 'var(--font-display)',
           }}
           onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
             background: 'rgba(0,200,255,0.13)',
             boxShadow: '0 0 32px rgba(0,200,255,0.22), inset 0 1px 0 rgba(0,200,255,0.15)',
-            borderColor: 'rgba(0,200,255,0.55)',
-            transform: 'translateY(-1px)',
+            borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(-1px)',
           })}
           onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
             background: 'rgba(0,200,255,0.07)',
             boxShadow: '0 0 20px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.08)',
-            borderColor: 'rgba(0,200,255,0.35)',
-            transform: 'translateY(0)',
+            borderColor: 'rgba(0,200,255,0.35)', transform: 'translateY(0)',
           })}
         >
           <div style={{
             width: 32, height: 32, borderRadius: 8,
-            background: 'rgba(0,200,255,0.14)',
-            border: '1px solid rgba(0,200,255,0.28)',
+            background: 'rgba(0,200,255,0.14)', border: '1px solid rgba(0,200,255,0.28)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Plus size={17} strokeWidth={2.5} />
@@ -334,7 +457,20 @@ export function HomePage() {
         </button>
       </div>
 
-      {/* ── Divisor ───────────────────────────────────────── */}
+      {/* ── Summary cards ────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 12 }}>
+        {(Object.entries(EQUIPOS) as [Equipo, string][]).map(([eq, label]) => (
+          <EquipoSummaryCard
+            key={eq}
+            equipo={eq}
+            label={label}
+            userName={userName}
+            onClick={() => handleCardClick(eq)}
+          />
+        ))}
+      </div>
+
+      {/* ── Divisor ──────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         <span style={{
@@ -346,10 +482,16 @@ export function HomePage() {
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
       </div>
 
-      {/* ── Equipos ───────────────────────────────────────── */}
+      {/* ── Secciones por equipo ─────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {(Object.entries(EQUIPOS) as [Equipo, string][]).map(([eq, label]) => (
-          <EquipoSection key={eq} equipo={eq} label={label} onVerMas={() => handleVerMas(eq)} />
+          <EquipoSection
+            key={eq}
+            equipo={eq}
+            label={label}
+            userName={userName}
+            onVerMas={() => handleVerMas(eq)}
+          />
         ))}
       </div>
     </div>

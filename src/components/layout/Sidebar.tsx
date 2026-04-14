@@ -48,7 +48,6 @@ export function Sidebar() {
   const isAdmin  = role.role === 'admin';
   const isMember = role.role === 'member';
 
-  // member solo ve su propio equipo; admin ve todos
   const equiposVisibles = (Object.entries(EQUIPOS) as [Equipo, string][]).filter(([key]) =>
     isAdmin || (isMember && role.team === key)
   );
@@ -58,16 +57,32 @@ export function Sidebar() {
     navigate('/board');
   }
 
-  // Etiqueta de rol para el footer
+  function handleHomeEquipo(key: Equipo) {
+    navigate(`/home?section=equipo-${key}`);
+  }
+
   const roleLabel =
     isAdmin  ? 'Administrador' :
     isMember ? EQUIPOS[role.team] :
                'Cliente';
 
+  // Helper: renderiza el label de sección o un separador si está colapsado
+  function NavLabel({ children, top = false }: { children: string; top?: boolean }) {
+    if (sidebarAbierto) {
+      return (
+        <span className={['sidebar__nav-label', top ? 'sidebar__nav-label--top' : ''].join(' ')}>
+          {children}
+        </span>
+      );
+    }
+    return <span className={['sidebar__nav-sep', top ? 'sidebar__nav-sep--top' : ''].join(' ')} />;
+  }
+
   return (
     <aside className={['sidebar', sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed'].join(' ')}>
       <div className="sidebar__accent-line" />
 
+      {/* ── Logo ── */}
       <div className="sidebar__logo">
         <div className="-icon">
           <img src="/favicon.svg" width="38" height="35" alt="Prisma" />
@@ -81,9 +96,9 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        {sidebarAbierto && <span className="sidebar__nav-label">Principal</span>}
+        <NavLabel>Principal</NavLabel>
 
-        {/* ── INICIO — todos los roles ── */}
+        {/* ── INICIO ── */}
         <NavLink
           to="/home"
           className={({ isActive }) =>
@@ -94,7 +109,7 @@ export function Sidebar() {
           {sidebarAbierto && <span>Inicio</span>}
         </NavLink>
 
-        {/* ── ESTADÍSTICAS — admin y member ── */}
+        {/* ── ESTADÍSTICAS ── */}
         {(isAdmin || isMember) && (
           <NavLink
             to="/stats"
@@ -107,12 +122,10 @@ export function Sidebar() {
           </NavLink>
         )}
 
-        {/* ── AUTOMATIZACIONES — solo admin ── */}
+        {/* ── AUTOMATIZACIONES ── */}
         {isAdmin && (
           <>
-            {sidebarAbierto && (
-              <span className="sidebar__nav-label sidebar__nav-label--top">Automatizaciones</span>
-            )}
+            <NavLabel top>Automatizaciones</NavLabel>
 
             {sidebarAbierto ? (
               <div className="sidebar__nav-group">
@@ -163,12 +176,10 @@ export function Sidebar() {
           </>
         )}
 
-        {/* ── EQUIPOS / BOARDS — admin y member ── */}
+        {/* ── EQUIPOS ── */}
         {(isAdmin || isMember) && equiposVisibles.length > 0 && (
           <>
-            {sidebarAbierto && (
-              <span className="sidebar__nav-label sidebar__nav-label--top">Equipos</span>
-            )}
+            <NavLabel top>Equipos</NavLabel>
 
             {equiposVisibles.map(([key, label]) => {
               const c    = EQUIPO_COLORS[key];
@@ -185,7 +196,12 @@ export function Sidebar() {
                   >
                     <Icon
                       size={15}
-                      style={{ color: ia ? c.dot : undefined, opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'color 0.12s, opacity 0.12s' }}
+                      style={{
+                        color: ia ? c.dot : undefined,
+                        opacity: ia ? 1 : 0.55,
+                        flexShrink: 0,
+                        transition: 'color 0.12s, opacity 0.12s',
+                      }}
                     />
                     {sidebarAbierto && (
                       <span style={{ color: ia ? c.dot : undefined }}>{label}</span>
@@ -195,7 +211,7 @@ export function Sidebar() {
                   {ia && sidebarAbierto && (
                     <div className="sidebar__nav-sub">
                       <NavLink
-                        to="/board"
+                        to="/"
                         className={({ isActive: active }) =>
                           ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
                         }
@@ -203,6 +219,13 @@ export function Sidebar() {
                       >
                         <LayoutGrid size={12} /><span>Board</span>
                       </NavLink>
+                      <button
+                        onClick={() => handleHomeEquipo(key)}
+                        className="sidebar__nav-item sidebar__nav-item--sub"
+                      >
+                        <span className="sidebar__sub-dot" />
+                        <span>Mis solicitudes</span>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -212,6 +235,7 @@ export function Sidebar() {
         )}
       </nav>
 
+      {/* ── Footer ── */}
       <div className="sidebar__footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
           <button

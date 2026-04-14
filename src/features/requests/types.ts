@@ -4,10 +4,10 @@
 export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis';
 
 export const EQUIPOS: Record<Equipo, string> = {
-  desarrollo: 'Desarrollo',
+  desarrollo: 'Desarrollo & UX',
   crm:        'CRM',
   sistemas:   'Sistemas de Información',
-  analisis:   'Análisis de Datos',
+  analisis:   'Ciencia de Datos',
 };
 
 /* ============================================================
