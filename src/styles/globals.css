@@ -1321,3 +1321,216 @@ a { text-decoration: none; color: inherit; }
   flex-shrink: 0;
   transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
 }
+
+/* ============================================================
+   Theme toggle button — pegar en globals.css
+   ============================================================ */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--txt-muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* ============================================================
+   LIGHT THEME
+   Se activa cuando <html data-theme="light">
+   Mantiene estética corporativa/futurista adaptada a blanco.
+   ============================================================ */
+[data-theme="light"] {
+  /* Fondos — blancos fríos estructurados */
+  --bg-deep:    #eef1f7;
+  --bg-panel:   #ffffff;
+  --bg-card:    #f7f9fc;
+  --bg-surface: #edf0f7;
+  --bg-hover:   #e4e9f3;
+
+  /* Acento cian adaptado para contraste en blanco */
+  --accent:        #0070bb;
+  --accent-2:      #004a99;
+  --accent-glow:   rgba(0, 112, 187, 0.08);
+  --accent-border: rgba(0, 112, 187, 0.22);
+
+  /* Bordes */
+  --border:        rgba(0, 112, 187, 0.16);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+
+  /* Texto */
+  --txt:       #0d1a2e;
+  --txt-muted: #5a6a85;
+  --txt-dim:   #b0bcd4;
+
+  /* Semánticos — mismos pero calibrados para fondo claro */
+  --success: #00996a;
+  --warn:    #d97706;
+  --danger:  #dc2626;
+  --info:    #6d40cc;
+}
+
+/* ── Topbar ──────────────────────────────────────────────── */
+[data-theme="light"] .topbar {
+  background: #ffffff;
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      #f5f0ff 0%,        /* lavanda muy suave */
+      #faf8ff 30%,       /* casi blanco */
+      #ffffff 100%       /* blanco puro al pie */
+    );
+  border-right-color: rgba(124, 58, 237, 0.12);
+  box-shadow: 2px 0 12px rgba(80, 20, 150, 0.06);
+}
+ 
+[data-theme="light"] .sidebar__accent-line {
+  background: linear-gradient(90deg, transparent, #7c3aed, #a855f7, transparent);
+  opacity: 0.6;
+}
+ 
+[data-theme="light"] .sidebar__nav-item--active {
+  background: rgba(124, 58, 237, 0.08);
+  color: #6d28d9;
+}
+ 
+[data-theme="light"] .sidebar__nav-item--active::before {
+  background: #7c3aed;
+}
+ 
+[data-theme="light"] .sidebar__nav-item--sub.sidebar__nav-item--active {
+  background: rgba(124, 58, 237, 0.06) !important;
+  color: #6d28d9 !important;
+}
+ 
+[data-theme="light"] .sidebar__nav-item:hover {
+  background: rgba(124, 58, 237, 0.06);
+  color: #4c1d95;
+}
+ 
+[data-theme="light"] .sidebar__nav-label {
+  color: rgba(109, 40, 217, 0.5);
+}
+ 
+[data-theme="light"] .sidebar__logo {
+  border-bottom-color: rgba(124, 58, 237, 0.10);
+}
+ 
+[data-theme="light"] .sidebar__footer {
+  border-top-color: rgba(124, 58, 237, 0.10);
+}
+ 
+[data-theme="light"] .sidebar__toggle-btn:hover {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: #6d28d9;
+}
+ 
+[data-theme="light"] .sidebar__user-name {
+  color: #1e1040;
+}
+ 
+[data-theme="light"] .sidebar__user-role {
+  color: #7c3aed;
+}
+ 
+/* ── Kanban columns ───────────────────────────────────────── */
+[data-theme="light"] .kanban__col--sin-categorizar {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .kanban__col--icebox      { background: rgba(96,165,250,0.04);  border-color: rgba(96,165,250,0.14); }
+[data-theme="light"] .kanban__col--backlog     { background: rgba(109,64,204,0.04);  border-color: rgba(109,64,204,0.14); }
+[data-theme="light"] .kanban__col--todo        { background: rgba(217,119,6,0.04);   border-color: rgba(217,119,6,0.16); }
+[data-theme="light"] .kanban__col--en-progreso { background: rgba(0,112,187,0.04);   border-color: rgba(0,112,187,0.14); }
+[data-theme="light"] .kanban__col--hecho       { background: rgba(0,153,106,0.04);   border-color: rgba(0,153,106,0.14); }
+
+[data-theme="light"] .kanban__col--over {
+  outline-color: var(--accent-border);
+  background: rgba(0, 112, 187, 0.05) !important;
+}
+
+/* ── Request cards ────────────────────────────────────────── */
+[data-theme="light"] .request-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .request-card:hover {
+  border-color: rgba(0, 112, 187, 0.25);
+  box-shadow: 0 3px 10px rgba(0, 112, 187, 0.10);
+}
+
+[data-theme="light"] .request-card__cat {
+  background: #eef1f7;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .request-card__progress-track {
+  background: #e4e9f3;
+}
+
+/* ── Badge prioridades en modo claro ──────────────────────── */
+[data-theme="light"] .request-card__badge--baja    { background: rgba(90,106,138,0.08);  border-color: rgba(90,106,138,0.2); }
+[data-theme="light"] .request-card__badge--media   { background: rgba(109,64,204,0.08);  border-color: rgba(109,64,204,0.2); }
+[data-theme="light"] .request-card__badge--alta    { background: rgba(217,119,6,0.10);   border-color: rgba(217,119,6,0.25); }
+[data-theme="light"] .request-card__badge--critica { background: rgba(220,38,38,0.08);   border-color: rgba(220,38,38,0.22); }
+
+/* ── Filter panel ─────────────────────────────────────────── */
+[data-theme="light"] .filter-panel {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .filter-select,
+[data-theme="light"] .filter-input {
+  background: #f7f9fc;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--txt);
+}
+
+[data-theme="light"] .filter-select option {
+  background: #ffffff;
+  color: var(--txt);
+}
+
+[data-theme="light"] .filter-select:hover,
+[data-theme="light"] .filter-select:focus,
+[data-theme="light"] .filter-input:focus {
+  border-color: var(--accent);
+}
+
+/* ── Login ────────────────────────────────────────────────── */
+[data-theme="light"] .login-page {
+  background: var(--bg-deep);
+}
+
+[data-theme="light"] .login-card {
+  background: #ffffff;
+  border-color: rgba(0, 112, 187, 0.18);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.10);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+[data-theme="light"] ::-webkit-scrollbar-track { background: #eef1f7; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #b0bcd4; }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #8a9ab8; }

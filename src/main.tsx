@@ -7,12 +7,23 @@ import { GraphServicesProvider } from '@/graph/GraphServicesProvider';
 import App from '@/App';
 import './styles/globals.css';
 
+// Aplica el tema guardado antes del primer render (evita flash)
+// Default: light
+const saved = localStorage.getItem('prisma-theme');
+let initialTheme = 'light';
+if (saved) {
+  try {
+    const parsed = JSON.parse(saved)?.state?.theme;
+    if (parsed === 'dark' || parsed === 'light') initialTheme = parsed;
+  } catch { /* silent */ }
+}
+document.documentElement.setAttribute('data-theme', initialTheme);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime:   15_000,
       retry:       1,
-      // No reintenta en errores 4xx (credenciales, permisos) — solo en 5xx
       retryDelay:  (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     },
     mutations: {
@@ -27,10 +38,8 @@ if (!root) throw new Error('No se encontró #root en el HTML');
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
-      {/* AuthProvider primero: GraphServicesProvider depende de useAuth */}
       <AuthProvider>
         <GraphServicesProvider>
-          {/* QueryClient después de los servicios: los hooks de query usan useGraphServices */}
           <QueryClientProvider client={queryClient}>
             <App />
           </QueryClientProvider>

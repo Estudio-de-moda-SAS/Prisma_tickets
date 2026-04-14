@@ -654,3 +654,255 @@
   gap: 4px;
   margin-bottom: 4px;
 }
+
+/* ============================================================
+   CUSTOMIZATION — parche modo claro + fixes generales
+   Pegar al FINAL de customization.css
+   ============================================================ */
+
+/* ── Panel en modo claro ───────────────────────────────────── */
+[data-theme="light"] .cp-panel {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .cp-panel__header {
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .cp-panel__title { color: var(--txt); }
+
+[data-theme="light"] .cp-panel__close { color: var(--txt-muted); }
+[data-theme="light"] .cp-panel__close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--txt);
+}
+
+[data-theme="light"] .cp-tabs {
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .cp-tab { color: var(--txt-muted); }
+[data-theme="light"] .cp-tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--txt);
+}
+[data-theme="light"] .cp-tab--active {
+  background: rgba(0, 112, 187, 0.08);
+  color: var(--accent);
+}
+
+
+[data-theme="light"] .cp-panel__footer {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .cp-panel__reset-btn:hover {
+  background: rgba(220, 38, 38, 0.07);
+}
+
+/* ── Sección labels ────────────────────────────────────────── */
+[data-theme="light"] .cp-section__label { color: var(--txt-muted); }
+[data-theme="light"] .cp-section__label-val { color: var(--txt); }
+
+/* ── Tema cards ────────────────────────────────────────────── */
+[data-theme="light"] .cp-theme-card {
+  border-color: rgba(0, 0, 0, 0.09);
+}
+[data-theme="light"] .cp-theme-card:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.02);
+}
+[data-theme="light"] .cp-theme-card--active {
+  border-color: var(--accent);
+  background: rgba(0, 112, 187, 0.06);
+}
+[data-theme="light"] .cp-theme-card__name { color: var(--txt-muted); }
+[data-theme="light"] .cp-theme-card--active .cp-theme-card__name { color: var(--accent); }
+
+/* ── Slider ────────────────────────────────────────────────── */
+[data-theme="light"] .cp-slider {
+  background: #dde3ef;
+}
+[data-theme="light"] .cp-slider::-webkit-slider-thumb {
+  background: var(--accent);
+  border-color: #ffffff;
+}
+[data-theme="light"] .cp-slider::-moz-range-thumb {
+  background: var(--accent);
+  border-color: #ffffff;
+}
+
+/* ── Toggle ────────────────────────────────────────────────── */
+[data-theme="light"] .cp-toggle {
+  background: #d5dcea;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .cp-toggle--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+[data-theme="light"] .cp-toggle-row {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .cp-toggle-row__label { color: var(--txt); }
+
+/* ── Column rows ───────────────────────────────────────────── */
+[data-theme="light"] .cp-col-row {
+  background: #f4f6fb;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .cp-col-row__name { color: var(--txt); }
+[data-theme="light"] .cp-col-row__body {
+  border-top-color: rgba(0, 0, 0, 0.07);
+}
+[data-theme="light"] .cp-col-row__reset { color: var(--txt-muted); }
+[data-theme="light"] .cp-col-row__reset:hover { color: var(--accent); }
+
+/* ── Campo labels ──────────────────────────────────────────── */
+[data-theme="light"] .cp-field__label { color: var(--txt-muted); }
+
+/* ── Emoji buttons ─────────────────────────────────────────── */
+[data-theme="light"] .cp-emoji-btn {
+  border-color: rgba(0, 0, 0, 0.09);
+  color: var(--txt-muted);
+}
+[data-theme="light"] .cp-emoji-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .cp-emoji-btn--active {
+  border-color: var(--accent);
+  background: rgba(0, 112, 187, 0.08);
+}
+
+/* ── Density buttons ───────────────────────────────────────── */
+[data-theme="light"] .cp-density-btn {
+  border-color: rgba(0, 0, 0, 0.09);
+}
+[data-theme="light"] .cp-density-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.02);
+}
+[data-theme="light"] .cp-density-btn--active {
+  border-color: var(--accent);
+  background: rgba(0, 112, 187, 0.07);
+}
+[data-theme="light"] .cp-density-btn__name { color: var(--txt); }
+[data-theme="light"] .cp-density-btn__desc { color: var(--txt-muted); }
+[data-theme="light"] .cp-density-btn--active .cp-density-btn__name { color: var(--accent); }
+
+/* ── Style buttons ─────────────────────────────────────────── */
+[data-theme="light"] .cp-style-btn {
+  border-color: rgba(0, 0, 0, 0.09);
+  color: var(--txt-muted);
+}
+[data-theme="light"] .cp-style-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--txt);
+}
+[data-theme="light"] .cp-style-btn--active {
+  border-color: var(--accent);
+  background: rgba(0, 112, 187, 0.07);
+  color: var(--accent);
+}
+
+/* Previews de estilo — versión clara */
+[data-theme="light"] .cp-style-btn__preview[data-style="default"] {
+  background: #f7f9fc;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 3px solid #d97706;
+}
+[data-theme="light"] .cp-style-btn__preview[data-style="bordered"] {
+  background: #f7f9fc;
+  border: 1.5px solid var(--accent);
+  border-left: 3px solid #d97706;
+}
+[data-theme="light"] .cp-style-btn__preview[data-style="flat"] {
+  background: transparent;
+  border: none;
+  border-left: 3px solid #d97706;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .cp-style-btn__preview[data-style="glass"] {
+  background: rgba(0, 112, 187, 0.06);
+  border: 1px solid rgba(0, 112, 187, 0.2);
+  border-left: 3px solid #d97706;
+}
+
+/* ── Priority grid ─────────────────────────────────────────── */
+[data-theme="light"] .cp-priority-grid {
+  background: #f4f6fb;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ── ColorField ────────────────────────────────────────────── */
+[data-theme="light"] .cp-colorfield__trigger {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.10);
+}
+[data-theme="light"] .cp-colorfield__trigger:hover {
+  border-color: rgba(0, 0, 0, 0.20);
+}
+[data-theme="light"] .cp-colorfield__label { color: var(--txt); }
+[data-theme="light"] .cp-colorfield__hex { color: var(--txt-muted); }
+[data-theme="light"] .cp-colorfield__swatch {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* ── ColorPicker ───────────────────────────────────────────── */
+[data-theme="light"] .cp-colorpicker {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .cp-colorpicker__hex-input {
+  background: #f4f6fb;
+  border-color: rgba(0, 0, 0, 0.10);
+  color: var(--txt);
+}
+[data-theme="light"] .cp-colorpicker__hex-input:focus {
+  border-color: var(--accent);
+}
+[data-theme="light"] .cp-colorpicker__hex-label { color: var(--txt-muted); }
+[data-theme="light"] .cp-colorpicker__preview {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+[data-theme="light"] .cp-colorpicker__preset {
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+/* ============================================================
+   Card styles — fixes para AMBOS modos
+   Los estilos visuales de tarjetas tenían colores hardcodeados
+   ============================================================ */
+
+/* Bordered — usa variable en vez de color fijo */
+.request-card--bordered {
+  border-color: var(--accent) !important;
+}
+
+/* Flat — adapta a modo claro */
+.request-card--flat {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Glass — usa variables */
+.request-card--glass {
+  background: var(--accent-glow) !important;
+  border-color: var(--accent-border) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Glass en modo claro — más delicado */
+[data-theme="light"] .request-card--glass {
+  background: rgba(0, 112, 187, 0.04) !important;
+  border-color: rgba(0, 112, 187, 0.18) !important;
+}

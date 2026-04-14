@@ -4,6 +4,7 @@ import { EQUIPOS } from '@/features/requests/types';
 import { EQUIPO_COLORS } from '@/components/layout/Sidebar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ThemeToggle } from './ThemeToggle';
 
 type TopbarProps = {
   titulo: string;
@@ -52,6 +53,8 @@ export function Topbar({ titulo }: TopbarProps) {
 
       <div className="topbar__right">
         <span className="topbar__date">{hoy}</span>
+        <div className="topbar__divider" />
+        <ThemeToggle />
         <div className="topbar__divider" />
         <div className="topbar__avatar">{initiales}</div>
       </div>

@@ -7,6 +7,7 @@ import {
   useCardStyle,
   usePriorityColor,
 } from '../hooks/useCustomizationStyles';
+import { useTheme } from '@/store/useTheme';
 import type { Request } from '../types';
 
 type Props = {
@@ -33,6 +34,9 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
     isDragging: isSortableDragging,
   } = useSortable({ id: request.id });
 
+  // useTheme siempre primero — orden de hooks estable
+  const { theme: uiTheme } = useTheme();
+
   const isBeingDragged  = isSortableDragging || isDragging;
   const progreso        = request.progreso ?? 0;
   const showProgressCol = request.columna === 'en_progreso' || request.columna === 'hecho';
@@ -40,16 +44,14 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const cardClasses                             = useCardClasses(request.prioridad);
   const { showDesc, showProgress, showAvatars,
           showCategory }                        = useCardVisibility();
-  const cardStyle                               = useCardStyle();
+  const cardStyle                               = useCardStyle(uiTheme);   // ← pasa uiTheme
   const priorityColor                           = usePriorityColor(request.prioridad);
   const shouldShowProgress                      = showProgressCol && showProgress;
 
-  // Borde izquierdo con el color de prioridad personalizado
   const priorityBorderStyle: React.CSSProperties = {
     '--priority-color': priorityColor,
   } as React.CSSProperties;
 
-  // Badge con color personalizado
   const badgeStyle: React.CSSProperties = {
     background: `${priorityColor}20`,
     color:       priorityColor,
@@ -79,7 +81,6 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
       {...listeners}
       onClick={handleClick}
     >
-      {/* Header */}
       <div className="request-card__header">
         <span className="request-card__id">
           #{request.id.slice(-6).toUpperCase()}
@@ -89,10 +90,8 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
         )}
       </div>
 
-      {/* Título */}
       <p className="request-card__title">{request.titulo}</p>
 
-      {/* Descripción */}
       {showDesc && request.descripcion && (
         <p className="request-card__desc">
           {request.descripcion.length > 80
@@ -101,7 +100,6 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
         </p>
       )}
 
-      {/* Progreso */}
       {shouldShowProgress && (
         <div className="request-card__progress">
           <div className="request-card__progress-track">
@@ -119,7 +117,6 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
         </div>
       )}
 
-      {/* Footer */}
       <div className="request-card__footer">
         <span className="request-card__badge" style={badgeStyle}>
           {PRIORIDAD_LABEL[request.prioridad]}

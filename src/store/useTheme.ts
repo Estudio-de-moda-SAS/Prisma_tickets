@@ -1,25 +1,36 @@
-import { useEffect } from 'react';
-import { useCustomizationStore, BOARD_THEMES } from '@/store/customizationStore';
+// src/store/useTheme.ts — light como default
 
-/* ============================================================
-   useTheme
-   ─────────────────────────────────────────────────────────────
-   Llama este hook UNA SOLA VEZ en App.tsx.
-   El tema es global — no depende del board activo.
-   Escribe las variables CSS directamente en :root para que
-   todo el layout (sidebar, topbar, columnas, tarjetas) herede
-   los colores sin props ni wrappers.
-   ============================================================ */
-export function useTheme() {
-  // Lee directamente de global.theme — no de customization
-  const theme = useCustomizationStore((s) => s.global.theme);
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-  useEffect(() => {
-    const preset = BOARD_THEMES[theme] ?? BOARD_THEMES.dark;
-    const root   = document.documentElement;
+export type Theme = 'dark' | 'light';
 
-    for (const [key, value] of Object.entries(preset.vars)) {
-      root.style.setProperty(key, value);
-    }
-  }, [theme]);
+interface ThemeState {
+  theme: Theme;
+  toggle: () => void;
+  setTheme: (t: Theme) => void;
 }
+
+export const useTheme = create<ThemeState>()(
+  persist(
+    (set, get) => ({
+      theme: 'light',                              // ← default claro
+      toggle: () => {
+        const next = get().theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        set({ theme: next });
+      },
+      setTheme: (t) => {
+        document.documentElement.setAttribute('data-theme', t);
+        set({ theme: t });
+      },
+    }),
+    {
+      name: 'prisma-theme',
+      onRehydrateStorage: () => (state) => {
+        const theme = state?.theme ?? 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+      },
+    }
+  )
+);

@@ -246,13 +246,9 @@
   transform: translateY(-1px);
 }
 
-.lp-auth__btn:active {
-  transform: scale(0.98);
-}
+.lp-auth__btn:active { transform: scale(0.98); }
 
-.lp-auth__btn-icon {
-  flex-shrink: 0;
-}
+.lp-auth__btn-icon { flex-shrink: 0; }
 
 /* Security notice */
 .lp-auth__notice {
@@ -282,19 +278,98 @@
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .lp-card {
-    flex-direction: column;
-    width: 92vw;
-    min-height: unset;
-  }
-  .lp-card__brand {
-    padding: 36px 32px 28px;
-  }
+  .lp-card { flex-direction: column; width: 92vw; min-height: unset; }
+  .lp-card__brand { padding: 36px 32px 28px; }
   .lp-card__brand::after { display: none; }
-  .lp-brand__tagline,
-  .lp-brand__features { display: none; }
-  .lp-card__auth {
-    width: auto;
-    padding: 32px 32px 40px;
-  }
+  .lp-brand__tagline, .lp-brand__features { display: none; }
+  .lp-card__auth { width: auto; padding: 32px 32px 40px; }
+}
+
+/* ══════════════════════════════════════════════
+   LIGHT THEME
+   Corporativo, limpio, mismo layout — misma
+   personalidad pero en blanco frío.
+══════════════════════════════════════════════ */
+[data-theme="light"] .lp-root {
+  background: #eef1f7;
+}
+
+/* Grid — líneas más oscuras sobre fondo claro */
+[data-theme="light"] .lp-bg__grid {
+  color: rgba(108, 78, 245, 0.06);
+}
+
+/* Orbs — más suaves, no saturados */
+[data-theme="light"] .lp-bg__orb--1 {
+  background: radial-gradient(circle, #c4b5fd 0%, transparent 70%);
+  opacity: 0.45;
+}
+[data-theme="light"] .lp-bg__orb--2 {
+  background: radial-gradient(circle, #93c5fd 0%, transparent 70%);
+  opacity: 0.35;
+}
+
+/* Card — borde sutil, sombra ligera */
+[data-theme="light"] .lp-card {
+  border-color: rgba(108, 78, 245, 0.14);
+  box-shadow:
+    0 0 0 1px rgba(108, 78, 245, 0.08),
+    0 24px 60px rgba(80, 40, 160, 0.10),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Panel izquierdo — púrpura corporativo claro */
+[data-theme="light"] .lp-card__brand {
+  background: linear-gradient(145deg, #2d1b6e 0%, #1e1050 55%, #1a2a5e 100%);
+}
+
+[data-theme="light"] .lp-card__brand::after {
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.12) 70%, transparent);
+}
+
+/* El texto del panel izquierdo queda igual (ya es blanco sobre oscuro) */
+
+/* Panel derecho — blanco puro */
+[data-theme="light"] .lp-card__auth {
+  background: #ffffff;
+}
+
+[data-theme="light"] .lp-auth__eyebrow {
+  color: #5b21b6;
+}
+
+[data-theme="light"] .lp-auth__title {
+  color: #0f0a2e;
+}
+
+[data-theme="light"] .lp-auth__sub {
+  color: #64748b;
+}
+
+/* Botón Microsoft — sombra más suave */
+[data-theme="light"] .lp-auth__btn {
+  background: #ffffff;
+  color: #0f0a2e;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .lp-auth__btn:hover {
+  background: #f8f6ff;
+  border-color: rgba(108, 78, 245, 0.3);
+  box-shadow: 0 4px 20px rgba(108, 78, 245, 0.15);
+}
+
+/* Notice */
+[data-theme="light"] .lp-auth__notice {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .lp-auth__notice svg {
+  color: #cbd5e1;
+}
+
+/* Footer */
+[data-theme="light"] .lp-footer {
+  color: rgba(80, 60, 140, 0.35);
 }

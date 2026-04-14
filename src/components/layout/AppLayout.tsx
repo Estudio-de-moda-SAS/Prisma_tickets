@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { useBoardTheme } from '@/store/useBoardTheme';
 
 const TITULOS: Record<string, string> = {
   '/new':            'Nueva Solicitud',
@@ -10,6 +11,7 @@ const TITULOS: Record<string, string> = {
 };
 
 export function AppLayout() {
+  useBoardTheme();
   const { pathname } = useLocation();
   const titulo = TITULOS[pathname] ?? 'Prisma Tickets';
 
