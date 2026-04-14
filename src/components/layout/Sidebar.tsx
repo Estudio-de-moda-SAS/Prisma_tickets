@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  Plus,
-  List,
   BarChart2,
   ChevronDown,
+  Home,
   LogOut,
   LayoutGrid,
   Zap,
@@ -28,7 +27,7 @@ export const EQUIPO_COLORS: Record<Equipo, { dot: string; glow: string; border: 
   analisis:   { dot: '#7F77DD', glow: 'rgba(127,119,221,0.12)', border: 'rgba(127,119,221,0.30)' },
 };
 
-const EQUIPO_ICONS: Record<Equipo, React.ElementType> = {
+export const EQUIPO_ICONS: Record<Equipo, React.ElementType> = {
   desarrollo: Code2,
   crm:        Users,
   sistemas:   Server,
@@ -39,7 +38,6 @@ export function Sidebar() {
   const { account, signOut } = useAuth();
   const { sidebarAbierto, toggleSidebar, equipoActivo, setEquipoActivo } = useBoardStore();
   const navigate = useNavigate();
-  const [solicitudesOpen,      setSolicitudesOpen]      = useState(false);
   const [automatizacionesOpen, setAutomatizacionesOpen] = useState(false);
 
   const initiales =
@@ -69,62 +67,16 @@ export function Sidebar() {
       <nav className="sidebar__nav">
         {sidebarAbierto && <span className="sidebar__nav-label">Principal</span>}
 
+        {/* ── INICIO — reemplaza "Nueva Solicitud" + "Solicitudes" ── */}
         <NavLink
-          to="/new"
-          end
+          to="/home"
           className={({ isActive }) =>
             ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
           }
         >
-          <Plus size={16} />
-          {sidebarAbierto && <span>Nueva Solicitud</span>}
+          <Home size={16} />
+          {sidebarAbierto && <span>Inicio</span>}
         </NavLink>
-
-        {sidebarAbierto ? (
-          <div className="sidebar__nav-group">
-            <button
-              className="sidebar__nav-item sidebar__nav-item--group-header"
-              onClick={() => setSolicitudesOpen((v) => !v)}
-            >
-              <List size={16} />
-              <span style={{ flex: 1 }}>Solicitudes</span>
-              <ChevronDown
-                size={12}
-                className={['sidebar__chevron', solicitudesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
-              />
-            </button>
-            {solicitudesOpen && (
-              <div className="sidebar__nav-sub">
-                <NavLink
-                  to="/my-requests"
-                  className={({ isActive }) =>
-                    ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                  }
-                >
-                  <span className="sidebar__sub-dot" /><span>Mis solicitudes</span>
-                </NavLink>
-                <NavLink
-                  to="/requests"
-                  className={({ isActive }) =>
-                    ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                  }
-                >
-                  <span className="sidebar__sub-dot" /><span>Todas las solicitudes</span>
-                </NavLink>
-              </div>
-            )}
-          </div>
-        ) : (
-          <NavLink
-            to="/requests"
-            title="Solicitudes"
-            className={({ isActive }) =>
-              ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-            }
-          >
-            <List size={16} />
-          </NavLink>
-        )}
 
         <NavLink
           to="/stats"
@@ -233,7 +185,6 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar__footer">
-        {/* Fila: toggle + config */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
           <button
             className="sidebar__toggle-btn"
@@ -246,8 +197,6 @@ export function Sidebar() {
               : <PanelLeftOpen size={14} />
             }
           </button>
-
-          {/* Botón de configuración — abre el popover de categorías y equipos */}
           <ConfigPopover />
         </div>
 

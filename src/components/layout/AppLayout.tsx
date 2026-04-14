@@ -4,10 +4,11 @@ import { Topbar } from './Topbar';
 import { useBoardTheme } from '@/store/useBoardTheme';
 
 const TITULOS: Record<string, string> = {
-  '/new':            'Nueva Solicitud',
-  '/requests':         'Requests',
+  '/home':         'Home',
+  '/new':          'Nueva Solicitud',
+  '/requests':     'Requests',
   '/my-requests':  'Mis Solicitudes',
-  '/stats':            'Estadísticas',
+  '/stats':        'Estadísticas',
 };
 
 export function AppLayout() {

@@ -2,14 +2,17 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { BoardPage } from '@/pages/BoardPage';
+import { HomePage } from '@/pages/HomePage';
 import { NuevaSolicitudPage } from '@/pages/NewRequestPage';
 import { MisSolicitudesPage } from '@/pages/MyRequestsPage';
 import { RequestsPage } from '@/pages/RequestsPage';
+import { StatsPage } from '@/pages/StatsPage';
+import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
-import { AutomationsPage } from './pages/AutomationsPage';
-import { StatsPage } from './pages/StatsPage';
-import { useTheme } from '@/store/useTheme';
 
+/* ============================================================
+   Guard — redirige a /login si no hay sesión activa
+   ============================================================ */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, account } = useAuth();
 
@@ -24,20 +27,19 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!account) return <Navigate to="/login" replace />;
-
   return <>{children}</>;
 }
 
+/* ============================================================
+   App
+   ============================================================ */
 export default function App() {
-  // Inyecta las variables CSS del tema activo en :root globalmente.
-  // Al cambiar de tema, useTheme actualiza document.documentElement
-  // y TODO el layout (sidebar, topbar, columnas, tarjetas) lo hereda.
-  useTheme();
-
   return (
     <Routes>
+      {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
+      {/* Protegidas — todas dentro del AppLayout */}
       <Route
         element={
           <RequireAuth>
@@ -45,15 +47,30 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* Board de equipo (raíz) */}
         <Route index element={<BoardPage />} />
-        <Route path="new"          element={<NuevaSolicitudPage />} />
-        <Route path="requests"     element={<RequestsPage />} />
-        <Route path="my-requests"  element={<MisSolicitudesPage />} />
-        <Route path="stats"        element={<StatsPage />} />
-        <Route path="automations"      element={<AutomationsPage />} />
+
+        {/* Inicio — panel con resumen por equipo + CTA */}
+        <Route path="home" element={<HomePage />} />
+
+        {/* Crear nueva solicitud */}
+        <Route path="new" element={<NuevaSolicitudPage />} />
+
+        {/* Mis solicitudes — lista personal */}
+        <Route path="my-requests" element={<MisSolicitudesPage />} />
+
+        {/* Todas las solicitudes — vista admin/resolutor */}
+        <Route path="requests" element={<RequestsPage />} />
+
+        {/* Estadísticas */}
+        <Route path="stats" element={<StatsPage />} />
+
+        {/* Automatizaciones */}
+        <Route path="automations" element={<AutomationsPage />} />
         <Route path="automations/logs" element={<AutomationsPage />} />
       </Route>
 
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
