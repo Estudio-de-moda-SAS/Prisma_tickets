@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   useCustomizationStore,
   BOARD_THEMES,
@@ -15,7 +16,7 @@ import { KANBAN_COLUMNAS, COLUMNAS_BOARD } from '@/features/requests/types';
 import type { KanbanColumna } from '@/features/requests/types';
 
 /* ============================================================
-   Utilidades de color  (sin cambios)
+   Utilidades de color
    ============================================================ */
 function hexToHsv(hex: string): [number, number, number] {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -58,7 +59,7 @@ function isValidHex(hex: string) {
 }
 
 /* ============================================================
-   ColorPicker  (sin cambios)
+   ColorPicker
    ============================================================ */
 type ColorPickerProps = { value: string; onChange: (hex: string) => void; onClose: () => void };
 
@@ -129,8 +130,8 @@ function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
     }
   }
 
-  const pureHue   = hsvToHex(hue, 1, 1);
-  const presets   = ['#ff4757','#ff6b35','#ffa502','#ffdd59','#00e5a0','#00c8ff','#a78bfa','#ff6b81','#5a6a8a','#ffffff'];
+  const pureHue = hsvToHex(hue, 1, 1);
+  const presets = ['#ff4757','#ff6b35','#ffa502','#ffdd59','#00e5a0','#00c8ff','#a78bfa','#ff6b81','#5a6a8a','#ffffff'];
 
   return (
     <div ref={panelRef} className="cp-colorpicker">
@@ -162,7 +163,7 @@ function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
 }
 
 /* ============================================================
-   ColorField  (sin cambios)
+   ColorField
    ============================================================ */
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -183,7 +184,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 }
 
 /* ============================================================
-   Iconos de sección  (sin cambios)
+   Iconos de sección
    ============================================================ */
 const SECTION_ICONS = {
   theme: (
@@ -227,7 +228,7 @@ const PRIORITY_LABELS: Record<keyof PriorityColors, string> = {
 };
 
 /* ============================================================
-   Sección: Tema — GLOBAL, no recibe boardId
+   Sección: Tema
    ============================================================ */
 function ThemeSection() {
   const { getCustomization, setTheme, setColumnGap, setShowBoardBg } = useCustomizationStore();
@@ -277,7 +278,7 @@ function ThemeSection() {
 }
 
 /* ============================================================
-   Sección: Columnas — por board
+   Sección: Columnas
    ============================================================ */
 function ColumnsSection({ boardId }: { boardId: string }) {
   const { getCustomization, updateColumn, resetColumn } = useCustomizationStore();
@@ -353,7 +354,7 @@ function ColumnsSection({ boardId }: { boardId: string }) {
 }
 
 /* ============================================================
-   Sección: Tarjetas — por board
+   Sección: Tarjetas
    ============================================================ */
 function CardsSection({ boardId }: { boardId: string }) {
   const { getCustomization, updateCard, updatePriorityColor, resetPriorityColors } =
@@ -366,10 +367,10 @@ function CardsSection({ boardId }: { boardId: string }) {
     JSON.stringify(priorityColors) !== JSON.stringify(PRIORITY_DEFAULTS);
 
   const toggles: { key: keyof typeof card; label: string }[] = [
-    { key: 'showDesc',      label: 'Descripción'        },
-    { key: 'showProgress',  label: 'Barra de progreso'  },
-    { key: 'showAvatars',   label: 'Avatares'           },
-    { key: 'showCategory',  label: 'Categoría'          },
+    { key: 'showDesc',      label: 'Descripción'          },
+    { key: 'showProgress',  label: 'Barra de progreso'    },
+    { key: 'showAvatars',   label: 'Avatares'             },
+    { key: 'showCategory',  label: 'Categoría'            },
     { key: 'roundedCorner', label: 'Esquinas redondeadas' },
   ];
 
@@ -449,7 +450,7 @@ function CardsSection({ boardId }: { boardId: string }) {
 /* ============================================================
    Panel principal
    ============================================================ */
-export function BoardCustomizationPanel() {
+export function BoardCustomizationPanel({ anchor }: { anchor: { top: number; left: number } }) {
   const { isPanelOpen, closePanel, activeSection, setActiveSection, resetAll } =
     useCustomizationStore();
   const { equipoActivo } = useBoardStore();
@@ -475,8 +476,14 @@ export function BoardCustomizationPanel() {
 
   if (!isPanelOpen) return null;
 
-  return (
-    <div className="cp-panel" ref={ref} role="dialog" aria-label="Personalización del board">
+  return createPortal(
+    <div
+      className="cp-panel"
+      ref={ref}
+      role="dialog"
+      aria-label="Personalización del board"
+      style={{ top: anchor.top, left: anchor.left }}
+    >
       <div className="cp-panel__header">
         <span className="cp-panel__title">Personalización</span>
         <button className="cp-panel__close" onClick={closePanel}>
@@ -510,21 +517,37 @@ export function BoardCustomizationPanel() {
           Restablecer todo
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 /* ============================================================
-   Trigger  (sin cambios)
+   Trigger
    ============================================================ */
 export function BoardCustomizationTrigger() {
   const { isPanelOpen, openPanel, closePanel } = useCustomizationStore();
+  const btnRef  = useRef<HTMLButtonElement>(null);
+  const [anchor, setAnchor] = useState({ top: 108, left: 280 });
+
+  function handleClick() {
+    if (isPanelOpen) {
+      closePanel();
+    } else {
+      if (btnRef.current) {
+        const rect = btnRef.current.getBoundingClientRect();
+        setAnchor({ top: rect.bottom + 8, left: rect.left });
+      }
+      openPanel();
+    }
+  }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <>
       <button
+        ref={btnRef}
         className={`filter-trigger cp-trigger ${isPanelOpen ? 'filter-trigger--active' : ''}`}
-        onClick={isPanelOpen ? closePanel : openPanel}
+        onClick={handleClick}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
@@ -533,7 +556,7 @@ export function BoardCustomizationTrigger() {
         </svg>
         Personalizar
       </button>
-      <BoardCustomizationPanel />
-    </div>
+      <BoardCustomizationPanel anchor={anchor} />
+    </>
   );
 }

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { KanbanColumna } from '@/features/requests/types';
 
 /* ============================================================
-   Tipos  (sin cambios)
+   Tipos
    ============================================================ */
 export type CardDensity  = 'compact' | 'normal' | 'expanded';
 export type CardStyle    = 'default' | 'bordered' | 'flat' | 'glass';
@@ -36,7 +36,7 @@ export type CardCustomization = {
 };
 
 export type BoardCustomization = {
-  theme:          BoardTheme;   // ← GLOBAL (no va en byBoard)
+  theme:          BoardTheme;
   columnGap:      number;
   columns:        Partial<Record<KanbanColumna, ColumnCustomization>>;
   card:           CardCustomization;
@@ -45,7 +45,7 @@ export type BoardCustomization = {
 };
 
 /* ============================================================
-   Defaults  (sin cambios)
+   Defaults
    ============================================================ */
 export const PRIORITY_DEFAULTS: PriorityColors = {
   baja:    '#5a6a8a',
@@ -74,7 +74,6 @@ export const CARD_DEFAULTS: CardCustomization = {
   roundedCorner: true,
 };
 
-/* Lo que va por board (sin theme) */
 type BoardLocalCustomization = Omit<BoardCustomization, 'theme'>;
 
 const BOARD_LOCAL_DEFAULTS: BoardLocalCustomization = {
@@ -85,16 +84,13 @@ const BOARD_LOCAL_DEFAULTS: BoardLocalCustomization = {
   priorityColors: PRIORITY_DEFAULTS,
 };
 
-/* Lo que es global */
 type GlobalCustomization = { theme: BoardTheme };
-
 const GLOBAL_DEFAULTS: GlobalCustomization = { theme: 'dark' };
 
-/* Vista unificada que los componentes siguen leyendo igual */
 export type BoardCustomizationView = BoardCustomization;
 
 /* ============================================================
-   Temas  (sin cambios)
+   Temas
    ============================================================ */
 export type ThemePreset = {
   label:   string;
@@ -203,7 +199,7 @@ export const BOARD_THEMES: Record<BoardTheme, ThemePreset> = {
 };
 
 /* ============================================================
-   Helper  (sin cambios)
+   Helpers
    ============================================================ */
 export function getColumnConfig(
   col: KanbanColumna,
@@ -212,9 +208,6 @@ export function getColumnConfig(
   return { ...COLUMN_DEFAULTS[col], ...(overrides[col] ?? {}) };
 }
 
-/* ============================================================
-   Helper interno: patchBoard
-   ============================================================ */
 function patchBoard(
   byBoard: Record<string, BoardLocalCustomization>,
   boardId: string,
@@ -227,14 +220,15 @@ function patchBoard(
 /* ============================================================
    Store
    ============================================================ */
+
 type CustomizationState = {
   /* ── Estado ── */
-  global:      GlobalCustomization;                  // theme
-  byBoard:     Record<string, BoardLocalCustomization>; // todo lo demás
-  isPanelOpen: boolean;
+  global:        GlobalCustomization;
+  byBoard:       Record<string, BoardLocalCustomization>;
+  isPanelOpen:   boolean;
   activeSection: 'theme' | 'columns' | 'cards';
 
-  /* ── Selector unificado (los componentes lo usan igual que antes) ── */
+  /* ── Selector unificado ── */
   getCustomization: (boardId: string) => BoardCustomizationView;
 
   /* ── Panel ── */

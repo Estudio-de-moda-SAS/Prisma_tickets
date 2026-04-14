@@ -423,38 +423,38 @@ export function HomePage() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/new')}
-          style={{
-            alignSelf: 'flex-start',
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '12px 24px',
-            border: '1px solid rgba(0,200,255,0.35)', borderRadius: 10,
-            background: 'rgba(0,200,255,0.07)', color: 'var(--accent)',
-            cursor: 'pointer', fontSize: 14, fontWeight: 600, letterSpacing: '0.3px',
-            boxShadow: '0 0 20px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.08)',
-            transition: 'all 0.18s ease', fontFamily: 'var(--font-display)',
-          }}
-          onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
-            background: 'rgba(0,200,255,0.13)',
-            boxShadow: '0 0 32px rgba(0,200,255,0.22), inset 0 1px 0 rgba(0,200,255,0.15)',
-            borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(-1px)',
-          })}
-          onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
-            background: 'rgba(0,200,255,0.07)',
-            boxShadow: '0 0 20px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.08)',
-            borderColor: 'rgba(0,200,255,0.35)', transform: 'translateY(0)',
-          })}
-        >
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'rgba(0,200,255,0.14)', border: '1px solid rgba(0,200,255,0.28)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Plus size={17} strokeWidth={2.5} />
-          </div>
-          Crear nueva solicitud
-        </button>
+<button
+  onClick={() => navigate('/new')}
+  style={{
+    alignSelf: 'flex-start',
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '16px 32px',
+    border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12,
+    background: 'rgba(0,200,255,0.12)', color: 'var(--accent)',
+    cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: '0.4px',
+    boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)',
+    transition: 'all 0.18s ease', fontFamily: 'var(--font-display)',
+  }}
+  onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
+    background: 'rgba(0,200,255,0.20)',
+    boxShadow: '0 0 44px rgba(0,200,255,0.32), 0 0 0 5px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.20)',
+    borderColor: 'rgba(0,200,255,0.80)', transform: 'translateY(-2px)',
+  })}
+  onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, {
+    background: 'rgba(0,200,255,0.12)',
+    boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)',
+    borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(0)',
+  })}
+>
+  <div style={{
+    width: 38, height: 38, borderRadius: 10,
+    background: 'rgba(0,200,255,0.18)', border: '1.5px solid rgba(0,200,255,0.40)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }}>
+    <Plus size={21} strokeWidth={2.5} />
+  </div>
+  Crear nueva solicitud
+</button>
       </div>
 
       {/* ── Summary cards ────────────────────────────────── */}

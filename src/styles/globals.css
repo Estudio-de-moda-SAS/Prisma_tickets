@@ -1,16 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Exo+2:wght@300;400;500;600&display=swap');
 @import './automations.css';
 @import './stats.css';
 @import './customization.css';
+
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Rg.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Md.ttf') format('truetype');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Bd.ttf') format('truetype');
+  font-weight: 700;
+}
 /* ============================================================
    Variables del tema
    ============================================================ */
 :root {
-  --bg-deep:    #0a0d14;
-  --bg-panel:   #0f1320;
-  --bg-card:    #141826;
-  --bg-surface: #1a2035;
-  --bg-hover:   #1e2540;
+--bg-deep:    #0d1422;   /* +3 pasos — azul marino oscuro en vez de casi-negro */
+--bg-panel:   #121a2e;   /* sidebar/topbar ligeramente más vivos */
+--bg-card:    #172035;   /* cards con más presencia */
+--bg-surface: #1e2b45;   /* chips, contadores, etc. */
+--bg-hover:   #243352;   /* hover states más visibles */
 
   --accent:        #00c8ff;
   --accent-2:      #0055cc;
@@ -38,7 +53,7 @@
   --radius-lg: 8px;
 
   --font-display: 'Rajdhani', sans-serif;
-  --font-body:    'Exo 2', sans-serif;
+  --font-body:    'Objektiv Mk3', sans-serif;
 }
 
 /* ============================================================
@@ -48,7 +63,7 @@
 
 html, body, #root {
   height: 100%;
-  background: var(--bg-deep);
+  background: var(--bg-panel);
   color: var(--txt);
   font-family: var(--font-body);
   font-size: 13px;
