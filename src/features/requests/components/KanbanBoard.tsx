@@ -31,7 +31,12 @@ const COLUMN_IDS = new Set<string>([
 export function KanbanBoard({ board, equipo, onMove }: Props) {
   const [activeCard, setActiveCard] = useState<Request | null>(null);
   const [overColumn, setOverColumn] = useState<KanbanColumna | null>(null);
-  const [modalCard,  setModalCard]  = useState<Request | null>(null);
+  const [modalId,    setModalId]    = useState<string | null>(null);  // ← solo el id
+
+  // Siempre fresco desde el board (conectado al cache de React Query)
+  const modalCard = modalId
+    ? Object.values(board).flat().find((r) => r.id === modalId) ?? null
+    : null;
 
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
@@ -73,7 +78,7 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
 
   function handleModalMove(id: string, columna: KanbanColumna) {
     onMove(id, columna);
-    setModalCard((prev) => prev ? { ...prev, columna } : prev);
+    // No hace falta setModalCard — modalCard se recalcula solo desde board
   }
 
   const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
@@ -100,7 +105,7 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
               titulo={KANBAN_COLUMNAS[col]}
               requests={board[col] ?? []}
               isOver={overColumn === col}
-              onCardClick={(card) => setModalCard(card)}
+              onCardClick={(card) => setModalId(card.id)}  // ← solo guarda el id
             />
           ))}
         </div>
@@ -118,7 +123,7 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
         <RequestModal
           request={modalCard}
           equipo={equipo}
-          onClose={() => setModalCard(null)}
+          onClose={() => setModalId(null)}        // ← setModalId
           onMove={handleModalMove}
         />
       )}

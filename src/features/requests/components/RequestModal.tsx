@@ -1,25 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ChevronUp, ChevronDown, Clock } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useUpdateRequest } from '../hooks/UseUpdateRequest';
-import { KANBAN_COLUMNAS, EQUIPOS, PRIORIDADES } from '../types';
+import { KANBAN_COLUMNAS, PRIORIDADES } from '../types';
 import type { Request, KanbanColumna, Prioridad, Equipo } from '../types';
 import { useConfigStore } from '@/store/configStore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-/* ── Puntaje ─────────────────────────────────────────────────── */
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
-  icebox:   '#60a5fa', backlog: 'var(--info)',
-  todo:     'var(--warn)', en_progreso: 'var(--accent)', hecho: 'var(--success)',
+  icebox:          '#60a5fa',
+  backlog:         'var(--info)',
+  todo:            'var(--warn)',
+  en_progreso:     'var(--accent)',
+  hecho:           'var(--success)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
-  baja: 'var(--txt-muted)', media: 'var(--info)',
-  alta: 'var(--warn)', critica: 'var(--danger)',
+  baja:    'var(--txt-muted)',
+  media:   'var(--info)',
+  alta:    'var(--warn)',
+  critica: 'var(--danger)',
 };
 
 const COLORS = [
@@ -29,12 +33,12 @@ const COLORS = [
 ];
 const EMOJIS = ['🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡','📋','🔒','🌐','📱','💰','🔔','✅','🧪','🎯','🏷️'];
 
-/* ── Timer ───────────────────────────────────────────────────── */
+/* ── Timer ── */
 function useTimer(requestId: string) {
-  const key = `timer:${requestId}`;
+  const key   = `timer:${requestId}`;
   const saved = (() => { try { return JSON.parse(sessionStorage.getItem(key) ?? '{}'); } catch { return {}; } })();
-  const [seconds, setSeconds]     = useState<number>(saved.seconds ?? 0);
-  const [running, setRunning]     = useState(false);
+  const [seconds,   setSeconds]   = useState<number>(saved.seconds ?? 0);
+  const [running,   setRunning]   = useState(false);
   const [completed, setCompleted] = useState<boolean>(saved.completed ?? false);
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -45,22 +49,43 @@ function useTimer(requestId: string) {
         sessionStorage.setItem(key, JSON.stringify({ seconds: n, completed }));
         return n;
       }), 1000);
-    } else { if (ref.current) clearInterval(ref.current); }
+    } else {
+      if (ref.current) clearInterval(ref.current);
+    }
     return () => { if (ref.current) clearInterval(ref.current); };
   }, [running, completed, key]);
 
-  const fmt = (s: number) => [
-    Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60,
-  ].map((v) => String(v).padStart(2, '0')).join(':');
+  const fmt = (s: number) =>
+    [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
+      .map((v) => String(v).padStart(2, '0')).join(':');
 
   return {
     seconds, running, completed, fmt,
     toggle:   () => { if (!completed) setRunning((r) => !r); },
-    complete: () => { setRunning(false); setCompleted(true); sessionStorage.setItem(key, JSON.stringify({ seconds, completed: true })); },
+    complete: () => {
+      setRunning(false); setCompleted(true);
+      sessionStorage.setItem(key, JSON.stringify({ seconds, completed: true }));
+    },
   };
 }
 
-/* ── Props ───────────────────────────────────────────────────── */
+/* ── Dropdown con cierre exterior ── */
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return { open, setOpen, ref };
+}
+
 type Props = {
   request: Request;
   equipo:  Equipo;
@@ -72,39 +97,70 @@ type Props = {
    Modal principal
    ============================================================ */
 export function RequestModal({ request, equipo, onClose, onMove }: Props) {
-  const { mutate: mover }   = useMoveRequest(equipo);
-  const { mutate: update }  = useUpdateRequest(equipo);
-  const timer               = useTimer(request.id);
-  const overlayRef          = useRef<HTMLDivElement>(null);
-  const { getCategorias, getEquipos, addCategoria, addEquipo } = useConfigStore();
+  const { mutate: mover }  = useMoveRequest(equipo);
+  const { mutate: update } = useUpdateRequest(equipo);
+  const timer              = useTimer(request.id);
+  const overlayRef         = useRef<HTMLDivElement>(null);
+  const { getCategorias, getEquipos, getSprints, addCategoria, addEquipo } = useConfigStore();
 
-  const [editCat,  setEditCat]  = useState(false);
-  const [editTeam, setEditTeam] = useState(false);
+  const catDD    = useDropdown();
+  const teamDD   = useDropdown();
+  const sprintDD = useDropdown();
 
   const categorias = getCategorias(equipo);
   const equipos    = getEquipos(equipo);
-  const catDef     = categorias.find((c) => c.nombre === request.categoria);
+  const sprints    = getSprints(equipo);
+
+  const categoriaActual: string[] = Array.isArray(request.categoria)
+    ? request.categoria
+    : request.categoria ? [request.categoria as unknown as string] : [];
+
+  const equipoActual: string[] = Array.isArray(request.equipo)
+    ? (request.equipo as unknown as string[])
+    : request.equipo ? [request.equipo as unknown as string] : [];
+
+  const catDefs   = categorias.filter((c) => categoriaActual.includes(c.nombre));
+  const sprintDef = sprints.find((s) => s.id === (request as any).sprintId);
 
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (editCat) { setEditCat(false); return; } if (editTeam) { setEditTeam(false); return; } onClose(); }};
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
-  }, [onClose, editCat, editTeam]);
+  }, [onClose]);
 
   function handleMover(columna: KanbanColumna) {
     if (request.columna === columna) return;
     mover({ id: request.id, columna }, { onSuccess: () => onMove(request.id, columna) });
   }
 
-  function handleCategoria(nombre: string | null) {
-    update({ id: request.id, patch: { categoria: nombre } });
-    setEditCat(false);
+  function handleCategoria(nombre: string) {
+    const next = categoriaActual.includes(nombre)
+      ? categoriaActual.filter((c) => c !== nombre)
+      : [...categoriaActual, nombre];
+    update({ id: request.id, patch: { categoria: next } });
   }
 
-  function handleEquipo(eq: Equipo | null) {
-    update({ id: request.id, patch: { equipo: eq } });
-    setEditTeam(false);
+  function handleEquipo(id: string) {
+    const next = equipoActual.includes(id)
+      ? equipoActual.filter((e) => e !== id)
+      : [...equipoActual, id];
+    update({ id: request.id, patch: { equipo: next as any } });
   }
+
+  function handleSprint(sprintId: string | null) {
+    update({ id: request.id, patch: { sprintId } as any });
+    sprintDD.setOpen(false);
+  }
+
+  /* ── estilos de trigger compartidos ── */
+  const triggerBase = (open: boolean, accentRgb: string): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+    minHeight: 32, width: '100%', padding: '4px 8px', borderRadius: 6,
+    border: `1px solid ${open ? `rgba(${accentRgb},0.45)` : 'var(--border-subtle)'}`,
+    background: open ? `rgba(${accentRgb},0.07)` : 'transparent',
+    cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s',
+    textAlign: 'left',
+  });
 
   return (
     <div
@@ -112,15 +168,10 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 }}
     >
-      <div style={{
-        width: '100%', maxWidth: 900, maxHeight: '90vh',
-        background: 'var(--bg-panel)', border: '1px solid var(--border)',
-        borderRadius: 12, display: 'flex', flexDirection: 'column',
-        overflow: 'hidden', position: 'relative',
-      }}>
+      <div style={{ width: '100%', maxWidth: 900, maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ display: 'flex', gap: 2 }}>
             {[ChevronUp, ChevronDown].map((Icon, i) => (
@@ -142,25 +193,23 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
           </div>
         </div>
 
-        {/* ── Cuerpo ── */}
+        {/* Cuerpo */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
 
-            {/* Título */}
             <div>
               <FieldLabel>Nombre de la solicitud</FieldLabel>
               <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{request.titulo}</h2>
             </div>
 
-            {/* Descripción */}
             <FieldBlock label="Descripción">
               <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '12px 14px', fontSize: 13, lineHeight: 1.65, minHeight: 80, color: request.descripcion ? 'var(--txt)' : 'var(--txt-muted)' }}>
                 {request.descripcion || 'Sin descripción.'}
               </div>
             </FieldBlock>
 
-            {/* Grid metadata */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
               <FieldBlock label="Solicitante">
                 <PersonChip name={request.solicitante} color="var(--accent-2)" />
               </FieldBlock>
@@ -180,51 +229,128 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
 
               {/* ── Equipo ── */}
               <FieldBlock label="Equipo">
-                {editTeam ? (
-                  <TeamSelector
-                    boardId={equipo}
-                    equipos={equipos}
-                    value={request.equipo}
-                    onSelect={handleEquipo}
-                    onCancel={() => setEditTeam(false)}
-                    onAddEquipo={(d) => addEquipo(equipo, d)}
-                  />
-                ) : (
-                  <EditableChip
-                    onClick={() => setEditTeam(true)}
-                    color="#00c8ff"
-                    empty="+ Asignar equipo"
+                <div ref={teamDD.ref} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => teamDD.setOpen((o) => !o)}
+                    style={triggerBase(teamDD.open, '0,200,255')}
+                    onMouseEnter={(e) => { if (!teamDD.open) e.currentTarget.style.borderColor = 'rgba(0,200,255,0.3)'; }}
+                    onMouseLeave={(e) => { if (!teamDD.open) e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
                   >
-                    {request.equipo ? EQUIPOS[request.equipo] : null}
-                  </EditableChip>
-                )}
+                    {equipoActual.length === 0
+                      ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo asignado</span>
+                      : equipoActual.map((eqId) => {
+                          const eq = equipos.find((e) => e.id === eqId || e.nombre === eqId);
+                          if (!eq) return null;
+                          return (
+                            <span key={eqId} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: eq.color, background: `${eq.color}18`, border: `1px solid ${eq.color}35` }}>
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 3px', borderRadius: 2, background: `${eq.color}25` }}>{eq.siglas}</span>
+                              {eq.nombre}
+                              <span onMouseDown={(e) => { e.stopPropagation(); handleEquipo(eqId); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13, lineHeight: 1 }}>×</span>
+                            </span>
+                          );
+                        })
+                    }
+                    <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: teamDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  </button>
+                  {teamDD.open && (
+                    <DropdownPanel>
+                      {equipos.map((eq) => {
+                        const sel = equipoActual.includes(eq.id) || equipoActual.includes(eq.nombre);
+                        return (
+                          <DropdownItem key={eq.id} selected={sel} onClick={() => handleEquipo(eq.id)}>
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${eq.color}25`, color: eq.color, marginRight: 4 }}>{eq.siglas}</span>
+                            <span style={{ flex: 1 }}>{eq.nombre}</span>
+                            {sel && <Checkmark />}
+                          </DropdownItem>
+                        );
+                      })}
+                      <DropdownDivider />
+                      <NewEquipoInline onAdd={(d) => { addEquipo(equipo, d); }} />
+                    </DropdownPanel>
+                  )}
+                </div>
               </FieldBlock>
 
               {/* ── Categoría ── */}
               <FieldBlock label="Categoría">
-                {editCat ? (
-                  <CatSelector
-                    boardId={equipo}
-                    categorias={categorias}
-                    value={request.categoria}
-                    onSelect={handleCategoria}
-                    onCancel={() => setEditCat(false)}
-                    onAddCat={(d) => addCategoria(equipo, d)}
-                  />
-                ) : (
-                  <EditableChip
-                    onClick={() => setEditCat(true)}
-                    color={catDef?.color ?? '#00c8ff'}
-                    empty="+ Asignar categoría"
+                <div ref={catDD.ref} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => catDD.setOpen((o) => !o)}
+                    style={triggerBase(catDD.open, '0,200,255')}
+                    onMouseEnter={(e) => { if (!catDD.open) e.currentTarget.style.borderColor = 'rgba(0,200,255,0.3)'; }}
+                    onMouseLeave={(e) => { if (!catDD.open) e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
                   >
-                    {request.categoria ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                        {catDef?.icono && <span>{catDef.icono}</span>}
-                        {request.categoria}
-                      </span>
-                    ) : null}
-                  </EditableChip>
-                )}
+                    {catDefs.length === 0
+                      ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin categoría asignada</span>
+                      : catDefs.map((cat) => (
+                          <span key={cat.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: cat.color, background: `${cat.color}18`, border: `1px solid ${cat.color}35` }}>
+                            {cat.icono && <span style={{ fontSize: 11 }}>{cat.icono}</span>}
+                            {cat.nombre}
+                            <span onMouseDown={(e) => { e.stopPropagation(); handleCategoria(cat.nombre); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13, lineHeight: 1 }}>×</span>
+                          </span>
+                        ))
+                    }
+                    <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  </button>
+                  {catDD.open && (
+                    <DropdownPanel>
+                      {categorias.map((cat) => {
+                        const sel = categoriaActual.includes(cat.nombre);
+                        return (
+                          <DropdownItem key={cat.id} selected={sel} onClick={() => handleCategoria(cat.nombre)}>
+                            {cat.icono && <span style={{ fontSize: 13, marginRight: 4 }}>{cat.icono}</span>}
+                            <span style={{ flex: 1 }}>{cat.nombre}</span>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                            {sel && <Checkmark />}
+                          </DropdownItem>
+                        );
+                      })}
+                      <DropdownDivider />
+                      <NewCatInline onAdd={(d) => { addCategoria(equipo, d); }} />
+                    </DropdownPanel>
+                  )}
+                </div>
+              </FieldBlock>
+
+              {/* ── Sprint ── */}
+              <FieldBlock label="Sprint">
+                <div ref={sprintDD.ref} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => sprintDD.setOpen((o) => !o)}
+                    style={{ ...triggerBase(sprintDD.open, '162,155,254'), flexWrap: 'nowrap' }}
+                    onMouseEnter={(e) => { if (!sprintDD.open) e.currentTarget.style.borderColor = 'rgba(162,155,254,0.3)'; }}
+                    onMouseLeave={(e) => { if (!sprintDD.open) e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+                  >
+                    {sprintDef
+                      ? <><SprintDot sprint={sprintDef} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{sprintDef.nombre}</span></>
+                      : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint asignado</span>
+                    }
+                    <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  </button>
+                  {sprintDD.open && (
+                    <DropdownPanel>
+                      {sprints.length === 0
+                        ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints. Créalos en la configuración del board.</div>
+                        : [...sprints]
+                            .sort((a, b) => new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime())
+                            .map((sp) => {
+                              const sel = (request as any).sprintId === sp.id;
+                              const now = new Date();
+                              const dotColor = now >= new Date(sp.fechaInicio) && now <= new Date(sp.fechaFin) ? '#00e5a0' : now > new Date(sp.fechaFin) ? '#b2bec3' : '#fdcb6e';
+                              const fmtD = (iso: string) => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y.slice(2)}`; };
+                              return (
+                                <DropdownItem key={sp.id} selected={sel} onClick={() => handleSprint(sel ? null : sp.id)}>
+                                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                                  <span style={{ flex: 1 }}>{sp.nombre}</span>
+                                  <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.fechaInicio)} → {fmtD(sp.fechaFin)}</span>
+                                  {sel && <Checkmark />}
+                                </DropdownItem>
+                              );
+                            })
+                      }
+                    </DropdownPanel>
+                  )}
+                </div>
               </FieldBlock>
 
               <FieldBlock label="Puntaje">
@@ -233,6 +359,7 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                   <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
                 </div>
               </FieldBlock>
+
             </div>
 
             {/* Fechas */}
@@ -281,7 +408,8 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                 {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
                   const active = request.columna === col;
                   return (
-                    <button key={col} onClick={() => handleMover(col)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s' }}
+                    <button key={col} onClick={() => handleMover(col)}
+                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s' }}
                       onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; }}}
                       onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}}
                     >{label}</button>
@@ -289,6 +417,7 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                 })}
               </div>
             </FieldBlock>
+
           </div>
 
           {/* Comentarios */}
@@ -313,190 +442,157 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
   );
 }
 
-/* ============================================================
-   Selector de Categoría inline
-   ============================================================ */
-function CatSelector({ categorias, value, onSelect, onCancel, onAddCat }: {
-  boardId: string;
-  categorias: { id: string; nombre: string; color: string; icono?: string }[];
-  value: string | null;
-  onSelect: (v: string | null) => void;
-  onCancel: () => void;
-  onAddCat: (d: { nombre: string; color: string; icono: string }) => void;
-}) {
-  const [showNew, setShowNew] = useState(false);
-  const [nombre,  setNombre]  = useState('');
-  const [color,   setColor]   = useState('#00c8ff');
-  const [icono,   setIcono]   = useState('');
+/* ── Dropdown primitives ── */
+function DropdownPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
+      background: 'var(--bg-panel)', border: '1px solid var(--border)',
+      borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      overflow: 'hidden', minWidth: 180,
+    }}>
+      {children}
+    </div>
+  );
+}
 
-  function crear() {
+function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '7px 12px', fontSize: 12, cursor: 'pointer',
+        background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent',
+        color: selected ? 'var(--txt)' : 'var(--txt-muted)',
+        fontWeight: selected ? 600 : 400,
+        transition: 'background 0.1s',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DropdownDivider() {
+  return <div style={{ height: 1, background: 'var(--border-subtle)', margin: '4px 0' }} />;
+}
+
+function Checkmark() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}>
+      <path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+/* ── Nueva categoría inline ── */
+function NewCatInline({ onAdd }: { onAdd: (d: { nombre: string; color: string; icono: string }) => void }) {
+  const [open,   setOpen]   = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [color,  setColor]  = useState('#00c8ff');
+  const [icono,  setIcono]  = useState('');
+
+  function save() {
     if (!nombre.trim()) return;
-    onAddCat({ nombre: nombre.trim(), color, icono });
-    onSelect(nombre.trim());
+    onAdd({ nombre: nombre.trim(), color, icono });
+    setNombre(''); setIcono(''); setOpen(false);
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {/* Chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-        {categorias.map((cat) => {
-          const sel = value === cat.nombre;
-          return (
-            <button key={cat.id} type="button" onClick={() => onSelect(sel ? null : cat.nombre)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${sel ? cat.color : 'rgba(255,255,255,0.1)'}`, background: sel ? `${cat.color}20` : 'rgba(255,255,255,0.03)', color: sel ? cat.color : '#7a8ba8', transition: 'all 0.12s' }}>
-              {cat.icono && <span style={{ fontSize: 12 }}>{cat.icono}</span>}
-              {cat.nombre}
-              {sel && <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1.5 4l2 2 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-            </button>
-          );
-        })}
-        {!showNew && (
-          <button type="button" onClick={() => setShowNew(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px dashed rgba(0,200,255,0.25)', background: 'transparent', color: 'rgba(0,200,255,0.5)', transition: 'all 0.12s' }}>
-            + Nueva
-          </button>
-        )}
-      </div>
-
-      {/* Form nueva categoría */}
-      {showNew && (
-        <InlineCreateForm
-          tipo="categoria"
-          nombre={nombre} setNombre={setNombre}
-          color={color}   setColor={setColor}
-          extra={icono}   setExtra={setIcono}
-          onSave={crear}
-          onCancel={() => setShowNew(false)}
-        />
-      )}
-
-      <button onClick={onCancel} style={{ alignSelf: 'flex-start', fontSize: 11, color: 'var(--txt-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Cerrar</button>
+  if (!open) return (
+    <div onClick={() => setOpen(true)}
+      style={{ padding: '7px 12px', fontSize: 11, color: 'rgba(0,200,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = '#00c8ff')}
+      onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(0,200,255,0.6)')}
+    >
+      <span style={{ fontSize: 14 }}>+</span> Nueva categoría
     </div>
   );
-}
-
-/* ============================================================
-   Selector de Equipo inline
-   ============================================================ */
-function TeamSelector({ equipos, value, onSelect, onCancel, onAddEquipo }: {
-  boardId: string;
-  equipos: { id: string; nombre: string; color: string; siglas: string }[];
-  value: string | null;
-  onSelect: (v: any) => void;
-  onCancel: () => void;
-  onAddEquipo: (d: { nombre: string; color: string; siglas: string }) => void;
-}) {
-  const [showNew, setShowNew] = useState(false);
-  const [nombre,  setNombre]  = useState('');
-  const [color,   setColor]   = useState('#00c8ff');
-  const [siglas,  setSiglas]  = useState('');
-
-  function crear() {
-    if (!nombre.trim() || !siglas.trim()) return;
-    onAddEquipo({ nombre: nombre.trim(), color, siglas: siglas.trim() });
-    onSelect(nombre.trim());
-  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-        {equipos.map((eq) => {
-          const sel = value === eq.id || value === eq.nombre;
-          return (
-            <button key={eq.id} type="button" onClick={() => onSelect(sel ? null : eq.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${sel ? eq.color : 'rgba(255,255,255,0.1)'}`, background: sel ? `${eq.color}20` : 'rgba(255,255,255,0.03)', color: sel ? eq.color : '#7a8ba8', transition: 'all 0.12s' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${eq.color}25`, color: eq.color }}>{eq.siglas}</span>
-              {eq.nombre}
-              {sel && <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1.5 4l2 2 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-            </button>
-          );
-        })}
-        {!showNew && (
-          <button type="button" onClick={() => setShowNew(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px dashed rgba(0,200,255,0.25)', background: 'transparent', color: 'rgba(0,200,255,0.5)', transition: 'all 0.12s' }}>
-            + Nuevo
+    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setOpen(false); }}
+        placeholder="Nombre de categoría..." style={inp} />
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+        {EMOJIS.slice(0, 9).map((em) => (
+          <button key={em} type="button" onClick={() => setIcono(icono === em ? '' : em)}
+            style={{ width: 22, height: 22, borderRadius: 4, fontSize: 12, cursor: 'pointer', border: icono === em ? '1px solid rgba(0,200,255,0.5)' : '1px solid transparent', background: icono === em ? 'rgba(0,200,255,0.1)' : 'rgba(255,255,255,0.04)' }}>
+            {em}
           </button>
-        )}
+        ))}
       </div>
-
-      {showNew && (
-        <InlineCreateForm
-          tipo="equipo"
-          nombre={nombre} setNombre={setNombre}
-          color={color}   setColor={setColor}
-          extra={siglas}  setExtra={setSiglas}
-          onSave={crear}
-          onCancel={() => setShowNew(false)}
-        />
-      )}
-
-      <button onClick={onCancel} style={{ alignSelf: 'flex-start', fontSize: 11, color: 'var(--txt-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Cerrar</button>
-    </div>
-  );
-}
-
-/* ── Formulario de creación inline reutilizable ── */
-function InlineCreateForm({ tipo, nombre, setNombre, color, setColor, extra, setExtra, onSave, onCancel }: {
-  tipo: 'categoria' | 'equipo';
-  nombre: string; setNombre: (v: string) => void;
-  color: string;  setColor:  (v: string) => void;
-  extra: string;  setExtra:  (v: string) => void;
-  onSave: () => void; onCancel: () => void;
-}) {
-  const canSave = nombre.trim() && (tipo === 'categoria' || extra.trim());
-  return (
-    <div style={{ padding: '10px 12px', background: 'rgba(0,200,255,0.04)', border: '1px solid rgba(0,200,255,0.15)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#00c8ff' }}>
-        {tipo === 'categoria' ? 'Nueva categoría' : 'Nuevo equipo'}
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+        {COLORS.slice(0, 8).map((c) => (
+          <div key={c} onClick={() => setColor(c)}
+            style={{ width: 13, height: 13, borderRadius: '50%', background: c, cursor: 'pointer', border: color === c ? '2px solid #fff' : '2px solid transparent', transform: color === c ? 'scale(1.25)' : 'scale(1)', flexShrink: 0 }} />
+        ))}
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
-        <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave(); if (e.key === 'Escape') onCancel(); }} placeholder={tipo === 'categoria' ? 'Nombre...' : 'Nombre del equipo...'} style={{ ...inp, flex: 1 }} />
-        {tipo === 'equipo' && <input value={extra} onChange={(e) => setExtra(e.target.value.toUpperCase().slice(0,3))} placeholder="AB" style={{ ...inp, width: 46, textAlign: 'center', fontWeight: 700, flex: 'none' }} />}
-      </div>
-      {tipo === 'categoria' && (
-        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>
-          {EMOJIS.map((e) => <button key={e} type="button" onClick={() => setExtra(extra === e ? '' : e)} style={{ width: 22, height: 22, borderRadius: 4, fontSize: 12, cursor: 'pointer', border: extra === e ? '1px solid rgba(0,200,255,0.5)' : '1px solid transparent', background: extra === e ? 'rgba(0,200,255,0.1)' : 'rgba(255,255,255,0.04)' }}>{e}</button>)}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-        {COLORS.map((c) => <div key={c} onClick={() => setColor(c)} style={{ width: 14, height: 14, borderRadius: '50%', background: c, cursor: 'pointer', border: color === c ? '2px solid #fff' : '2px solid transparent', transform: color === c ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.1s', flexShrink: 0 }} />)}
-      </div>
-      {nombre.trim() && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 9, color: '#5a6a8a', letterSpacing: 1, textTransform: 'uppercase' }}>Preview:</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: `${color}20`, border: `1px solid ${color}50`, color }}>
-            {tipo === 'categoria' && extra && <span>{extra}</span>}
-            {tipo === 'equipo' && extra && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: `${color}25` }}>{extra}</span>}
-            {nombre.trim()}
-          </span>
-        </div>
-      )}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-        <button onClick={onCancel} style={{ padding: '4px 11px', borderRadius: 4, fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#5a6a8a', cursor: 'pointer' }}>Cancelar</button>
-        <button onClick={onSave} style={{ padding: '4px 14px', borderRadius: 4, fontSize: 11, fontWeight: 700, border: 'none', cursor: canSave ? 'pointer' : 'not-allowed', background: canSave ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'rgba(255,255,255,0.06)', color: canSave ? 'white' : '#5a6a8a', fontFamily: "'Rajdhani', sans-serif", letterSpacing: 0.5 }}>
-          CREAR Y SELECCIONAR
-        </button>
+        <button onClick={() => setOpen(false)} style={{ flex: 1, padding: '4px', borderRadius: 4, fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer' }}>Cancelar</button>
+        <button onClick={save} style={{ flex: 1, padding: '4px', borderRadius: 4, fontSize: 11, fontWeight: 700, border: 'none', cursor: nombre.trim() ? 'pointer' : 'not-allowed', background: nombre.trim() ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'rgba(255,255,255,0.06)', color: nombre.trim() ? 'white' : 'var(--txt-muted)' }}>Crear</button>
       </div>
     </div>
   );
 }
 
-/* ── Chip clicable genérico ── */
-function EditableChip({ onClick, color, empty, children }: { onClick: () => void; color: string; empty: string; children: React.ReactNode }) {
-  return (
-    <div onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-      {children ? (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 5, color, background: `${color}18`, border: `1px solid ${color}35`, transition: 'opacity 0.12s' }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.75')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-        >
-          {children}
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ opacity: 0.45, marginLeft: 2 }}><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
-        </span>
-      ) : (
-        <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 5, border: '1px dashed rgba(0,200,255,0.22)', color: 'rgba(0,200,255,0.5)', transition: 'all 0.12s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.5)'; e.currentTarget.style.color = '#00c8ff'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.22)'; e.currentTarget.style.color = 'rgba(0,200,255,0.5)'; }}
-        >{empty}</span>
-      )}
+/* ── Nuevo equipo inline ── */
+function NewEquipoInline({ onAdd }: { onAdd: (d: { nombre: string; color: string; siglas: string }) => void }) {
+  const [open,   setOpen]   = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [color,  setColor]  = useState('#00c8ff');
+  const [siglas, setSiglas] = useState('');
+
+  function save() {
+    if (!nombre.trim() || !siglas.trim()) return;
+    onAdd({ nombre: nombre.trim(), color, siglas: siglas.trim() });
+    setNombre(''); setSiglas(''); setOpen(false);
+  }
+
+  if (!open) return (
+    <div onClick={() => setOpen(true)}
+      style={{ padding: '7px 12px', fontSize: 11, color: 'rgba(0,200,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = '#00c8ff')}
+      onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(0,200,255,0.6)')}
+    >
+      <span style={{ fontSize: 14 }}>+</span> Nuevo equipo
     </div>
   );
+
+  return (
+    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setOpen(false); }}
+          placeholder="Nombre del equipo..." style={{ ...inp, flex: 1 }} />
+        <input value={siglas} onChange={(e) => setSiglas(e.target.value.toUpperCase().slice(0, 3))}
+          placeholder="AB" style={{ ...inp, width: 42, textAlign: 'center', fontWeight: 700, flex: 'none' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+        {COLORS.slice(0, 8).map((c) => (
+          <div key={c} onClick={() => setColor(c)}
+            style={{ width: 13, height: 13, borderRadius: '50%', background: c, cursor: 'pointer', border: color === c ? '2px solid #fff' : '2px solid transparent', transform: color === c ? 'scale(1.25)' : 'scale(1)', flexShrink: 0 }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={() => setOpen(false)} style={{ flex: 1, padding: '4px', borderRadius: 4, fontSize: 11, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer' }}>Cancelar</button>
+        <button onClick={save} style={{ flex: 1, padding: '4px', borderRadius: 4, fontSize: 11, fontWeight: 700, border: 'none', cursor: (nombre.trim() && siglas.trim()) ? 'pointer' : 'not-allowed', background: (nombre.trim() && siglas.trim()) ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'rgba(255,255,255,0.06)', color: (nombre.trim() && siglas.trim()) ? 'white' : 'var(--txt-muted)' }}>Crear</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Sprint dot ── */
+import type { Sprint } from '@/store/configStore';
+
+function SprintDot({ sprint }: { sprint: Sprint }) {
+  const now = new Date();
+  const color = now >= new Date(sprint.fechaInicio) && now <= new Date(sprint.fechaFin)
+    ? '#00e5a0' : now > new Date(sprint.fechaFin) ? '#b2bec3' : '#fdcb6e';
+  return <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />;
 }
 
 /* ── Helpers ── */
@@ -516,4 +612,8 @@ function PersonChip({ name, color }: { name: string; color: string }) {
   );
 }
 
-const inp: React.CSSProperties = { padding: '6px 9px', borderRadius: 5, fontSize: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e8ecf4', outline: 'none', width: '100%', boxSizing: 'border-box' };
+const inp: React.CSSProperties = {
+  padding: '6px 9px', borderRadius: 5, fontSize: 12,
+  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+  color: '#e8ecf4', outline: 'none', width: '100%', boxSizing: 'border-box',
+};
