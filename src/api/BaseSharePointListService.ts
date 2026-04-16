@@ -1,4 +1,4 @@
-import { GraphRest } from '@/api/GraphRest';
+import { GraphRest } from '@/graph/GraphRest';
 import type { GetAllOpts, PageResult } from '@/types/commons';
 
 export abstract class BaseSharePointListService<

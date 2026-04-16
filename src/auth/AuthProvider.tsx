@@ -9,7 +9,7 @@ import {
   logout,
 } from './msal';
 
-type AuthCtx = {
+export type AuthCtx = {
   ready:    boolean;
   account:  AccountInfo | null;
   getToken: () => Promise<string>;
@@ -17,7 +17,13 @@ type AuthCtx = {
   signOut:  () => Promise<void>;
 };
 
-const Ctx = React.createContext<AuthCtx | null>(null);
+export const AuthContext = React.createContext<AuthCtx | null>(null);
+
+export function useAuth(): AuthCtx {
+  const ctx = React.useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
+  return ctx;
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ready,   setReady]   = React.useState(false);
@@ -66,11 +72,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [ready, account, getToken, signIn, signOut],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-export function useAuth(): AuthCtx {
-  const ctx = React.useContext(Ctx);
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
-  return ctx;
-}
