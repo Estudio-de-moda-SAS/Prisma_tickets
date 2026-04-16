@@ -562,8 +562,8 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
               </FieldBlock>
 
               <FieldBlock label="Tiempo estimado">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth:260 }}>
+                  <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, width: '100%', boxSizing: 'border-box' }}>
                     <Clock size={15} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
                     <input
                       type="text"
@@ -581,15 +581,12 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                       h:mm
                     </span>
                   </div>
-                  <span style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4 }}>
-                    Registro manual del tiempo planeado.
-                  </span>
                 </div>
               </FieldBlock>
 
               <FieldBlock label="Tiempo consumido">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth:260 }}>
+                   <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, width: '100%', boxSizing: 'border-box' }}>
                     <Clock size={15} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
                     <input
                       type="text"
@@ -607,9 +604,6 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                       h:mm
                     </span>
                   </div>
-                  <span style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4 }}>
-                    Registro manual del tiempo real invertido.
-                  </span>
                 </div>
               </FieldBlock>
             </div>
