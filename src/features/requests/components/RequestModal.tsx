@@ -121,12 +121,24 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
 
   const catDefs   = categorias.filter((c) => categoriaActual.includes(c.nombre));
   const sprintDef = sprints.find((s) => s.id === (request as any).sprintId);
+  const [tiempoEstimado, setTiempoEstimado] = useState((request as any).tiempoEstimado || '0:00');
+  const [tiempoConsumido, setTiempoConsumido] = useState((request as any).tiempoConsumido || '0:00');
+  const [descripcion, setDescripcion] = useState(request.descripcion || '');
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
   }, [onClose]);
+  
+  useEffect(() => {
+  setDescripcion(request.descripcion || '');
+}, [request.id, request.descripcion]);
+
+  useEffect(() => {
+  setTiempoEstimado((request as any).tiempoEstimado || '0:00');
+  setTiempoConsumido((request as any).tiempoConsumido || '0:00');
+}, [request.id, (request as any).tiempoEstimado, (request as any).tiempoConsumido]);
 
   function handleMover(columna: KanbanColumna) {
     if (request.columna === columna) return;
@@ -151,7 +163,59 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
     update({ id: request.id, patch: { sprintId } as any });
     sprintDD.setOpen(false);
   }
+  function sanitizeDurationInput(value: string) {
+    const clean = value.replace(/[^\d:]/g, '');
+    const parts = clean.split(':');
+    const hours = (parts[0] ?? '').slice(0, 3);
+    const minutes = parts.length > 1 ? (parts.slice(1).join('').slice(0, 2)) : '';
+    return parts.length > 1 ? `${hours}:${minutes}` : hours;
+  }
 
+  function normalizeDurationInput(value: string) {
+    const clean = sanitizeDurationInput(value);
+    if (!clean) return '';
+    if (!clean.includes(':')) return clean;
+
+    const [rawHours, rawMinutes = ''] = clean.split(':');
+    const hours = rawHours === '' ? '0' : String(Number(rawHours));
+    const minutes = String(Math.min(59, Number(rawMinutes || '0'))).padStart(2, '0');
+
+    return `${hours}:${minutes}`;
+  }
+
+  function handleDurationKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    const allowedKeys = [
+      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight',
+      'Tab', 'Home', 'End',
+    ];
+
+    if (allowedKeys.includes(e.key)) return;
+    if (/^\d$/.test(e.key)) return;
+    if (e.key === ':' && !e.currentTarget.value.includes(':')) return;
+
+    e.preventDefault();
+  }
+  function handleGuardarTiempoEstimado() {
+  const value = normalizeDurationInput(tiempoEstimado) || '0:00';
+  setTiempoEstimado(value);
+  update({
+    id: request.id,
+    patch: { tiempoEstimado: value } as any,
+  });
+}
+
+function handleGuardarTiempoConsumido() {
+  const value = normalizeDurationInput(tiempoConsumido) || '0:00';
+  setTiempoConsumido(value);
+  update({
+    id: request.id,
+    patch: { tiempoConsumido: value } as any,
+  });
+}
+
+function handleDurationFocus(e: React.FocusEvent<HTMLInputElement>) {
+    e.currentTarget.select();
+  }
   /* ── estilos de trigger compartidos ── */
   const triggerBase = (open: boolean, accentRgb: string): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
@@ -201,12 +265,34 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
               <FieldLabel>Nombre de la solicitud</FieldLabel>
               <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{request.titulo}</h2>
             </div>
-
-            <FieldBlock label="Descripción">
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '12px 14px', fontSize: 13, lineHeight: 1.65, minHeight: 80, color: request.descripcion ? 'var(--txt)' : 'var(--txt-muted)' }}>
-                {request.descripcion || 'Sin descripción.'}
-              </div>
-            </FieldBlock>
+             <FieldBlock label="Descripción">
+             <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              onBlur={() => update({ id: request.id, patch: { descripcion } as any })}
+              placeholder="Escribe una descripción..."
+              rows={4}
+              style={{
+              width: '100%',
+              minHeight: 100,
+              maxHeight: 180,
+              padding: '12px 14px',
+              borderRadius: 7,
+              border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-surface)',
+              color: descripcion ? 'var(--txt)' : 'var(--txt-muted)',
+              fontSize: 13,
+              lineHeight: 1.65,
+              resize: 'none',
+              overflowY: 'auto',
+              outline: 'none',
+              fontFamily: 'var(--font-body)',
+              boxSizing: 'border-box',
+              
+          }}
+          />
+        </FieldBlock>
+            
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
@@ -359,7 +445,85 @@ export function RequestModal({ request, equipo, onClose, onMove }: Props) {
                   <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
                 </div>
               </FieldBlock>
+                <FieldBlock label="Tiempo estimado">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <Clock size={15} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
+                    <input
+                    type="text"
+                    inputMode="numeric"
+                    value={tiempoEstimado}
+                    onChange={(e) => setTiempoEstimado(sanitizeDurationInput(e.target.value))}
+                    onFocus={handleDurationFocus}
+                    onBlur={handleGuardarTiempoEstimado}
+                    onKeyDown={handleDurationKeyDown}
+                    placeholder="0:00"
+                    maxLength={6}
+                    style={durationInput}
+                  />
+                    <span style={{
+                      fontSize: 10,
+                      color: 'var(--txt-muted)',
+                      letterSpacing: 1,
+                      fontFamily: 'monospace',
+                      flexShrink: 0,
+                    }}>
+                      h:mm
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4 }}>
+                    Registro manual del tiempo planeado.
+                  </span>
+                </div>
+              </FieldBlock>
 
+              <FieldBlock label="Tiempo consumido">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <Clock size={15} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={tiempoConsumido}
+                      onChange={(e) => setTiempoConsumido(sanitizeDurationInput(e.target.value))}
+                      onFocus={handleDurationFocus}
+                      onBlur={handleGuardarTiempoConsumido}
+                      onKeyDown={handleDurationKeyDown}
+                      placeholder="0:00"
+                      maxLength={6}
+                      style={durationInput}
+                    />
+                    <span style={{
+                      fontSize: 10,
+                      color: 'var(--txt-muted)',
+                      letterSpacing: 1,
+                      fontFamily: 'monospace',
+                      flexShrink: 0,
+                    }}>
+                      h:mm
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4 }}>
+                    Registro manual del tiempo real invertido.
+                  </span>
+                </div>
+              </FieldBlock>
             </div>
 
             {/* Fechas */}
@@ -616,4 +780,17 @@ const inp: React.CSSProperties = {
   padding: '6px 9px', borderRadius: 5, fontSize: 12,
   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
   color: '#e8ecf4', outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+const durationInput: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  padding: 0,
+  border: 'none',
+  outline: 'none',
+  background: 'transparent',
+  color: 'var(--txt)',
+  fontSize: 18,
+  fontWeight: 600,
+  fontFamily: 'monospace',
+  letterSpacing: 1,
 };
