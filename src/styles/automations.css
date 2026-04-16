@@ -1,0 +1,452 @@
+/* ============================================================
+   Automatizaciones — Estilos
+   Diseñado para integrarse con el tema Prisma (App.css)
+   ============================================================ */
+
+/* ── Página ─────────────────────────────────────────────────── */
+.auto-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.auto-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.auto-page__header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auto-page__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-page__title-icon {
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.4));
+}
+
+.auto-page__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--txt);
+}
+
+.auto-page__subtitle {
+  font-size: 12px;
+  color: var(--txt-muted);
+  margin-top: 2px;
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* Botón nueva automatización */
+.auto-page__new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  border-radius: var(--radius-md);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  transition: opacity 0.15s, transform 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.auto-page__new-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ── Stats ──────────────────────────────────────────────────── */
+.auto-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  width: fit-content;
+}
+
+.auto-stats__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 20px;
+}
+
+.auto-stats__divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-subtle);
+}
+
+.auto-stats__value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--txt);
+  line-height: 1;
+}
+
+.auto-stats__value--active { color: var(--success); }
+.auto-stats__value--error  { color: var(--danger); }
+.auto-stats__value--accent { color: var(--accent); }
+
+.auto-stats__label {
+  font-size: 10px;
+  color: var(--txt-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── Filtros ────────────────────────────────────────────────── */
+.auto-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.auto-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--txt-muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.auto-filter-btn:hover {
+  border-color: var(--border);
+  color: var(--txt);
+  background: var(--bg-hover);
+}
+
+.auto-filter-btn--active {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.auto-filter-btn__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--txt-muted);
+}
+
+.auto-filter-btn--active .auto-filter-btn__count {
+  background: rgba(0, 200, 255, 0.15);
+  color: var(--accent);
+}
+
+/* ── Grid de tarjetas ───────────────────────────────────────── */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 12px;
+}
+
+/* ── Tarjeta ────────────────────────────────────────────────── */
+.auto-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.auto-card:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.auto-card--error {
+  border-color: rgba(255, 71, 87, 0.25);
+}
+
+.auto-card__error-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--danger);
+}
+
+/* Header de tarjeta */
+.auto-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auto-card__icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.auto-card--error .auto-card__icon-wrap {
+  background: rgba(255, 71, 87, 0.08);
+  border-color: rgba(255, 71, 87, 0.25);
+  color: var(--danger);
+}
+
+.auto-card__meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auto-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auto-card__equipo {
+  font-size: 10px;
+  color: var(--txt-muted);
+  letter-spacing: 0.5px;
+}
+
+.auto-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Toggle */
+.auto-card__toggle {
+  color: var(--txt-muted);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s;
+  display: flex;
+  align-items: center;
+}
+
+.auto-card__toggle:hover { color: var(--txt); }
+.auto-card__toggle--on { color: var(--success); }
+
+/* Delete */
+.auto-card__delete {
+  color: var(--txt-dim);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s, background 0.12s;
+  display: flex;
+  align-items: center;
+}
+
+.auto-card__delete:hover {
+  color: var(--danger);
+  background: rgba(255, 71, 87, 0.08);
+}
+
+/* Descripción */
+.auto-card__desc {
+  font-size: 12px;
+  color: var(--txt-muted);
+  line-height: 1.6;
+}
+
+/* ── Flujo Trigger → Action ─────────────────────────────────── */
+.auto-card__flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  flex-wrap: wrap;
+}
+
+.auto-card__flow-step {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.auto-card__flow-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.auto-card__flow-step--trigger .auto-card__flow-label { color: var(--info); }
+.auto-card__flow-step--action  .auto-card__flow-label { color: var(--accent); }
+
+.auto-card__flow-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--txt);
+  flex-wrap: wrap;
+}
+
+.auto-card__flow-param {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--txt-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-weight: 400;
+}
+
+.auto-card__flow-arrow {
+  font-size: 16px;
+  color: var(--txt-dim);
+  flex-shrink: 0;
+}
+
+/* Footer de tarjeta */
+.auto-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+  margin-top: -2px;
+}
+
+.auto-card__stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--txt-muted);
+}
+
+.auto-card__stat--muted {
+  color: var(--txt-dim);
+  font-size: 10px;
+}
+
+/* ── Badges de estado ───────────────────────────────────────── */
+.auto-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.auto-badge--activa {
+  background: rgba(0, 229, 160, 0.10);
+  border: 1px solid rgba(0, 229, 160, 0.25);
+  color: var(--success);
+}
+
+.auto-badge--inactiva {
+  background: rgba(90, 106, 138, 0.12);
+  border: 1px solid rgba(90, 106, 138, 0.25);
+  color: var(--txt-muted);
+}
+
+.auto-badge--error {
+  background: rgba(255, 71, 87, 0.10);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  color: var(--danger);
+}
+
+/* ── Estado vacío ───────────────────────────────────────────── */
+.auto-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 200px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--txt-dim);
+}
+
+.auto-empty__icon { opacity: 0.25; }
+
+.auto-empty__text {
+  font-size: 13px;
+  color: var(--txt-muted);
+}
+
+/* ── Sidebar ítem de automatizaciones ──────────────────────── */
+/* El dot decorativo usa el color accent (rayo) */
+.sidebar__team-dot--auto {
+  background: rgba(167, 139, 250, 0.3);
+}
+
+.sidebar__nav-item--active .sidebar__team-dot--auto {
+  background: var(--info);
+  box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
+}
