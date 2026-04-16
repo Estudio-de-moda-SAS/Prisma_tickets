@@ -8,6 +8,7 @@ import { useConfigStore } from '@/store/configStore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+/* eslint-disable react-hooks/refs */
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {

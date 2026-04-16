@@ -61,15 +61,14 @@ export function RequestsPage() {
         .some((f) => f.toLowerCase().includes(q))) return false;
       if (colFilter && r.columna   !== colFilter) return false;
       if (priFilter && r.prioridad !== priFilter) return false;
-      if (eqFilter  && r.equipo    !== eqFilter)  return false;
-      return true;
+if (eqFilter && !r.equipo.includes(eqFilter)) return false;      return true;
     });
   }, [all, search, colFilter, priFilter, eqFilter]);
 
-  function goToBoard(r: Request) {
-    if (r.equipo) setEquipoActivo(r.equipo);
-    navigate('/');
-  }
+function goToBoard(r: Request) {
+  if (r.equipo.length > 0) setEquipoActivo(r.equipo[0]);
+  navigate('/');
+}
 
   /* Estilos reutilizables */
   const selectStyle: React.CSSProperties = {
@@ -254,11 +253,12 @@ function RequestRow({ request: r, isSelected, onClick }: {
         <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--txt-muted)' }}>
           <span>{r.solicitante}</span>
           {r.resolutor && <><span>→</span><span>{r.resolutor}</span></>}
-          {r.equipo && (
-            <span style={{ color: 'var(--accent)', fontWeight: 500 }}>
-              {EQUIPOS[r.equipo]}
-            </span>
-          )}
+{r.equipo.length > 0 && (
+  <span style={{ color: 'var(--accent)', fontWeight: 500 }}>
+    {EQUIPOS[r.equipo[0]]}
+  </span>
+)}
+
         </div>
       </div>
 
@@ -280,7 +280,7 @@ function RequestDetail({ request, onClose, onGoToBoard, onUpdate }: {
   onGoToBoard: (r: Request) => void;
   onUpdate:    (r: Request) => void;
 }) {
-  const { mutate: mover } = useMoveRequest(request.equipo ?? 'desarrollo');
+const { mutate: mover } = useMoveRequest(request.equipo[0] ?? 'desarrollo');
 
   function handleMover(columna: KanbanColumna) {
     mover(
@@ -375,7 +375,9 @@ function RequestDetail({ request, onClose, onGoToBoard, onUpdate }: {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <InfoRow label="Solicitante" value={request.solicitante} />
             <InfoRow label="Resolutor"   value={request.resolutor ?? '—'} />
-            {request.equipo && <InfoRow label="Equipo" value={EQUIPOS[request.equipo]} accent />}
+{request.equipo.length > 0 && (
+  <InfoRow label="Equipo" value={EQUIPOS[request.equipo[0]]} accent />
+)}
           </div>
         </div>
 
