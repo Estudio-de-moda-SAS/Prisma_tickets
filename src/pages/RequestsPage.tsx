@@ -280,7 +280,7 @@ function RequestDetail({ request, onClose, onGoToBoard, onUpdate }: {
   onGoToBoard: (r: Request) => void;
   onUpdate:    (r: Request) => void;
 }) {
-  const { mutate: mover } = useMoveRequest(request.equipo ?? 'front');
+  const { mutate: mover } = useMoveRequest(request.equipo ?? 'desarrollo');
 
   function handleMover(columna: KanbanColumna) {
     mover(

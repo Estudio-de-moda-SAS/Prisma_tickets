@@ -181,16 +181,20 @@
 }
 
 .stats-kpi-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  /* FIX: fondo blanco en light, superficie elevada en dark — más contraste que bg-surface */
+  background: var(--bg-elevated, var(--bg-card));
+  border: 1px solid var(--border);          /* border más visible que border-subtle */
   border-radius: var(--radius-md);
   padding: 14px 16px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-.stats-kpi-card:hover { border-color: var(--border); }
+.stats-kpi-card:hover {
+  border-color: var(--border-strong, var(--border));
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
 
 .stats-kpi-card__accent {
   position: absolute;
@@ -239,15 +243,19 @@
 }
 
 .stats-comp-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  /* FIX: mismo tratamiento que kpi-card */
+  background: var(--bg-elevated, var(--bg-card));
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  border-top: 2px solid transparent;
+  border-top: 2px solid transparent;       /* el color lo pone el inline style del JSX */
   padding: 12px;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-.stats-comp-card:hover { border-color: var(--border); }
+.stats-comp-card:hover {
+  border-color: var(--border-strong, var(--border));
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
 
 .stats-comp-card__name {
   font-size: 10px;
@@ -274,14 +282,15 @@
 
 /* ── Panel card ─────────────────────────────────────────────── */
 .stats-panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  /* FIX: mismo tratamiento — border más visible + bg elevado */
+  background: var(--bg-elevated, var(--bg-card));
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px;
   transition: border-color 0.12s;
 }
 
-.stats-panel:hover { border-color: var(--border); }
+.stats-panel:hover { border-color: var(--border-strong, var(--border)); }
 
 .stats-panel__header {
   display: flex;
@@ -408,13 +417,14 @@
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  background: var(--bg-surface);
+  /* FIX: mismo patrón de elevación */
+  background: var(--bg-elevated, var(--bg-surface));
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
   transition: border-color 0.12s;
 }
 
-.stats-resolutor:hover { border-color: var(--border); }
+.stats-resolutor:hover { border-color: var(--border-strong, var(--border)); }
 
 .stats-resolutor__avatar {
   width: 32px;

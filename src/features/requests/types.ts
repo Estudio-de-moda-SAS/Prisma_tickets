@@ -4,14 +4,14 @@
 export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis';
 
 export const EQUIPOS: Record<Equipo, string> = {
-  desarrollo: 'Desarrollo',
+  desarrollo: 'Desarrollo & UX',
   crm:        'CRM',
   sistemas:   'Sistemas de Información',
-  analisis:   'Análisis de Datos',
+  analisis:   'Ciencia de Datos',
 };
 
 /* ============================================================
-   Columnas Kanban por equipo
+   Columnas Kanban
    ============================================================ */
 export type KanbanColumna =
   | 'sin_categorizar'
@@ -30,7 +30,6 @@ export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
   hecho:           'Hecho',
 };
 
-// Columnas que pertenecen al board de equipo (excluye sin_categorizar)
 export const COLUMNAS_BOARD: KanbanColumna[] = [
   'icebox',
   'backlog',
@@ -60,23 +59,28 @@ export type Request = {
   descripcion:   string;
   solicitante:   string;
   resolutor:     string | null;
-  equipo:        Equipo | null;
+  equipo:        Equipo[];    // multi
   columna:       KanbanColumna;
   prioridad:     Prioridad;
-  categoria:     string | null;
+  categoria:     string[];    // multi
   fechaApertura: string;
   fechaMaxima:   string | null;
-  progreso:      number; // 0-100
+  progreso:      number;
 };
 
 /* ============================================================
    Payload para crear una solicitud
    ============================================================ */
-export type CrearSolicitudPayload = Omit<
-  Request,
-  'id' | 'columna' | 'fechaApertura' | 'progreso'
-> & {
-  columna?: KanbanColumna;
+export type CrearSolicitudPayload = {
+  titulo:       string;
+  descripcion:  string;
+  solicitante:  string;
+  resolutor:    string | null;
+  equipo:       Equipo[];
+  prioridad:    Prioridad;
+  categoria:    string[];
+  fechaMaxima:  string | null;
+  columna?:     KanbanColumna;
 };
 
 /* ============================================================

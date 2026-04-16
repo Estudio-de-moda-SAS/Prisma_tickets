@@ -23,15 +23,17 @@ const INITIAL: FormState = {
 };
 
 const S = {
-  section:       { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 16 } as React.CSSProperties,
+  // FIX: bg-elevated + border más visible (igual que stats.css)
+  section:       { background: 'var(--bg-elevated, var(--bg-card))', border: '1px solid var(--border)', borderRadius: 8, padding: 16 } as React.CSSProperties,
   sectionHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 } as React.CSSProperties,
   tag:           { fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' as const, color: 'var(--accent)', background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.2)', padding: '2px 8px', borderRadius: 3 } as React.CSSProperties,
   line:          { flex: 1, height: 1, background: 'var(--border-subtle)' } as React.CSSProperties,
   grid2:         { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 } as React.CSSProperties,
   label:         { fontSize: 10, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' as const, color: 'var(--txt-muted)', display: 'block', marginBottom: 6 } as React.CSSProperties,
-  input:         { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '9px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none' } as React.CSSProperties,
-  textarea:      { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '10px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', resize: 'vertical' as const, minHeight: 100 } as React.CSSProperties,
-  select:        { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '9px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', cursor: 'pointer' } as React.CSSProperties,
+  // FIX: inputs con bg-elevated y border visible para destacar del fondo del section
+  input:         { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none' } as React.CSSProperties,
+  textarea:      { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', resize: 'vertical' as const, minHeight: 100 } as React.CSSProperties,
+  select:        { width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 12px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', cursor: 'pointer' } as React.CSSProperties,
 };
 
 const PRIORIDAD_COLORS: Record<Prioridad, string> = { baja: 'rgba(90,106,138,0.15)', media: 'rgba(167,139,250,0.15)', alta: 'rgba(255,165,2,0.15)', critica: 'rgba(255,71,87,0.15)' };
@@ -74,6 +76,7 @@ export function NuevaSolicitudPage() {
       fechaMaxima: null,
     });
   }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -83,8 +86,8 @@ export function NuevaSolicitudPage() {
         gap: 16,
         maxWidth: 860,
         width: '100%',
-        margin: '0 auto',       // centra el form
-        padding: '0 24px',      // respira en pantallas angostas
+        margin: '0 auto',
+        padding: '0 24px',
       }}
     >
       {/* PARTES */}
@@ -161,7 +164,7 @@ export function NuevaSolicitudPage() {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
         <button type="button" onClick={() => navigate(-1)}
-          style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent' }}>
+          style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid var(--border)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent' }}>
           Cancelar
         </button>
         <button type="submit" disabled={isPending}
