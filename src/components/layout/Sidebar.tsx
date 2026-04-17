@@ -12,17 +12,6 @@ import type { Equipo } from '@/features/requests/types';
 import { ConfigPopover } from '@/components/ConfigPopover';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
 
-function NavLabel({ children, top = false, open }: { children: string; top?: boolean; open: boolean }) {
-  if (open) {
-    return (
-      <span className={['sidebar__nav-label', top ? 'sidebar__nav-label--top' : ''].join(' ')}>
-        {children}
-      </span>
-    );
-  }
-  return <span className={['sidebar__nav-sep', top ? 'sidebar__nav-sep--top' : ''].join(' ')} />;
-}
-
 export function Sidebar() {
   const { account, signOut } = useAuth();
   const role = useRole();
@@ -40,12 +29,10 @@ export function Sidebar() {
     isAdmin || (isMember && role.team === key)
   );
 
-  function handleEquipo(key: Equipo) { setEquipoActivo(key); navigate('/'); }
-  function handleHomeEquipo(key: Equipo) { navigate(`/home?section=equipo-${key}`); }
-
-  const roleLabel =
-    isAdmin  ? 'Administrador' :
-    isMember ? EQUIPOS[role.team] : 'Cliente';
+  function handleEquipo(key: Equipo) {
+    setEquipoActivo(key);
+    navigate('/');
+  }
 
   function handleHomeEquipo(key: Equipo) {
     navigate(`/home?section=equipo-${key}`);
@@ -86,25 +73,37 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        <NavLabel open={sidebarAbierto}>Principal</NavLabel>
+        <NavLabel>Principal</NavLabel>
 
-        <NavLink to="/home" className={({ isActive }) =>
-          ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')}>
+        {/* ── INICIO ── */}
+        <NavLink
+          to="/home"
+          className={({ isActive }) =>
+            ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+          }
+        >
           <Home size={16} />
           {sidebarAbierto && <span>Inicio</span>}
         </NavLink>
 
+        {/* ── ESTADÍSTICAS ── */}
         {(isAdmin || isMember) && (
-          <NavLink to="/stats" className={({ isActive }) =>
-            ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')}>
+          <NavLink
+            to="/stats"
+            className={({ isActive }) =>
+              ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+            }
+          >
             <BarChart2 size={16} />
             {sidebarAbierto && <span>Estadísticas</span>}
           </NavLink>
         )}
 
+        {/* ── AUTOMATIZACIONES ── */}
         {isAdmin && (
           <>
-            <NavLabel top open={sidebarAbierto}>Automatizaciones</NavLabel>
+            <NavLabel top>Automatizaciones</NavLabel>
+
             {sidebarAbierto ? (
               <div className="sidebar__nav-group">
                 <button
@@ -113,37 +112,52 @@ export function Sidebar() {
                 >
                   <Zap size={16} />
                   <span style={{ flex: 1 }}>Automatizaciones</span>
-                  <ChevronDown size={12}
-                    className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')} />
+                  <ChevronDown
+                    size={12}
+                    className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
+                  />
                 </button>
                 {automatizacionesOpen && (
                   <div className="sidebar__nav-sub">
-                    <NavLink to="/automations" end
+                    <NavLink
+                      to="/automations"
+                      end
                       className={({ isActive }) =>
-                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')}>
+                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                      }
+                    >
                       <span className="sidebar__sub-dot" /><span>Todas las reglas</span>
                     </NavLink>
-                    <NavLink to="/automations/logs"
+                    <NavLink
+                      to="/automations/logs"
                       className={({ isActive }) =>
-                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')}>
+                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                      }
+                    >
                       <span className="sidebar__sub-dot" /><span>Historial</span>
                     </NavLink>
                   </div>
                 )}
               </div>
             ) : (
-              <NavLink to="/automations" title="Automatizaciones"
+              <NavLink
+                to="/automations"
+                title="Automatizaciones"
                 className={({ isActive }) =>
-                  ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')}>
+                  ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                }
+              >
                 <Zap size={16} />
               </NavLink>
             )}
           </>
         )}
 
+        {/* ── EQUIPOS ── */}
         {(isAdmin || isMember) && equiposVisibles.length > 0 && (
           <>
-            <NavLabel top open={sidebarAbierto}>Equipos</NavLabel>
+            <NavLabel top>Equipos</NavLabel>
+
             {equiposVisibles.map(([key, label]) => {
               const c    = EQUIPO_COLORS[key];
               const ia   = equipoActivo === key;
@@ -156,18 +170,35 @@ export function Sidebar() {
                     className="sidebar__nav-item sidebar__nav-item--team"
                     style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
                   >
-                    <Icon size={15} style={{ color: ia ? c.dot : undefined, opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'color 0.12s, opacity 0.12s' }} />
-                    {sidebarAbierto && <span style={{ color: ia ? c.dot : undefined }}>{label}</span>}
+                    <Icon
+                      size={15}
+                      style={{
+                        color: ia ? c.dot : undefined,
+                        opacity: ia ? 1 : 0.55,
+                        flexShrink: 0,
+                        transition: 'color 0.12s, opacity 0.12s',
+                      }}
+                    />
+                    {sidebarAbierto && (
+                      <span style={{ color: ia ? c.dot : undefined }}>{label}</span>
+                    )}
                   </button>
+
                   {ia && sidebarAbierto && (
                     <div className="sidebar__nav-sub">
-                      <NavLink to="/"
+                      <NavLink
+                        to="/"
                         className={({ isActive: active }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')}
-                        style={({ isActive: active }) => active ? { color: c.dot } : {}}>
+                          ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+                        }
+                        style={({ isActive: active }) => active ? { color: c.dot } : {}}
+                      >
                         <LayoutGrid size={12} /><span>Board</span>
                       </NavLink>
-                      <button onClick={() => handleHomeEquipo(key)} className="sidebar__nav-item sidebar__nav-item--sub">
+                      <button
+                        onClick={() => handleHomeEquipo(key)}
+                        className="sidebar__nav-item sidebar__nav-item--sub"
+                      >
                         <span className="sidebar__sub-dot" />
                         <span>Mis solicitudes</span>
                       </button>
