@@ -9,7 +9,7 @@ import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
 import { MOCK_BOARD } from '@/features/requests/mock/Mockboard';
 import { KANBAN_COLUMNAS, EQUIPOS } from '@/features/requests/types';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/Sidebar';
+import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import type { Request, Equipo, KanbanColumna } from '@/features/requests/types';
 
 /* ── helpers ──────────────────────────────────────────────────── */

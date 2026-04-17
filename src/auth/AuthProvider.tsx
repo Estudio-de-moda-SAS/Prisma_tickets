@@ -10,7 +10,7 @@ import {
   logout,
 } from './msal';
 
-type AuthCtx = {
+export type AuthCtx = {
   ready:    boolean;
   account:  AccountInfo | null;
   getToken: () => Promise<string>;

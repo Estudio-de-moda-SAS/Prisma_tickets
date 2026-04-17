@@ -1,4 +1,4 @@
-import { GraphRest } from '@/api/GraphRest';
+import { GraphRest } from '@/graph/GraphRest';
 import type { GetAllOpts, PageResult } from '@/types/commons';
 
 export abstract class BaseSharePointListService<
@@ -141,7 +141,7 @@ export abstract class BaseSharePointListService<
 
     const raw = Array.isArray(res?.value) ? res.value : [];
     return {
-      items: raw.map((item) => this.toModel(item)),
+      items: raw.map((item: unknown) => this.toModel(item)),
       nextLink: res?.['@odata.nextLink'] ? String(res['@odata.nextLink']) : null,
     };
   }
@@ -163,7 +163,7 @@ export abstract class BaseSharePointListService<
 
     try {
       const res = await this.graph.get<{ value: unknown[] }>(url);
-      return (res?.value ?? []).map((item) => this.toModel(item));
+      return (res?.value ?? []).map((item: unknown) => this.toModel(item));
     } catch (e: unknown) {
       const code = (e as { error?: { code?: string }; code?: string })?.error?.code
         ?? (e as { code?: string })?.code;
@@ -173,7 +173,7 @@ export abstract class BaseSharePointListService<
         qs2.delete('$filter');
         const url2 = `/sites/${encodeURIComponent(this.siteId!)}/lists/${encodeURIComponent(this.listId!)}/items?${qs2.toString()}`;
         const res2 = await this.graph.get<{ value: unknown[] }>(url2);
-        return (res2?.value ?? []).map((item) => this.toModel(item));
+        return (res2?.value ?? []).map((item: unknown) => this.toModel(item));
       }
 
       throw e;

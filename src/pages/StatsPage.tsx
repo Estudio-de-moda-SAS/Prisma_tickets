@@ -12,6 +12,12 @@ import {
 import type { RangoTiempo, ActividadItem, ColStats, PriStats, Resolutor } from '@/features/stats/types';
 import '@/styles/stats.css';
 
+/* ── Tipo mínimo para la instancia de Chart.js cargada dinámicamente ── */
+type ChartInstance = { destroy: () => void };
+type ChartWindow = Window & typeof globalThis & {
+  Chart?: new (canvas: HTMLCanvasElement, config: unknown) => ChartInstance;
+};
+
 /* ─────────────────────────────────────────────────────────────
    Utilidades
 ───────────────────────────────────────────────────────────── */
@@ -26,7 +32,7 @@ function timeAgo(iso: string): string {
 }
 
 function loadChartJs(cb: () => void) {
-  if ((window as any).Chart) { cb(); return; }
+  if ((window as ChartWindow).Chart) { cb(); return; }
   const s = document.createElement('script');
   s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
   s.onload = cb;
@@ -91,20 +97,23 @@ function ActivityItem({ item }: { item: ActividadItem }) {
 /* ─────────────────────────────────────────────────────────────
    Canvas chart (columnas)
 ───────────────────────────────────────────────────────────── */
+type TooltipContext = { raw: unknown };
+
 function BarChart({ id, data, height = 180 }: { id: string; data: ColStats[] | PriStats[]; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef  = useRef<any>(null);
+  const chartRef  = useRef<ChartInstance | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !(window as any).Chart) return;
+    const ChartJs = (window as ChartWindow).Chart;
+    if (!canvas || !ChartJs) return;
     if (chartRef.current) chartRef.current.destroy();
 
-    const isDark   = matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark    = matchMedia('(prefers-color-scheme: dark)').matches;
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
     const tickColor = isDark ? '#5a6a8a' : '#888';
 
-    chartRef.current = new (window as any).Chart(canvas, {
+    chartRef.current = new ChartJs(canvas, {
       type: 'bar',
       data: {
         labels: data.map((d) => d.label),
@@ -119,7 +128,10 @@ function BarChart({ id, data, height = 180 }: { id: string; data: ColStats[] | P
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} solicitudes` } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx: TooltipContext) => ` ${ctx.raw} solicitudes` } },
+        },
         scales: {
           x: { ticks: { color: tickColor, font: { size: 11 }, autoSkip: false }, grid: { display: false }, border: { display: false } },
           y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor }, border: { display: false }, beginAtZero: true },
@@ -186,10 +198,10 @@ function GeneralView({ rango }: { rango: RangoTiempo }) {
     <>
       <p className="stats-section-label">Resumen global — todos los equipos</p>
       <div className="stats-kpi-grid">
-        <KPICard label="Total solicitudes"      value={kpis.total}           sub="↑ 8 vs período anterior"  trend="up"      accent="var(--accent)" />
-        <KPICard label="Resueltas"              value={kpis.resueltas}       sub="↑ 5 vs período anterior"  trend="up"      accent="var(--success)" />
-        <KPICard label="Tasa global resolución" value={`${kpis.tasaGlobal}%`} sub="→ estable"               trend="neutral" accent="var(--warn)" />
-        <KPICard label="Tiempo prom. resolución" value={`${kpis.tiempoPromedio}d`} sub="↑ mejorando"        trend="up"      accent="var(--info)" />
+        <KPICard label="Total solicitudes"       value={kpis.total}            sub="↑ 8 vs período anterior" trend="up"      accent="var(--accent)" />
+        <KPICard label="Resueltas"               value={kpis.resueltas}        sub="↑ 5 vs período anterior" trend="up"      accent="var(--success)" />
+        <KPICard label="Tasa global resolución"  value={`${kpis.tasaGlobal}%`} sub="→ estable"               trend="neutral" accent="var(--warn)" />
+        <KPICard label="Tiempo prom. resolución" value={`${kpis.tiempoPromedio}d`} sub="↑ mejorando"         trend="up"      accent="var(--info)" />
       </div>
 
       <div className="stats-mid-grid">
@@ -214,13 +226,7 @@ function GeneralView({ rango }: { rango: RangoTiempo }) {
             <span className="stats-panel__title">SLA cumplido por equipo</span>
           </div>
           {porEquipo.map((e) => (
-            <BarRow
-              key={e.equipo}
-              label={EQUIPOS[e.equipo]}
-              value={e.sla}
-              max={100}
-              color={EQUIPO_COLORS[e.equipo]}
-            />
+            <BarRow key={e.equipo} label={EQUIPOS[e.equipo]} value={e.sla} max={100} color={EQUIPO_COLORS[e.equipo]} />
           ))}
         </div>
       </div>
@@ -228,20 +234,14 @@ function GeneralView({ rango }: { rango: RangoTiempo }) {
       <p className="stats-section-label">Comparativa entre equipos</p>
       <div className="stats-comp-grid">
         {porEquipo.map((e) => (
-          <div
-            key={e.equipo}
-            className="stats-comp-card"
-            style={{ borderTopColor: EQUIPO_COLORS[e.equipo] }}
-          >
+          <div key={e.equipo} className="stats-comp-card" style={{ borderTopColor: EQUIPO_COLORS[e.equipo] }}>
             <div className="stats-comp-card__name">{EQUIPOS[e.equipo]}</div>
             <div className="stats-comp-stat"><span>Creadas</span><span>{e.creadas}</span></div>
             <div className="stats-comp-stat"><span>Resueltas</span><span>{e.resueltas}</span></div>
             <div className="stats-comp-stat"><span>SLA</span><span>{e.sla}%</span></div>
             <div className="stats-comp-stat">
               <span>Críticas</span>
-              <span style={{ color: e.criticas > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                {e.criticas}
-              </span>
+              <span style={{ color: e.criticas > 0 ? 'var(--danger)' : 'var(--success)' }}>{e.criticas}</span>
             </div>
           </div>
         ))}
@@ -261,7 +261,6 @@ function BoardView({ rango }: { rango: RangoTiempo }) {
 
   return (
     <>
-      {/* Selector de equipo */}
       <div className="stats-team-tabs">
         {(Object.entries(EQUIPOS) as [Equipo, string][]).map(([key, label]) => (
           <button
@@ -270,20 +269,16 @@ function BoardView({ rango }: { rango: RangoTiempo }) {
             style={equipo === key ? { borderColor: EQUIPO_COLORS[key], color: EQUIPO_COLORS[key], background: `${EQUIPO_COLORS[key]}18` } : {}}
             onClick={() => setEquipo(key)}
           >
-            <span
-              className="stats-team-dot"
-              style={{ background: EQUIPO_COLORS[key] }}
-            />
+            <span className="stats-team-dot" style={{ background: EQUIPO_COLORS[key] }} />
             {label}
           </button>
         ))}
       </div>
 
-      {/* KPIs del board */}
       <div className="stats-kpi-grid">
-        <KPICard label="Solicitudes creadas"  value={kpis.creadas}   sub="↑ 4 vs período anterior"   trend="up"   accent={EQUIPO_COLORS[equipo]} />
-        <KPICard label="Resueltas"            value={kpis.resueltas} sub="↑ 2 vs período anterior"   trend="up"   accent="var(--success)" />
-        <KPICard label="SLA cumplido"         value={`${kpis.sla}%`} sub="→ estable"                 trend="neutral" accent="var(--warn)" />
+        <KPICard label="Solicitudes creadas" value={kpis.creadas}   sub="↑ 4 vs período anterior" trend="up"      accent={EQUIPO_COLORS[equipo]} />
+        <KPICard label="Resueltas"           value={kpis.resueltas} sub="↑ 2 vs período anterior" trend="up"      accent="var(--success)" />
+        <KPICard label="SLA cumplido"        value={`${kpis.sla}%`} sub="→ estable"               trend="neutral" accent="var(--warn)" />
         <KPICard
           label="Críticas activas"
           value={kpis.criticas}
@@ -320,7 +315,6 @@ function BoardView({ rango }: { rango: RangoTiempo }) {
         </div>
       </div>
 
-      {/* Resolutores */}
       <div className="stats-panel">
         <div className="stats-panel__header">
           <span className="stats-panel__title">Top resolutores — {EQUIPOS[equipo]}</span>
@@ -339,7 +333,7 @@ export function StatsPage() {
   const { account } = useAuth();
   const [view,  setView]  = useState<'general' | 'board'>('general');
   const [rango, setRango] = useState<RangoTiempo>('week');
-  const [chartReady, setChartReady] = useState(!!(window as any).Chart);
+  const [chartReady, setChartReady] = useState(!!(window as ChartWindow).Chart);
 
   useEffect(() => { loadChartJs(() => setChartReady(true)); }, []);
 
@@ -350,8 +344,6 @@ export function StatsPage() {
 
   return (
     <div className="stats-page">
-
-      {/* ── Header ─────────────────────────────────── */}
       <div className="stats-page__header">
         <div className="stats-page__user">
           <div className="stats-page__avatar">{initials}</div>
@@ -365,25 +357,21 @@ export function StatsPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Vista general / por board */}
           <div className="stats-view-tabs">
             <button
               className={['stats-view-tab', view === 'general' ? 'stats-view-tab--active' : ''].join(' ')}
               onClick={() => setView('general')}
             >
-              <Globe size={12} />
-              Vista general
+              <Globe size={12} /> Vista general
             </button>
             <button
               className={['stats-view-tab', view === 'board' ? 'stats-view-tab--active' : ''].join(' ')}
               onClick={() => setView('board')}
             >
-              <LayoutGrid size={12} />
-              Por equipo
+              <LayoutGrid size={12} /> Por equipo
             </button>
           </div>
 
-          {/* Rango de tiempo */}
           <div className="stats-range-tabs">
             {(Object.entries(RANGO_LABELS) as [RangoTiempo, string][]).map(([key, label]) => (
               <button
@@ -398,7 +386,6 @@ export function StatsPage() {
         </div>
       </div>
 
-      {/* ── Contenido por vista ────────────────────── */}
       {chartReady ? (
         view === 'general'
           ? <GeneralView rango={rango} />
@@ -407,7 +394,6 @@ export function StatsPage() {
         <p style={{ color: 'var(--txt-muted)', fontSize: 12 }}>Cargando gráficas…</p>
       )}
 
-      {/* ── Actividad reciente (siempre visible) ───── */}
       <div className="stats-panel" style={{ marginTop: 4 }}>
         <div className="stats-panel__header">
           <span className="stats-panel__title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -422,7 +408,6 @@ export function StatsPage() {
           {MOCK_ACTIVIDAD.map((item) => <ActivityItem key={item.id} item={item} />)}
         </div>
       </div>
-
     </div>
   );
 }

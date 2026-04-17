@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGraphServices } from '@/graph/GraphServicesProvider';
+import { useGraphServices } from '@/graph/useGraphServices';
 import { config } from '@/config';
 import { requestKeys } from './useRequests';
 import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
@@ -11,7 +11,7 @@ type UpdatePayload = {
 
 type MutationContext = { snapshot: BoardData | undefined };
 
-function toSPFields(patch: UpdatePayload['patch']) {
+function toSPFields(patch: UpdatePayload['patch']): Record<string, unknown> {
   const sp: Record<string, unknown> = {};
   if ('categoria' in patch) sp['Categoria'] = patch.categoria ?? null;
   if ('equipo'    in patch) sp['Equipo']    = patch.equipo    ?? null;
@@ -28,7 +28,7 @@ export function useUpdateRequest(equipo: Equipo) {
   return useMutation<void, Error, UpdatePayload, MutationContext>({
     mutationFn: async ({ id, patch }) => {
       if (!config.USE_MOCK) {
-        await Requests.update(id, toSPFields(patch) as any);
+        await Requests.update(id, toSPFields(patch));
       }
     },
 

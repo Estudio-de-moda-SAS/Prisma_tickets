@@ -61,22 +61,21 @@ export function NuevaSolicitudPage() {
       setError(null);
     };
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.titulo.trim())      return setError('El asunto es obligatorio.');
-    if (!form.solicitante.trim()) return setError('El solicitante es obligatorio.');
-    crear({
-      titulo:      form.titulo.trim(),
-      descripcion: form.descripcion.trim(),
-      solicitante: form.solicitante.trim(),
-      resolutor:   form.resolutor.trim() || null,
-      equipo:      form.equipo || null,
-      prioridad:   form.prioridad,
-      categoria:   form.categoria.trim() || null,
-      fechaMaxima: null,
-    });
-  }
-
+function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  if (!form.titulo.trim())      return setError('El asunto es obligatorio.');
+  if (!form.solicitante.trim()) return setError('El solicitante es obligatorio.');
+  crear({
+    titulo:      form.titulo.trim(),
+    descripcion: form.descripcion.trim(),
+    solicitante: form.solicitante.trim(),
+    resolutor:   form.resolutor.trim() || null,
+    equipo:      form.equipo ? [form.equipo] : [],        // Equipo | '' → Equipo[]
+    prioridad:   form.prioridad,
+    categoria:   form.categoria.trim() ? [form.categoria.trim()] : [],  // string → string[]
+    fechaMaxima: null,
+  });
+}
   return (
     <form
       onSubmit={handleSubmit}
