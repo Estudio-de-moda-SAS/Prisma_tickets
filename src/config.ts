@@ -1,6 +1,6 @@
 export const config = {
   USE_MOCK: true,
-
+  BYPASS_AUTH: true,
   // ── Azure AD Group GUIDs ────────────────────────────────────────────────────
   // Reemplaza cada string vacío con el Object ID del grupo en Azure AD.
   // Portal: Azure Active Directory → Groups → selecciona el grupo → Object ID
