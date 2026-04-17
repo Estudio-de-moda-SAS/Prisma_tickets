@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/Sidebar';
+import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { EQUIPOS } from '@/features/requests/types';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import type { Equipo, Request } from '@/features/requests/types';

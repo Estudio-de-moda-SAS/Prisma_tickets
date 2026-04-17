@@ -64,24 +64,30 @@ function isValidHex(hex: string) {
 type ColorPickerProps = { value: string; onChange: (hex: string) => void; onClose: () => void };
 
 function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
-  const safeHex         = isValidHex(value) ? value : '#00c8ff';
-  const [h, s, v]       = hexToHsv(safeHex);
-  const [hue, setHue]   = useState(h);
-  const [sat, setSat]   = useState(s);
-  const [val, setVal]   = useState(v);
-  const [hex, setHex]   = useState(safeHex);
+  const safeHex       = isValidHex(value) ? value : '#00c8ff';
+  const [h, s, v]     = hexToHsv(safeHex);
+  const [hue, setHue] = useState(h);
+  const [sat, setSat] = useState(s);
+  const [val, setVal] = useState(v);
+
+  // `hex` se deriva de hue/sat/val — no necesita estado propio
+  const hex = hsvToHex(hue, sat, val);
+
+  // hexInput permite edición libre en el input sin forzar rerenders
   const [hexInput, setHexInput] = useState(safeHex);
 
   const gradRef  = useRef<HTMLDivElement>(null);
   const hueRef   = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Sincroniza hexInput y notifica al padre cuando cambia el color por el picker
   useEffect(() => {
-    const newHex = hsvToHex(hue, sat, val);
-    setHex(newHex);
-    setHexInput(newHex);
-    onChange(newHex);
-  }, [hue, sat, val]);
+    setHexInput(hex);
+    onChange(hex);
+    // onChange se omite intencionalmente: si el padre no usa useCallback
+    // causaría un bucle infinito. El padre debe memoizar onChange.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hex]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -121,9 +127,9 @@ function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
   }
 
   function handleHexInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const v = e.target.value;
-    setHexInput(v);
-    const full = v.startsWith('#') ? v : '#' + v;
+    const raw = e.target.value;
+    setHexInput(raw);
+    const full = raw.startsWith('#') ? raw : '#' + raw;
     if (isValidHex(full)) {
       const [nh, ns, nv] = hexToHsv(full);
       setHue(nh); setSat(ns); setVal(nv);

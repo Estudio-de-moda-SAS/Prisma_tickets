@@ -16,11 +16,10 @@ export function useMoveRequest(equipo: Equipo) {
   const queryKey     = requestKeys.byEquipo(equipo);
 
   return useMutation({
-    mutationFn: (payload: MovePayload) =>
-      config.USE_MOCK
-        ? Promise.resolve(undefined as any)
-        : Requests.mover({ id: payload.id, columna: payload.columna, equipo: payload.equipo }),
-
+mutationFn: (payload: MovePayload) =>
+  config.USE_MOCK
+    ? Promise.resolve({} as Awaited<ReturnType<typeof Requests.mover>>)
+    : Requests.mover({ id: payload.id, columna: payload.columna, equipo: payload.equipo }),
     // 1. Mueve la tarjeta localmente de inmediato
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey });

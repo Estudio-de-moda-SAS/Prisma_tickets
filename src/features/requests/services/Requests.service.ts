@@ -43,26 +43,27 @@ export class RequestsService extends BaseSharePointListService<
   }
 
   // ── Mapeo SP → modelo interno ──────────────────────────────
-  protected toModel(raw: unknown): Request {
-    const item = raw as SPItem;
-    const f    = item.fields;
+protected toModel(raw: unknown): Request {
+  const item = raw as SPItem;
+  const f    = item.fields;
 
-    return {
-      id:            item.id,
-      titulo:        f.Title        ?? '',
-      descripcion:   f.Descripcion  ?? '',
-      solicitante:   f.Solicitante  ?? '',
-      resolutor:     f.Resolutor    ?? null,
-      equipo:        (f.Equipo      as Equipo | undefined)    ?? null,
-      columna:       (f.Columna     as KanbanColumna)         ?? 'sin_categorizar',
-      prioridad:     (f.Prioridad   as Request['prioridad']) ?? 'media',
-      categoria:     f.Categoria    ?? null,
-      fechaApertura: f.FechaApertura ?? new Date().toISOString(),
-      fechaMaxima:   f.FechaMaxima  ?? null,
-      progreso:      f.Progreso     ?? 0,
-    };
-  }
-
+  return {
+    id:            item.id,
+    titulo:        f.Title        ?? '',
+    descripcion:   f.Descripcion  ?? '',
+    solicitante:   f.Solicitante  ?? '',
+    resolutor:     f.Resolutor    ?? null,
+    // string → Equipo[]  (SP devuelve un solo valor como string)
+    equipo:        f.Equipo ? [f.Equipo as Equipo] : [],
+    columna:       (f.Columna  as KanbanColumna) ?? 'sin_categorizar',
+    prioridad:     (f.Prioridad as Request['prioridad']) ?? 'media',
+    // string → string[]
+    categoria:     f.Categoria ? [f.Categoria] : [],
+    fechaApertura: f.FechaApertura ?? new Date().toISOString(),
+    fechaMaxima:   f.FechaMaxima  ?? null,
+    progreso:      f.Progreso     ?? 0,
+  };
+}
   // ── Crear solicitud (siempre entra en sin_categorizar) ──────
   async crear(payload: CrearSolicitudPayload): Promise<Request> {
     return this.create({
@@ -72,13 +73,13 @@ export class RequestsService extends BaseSharePointListService<
   }
 
   // ── Mover tarjeta entre columnas / asignar equipo ───────────
-  async mover({ id, columna, equipo }: MoverSolicitudPayload): Promise<Request> {
-    return this.update(id, {
-      Columna: columna,
-      ...(equipo ? { Equipo: equipo } : {}),
-    });
-  }
-
+async mover({ id, columna, equipo }: MoverSolicitudPayload): Promise<Request> {
+  return this.update(id, {
+    Columna: columna,
+    // Guardamos en SP como string simple (primer valor del array)
+    ...(equipo ? { Equipo: equipo } : {}),
+  });
+}
   // ── Obtener todas agrupadas por columna ─────────────────────
   async getByEquipo(equipo: Equipo): Promise<Request[]> {
     return this.getAllPlain({

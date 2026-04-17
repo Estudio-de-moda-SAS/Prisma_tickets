@@ -1,18 +1,8 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  BarChart2,
-  ChevronDown,
-  Home,
-  LogOut,
-  LayoutGrid,
-  Zap,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Code2,
-  Users,
-  Server,
-  LineChart,
+  BarChart2, ChevronDown, Home, LogOut,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole } from '@/auth/roles';
@@ -20,20 +10,7 @@ import { useBoardStore } from '@/store/boardStore';
 import { EQUIPOS } from '@/features/requests/types';
 import type { Equipo } from '@/features/requests/types';
 import { ConfigPopover } from '@/components/ConfigPopover';
-
-export const EQUIPO_COLORS: Record<Equipo, { dot: string; glow: string; border: string }> = {
-  desarrollo: { dot: '#378ADD', glow: 'rgba(55,138,221,0.12)',  border: 'rgba(55,138,221,0.30)'  },
-  crm:        { dot: '#1D9E75', glow: 'rgba(29,158,117,0.12)',  border: 'rgba(29,158,117,0.30)'  },
-  sistemas:   { dot: '#EF9F27', glow: 'rgba(239,159,39,0.12)',  border: 'rgba(239,159,39,0.30)'  },
-  analisis:   { dot: '#7F77DD', glow: 'rgba(127,119,221,0.12)', border: 'rgba(127,119,221,0.30)' },
-};
-
-export const EQUIPO_ICONS: Record<Equipo, React.ElementType> = {
-  desarrollo: Code2,
-  crm:        Users,
-  sistemas:   Server,
-  analisis:   LineChart,
-};
+import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
 
 export function Sidebar() {
   const { account, signOut } = useAuth();
@@ -185,7 +162,6 @@ export function Sidebar() {
               const c    = EQUIPO_COLORS[key];
               const ia   = equipoActivo === key;
               const Icon = EQUIPO_ICONS[key];
-
               return (
                 <div key={key} className="sidebar__nav-group">
                   <button
@@ -238,20 +214,14 @@ export function Sidebar() {
       {/* ── Footer ── */}
       <div className="sidebar__footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <button
-            className="sidebar__toggle-btn"
-            onClick={toggleSidebar}
-            title={sidebarAbierto ? 'Contraer panel' : 'Expandir panel'}
-            style={{ flex: 1 }}
-          >
+          <button className="sidebar__toggle-btn" onClick={toggleSidebar}
+            title={sidebarAbierto ? 'Contraer panel' : 'Expandir panel'} style={{ flex: 1 }}>
             {sidebarAbierto
               ? <><PanelLeftClose size={14} /><span>Contraer</span></>
-              : <PanelLeftOpen size={14} />
-            }
+              : <PanelLeftOpen size={14} />}
           </button>
           <ConfigPopover />
         </div>
-
         {sidebarAbierto ? (
           <div className="sidebar__user">
             <div className="sidebar__avatar">{initiales}</div>
