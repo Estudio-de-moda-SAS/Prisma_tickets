@@ -480,7 +480,10 @@ a { text-decoration: none; color: inherit; }
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 500px;
+
+  height: 100%;
+  min-height: 0; /* CLAVE para que funcione el scroll */
+
   transition: outline 0.1s, background 0.1s;
 }
 
@@ -509,6 +512,19 @@ a { text-decoration: none; color: inherit; }
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.kanban__col-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+.kanban__col-body > * + * {
+  margin-top: 10px;
+}
+.request-card {
+  flex-shrink: 0;
+}
 .kanban__col-title {
   font-family: var(--font-display);
   font-size: 11px;
@@ -543,7 +559,6 @@ a { text-decoration: none; color: inherit; }
 }
 
 .kanban__col-empty {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
