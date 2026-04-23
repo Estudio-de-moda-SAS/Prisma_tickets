@@ -35,6 +35,33 @@ function groupByColumn(requests: Request[]): BoardData {
 }
 
 /* ============================================================
+   Mock: en modo demo el board muestra TODAS las solicitudes
+   del equipo activo (sin filtrar por solicitante).
+   En producción, el filtro vendrá del query a SharePoint.
+   ============================================================ */
+function mockBoardParaEquipo(equipo: Equipo): BoardData {
+  const board: BoardData = {
+    sin_categorizar: [],
+    icebox:          [],
+    backlog:         [],
+    todo:            [],
+    en_progreso:     [],
+    hecho:           [],
+  };
+  for (const col of Object.keys(board) as KanbanColumna[]) {
+    board[col] = MOCK_BOARD[col].filter((r) => r.equipo.includes(equipo));
+  }
+  return board;
+}
+
+/* ============================================================
+   Mock: board global sin filtro de equipo (para admins / board completo)
+   ============================================================ */
+function mockBoardCompleto(): BoardData {
+  return structuredClone(MOCK_BOARD);
+}
+
+/* ============================================================
    Hook principal — board de un equipo
    ============================================================ */
 export function useBoardEquipo(equipo: Equipo) {
@@ -43,8 +70,28 @@ export function useBoardEquipo(equipo: Equipo) {
   return useQuery<BoardData>({
     queryKey: requestKeys.byEquipo(equipo),
     queryFn:  config.USE_MOCK
-      ? () => Promise.resolve(MOCK_BOARD)
+      ? () => Promise.resolve(mockBoardParaEquipo(equipo))
       : () => Requests.getByEquipo(equipo).then(groupByColumn),
+
+    staleTime:            config.USE_MOCK ? Infinity : 15_000,
+    refetchInterval:      config.USE_MOCK ? false    : 20_000,
+    refetchOnWindowFocus: !config.USE_MOCK,
+    retry:                config.USE_MOCK ? false    : 1,
+  });
+}
+
+/* ============================================================
+   Hook para el board completo (sin filtro de equipo)
+   Usado en BoardPage cuando se quiere ver todo
+   ============================================================ */
+export function useBoardCompleto() {
+  const { Requests } = useGraphServices();
+
+  return useQuery<BoardData>({
+    queryKey: [...ALL, 'completo'],
+    queryFn:  config.USE_MOCK
+      ? () => Promise.resolve(mockBoardCompleto())
+      : () => Requests.getAllPlain().then(groupByColumn),
 
     staleTime:            config.USE_MOCK ? Infinity : 15_000,
     refetchInterval:      config.USE_MOCK ? false    : 20_000,
@@ -69,5 +116,21 @@ export function useSinCategorizar() {
     refetchInterval:      config.USE_MOCK ? false    : 20_000,
     refetchOnWindowFocus: !config.USE_MOCK,
     retry:                config.USE_MOCK ? false    : 1,
+  });
+}
+
+/* ============================================================
+   Hook para mis solicitudes (filtrado por solicitante)
+   ============================================================ */
+export function useMisSolicitudes(nombre: string) {
+  return useQuery<Request[]>({
+    queryKey: [...ALL, 'mis-solicitudes', nombre],
+    queryFn:  () => Promise.resolve(
+      Object.values(MOCK_BOARD).flat().filter((r) =>
+        r.solicitante.toLowerCase().includes(nombre.split(' ')[0]?.toLowerCase() ?? '')
+      )
+    ),
+    enabled:   !!nombre,
+    staleTime: Infinity,
   });
 }

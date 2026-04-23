@@ -9,11 +9,10 @@ import { config } from '@/config';
 import type { KanbanColumna } from '@/features/requests/types';
 
 export function BoardPage() {
-  const { equipoActivo }                 = useBoardStore();
-  const { data, isLoading, isError }     = useBoardEquipo(equipoActivo);
-  const { mutate: mover }                = useMoveRequest(equipoActivo);
+  const { equipoActivo }             = useBoardStore();
+  const { data, isLoading, isError } = useBoardEquipo(equipoActivo);
+  const { mutate: mover }            = useMoveRequest(equipoActivo);
 
-  // ▶ boardId = equipoActivo — cada equipo tiene sus propios filtros
   const filteredData = useFilteredBoard(equipoActivo, data);
 
   function handleMove(id: string, columna: KanbanColumna) {
@@ -31,25 +30,23 @@ export function BoardPage() {
         flexWrap:       'wrap',
         gap:            8,
       }}>
-        {/* Izquierda: filtros + personalización — ambos reciben boardId */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <BoardFilters boardId={equipoActivo} />
           <BoardCustomizationTrigger />
         </div>
 
-        {/* Derecha: modo demo */}
         {config.USE_MOCK && (
           <span style={{
-            fontSize:        10,
-            color:           'var(--warn)',
-            background:      'rgba(255,165,2,0.08)',
-            border:          '1px solid rgba(255,165,2,0.2)',
-            borderRadius:    4,
-            padding:         '3px 10px',
-            letterSpacing:   1,
-            textTransform:   'uppercase',
-            fontWeight:      600,
-            flexShrink:      0,
+            fontSize:      10,
+            color:         'var(--warn)',
+            background:    'rgba(255,165,2,0.08)',
+            border:        '1px solid rgba(255,165,2,0.2)',
+            borderRadius:  4,
+            padding:       '3px 10px',
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            fontWeight:    600,
+            flexShrink:    0,
           }}>
             Modo Demo
           </span>

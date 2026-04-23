@@ -5,6 +5,7 @@ import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstan
 import { EQUIPOS } from '@/features/requests/types';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import type { Equipo, Request } from '@/features/requests/types';
+import { config } from '@/config';
 
 /* ── helpers ──────────────────────────────────────────────────── */
 const PRIORIDAD_COLOR: Record<string, string> = {
@@ -52,7 +53,8 @@ function timeAgo(iso: string): string {
 /* ── useMyRequestsForEquipo ──────────────────────────────────── */
 function useMyRequests(equipo: Equipo, userName: string) {
   const { data: board, isLoading } = useBoardEquipo(equipo);
-  const firstName = userName.split(' ')[0]?.toLowerCase() ?? '';
+  const effectiveName = config.USE_MOCK ? 'Juan Esteban' : userName;
+  const firstName = effectiveName.split(' ')[0]?.toLowerCase() ?? '';
   const requests: Request[] = board
     ? Object.values(board).flat().filter((r) =>
         firstName ? r.solicitante.toLowerCase().includes(firstName) : true
@@ -60,7 +62,6 @@ function useMyRequests(equipo: Equipo, userName: string) {
     : [];
   return { requests, isLoading };
 }
-
 /* ── EquipoSummaryCard ───────────────────────────────────────── */
 function EquipoSummaryCard({ equipo, label, userName, onClick }: {
   equipo: Equipo;

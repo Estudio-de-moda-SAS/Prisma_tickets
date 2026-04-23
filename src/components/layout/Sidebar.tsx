@@ -34,9 +34,9 @@ export function Sidebar() {
     navigate('/');
   }
 
-  function handleHomeEquipo(key: Equipo) {
-    navigate(`/home?section=equipo-${key}`);
-  }
+function handleHomeEquipo(key: Equipo) {
+  navigate(`/requests/team/${key}`);
+}
 
   const roleLabel =
     isAdmin  ? 'Administrador' :
@@ -212,17 +212,24 @@ export function Sidebar() {
       </nav>
 
       {/* ── Footer ── */}
-      <div className="sidebar__footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <button className="sidebar__toggle-btn" onClick={toggleSidebar}
-            title={sidebarAbierto ? 'Contraer panel' : 'Expandir panel'} style={{ flex: 1 }}>
-            {sidebarAbierto
-              ? <><PanelLeftClose size={14} /><span>Contraer</span></>
-              : <PanelLeftOpen size={14} />}
-          </button>
-          <ConfigPopover />
-        </div>
-        {sidebarAbierto ? (
+<div className="sidebar__footer">
+  {sidebarAbierto ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      <button className="sidebar__toggle-btn" onClick={toggleSidebar}
+        title="Contraer panel" style={{ flex: 1 }}>
+        <PanelLeftClose size={14} /><span>Contraer</span>
+      </button>
+      <ConfigPopover />
+    </div>
+  ) : (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      <button className="sidebar__toggle-btn" onClick={toggleSidebar}
+        title="Expandir panel" style={{ width: '100%' }}>
+        <PanelLeftOpen size={14} />
+      </button>
+      <ConfigPopover />
+    </div>
+  )}        {sidebarAbierto ? (
           <div className="sidebar__user">
             <div className="sidebar__avatar">{initiales}</div>
             <div className="sidebar__user-info">

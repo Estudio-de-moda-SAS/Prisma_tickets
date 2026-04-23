@@ -17,14 +17,20 @@ export function AppLayout() {
   const titulo = TITULOS[pathname] ?? 'Prisma Tickets';
 
   return (
-    <div className="app-layout">
-      <Sidebar />
-      <div className="app-layout__main">
-        <Topbar titulo={titulo} />
-        <main className="app-layout__content">
-          <Outlet />
-        </main>
+    <>
+      <div className="app-layout">
+        <Sidebar />
+        <div className="app-layout__main">
+          <Topbar titulo={titulo} />
+          <main className="app-layout__content">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+
+      {/* Portal root — fuera del app-layout para evitar que
+          overflow:hidden bloquee modales con position:fixed */}
+      <div id="portal-root" />
+    </>
   );
 }
