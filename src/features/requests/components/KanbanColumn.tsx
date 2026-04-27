@@ -41,7 +41,12 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
         COL_CLASS[id],
         isOver ? 'kanban__col--over' : '',
       ].join(' ')}
-      style={colStyle}
+      style={{
+  ...colStyle,
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
+}}
     >
       <div className="kanban__col-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -91,25 +96,26 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       {id === 'sin_categorizar' && (
         <p className="kanban__drop-hint">↓ Asignar al equipo</p>
       )}
+<div className="kanban__col-body">
+  <SortableContext
+    items={requests.map((r) => r.id)}
+    strategy={verticalListSortingStrategy}
+  >
+    {requests.map((r) => (
+      <RequestCard
+        key={r.id}
+        request={r}
+        onClick={() => onCardClick(r)}
+      />
+    ))}
+  </SortableContext>
 
-      <SortableContext
-        items={requests.map((r) => r.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        {requests.map((r) => (
-          <RequestCard
-            key={r.id}
-            request={r}
-            onClick={() => onCardClick(r)}
-          />
-        ))}
-      </SortableContext>
-
-      {requests.length === 0 && (
-        <div className="kanban__col-empty">
-          <span>Sin solicitudes</span>
-        </div>
-      )}
+  {requests.length === 0 && (
+    <div className="kanban__col-empty">
+      <span>Sin solicitudes</span>
+    </div>
+  )}
+</div>
     </div>
   );
 }
