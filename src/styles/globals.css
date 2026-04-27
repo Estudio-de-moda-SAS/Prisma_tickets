@@ -1,3 +1,11 @@
+@import './variables.css';
+@import './layout.css';
+@import './kanban.css';
+@import './requestCard.css';
+@import './login.css';
+@import './filters.css';
+@import './configPopover.css';
+@import './themeLight.css';
 @import './automations.css';
 @import './stats.css';
 @import './customization.css';

@@ -1,0 +1,79 @@
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Rg.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Md.ttf') format('truetype');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'Objektiv Mk3';
+  src: url('../assets/fonts/ObjektivMk3_Trial_Bd.ttf') format('truetype');
+  font-weight: 700;
+}
+
+/* ============================================================
+   Variables del tema
+   ============================================================ */
+:root {
+  --bg-deep:    #0d1422;
+  --bg-panel:   #121a2e;
+  --bg-card:    #172035;
+  --bg-surface: #1e2b45;
+  --bg-hover:   #243352;
+
+  --accent:        #00c8ff;
+  --accent-2:      #0055cc;
+  --accent-glow:   rgba(0, 200, 255, 0.12);
+  --accent-border: rgba(0, 200, 255, 0.2);
+
+  --border:        rgba(0, 200, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  --txt:       #e8ecf4;
+  --txt-muted: #5a6a8a;
+  --txt-dim:   #2e3a55;
+
+  --success: #00e5a0;
+  --warn:    #ffa502;
+  --danger:  #ff4757;
+  --info:    #a78bfa;
+
+  --sidebar-w:           220px;
+  --sidebar-w-collapsed: 56px;
+  --topbar-h:            52px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --font-display: 'Rajdhani', sans-serif;
+  --font-body:    'Objektiv Mk3', sans-serif;
+}
+
+/* ============================================================
+   Reset base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-panel);
+  color: var(--txt);
+  font-family: var(--font-body);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; background: none; border: none; color: inherit; font: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+::-webkit-scrollbar              { width: 4px; height: 4px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--accent-border); }
