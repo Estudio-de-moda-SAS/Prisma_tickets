@@ -15,7 +15,7 @@ import {
    =========================== */
 export const msal = new PublicClientApplication({
   auth: {
-    clientId: 'd2290169-4e11-4316-8d72-5547fa3daa08',
+    clientId: 'e812277c-a88f-4484-bc55-b2af34ad99bd',
     authority: 'https://login.microsoftonline.com/cd48ecd9-7e15-4f4b-97d9-ec813ee42b2c',
     redirectUri: window.location.origin, // asegúrate que esté registrado en Azure
     // postLogoutRedirectUri: window.location.origin, // opcional
@@ -43,7 +43,7 @@ export const msal = new PublicClientApplication({
 let initialized = false;
 
 /** Scopes centralizados para login/token */
-export const SCOPES = ['openid', 'profile', 'email', 'User.Read', 'Sites.ReadWrite.All','Directory.Read.All',] as const;
+export const SCOPES = ['openid', 'profile', 'email', 'User.Read'] as const;
 
 /** Helpers de requests */
 const loginPopupRequest: PopupRequest = { scopes: [...SCOPES], prompt: 'select_account' };

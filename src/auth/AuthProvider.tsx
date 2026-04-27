@@ -35,7 +35,7 @@ const MOCK_ACCOUNT: AccountInfo = {
 const Ctx = React.createContext<AuthCtx | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ready,   setReady]   = React.useState(config.BYPASS_AUTH); // si bypass, ya arranca ready
+  const [ready,   setReady]   = React.useState<boolean>(config.BYPASS_AUTH); // si bypass, ya arranca ready
   const [account, setAccount] = React.useState<AccountInfo | null>(
     config.BYPASS_AUTH ? MOCK_ACCOUNT : null,
   );
