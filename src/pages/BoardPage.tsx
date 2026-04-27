@@ -1,6 +1,7 @@
 import { useBoardStore } from '@/store/boardStore';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
+import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { KanbanBoard } from '@/features/requests/components/KanbanBoard';
 import { BoardFilters } from '@/features/requests/components/BoardFilters';
 import { BoardCustomizationTrigger } from '@/features/requests/components/BoardCustomization';
@@ -12,17 +13,19 @@ export function BoardPage() {
   const { equipoActivo }             = useBoardStore();
   const { data, isLoading, isError } = useBoardEquipo(equipoActivo);
   const { mutate: mover }            = useMoveRequest(equipoActivo);
+  const columnMap                    = useColumnMap(config.DEFAULT_BOARD_ID);
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
   function handleMove(id: string, columna: KanbanColumna) {
-    mover({ id, columna });
+    // columnMap siempre tiene el columnId correcto, incluso para columnas vacías
+    const columnId = columnMap?.[columna];
+    mover({ id, columna, columnId });
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
 
-      {/* Barra superior */}
       <div style={{
         display:        'flex',
         alignItems:     'center',

@@ -1,24 +1,28 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGraphServices } from '@/graph/useGraphServices';
+import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
 import { requestKeys } from './useRequests';
 import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
 
 type UpdatePayload = {
   id:    string;
-  patch: Partial<Pick<Request, 'categoria' | 'equipo' | 'prioridad' | 'resolutor'>>;
+  patch: Partial<Pick<
+    Request,
+    | 'titulo'
+    | 'descripcion'
+    | 'categoria'
+    | 'labelIds'
+    | 'equipo'
+    | 'equipoIds'
+    | 'prioridad'
+    | 'assignees'
+    | 'progreso'
+    | 'sprintId'
+    | 'deadline'
+  >>;
 };
 
 type MutationContext = { snapshot: BoardData | undefined };
-
-function toSPFields(patch: UpdatePayload['patch']): Record<string, unknown> {
-  const sp: Record<string, unknown> = {};
-  if ('categoria' in patch) sp['Categoria'] = patch.categoria ?? null;
-  if ('equipo'    in patch) sp['Equipo']    = patch.equipo    ?? null;
-  if ('prioridad' in patch) sp['Prioridad'] = patch.prioridad ?? null;
-  if ('resolutor' in patch) sp['Resolutor'] = patch.resolutor ?? null;
-  return sp;
-}
 
 export function useUpdateRequest(equipo: Equipo) {
   const queryClient  = useQueryClient();
@@ -27,11 +31,21 @@ export function useUpdateRequest(equipo: Equipo) {
 
   return useMutation<void, Error, UpdatePayload, MutationContext>({
     mutationFn: async ({ id, patch }) => {
-      if (!config.USE_MOCK) {
-        await Requests.update(id, toSPFields(patch));
-      }
+      if (config.USE_MOCK) return;
+      await Requests.updateRequest({
+        id,
+        titulo:      patch.titulo,
+        descripcion: patch.descripcion,
+        prioridad:   patch.prioridad,
+        progreso:    patch.progreso,
+        equipoIds:   patch.equipoIds,
+        labelIds:    patch.labelIds,
+        sprintId:    patch.sprintId,
+        deadline:    patch.deadline,
+      });
     },
 
+    // Actualización optimista — refleja el cambio localmente de inmediato
     onMutate: async ({ id, patch }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey });
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
@@ -41,7 +55,7 @@ export function useUpdateRequest(equipo: Equipo) {
         const next = {} as BoardData;
         for (const col of Object.keys(prev) as KanbanColumna[]) {
           next[col] = prev[col].map((r) =>
-            r.id === id ? { ...r, ...patch } : r
+            r.id === id ? { ...r, ...patch } : r,
           );
         }
         return next;
@@ -50,12 +64,14 @@ export function useUpdateRequest(equipo: Equipo) {
       return { snapshot };
     },
 
+    // Revertir si Supabase falla
     onError: (_err, _payload, context) => {
       if (context?.snapshot) {
         queryClient.setQueryData<BoardData>(queryKey, context.snapshot);
       }
     },
 
+    // Revalidar desde Supabase solo en modo real
     onSettled: () => {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });

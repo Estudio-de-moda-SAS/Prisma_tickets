@@ -7,24 +7,23 @@ import { GraphServicesProvider } from '@/graph/GraphServicesProvider';
 import App from '@/App';
 import './styles/globals.css';
 
-// Aplica el tema guardado antes del primer render (evita flash)
-// Default: light
-const saved = localStorage.getItem('prisma-theme');
-let initialTheme = 'light';
-if (saved) {
+// Aplica el tema guardado antes del primer render para evitar flash
+const savedTheme = (() => {
   try {
-    const parsed = JSON.parse(saved)?.state?.theme;
-    if (parsed === 'dark' || parsed === 'light') initialTheme = parsed;
-  } catch { /* silent */ }
-}
-document.documentElement.setAttribute('data-theme', initialTheme);
+    const parsed = JSON.parse(localStorage.getItem('prisma-theme') ?? '{}')?.state?.theme;
+    return parsed === 'dark' || parsed === 'light' ? parsed : 'light';
+  } catch {
+    return 'light';
+  }
+})();
+document.documentElement.setAttribute('data-theme', savedTheme);
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime:   15_000,
-      retry:       1,
-      retryDelay:  (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
+      staleTime:  15_000,
+      retry:      1,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     },
     mutations: {
       retry: 0,
@@ -32,10 +31,10 @@ const queryClient = new QueryClient({
   },
 });
 
-const root = document.getElementById('root');
-if (!root) throw new Error('No se encontró #root en el HTML');
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('[main] No se encontró #root en el HTML');
 
-createRoot(root).render(
+createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>

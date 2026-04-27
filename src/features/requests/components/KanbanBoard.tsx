@@ -20,7 +20,7 @@ import { COLUMNAS_BOARD } from '../types';
 import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
 
 type Props = {
-  board: BoardData;
+  board:  BoardData;
   equipo: Equipo;
   onMove: (id: string, columna: KanbanColumna) => void;
 };
@@ -31,17 +31,17 @@ const COLUMN_IDS = new Set<string>([
 
 const COLUMN_LABELS: Record<KanbanColumna, string> = {
   sin_categorizar: 'Sin categorizar',
-  icebox: 'Icebox',
-  backlog: 'Backlog',
-  todo: 'To do',
-  en_progreso: 'En progreso',
-  hecho: 'Hecho',
+  icebox:          'Icebox',
+  backlog:         'Backlog',
+  todo:            'To do',
+  en_progreso:     'En progreso',
+  hecho:           'Hecho',
 };
 
 export function KanbanBoard({ board, equipo, onMove }: Props) {
-  const [activeCard, setActiveCard] = useState<Request | null>(null);
-  const [overColumn, setOverColumn] = useState<KanbanColumna | null>(null);
-  const [modalId, setModalId] = useState<string | null>(null);
+  const [activeCard, setActiveCard]     = useState<Request | null>(null);
+  const [overColumn, setOverColumn]     = useState<KanbanColumna | null>(null);
+  const [modalId, setModalId]           = useState<string | null>(null);
   const [createColumn, setCreateColumn] = useState<KanbanColumna | null>(null);
   const [localCreatedRequests, setLocalCreatedRequests] = useState<Request[]>([]);
 
@@ -53,30 +53,12 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
   );
 
   const mergedBoard: BoardData = {
-    sin_categorizar: [
-      ...(board.sin_categorizar ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'sin_categorizar'),
-    ],
-    icebox: [
-      ...(board.icebox ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'icebox'),
-    ],
-    backlog: [
-      ...(board.backlog ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'backlog'),
-    ],
-    todo: [
-      ...(board.todo ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'todo'),
-    ],
-    en_progreso: [
-      ...(board.en_progreso ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'en_progreso'),
-    ],
-    hecho: [
-      ...(board.hecho ?? []),
-      ...localCreatedRequests.filter((r) => r.columna === 'hecho'),
-    ],
+    sin_categorizar: [...(board.sin_categorizar ?? []), ...localCreatedRequests.filter((r) => r.columna === 'sin_categorizar')],
+    icebox:          [...(board.icebox          ?? []), ...localCreatedRequests.filter((r) => r.columna === 'icebox')],
+    backlog:         [...(board.backlog         ?? []), ...localCreatedRequests.filter((r) => r.columna === 'backlog')],
+    todo:            [...(board.todo            ?? []), ...localCreatedRequests.filter((r) => r.columna === 'todo')],
+    en_progreso:     [...(board.en_progreso     ?? []), ...localCreatedRequests.filter((r) => r.columna === 'en_progreso')],
+    hecho:           [...(board.hecho           ?? []), ...localCreatedRequests.filter((r) => r.columna === 'hecho')],
   };
 
   const modalCard = modalId
@@ -91,22 +73,14 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
   }
 
   function handleDragStart({ active }: DragStartEvent) {
-    const card = Object.values(mergedBoard).flat().find((r) => r.id === active.id);
+    const card = Object.values(mergedBoard).flat().find((r) => r.id === String(active.id));
     setActiveCard(card ?? null);
   }
 
   function handleDragOver({ over }: DragOverEvent) {
-    if (!over) {
-      setOverColumn(null);
-      return;
-    }
-
+    if (!over) { setOverColumn(null); return; }
     const overId = String(over.id);
-    setOverColumn(
-      COLUMN_IDS.has(overId)
-        ? (overId as KanbanColumna)
-        : findColumn(overId),
-    );
+    setOverColumn(COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId));
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
@@ -114,17 +88,14 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
     setOverColumn(null);
     if (!over) return;
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const targetCol = COLUMN_IDS.has(overId)
-      ? (overId as KanbanColumna)
-      : findColumn(overId);
+    const activeId  = String(active.id);
+    const overId    = String(over.id);
+    const targetCol = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
 
     const isLocalCreated = localCreatedRequests.some((r) => r.id === activeId);
-
     if (isLocalCreated) {
       setLocalCreatedRequests((prev) =>
         prev.map((r) => (r.id === activeId ? { ...r, columna: targetCol } : r)),
@@ -137,19 +108,13 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
 
   function handleModalMove(id: string, columna: KanbanColumna) {
     const isLocalCreated = localCreatedRequests.some((r) => r.id === id);
-
     if (isLocalCreated) {
       setLocalCreatedRequests((prev) =>
         prev.map((r) => (r.id === id ? { ...r, columna } : r)),
       );
       return;
     }
-
     onMove(id, columna);
-  }
-
-  function handleAddClick(columna: KanbanColumna) {
-    setCreateColumn(columna);
   }
 
   function handleCreateRequest(newRequest: Request) {
@@ -183,7 +148,7 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
               requests={mergedBoard[col] ?? []}
               isOver={overColumn === col}
               onCardClick={(card) => setModalId(card.id)}
-              onAddClick={handleAddClick}
+              onAddClick={(columna) => setCreateColumn(columna)}
             />
           ))}
         </div>
