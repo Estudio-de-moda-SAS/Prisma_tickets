@@ -446,3 +446,56 @@
   border-color: var(--accent-border);
   color: var(--accent);
 }
+
+/* ============================================================
+   Sidebar — Brand theme
+   ============================================================ */
+
+.app-layout .sidebar {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text-strong);
+  border-right-color: var(--sidebar-border);
+}
+
+.app-layout .sidebar__logo,
+.app-layout .sidebar__footer {
+  border-color: var(--sidebar-border);
+}
+
+.app-layout .sidebar__logo-title,
+.app-layout .sidebar__user-name {
+  color: var(--sidebar-text-strong);
+}
+
+.app-layout .sidebar__logo-sub,
+.app-layout .sidebar__nav-item,
+.app-layout .sidebar__toggle-btn,
+.app-layout .sidebar__logout-btn {
+  color: var(--sidebar-text);
+}
+
+.app-layout .sidebar__nav-label,
+.app-layout .sidebar__user-role {
+  color: var(--sidebar-label);
+}
+
+.app-layout .sidebar__nav-item:hover,
+.app-layout .sidebar__toggle-btn:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-text-strong);
+}
+
+.app-layout .sidebar__nav-item--active {
+  background: var(--sidebar-active);
+  color: var(--sidebar-text-strong);
+}
+
+.app-layout .sidebar__nav-sub {
+  border-left-color: var(--sidebar-border);
+}
+
+.app-layout .sidebar__toggle-btn,
+.app-layout .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--sidebar-border);
+}
