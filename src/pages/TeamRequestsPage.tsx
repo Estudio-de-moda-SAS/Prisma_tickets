@@ -287,7 +287,6 @@ export function TeamRequestsPage() {
       {selected && createPortal(
         <RequestDetailModal
           request={selected}
-          equipoActual={equipo}
           onClose={() => setSelected(null)}
         />,
         document.getElementById('portal-root') ?? document.body
@@ -440,8 +439,8 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
 }
 
 /* ── Modal de detalle ────────────────────────────────────────── */
-function RequestDetailModal({ request: r, equipoActual, onClose }: {
-  request: Request; equipoActual: Equipo; onClose: () => void;
+function RequestDetailModal({ request: r, onClose }: {
+  request: Request; onClose: () => void;
 }) {
   const navigate            = useNavigate();
   const role                = useRole();
