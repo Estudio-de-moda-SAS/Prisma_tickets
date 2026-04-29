@@ -11,7 +11,7 @@ import { RequestsPage } from '@/pages/RequestsPage';
 import { StatsPage } from '@/pages/StatsPage';
 import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
-
+import { CreateTicketModal } from '@/features/requests/components/CreateTicketModal';
 /* ============================================================
    ScrollToEquipo — cuando la URL tiene ?section=equipo-XXX
    hace scroll suave al elemento con ese id una vez que el
@@ -83,6 +83,16 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* Preview temporal del modal */}
+<Route
+  path="preview/create-ticket-modal"
+  element={
+    <CreateTicketModal
+      open={true}
+      onClose={() => console.log('cerrar modal')}
+    />
+  }
+/>
         {/* Board de equipo (raíz) */}
         <Route index element={<BoardPage />} />
 
