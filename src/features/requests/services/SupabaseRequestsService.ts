@@ -1,7 +1,4 @@
 // src/features/requests/services/SupabaseRequestsService.ts
-// Todas las operaciones van a través de la Edge Function (apiClient).
-// El frontend nunca tiene acceso directo a Supabase.
-
 import { apiClient } from '@/lib/apiClient';
 import type {
   Request,
@@ -15,9 +12,6 @@ import type {
 } from '../types';
 import { SCORE_TO_PRIORIDAD, PRIORIDAD_TO_SCORE } from '../types';
 
-/* ============================================================
-   Tipo de la fila cruda que devuelve la Edge Function
-   ============================================================ */
 type RawRequestRow = {
   Request_ID:              number;
   Request_Board_Column_ID: number;
@@ -31,6 +25,7 @@ type RawRequestRow = {
   Request_Deadline:        string | null;
   Request_Time_Consumed:   string | null;
   Request_Finished_At:     string | null;
+  Request_Parent_ID:       number | null;
 
   requester: { User_Name: string; User_Email: string; User_Avatar_url: string } | null;
   column:    { Board_Column_Name: string } | null;
@@ -40,15 +35,14 @@ type RawRequestRow = {
     assignee: { User_ID: number; User_Name: string; User_Email: string; User_Avatar_url: string } | null;
   }[];
 
-  teams:    { team:  { Board_Team_ID: number; Board_Team_Code: string } | null }[];
-  labels:   { label: { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string } | null }[];
-  sprints:  { Request_Sprint_ID: number }[];
+  teams:     { team:     { Board_Team_ID: number; Board_Team_Code: string } | null }[];
+  labels:    { label:    { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string } | null }[];
+  sub_teams: { sub_team: { Sub_Team_ID: number; Sub_Team_Name: string; Sub_Team_Color: string } | null }[];
+  sprints:   { Request_Sprint_ID: number; sprint: { Sprint_Text: string } | null }[];
   crm_extra: { Request_CRM_Example_Store_Name: string } | null;
+  child_count?: { count: number }[];
 };
 
-/* ============================================================
-   Mapeo nombre de columna → KanbanColumna
-   ============================================================ */
 const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
   'Sin categorizar': 'sin_categorizar',
   'Icebox':          'icebox',
@@ -58,9 +52,6 @@ const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
   'Hecho':           'hecho',
 };
 
-/* ============================================================
-   Mapeo fila cruda → modelo Request del frontend
-   ============================================================ */
 function mapRowToRequest(row: RawRequestRow): Request {
   const columna              = COLUMN_NAME_TO_KANBAN[row.column?.Board_Column_Name ?? ''] ?? 'sin_categorizar';
   const score                = row.Request_Score ?? 3;
@@ -84,6 +75,16 @@ function mapRowToRequest(row: RawRequestRow): Request {
     .filter((t) => t.team !== null)
     .map((t) => t.team!.Board_Team_ID);
 
+  const boardTeamId = equipoIds[0] ?? null;
+
+  const subTeamIds = (row.sub_teams ?? [])
+    .filter((s) => s.sub_team !== null)
+    .map((s) => s.sub_team!.Sub_Team_ID);
+
+  const subTeamNames = (row.sub_teams ?? [])
+    .filter((s) => s.sub_team !== null)
+    .map((s) => s.sub_team!.Sub_Team_Name);
+
   const labelNames = (row.labels ?? [])
     .filter((l) => l.label !== null)
     .map((l) => l.label!.Label_Name);
@@ -92,16 +93,21 @@ function mapRowToRequest(row: RawRequestRow): Request {
     .filter((l) => l.label !== null)
     .map((l) => l.label!.Label_ID);
 
-  const sprintId = row.sprints?.[0]?.Request_Sprint_ID ?? null;
+  const firstSprint = row.sprints?.[0] ?? null;
+  const sprintId    = firstSprint?.Request_Sprint_ID ?? null;
+  const sprintName  = firstSprint?.sprint?.Sprint_Text ?? null;
 
   let extraFields: RequestExtraFields | null = null;
   if (row.crm_extra) {
     extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
   }
 
+  const childCount = row.child_count?.[0]?.count ?? undefined;
+
   return {
     id:              String(row.Request_ID),
     templateId:      row.Request_Template_ID,
+    parentId:        row.Request_Parent_ID ?? null,
     titulo:          row.Request_Title        ?? '',
     descripcion:     row.Request_Description  ?? '',
     columna,
@@ -114,20 +120,22 @@ function mapRowToRequest(row: RawRequestRow): Request {
     assignees,
     equipo:          equipoCodes,
     equipoIds,
+    boardTeamId,
+    subTeamIds,
+    subTeamNames,
     categoria:       labelNames,
     labelIds,
     sprintId,
+    sprintName,
     fechaApertura:   row.Request_Created_At   ?? new Date().toISOString(),
     deadline:        row.Request_Deadline     ?? null,
     fechaCierre:     row.Request_Finished_At  ?? null,
     tiempoConsuмido: row.Request_Time_Consumed ?? null,
     extraFields,
+    childCount,
   };
 }
 
-/* ============================================================
-   Servicio
-   ============================================================ */
 export class SupabaseRequestsService {
   private readonly boardId: number;
 
@@ -141,10 +149,7 @@ export class SupabaseRequestsService {
   }
 
   async fetchByTeamCode(teamCode: string): Promise<Request[]> {
-    const rows = await apiClient.call<RawRequestRow[]>('fetchByTeamCode', {
-      boardId: this.boardId,
-      teamCode,
-    });
+    const rows = await apiClient.call<RawRequestRow[]>('fetchByTeamCode', { boardId: this.boardId, teamCode });
     return rows.map(mapRowToRequest);
   }
 
@@ -156,6 +161,16 @@ export class SupabaseRequestsService {
   async fetchById(id: number): Promise<Request> {
     const row = await apiClient.call<RawRequestRow>('fetchById', { id });
     return mapRowToRequest(row);
+  }
+
+  async fetchByRequestedBy(userId: number): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchByRequestedBy', { userId, boardId: this.boardId });
+    return rows.map(mapRowToRequest);
+  }
+
+  async fetchChildRequests(parentId: number): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchChildRequests', { parentId });
+    return rows.map(mapRowToRequest);
   }
 
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
@@ -171,6 +186,7 @@ export class SupabaseRequestsService {
       labelIds:    payload.labelIds,
       sprintId:    payload.sprintId,
       deadline:    payload.deadline,
+      parentId:    payload.parentId,
     });
     return mapRowToRequest(row);
   }
@@ -191,6 +207,9 @@ export class SupabaseRequestsService {
       sprintId:    patch.sprintId,
       deadline:    patch.deadline,
     });
+    if (patch.subTeamIds !== undefined) {
+      await apiClient.call('updateRequestSubTeams', { id: Number(id), subTeamIds: patch.subTeamIds });
+    }
   }
 
   async deleteRequest(id: string): Promise<void> {

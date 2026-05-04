@@ -21,7 +21,7 @@ document.documentElement.setAttribute('data-theme', savedTheme);
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime:  15_000,
+      staleTime:  0,
       retry:      1,
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     },

@@ -14,6 +14,7 @@ type UpdatePayload = {
     | 'labelIds'
     | 'equipo'
     | 'equipoIds'
+    | 'subTeamIds'
     | 'prioridad'
     | 'assignees'
     | 'progreso'
@@ -39,13 +40,13 @@ export function useUpdateRequest(equipo: Equipo) {
         prioridad:   patch.prioridad,
         progreso:    patch.progreso,
         equipoIds:   patch.equipoIds,
+        subTeamIds:  patch.subTeamIds,
         labelIds:    patch.labelIds,
         sprintId:    patch.sprintId,
         deadline:    patch.deadline,
       });
     },
 
-    // Actualización optimista — refleja el cambio localmente de inmediato
     onMutate: async ({ id, patch }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey });
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
@@ -64,17 +65,16 @@ export function useUpdateRequest(equipo: Equipo) {
       return { snapshot };
     },
 
-    // Revertir si Supabase falla
     onError: (_err, _payload, context) => {
       if (context?.snapshot) {
         queryClient.setQueryData<BoardData>(queryKey, context.snapshot);
       }
     },
 
-    // Revalidar desde Supabase solo en modo real
     onSettled: () => {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: requestKeys.all });
       }
     },
   });

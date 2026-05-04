@@ -288,6 +288,7 @@ export type Database = {
           Label_Icon: string
           Label_ID: number
           Label_Name: string
+          Label_Team_ID: number | null
         }
         Insert: {
           Label_Board_ID: number
@@ -295,6 +296,7 @@ export type Database = {
           Label_Icon: string
           Label_ID?: number
           Label_Name: string
+          Label_Team_ID?: number | null
         }
         Update: {
           Label_Board_ID?: number
@@ -302,6 +304,7 @@ export type Database = {
           Label_Icon?: string
           Label_ID?: number
           Label_Name?: string
+          Label_Team_ID?: number | null
         }
         Relationships: [
           {
@@ -310,6 +313,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "TBL_Boards"
             referencedColumns: ["Board_ID"]
+          },
+          {
+            foreignKeyName: "TBL_Labels_Label_Team_ID_fkey"
+            columns: ["Label_Team_ID"]
+            isOneToOne: false
+            referencedRelation: "TBL_Board_Teams"
+            referencedColumns: ["Board_Team_ID"]
           },
         ]
       }
@@ -633,6 +643,35 @@ export type Database = {
           Sprint_Text?: string
         }
         Relationships: []
+      }
+      TBL_Sub_Teams: {
+        Row: {
+          Sub_Team_Color: string
+          Sub_Team_ID: number
+          Sub_Team_Name: string
+          Sub_Team_Team_ID: number
+        }
+        Insert: {
+          Sub_Team_Color: string
+          Sub_Team_ID?: number
+          Sub_Team_Name: string
+          Sub_Team_Team_ID: number
+        }
+        Update: {
+          Sub_Team_Color?: string
+          Sub_Team_ID?: number
+          Sub_Team_Name?: string
+          Sub_Team_Team_ID?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "TBL_Sub_Teams_Sub_Team_Team_ID_fkey"
+            columns: ["Sub_Team_Team_ID"]
+            isOneToOne: false
+            referencedRelation: "TBL_Board_Teams"
+            referencedColumns: ["Board_Team_ID"]
+          },
+        ]
       }
       TBL_Users: {
         Row: {

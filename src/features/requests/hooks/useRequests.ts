@@ -68,10 +68,11 @@ export function useBoardEquipo(equipo: Equipo) {
       ? () => Promise.resolve(getMockBoardForTeam(equipo))
       : () => Requests.fetchByTeamCode(equipo).then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
@@ -87,10 +88,11 @@ export function useBoardCompleto() {
       ? () => Promise.resolve(getMockBoardFull())
       : () => Requests.fetchAllByBoard().then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
@@ -106,10 +108,11 @@ export function useSinCategorizar() {
       ? () => Promise.resolve(MOCK_BOARD.sin_categorizar)
       : () => Requests.fetchUncategorized(),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
@@ -126,7 +129,9 @@ export function useMisSolicitudes(nombre: string) {
         ),
       ),
     ),
-    enabled:   !!nombre,
-    staleTime: Infinity,
+    enabled:              !!nombre,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
   });
 }

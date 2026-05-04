@@ -1,8 +1,15 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useConfigStore } from '@/store/configStore';
 import { useBoardStore } from '@/store/boardStore';
-import type { Sprint} from '@/store/configStore';
+import { useBoardTeams, useLabelsByTeamId } from '@/features/requests/hooks/useBoardMetadata';
+import { useSprints, useCreateSprint, useUpdateSprint, useDeleteSprint } from '@/features/requests/hooks/useSprints';
+import { useSubTeams, useCreateSubTeam, useUpdateSubTeam, useDeleteSubTeam } from '@/features/requests/hooks/useSubTeams';
+import { apiClient } from '@/lib/apiClient';
+import { useQueryClient } from '@tanstack/react-query';
+import { config } from '@/config';
+import type { Sprint } from '@/features/requests/hooks/useSprints';
+import type { SubTeam } from '@/features/requests/hooks/useSubTeams';
+import type { BoardLabel } from '@/features/requests/hooks/useBoardMetadata';
 
 const COLORS = [
   '#ff4757','#ff6b81','#ff7f50','#fdcb6e','#f9ca24','#a3cb38',
@@ -11,16 +18,12 @@ const COLORS = [
 ];
 const EMOJIS = ['🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡','📋','🔒','🌐','📱','💰','🔔','✅','🧪','🎯','🏷️'];
 
-function usePopoverPos(
-  btnRef: React.RefObject<HTMLButtonElement | null>,
-  open: boolean,
-) {
+function usePopoverPos(btnRef: React.RefObject<HTMLButtonElement | null>, open: boolean) {
   const [pos, setPos] = useState({ top: 0, left: 0 });
-
   const calc = useCallback(() => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const W = 330, H = 520;
+    const W = 330, H = 560;
     let left = r.right + 8;
     let top  = r.bottom - H;
     if (left + W > window.innerWidth - 8) left = r.left - W - 8;
@@ -38,17 +41,30 @@ function usePopoverPos(
   return pos;
 }
 
-/* ============================================================
-   Botón + Panel
-   ============================================================ */
 export function ConfigPopover() {
   const [open, setOpen] = useState(false);
-  const [tab,  setTab]  = useState<'categorias' | 'equipos' | 'sprints'>('categorias');
+  const [tab,  setTab]  = useState<'labels' | 'subteams' | 'sprints'>('labels');
   const btnRef   = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const pos      = usePopoverPos(btnRef, open);
   const { equipoActivo } = useBoardStore();
-  const store = useConfigStore();
+  const boardId  = config.DEFAULT_BOARD_ID;
+
+  const { data: teams = [] } = useBoardTeams(boardId);
+  const activeTeam = teams.find((t) => t.Board_Team_Code === equipoActivo);
+  const teamId = activeTeam?.Board_Team_ID ?? null;
+
+  const { data: labels   = [] } = useLabelsByTeamId(boardId, teamId);
+  const { data: sprints  = [] } = useSprints();
+  const { data: subTeams = [] } = useSubTeams(teamId);
+
+  const createSprint   = useCreateSprint();
+  const updateSprint   = useUpdateSprint();
+  const deleteSprint   = useDeleteSprint();
+  const createSubTeam  = useCreateSubTeam(teamId);
+  const updateSubTeam  = useUpdateSubTeam(teamId);
+  const deleteSubTeam  = useDeleteSubTeam(teamId);
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!open) return;
@@ -67,12 +83,28 @@ export function ConfigPopover() {
     return () => document.removeEventListener('keydown', fn);
   }, [open]);
 
+  async function handleCreateLabel(d: { name: string; color: string; icon: string }) {
+    if (!teamId) return;
+    await apiClient.call('createLabel', { boardId, teamId, name: d.name, color: d.color, icon: d.icon });
+    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
+  }
+
+  async function handleUpdateLabel(id: number, d: { name: string; color: string; icon: string }) {
+    await apiClient.call('updateLabel', { id, name: d.name, color: d.color, icon: d.icon });
+    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
+  }
+
+  async function handleDeleteLabel(id: number) {
+    await apiClient.call('deleteLabel', { id });
+    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
+  }
+
   return (
     <>
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        title="Configurar categorías, equipos y sprints"
+        title="Configurar etiquetas, sub-equipos y sprints"
         className={`cpop-trigger${open ? ' cpop-trigger--open' : ''}`}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -91,50 +123,47 @@ export function ConfigPopover() {
           </div>
 
           <div className="cpop-tabs">
-            {(['categorias', 'equipos', 'sprints'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`cpop-tab${tab === t ? ' cpop-tab--active' : ''}`}
-              >
-                {t === 'categorias' ? 'Categorías' : t === 'equipos' ? 'Equipos' : 'Sprints'}
+            {(['labels', 'subteams', 'sprints'] as const).map((t) => (
+              <button key={t} onClick={() => setTab(t)} className={`cpop-tab${tab === t ? ' cpop-tab--active' : ''}`}>
+                {t === 'labels' ? 'Etiquetas' : t === 'subteams' ? 'Sub-equipos' : 'Sprints'}
               </button>
             ))}
           </div>
 
           <div className="cpop-body">
-            {tab === 'categorias' && (
-              <ItemList
-                items={store.getCategorias(equipoActivo).map((c) => ({
-                  id: c.id, nombre: c.nombre, color: c.color, extra: c.icono,
-                }))}
-                onAdd={(d)        => store.addCategoria(equipoActivo, { nombre: d.nombre, color: d.color, icono: d.extra })}
-                onUpdate={(id, d) => store.updateCategoria(equipoActivo, id, { nombre: d.nombre, color: d.color, icono: d.extra })}
-                onRemove={(id)    => store.removeCategoria(equipoActivo, id)}
-                tipo="categoria"
-                addLabel="Nueva categoría"
+            {/* ── Etiquetas ── */}
+            {tab === 'labels' && teamId && (
+              <LabelList
+                labels={labels}
+                onAdd={handleCreateLabel}
+                onUpdate={handleUpdateLabel}
+                onDelete={handleDeleteLabel}
               />
             )}
-
-            {tab === 'equipos' && (
-              <ItemList
-                items={store.getEquipos(equipoActivo).map((e) => ({
-                  id: e.id, nombre: e.nombre, color: e.color, extra: e.siglas,
-                }))}
-                onAdd={(d)        => store.addEquipo(equipoActivo, { nombre: d.nombre, color: d.color, siglas: d.extra ?? '' })}
-                onUpdate={(id, d) => store.updateEquipo(equipoActivo, id, { nombre: d.nombre, color: d.color, siglas: d.extra })}
-                onRemove={(id)    => store.removeEquipo(equipoActivo, id)}
-                tipo="equipo"
-                addLabel="Nuevo equipo"
-              />
+            {tab === 'labels' && !teamId && (
+              <p className="cpop-empty">Seleccioná un equipo en el board para ver sus etiquetas.</p>
             )}
 
+            {/* ── Sub-equipos ── */}
+            {tab === 'subteams' && teamId && (
+              <SubTeamList
+                subTeams={subTeams}
+                onAdd={(d) => createSubTeam.mutate(d)}
+                onUpdate={(id, d) => updateSubTeam.mutate({ id, ...d })}
+                onRemove={(id) => deleteSubTeam.mutate(id)}
+              />
+            )}
+            {tab === 'subteams' && !teamId && (
+              <p className="cpop-empty">Seleccioná un equipo en el board para ver sus sub-equipos.</p>
+            )}
+
+            {/* ── Sprints ── */}
             {tab === 'sprints' && (
-              <SprintList 
-                sprints={store.getSprints(equipoActivo)}
-                onAdd={(s)        => store.addSprint(equipoActivo, s)}
-                onUpdate={(id, s) => store.updateSprint(equipoActivo, id, s)}
-                onRemove={(id)    => store.removeSprint(equipoActivo, id)}
+              <SprintList
+                sprints={sprints}
+                onAdd={(s) => createSprint.mutate(s)}
+                onUpdate={(id, s) => updateSprint.mutate({ id, ...s })}
+                onRemove={(id) => deleteSprint.mutate(id)}
               />
             )}
           </div>
@@ -146,172 +175,101 @@ export function ConfigPopover() {
 }
 
 /* ============================================================
-   Lista genérica (categorías + equipos — sin cambios)
+   Lista de etiquetas
    ============================================================ */
-type FlatItem = { id: string; nombre: string; color: string; extra?: string };
-
-function ItemList({ items, onAdd, onUpdate, onRemove, tipo, addLabel }: {
-  items:    FlatItem[];
-  onAdd:    (d: Omit<FlatItem, 'id'>) => void;
-  onUpdate: (id: string, d: Omit<FlatItem, 'id'>) => void;
-  onRemove: (id: string) => void;
-  tipo:     'categoria' | 'equipo';
-  addLabel: string;
+function LabelList({ labels, onAdd, onUpdate, onDelete }: {
+  labels:   BoardLabel[];
+  onAdd:    (d: { name: string; color: string; icon: string }) => void;
+  onUpdate: (id: number, d: { name: string; color: string; icon: string }) => void;
+  onDelete: (id: number) => void;
 }) {
-  const [editId,  setEditId]  = useState<string | null>(null);
+  const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {items.length === 0 && !showNew && (
-        <p className="cpop-empty">
-          No hay {tipo === 'categoria' ? 'categorías' : 'equipos'} aún.
-        </p>
+      {labels.length === 0 && !showNew && (
+        <p className="cpop-empty">No hay etiquetas para este equipo.</p>
       )}
-
-      {items.map((item) =>
-        editId === item.id ? (
-          <ItemForm key={item.id} initial={item} tipo={tipo}
-            onSave={(d) => { onUpdate(item.id, d); setEditId(null); }}
+      {labels.map((label) =>
+        editId === label.Label_ID ? (
+          <LabelForm key={label.Label_ID}
+            initial={{ name: label.Label_Name, color: label.Label_Color, icon: label.Label_Icon }}
+            onSave={(d) => { onUpdate(label.Label_ID, d); setEditId(null); }}
             onCancel={() => setEditId(null)}
           />
         ) : (
-          <ItemRow key={item.id} item={item} tipo={tipo}
-            onEdit={() => { setShowNew(false); setEditId(item.id); }}
-            onRemove={() => onRemove(item.id)}
+          <ColorRow key={label.Label_ID}
+            color={label.Label_Color} icon={label.Label_Icon} name={label.Label_Name}
+            onEdit={() => { setShowNew(false); setEditId(label.Label_ID); }}
+            onDelete={() => onDelete(label.Label_ID)}
           />
         )
       )}
-
       {showNew ? (
-        <ItemForm tipo={tipo}
-          onSave={(d) => { onAdd(d); setShowNew(false); }}
-          onCancel={() => setShowNew(false)}
-        />
+        <LabelForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
       ) : (
-        <AddBtn label={addLabel} onClick={() => { setEditId(null); setShowNew(true); }} />
+        <AddBtn label="Nueva etiqueta" onClick={() => { setEditId(null); setShowNew(true); }} />
       )}
-    </div>
-  );
-}
-
-function ItemRow({ item, tipo, onEdit, onRemove }: {
-  item: FlatItem; tipo: 'categoria' | 'equipo';
-  onEdit: () => void; onRemove: () => void;
-}) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      className={`cpop-row${hov ? ' cpop-row--hov' : ''}`}
-    >
-      <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-      {tipo === 'categoria' && item.extra && <span style={{ fontSize: 13, lineHeight: 1 }}>{item.extra}</span>}
-      <span className="cpop-row__name">{item.nombre}</span>
-      {tipo === 'equipo' && item.extra && (
-        <span className="cpop-row__siglas" style={{ background: `${item.color}18`, color: item.color }}>
-          {item.extra}
-        </span>
-      )}
-      <div style={{ display: 'flex', gap: 3, opacity: hov ? 1 : 0, transition: 'opacity 0.12s' }}>
-        <SmBtn color="#00c8ff" onClick={onEdit} title="Editar">
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
-        </SmBtn>
-        <SmBtn color="#ff4757" onClick={onRemove} title="Eliminar">
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg>
-        </SmBtn>
-      </div>
-    </div>
-  );
-}
-
-function ItemForm({ initial, tipo, onSave, onCancel }: {
-  initial?:  Partial<FlatItem>;
-  tipo:      'categoria' | 'equipo';
-  onSave:    (d: Omit<FlatItem, 'id'>) => void;
-  onCancel:  () => void;
-}) {
-  const [nombre, setNombre] = useState(initial?.nombre ?? '');
-  const [color,  setColor]  = useState(initial?.color  ?? '#00c8ff');
-  const [extra,  setExtra]  = useState(initial?.extra  ?? '');
-  const canSave = nombre.trim() && (tipo === 'categoria' || extra.trim());
-
-  return (
-    <div className="cpop-form">
-      <div style={{ display: 'flex', gap: 6 }}>
-        <input
-          autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && canSave) onSave({ nombre: nombre.trim(), color, extra });
-            if (e.key === 'Escape') onCancel();
-          }}
-          placeholder={tipo === 'categoria' ? 'Nombre de la categoría...' : 'Nombre del equipo...'}
-          className="cpop-input"
-        />
-        {tipo === 'equipo' && (
-          <input
-            value={extra}
-            onChange={(e) => setExtra(e.target.value.toUpperCase().slice(0, 3))}
-            placeholder="AB"
-            className="cpop-input cpop-input--siglas"
-          />
-        )}
-      </div>
-
-      {tipo === 'categoria' && (
-        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>
-          {EMOJIS.map((e) => (
-            <button
-              key={e} type="button"
-              onClick={() => setExtra(extra === e ? '' : e)}
-              className={`cpop-emoji${extra === e ? ' cpop-emoji--active' : ''}`}
-            >{e}</button>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-        {COLORS.map((c) => (
-          <div
-            key={c} onClick={() => setColor(c)}
-            className="cpop-swatch"
-            style={{
-              background: c,
-              border: color === c ? '2px solid var(--txt)' : '2px solid transparent',
-              transform: color === c ? 'scale(1.25)' : 'scale(1)',
-            }}
-          />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-        <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
-        <button
-          onClick={() => canSave && onSave({ nombre: nombre.trim(), color, extra })}
-          className={`cpop-btn-save${canSave ? '' : ' cpop-btn-save--disabled'}`}
-        >GUARDAR</button>
-      </div>
     </div>
   );
 }
 
 /* ============================================================
-   Sprints — lista + CRUD
+   Lista de sub-equipos
    ============================================================ */
-
-function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
-  sprints:  Sprint[];
-  onAdd:    (s: Omit<Sprint, 'id'>) => void;
-  onUpdate: (id: string, patch: Partial<Omit<Sprint, 'id'>>) => void;
-  onRemove: (id: string) => void;
+function SubTeamList({ subTeams, onAdd, onUpdate, onRemove }: {
+  subTeams: SubTeam[];
+  onAdd:    (d: { name: string; color: string }) => void;
+  onUpdate: (id: number, d: { name: string; color: string }) => void;
+  onRemove: (id: number) => void;
 }) {
-  const [editId,  setEditId]  = useState<string | null>(null);
+  const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
 
-  /* Ordena por fechaInicio desc — el más reciente primero */
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {subTeams.length === 0 && !showNew && (
+        <p className="cpop-empty">No hay sub-equipos para este equipo.</p>
+      )}
+      {subTeams.map((st) =>
+        editId === st.Sub_Team_ID ? (
+          <SimpleColorForm key={st.Sub_Team_ID}
+            initial={{ name: st.Sub_Team_Name, color: st.Sub_Team_Color }}
+            onSave={(d) => { onUpdate(st.Sub_Team_ID, d); setEditId(null); }}
+            onCancel={() => setEditId(null)}
+          />
+        ) : (
+          <ColorRow key={st.Sub_Team_ID}
+            color={st.Sub_Team_Color} name={st.Sub_Team_Name}
+            onEdit={() => { setShowNew(false); setEditId(st.Sub_Team_ID); }}
+            onDelete={() => onRemove(st.Sub_Team_ID)}
+          />
+        )
+      )}
+      {showNew ? (
+        <SimpleColorForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
+      ) : (
+        <AddBtn label="Nuevo sub-equipo" onClick={() => { setEditId(null); setShowNew(true); }} />
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   Lista de sprints
+   ============================================================ */
+function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
+  sprints:  Sprint[];
+  onAdd:    (s: { text: string; startDate: string; endDate: string }) => void;
+  onUpdate: (id: number, s: { text: string; startDate: string; endDate: string }) => void;
+  onRemove: (id: number) => void;
+}) {
+  const [editId,  setEditId]  = useState<number | null>(null);
+  const [showNew, setShowNew] = useState(false);
+
   const sorted = [...sprints].sort(
-    (a, b) => new Date(b.fechaInicio).getTime() - new Date(a.fechaInicio).getTime()
+    (a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()
   );
 
   return (
@@ -319,26 +277,22 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
       {sorted.length === 0 && !showNew && (
         <p className="cpop-empty">No hay sprints definidos aún.</p>
       )}
-
       {sorted.map((sp) =>
-        editId === sp.id ? (
-          <SprintForm key={sp.id} initial={sp}
-            onSave={(d) => { onUpdate(sp.id, d); setEditId(null); }}
+        editId === sp.Sprint_ID ? (
+          <SprintForm key={sp.Sprint_ID}
+            initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }}
+            onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }}
             onCancel={() => setEditId(null)}
           />
         ) : (
-          <SprintRow key={sp.id} sprint ={sp}
-            onEdit={() => { setShowNew(false); setEditId(sp.id); }}
-            onRemove={() => onRemove(sp.id)}
+          <SprintRow key={sp.Sprint_ID} sprint={sp}
+            onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }}
+            onRemove={() => onRemove(sp.Sprint_ID)}
           />
         )
       )}
-
       {showNew ? (
-        <SprintForm
-          onSave={(d) => { onAdd(d); setShowNew(false); }}
-          onCancel={() => setShowNew(false)}
-        />
+        <SprintForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
       ) : (
         <AddBtn label="Nuevo sprint" onClick={() => { setEditId(null); setShowNew(true); }} />
       )}
@@ -346,39 +300,107 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
   );
 }
 
-function SprintRow({ sprint, onEdit, onRemove }: {
-  sprint: Sprint; onEdit: () => void; onRemove: () => void;
+/* ============================================================
+   Componentes compartidos
+   ============================================================ */
+function ColorRow({ color, icon, name, onEdit, onDelete }: {
+  color: string; icon?: string; name: string; onEdit: () => void; onDelete: () => void;
 }) {
   const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      className={`cpop-row${hov ? ' cpop-row--hov' : ''}`}
+    >
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      {icon && <span style={{ fontSize: 13 }}>{icon}</span>}
+      <span className="cpop-row__name">{name}</span>
+      <div style={{ display: 'flex', gap: 3, opacity: hov ? 1 : 0, transition: 'opacity 0.12s', marginLeft: 'auto' }}>
+        <SmBtn color="#00c8ff" onClick={onEdit} title="Editar">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
+        </SmBtn>
+        <SmBtn color="#ff4757" onClick={onDelete} title="Eliminar">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg>
+        </SmBtn>
+      </div>
+    </div>
+  );
+}
 
-  const fmt = (iso: string) => {
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  };
-
-  /* Estado visual del sprint */
-  const now   = new Date();
-  const start = new Date(sprint.fechaInicio);
-  const end   = new Date(sprint.fechaFin);
-  const isActive  = now >= start && now <= end;
-  const isPast    = now > end;
-  const statusColor = isActive ? '#00e5a0' : isPast ? '#b2bec3' : '#fdcb6e';
-  const statusLabel = isActive ? 'activo' : isPast ? 'pasado' : 'futuro';
+function LabelForm({ initial, onSave, onCancel }: {
+  initial?:  { name: string; color: string; icon: string };
+  onSave:    (d: { name: string; color: string; icon: string }) => void;
+  onCancel:  () => void;
+}) {
+  const [name,  setName]  = useState(initial?.name  ?? '');
+  const [color, setColor] = useState(initial?.color ?? '#00c8ff');
+  const [icon,  setIcon]  = useState(initial?.icon  ?? '');
+  const canSave = name.trim().length > 0;
 
   return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+    <div className="cpop-form">
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color, icon });
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder="Nombre de la etiqueta..." className="cpop-input"
+      />
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>
+        {EMOJIS.map((e) => (
+          <button key={e} type="button" onClick={() => setIcon(icon === e ? '' : e)}
+            className={`cpop-emoji${icon === e ? ' cpop-emoji--active' : ''}`}>{e}</button>
+        ))}
+      </div>
+      <ColorPicker color={color} onChange={setColor} />
+      <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color, icon })} onCancel={onCancel} />
+    </div>
+  );
+}
+
+function SimpleColorForm({ initial, onSave, onCancel }: {
+  initial?:  { name: string; color: string };
+  onSave:    (d: { name: string; color: string }) => void;
+  onCancel:  () => void;
+}) {
+  const [name,  setName]  = useState(initial?.name  ?? '');
+  const [color, setColor] = useState(initial?.color ?? '#00c8ff');
+  const canSave = name.trim().length > 0;
+
+  return (
+    <div className="cpop-form">
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color });
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder="Nombre del sub-equipo..." className="cpop-input"
+      />
+      <ColorPicker color={color} onChange={setColor} />
+      <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color })} onCancel={onCancel} />
+    </div>
+  );
+}
+
+function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () => void; onRemove: () => void }) {
+  const [hov, setHov] = useState(false);
+  const now   = new Date();
+  const start = new Date(sprint.Sprint_Start_Date);
+  const end   = new Date(sprint.Sprint_End_Date);
+  const isActive = now >= start && now <= end;
+  const isPast   = now > end;
+  const statusColor = isActive ? '#00e5a0' : isPast ? '#b2bec3' : '#fdcb6e';
+  const statusLabel = isActive ? 'activo' : isPast ? 'pasado' : 'futuro';
+  const fmt = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y}`; };
+
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       className={`cpop-row${hov ? ' cpop-row--hov' : ''}`}
       style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2, padding: '6px 8px' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-        {/* Dot de estado */}
         <div style={{ width: 7, height: 7, borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
-        <span className="cpop-row__name" style={{ flex: 1 }}>{sprint.nombre}</span>
-        <span style={{ fontSize: 9, color: statusColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          {statusLabel}
-        </span>
+        <span className="cpop-row__name" style={{ flex: 1 }}>{sprint.Sprint_Text}</span>
+        <span style={{ fontSize: 9, color: statusColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{statusLabel}</span>
         <div style={{ display: 'flex', gap: 3, opacity: hov ? 1 : 0, transition: 'opacity 0.12s' }}>
           <SmBtn color="#00c8ff" onClick={onEdit} title="Editar">
             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
@@ -389,74 +411,45 @@ function SprintRow({ sprint, onEdit, onRemove }: {
         </div>
       </div>
       <span style={{ fontSize: 10, color: 'var(--txt-muted)', paddingLeft: 13 }}>
-        {fmt(sprint.fechaInicio)} → {fmt(sprint.fechaFin)}
+        {fmt(sprint.Sprint_Start_Date)} → {fmt(sprint.Sprint_End_Date)}
       </span>
     </div>
   );
 }
 
 function SprintForm({ initial, onSave, onCancel }: {
-  initial?:  Partial<Sprint>;
-  onSave:    (d: Omit<Sprint, 'id'>) => void;
+  initial?:  { text: string; startDate: string; endDate: string };
+  onSave:    (d: { text: string; startDate: string; endDate: string }) => void;
   onCancel:  () => void;
 }) {
-  const [nombre,      setNombre]      = useState(initial?.nombre      ?? '');
-  const [fechaInicio, setFechaInicio] = useState(initial?.fechaInicio ?? '');
-  const [fechaFin,    setFechaFin]    = useState(initial?.fechaFin    ?? '');
-
-  const canSave = nombre.trim() && fechaInicio && fechaFin && fechaFin >= fechaInicio;
+  const [text,      setText]      = useState(initial?.text      ?? '');
+  const [startDate, setStartDate] = useState(initial?.startDate ?? '');
+  const [endDate,   setEndDate]   = useState(initial?.endDate   ?? '');
+  const canSave = text.trim() && startDate && endDate && endDate >= startDate;
 
   return (
     <div className="cpop-form">
-      <input
-        autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)}
+      <input autoFocus value={text} onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && canSave) onSave({ nombre: nombre.trim(), fechaInicio, fechaFin });
+          if (e.key === 'Enter' && canSave) onSave({ text: text.trim(), startDate, endDate });
           if (e.key === 'Escape') onCancel();
         }}
-        placeholder="Nombre del sprint..."
-        className="cpop-input"
+        placeholder="Nombre del sprint..." className="cpop-input"
       />
-
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 6 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-          <label style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Inicio
-          </label>
-          <input
-            type="date"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="cpop-input cpop-input--date"
-          />
+          <label style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Inicio</label>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="cpop-input cpop-input--date" />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-          <label style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Fin
-          </label>
-          <input
-            type="date"
-            value={fechaFin}
-            min={fechaInicio}
-            onChange={(e) => setFechaFin(e.target.value)}
-            className="cpop-input cpop-input--date"
-          />
+          <label style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fin</label>
+          <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="cpop-input cpop-input--date" />
         </div>
       </div>
-
-      {fechaFin && fechaInicio && fechaFin < fechaInicio && (
-        <p style={{ fontSize: 10, color: '#ff4757', margin: 0 }}>
-          La fecha de fin debe ser posterior al inicio.
-        </p>
+      {endDate && startDate && endDate < startDate && (
+        <p style={{ fontSize: 10, color: '#ff4757', margin: 0 }}>La fecha de fin debe ser posterior al inicio.</p>
       )}
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-        <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
-        <button
-          onClick={() => canSave && onSave({ nombre: nombre.trim(), fechaInicio, fechaFin })}
-          className={`cpop-btn-save${canSave ? '' : ' cpop-btn-save--disabled'}`}
-        >GUARDAR</button>
-      </div>
+      <FormActions canSave={!!canSave} onSave={() => canSave && onSave({ text: text.trim(), startDate, endDate })} onCancel={onCancel} />
     </div>
   );
 }
@@ -464,6 +457,29 @@ function SprintForm({ initial, onSave, onCancel }: {
 /* ============================================================
    Helpers compartidos
    ============================================================ */
+function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+      {COLORS.map((c) => (
+        <div key={c} onClick={() => onChange(c)} className="cpop-swatch"
+          style={{ background: c, border: color === c ? '2px solid var(--txt)' : '2px solid transparent', transform: color === c ? 'scale(1.25)' : 'scale(1)' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FormActions({ canSave, onSave, onCancel }: { canSave: boolean; onSave: () => void; onCancel: () => void }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+      <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
+      <button onClick={() => canSave && onSave()} className={`cpop-btn-save${canSave ? '' : ' cpop-btn-save--disabled'}`}>
+        GUARDAR
+      </button>
+    </div>
+  );
+}
+
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="cpop-add-btn">
@@ -475,21 +491,11 @@ function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
-function SmBtn({ color, onClick, title, children }: {
-  color: string; onClick: () => void; title: string; children: React.ReactNode;
-}) {
+function SmBtn({ color, onClick, title, children }: { color: string; onClick: () => void; title: string; children: React.ReactNode }) {
   const [hov, setHov] = useState(false);
   return (
-    <button
-      onClick={onClick} title={title}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        width: 20, height: 20, borderRadius: 4, border: 'none', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: hov ? `${color}28` : `${color}12`,
-        color, transition: 'background 0.12s',
-      }}
+    <button onClick={onClick} title={title} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ width: 20, height: 20, borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: hov ? `${color}28` : `${color}12`, color, transition: 'background 0.12s' }}
     >
       {children}
     </button>

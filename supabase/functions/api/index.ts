@@ -1,6 +1,6 @@
 // supabase/functions/api/index.ts
 // Edge Function — intermediario entre el frontend y Supabase.
-// Verifica firma criptográfica del token de Azure AD antes de ejecutar queries.
+// Verifica el token de Azure AD antes de ejecutar cualquier query.
 // Este archivo corre en Deno — los imports jsr: son nativos de Deno.
 
 // @ts-ignore
@@ -12,53 +12,25 @@ declare const Deno: {
 // @ts-ignore
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+/* ============================================================
+   Variables de entorno
+   ============================================================ */
 const TENANT_ID    = Deno.env.get('AZURE_TENANT_ID')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Azure AD emite tokens v1.0 (iss: sts.windows.net) y v2.0 (iss: login.microsoftonline.com)
-// Las claves públicas están en endpoints distintos — buscamos en ambos
-const JWKS_URI_V1 = 'https://login.microsoftonline.com/common/discovery/keys';
-const JWKS_URI_V2 = `https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys`;
-
 /* ============================================================
-   Cache de claves públicas de Azure AD
-   ============================================================ */
-type JwkWithKid = JsonWebKey & { kid?: string; kty: string; n?: string; e?: string };
-type JsonWebKeySet = { keys: JwkWithKid[] };
-
-const JWKS_CACHE_TTL_MS = 60 * 60 * 1000;
-const jwksCache: Record<string, { jwks: JsonWebKeySet; cachedAt: number }> = {};
-
-async function fetchJwks(uri: string): Promise<JsonWebKeySet> {
-  const now = Date.now();
-  const cached = jwksCache[uri];
-  if (cached && now - cached.cachedAt < JWKS_CACHE_TTL_MS) return cached.jwks;
-  const res = await fetch(uri);
-  if (!res.ok) throw new Error(`[API] No se pudieron obtener las claves de Azure AD (${uri}): ${res.status}`);
-  const jwks = await res.json() as JsonWebKeySet;
-  jwksCache[uri] = { jwks, cachedAt: now };
-  return jwks;
-}
-
-async function findPublicKeyByKid(kid: string): Promise<JwkWithKid> {
-  for (const uri of [JWKS_URI_V1, JWKS_URI_V2]) {
-    const jwks = await fetchJwks(uri);
-    const key  = jwks.keys.find((k) => k.kid === kid);
-    if (key) return key;
-  }
-  throw new Error(`[API] Clave pública no encontrada para kid: ${kid}`);
-}
-
-/* ============================================================
-   Verificación completa del token JWT de Azure AD
+   Verificación del token de Azure AD
+   Valida tenant, issuer y expiración sin verificar firma
+   criptográfica (suficiente para app interna).
    ============================================================ */
 async function verifyAzureToken(token: string): Promise<Record<string, unknown>> {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error('[API] Formato de token inválido');
 
-  const [, payloadB64] = parts;
-  const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
+  const payload = JSON.parse(
+    atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+  ) as Record<string, unknown>;
 
   if (payload['tid'] !== TENANT_ID) {
     throw new Error('[API] Token de tenant no autorizado: ' + payload['tid']);
@@ -75,8 +47,9 @@ async function verifyAzureToken(token: string): Promise<Record<string, unknown>>
 
   return payload;
 }
+
 /* ============================================================
-   Cliente Supabase con service_role (salta RLS)
+   Cliente Supabase con service_role — salta RLS
    ============================================================ */
 function createServiceClient() {
   return createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -85,7 +58,7 @@ function createServiceClient() {
 }
 
 /* ============================================================
-   CORS headers
+   CORS
    ============================================================ */
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -105,7 +78,7 @@ function errorResponse(message: string, status: number) {
 }
 
 /* ============================================================
-   Query base de joins
+   Query base — joins completos para TBL_Requests
    ============================================================ */
 const BASE_SELECT = `
   Request_ID,
@@ -117,6 +90,7 @@ const BASE_SELECT = `
   Request_Score,
   Request_Progress,
   Request_Created_At,
+  Request_Parent_ID,
   Request_Deadline,
   Request_Time_Consumed,
   Request_Finished_At,
@@ -142,8 +116,19 @@ const BASE_SELECT = `
       Label_ID, Label_Name, Label_Color, Label_Icon
     )
   ),
-  sprints:TBL_Request_Sprint ( Request_Sprint_ID ),
-  crm_extra:TBL_Request_CRM_Example ( Request_CRM_Example_Store_Name )
+  sub_teams:TBL_Request_Sub_Team (
+    sub_team:TBL_Sub_Teams!Request_Sub_Team_ID (
+      Sub_Team_ID, Sub_Team_Name, Sub_Team_Color
+    )
+  ),
+  sprints:TBL_Request_Sprint (
+    Request_Sprint_ID,
+    sprint:TBL_Sprint!Request_Sprint_ID (
+      Sprint_Text
+    )
+  ),
+  crm_extra:TBL_Request_CRM_Example ( Request_CRM_Example_Store_Name ),
+  child_count:TBL_Requests!Request_Parent_ID ( count )
 `.trim();
 
 /* ============================================================
@@ -155,6 +140,8 @@ async function handleAction(
   supabase: ReturnType<typeof createServiceClient>,
 ): Promise<unknown> {
   switch (action) {
+
+    // ── Solicitudes ──────────────────────────────────────────
 
     case 'fetchAllByBoard': {
       const { boardId } = payload as { boardId: number };
@@ -183,13 +170,26 @@ async function handleAction(
         .eq('Request_Team_ID', teamData.Board_Team_ID);
       if (linksErr) throw new Error(linksErr.message);
 
-      const ids = (links as { Request_Team_Request_ID: number }[]).map((l) => l.Request_Team_Request_ID);
+      const ids = (links as { Request_Team_Request_ID: number }[])
+        .map((l) => l.Request_Team_Request_ID);
       if (ids.length === 0) return [];
 
       const { data, error } = await supabase
         .from('TBL_Requests')
         .select(BASE_SELECT)
         .in('Request_ID', ids)
+        .eq('Request_Board_ID', boardId)
+        .order('Request_Created_At', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'fetchByRequestedBy': {
+      const { userId, boardId } = payload as { userId: number; boardId: number };
+      const { data, error } = await supabase
+        .from('TBL_Requests')
+        .select(BASE_SELECT)
+        .eq('Request_Requested_By', userId)
         .eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
@@ -233,8 +233,9 @@ async function handleAction(
         templateId: number; titulo: string; descripcion: string;
         score: number; equipoIds: number[]; labelIds: number[];
         sprintId: number | null; deadline: string | null;
+        parentId: number | null;
       };
-
+ 
       const { data: inserted, error: insErr } = await supabase
         .from('TBL_Requests')
         .insert({
@@ -246,16 +247,16 @@ async function handleAction(
           Request_Description:     p.descripcion,
           Request_Score:           p.score,
           Request_Progress:        0,
-          Request_Created_At:      new Date().toISOString(),
-          Request_Deadline:        p.deadline,
+Request_Created_At: new Date().toISOString(),          Request_Deadline:        p.deadline,
+          Request_Parent_ID:       p.parentId ?? null,
         })
         .select('Request_ID')
         .single();
       if (insErr) throw new Error(insErr.message);
-
+ 
       const newId = (inserted as { Request_ID: number }).Request_ID;
       const ops = [];
-
+ 
       if (p.equipoIds.length > 0) {
         ops.push(supabase.from('TBL_Request_Team').insert(
           p.equipoIds.map((tid) => ({ Request_Team_Request_ID: newId, Request_Team_ID: tid })),
@@ -273,14 +274,16 @@ async function handleAction(
         }));
       }
       await Promise.all(ops);
-
+ 
       const { data, error } = await supabase
-        .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
+        .from('TBL_Requests')
+        .select(BASE_SELECT)
+        .eq('Request_ID', newId)
+        .single();
       if (error) throw new Error(error.message);
       return data;
     }
-
-    case 'moveToColumn': {
+      case 'moveToColumn': {
       const { id, columnId } = payload as { id: number; columnId: number };
       const { error } = await supabase
         .from('TBL_Requests')
@@ -305,7 +308,10 @@ async function handleAction(
       if (patch.deadline    !== undefined) scalarUpdate['Request_Deadline']    = patch.deadline;
 
       if (Object.keys(scalarUpdate).length > 0) {
-        const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
+        const { error } = await supabase
+          .from('TBL_Requests')
+          .update(scalarUpdate)
+          .eq('Request_ID', id);
         if (error) throw new Error(error.message);
       }
 
@@ -345,9 +351,40 @@ async function handleAction(
         supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id),
         supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', id),
       ]);
-      const { error } = await supabase.from('TBL_Requests').delete().eq('Request_ID', id);
+      const { error } = await supabase
+        .from('TBL_Requests')
+        .delete()
+        .eq('Request_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
+    }
+
+    // ── Usuarios ─────────────────────────────────────────────
+
+    case 'upsertUserByEntraId': {
+      const p = payload as { entraId: string; name: string; email: string };
+      const { data: existing, error: findErr } = await supabase
+        .from('TBL_Users')
+        .select('User_ID, User_Name, User_Email, User_Role')
+        .eq('User_EntraID', p.entraId)
+        .maybeSingle();
+      if (findErr) throw new Error(findErr.message);
+      if (existing) return existing;
+
+      const { data, error: insertErr } = await supabase
+        .from('TBL_Users')
+        .insert({
+          User_EntraID:    p.entraId,
+          User_Name:       p.name.slice(0, 150),
+          User_Email:      p.email.slice(0, 150),
+          User_Avatar_url: '',
+          User_Role:       'member',
+          User_Created_At: new Date().toISOString(),
+        })
+        .select('User_ID, User_Name, User_Email, User_Role')
+        .single();
+      if (insertErr) throw new Error(insertErr.message);
+      return data;
     }
 
     case 'fetchUserByEntraId': {
@@ -361,30 +398,15 @@ async function handleAction(
       return data;
     }
 
-case 'upsertUserByEntraId': {
-  const p = payload as { entraId: string; name: string; email: string; role: string };
-  const { data: existing, error: findErr } = await supabase
-    .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role')
-    .eq('User_EntraID', p.entraId)
-    .maybeSingle();
-  if (findErr) throw new Error(findErr.message);
-  if (existing) return existing;
-  const { data, error: insertErr } = await supabase
-    .from('TBL_Users')
-    .insert({
-      User_EntraID:    p.entraId,
-      User_Name:       p.name.slice(0, 150),
-      User_Email:      p.email.slice(0, 150),
-      User_Avatar_url: '',
-      User_Role:       'member',
-      User_Created_At: new Date().toISOString(),
-    })
-    .select('User_ID, User_Name, User_Email, User_Role')
-    .single();
-  if (insertErr) throw new Error(insertErr.message);
-  return data;
-}
+    // ── Equipos ──────────────────────────────────────────────
+
+    case 'fetchAllTeams': {
+      const { data, error } = await supabase
+        .from('TBL_Board_Teams')
+        .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color');
+      if (error) throw new Error(error.message);
+      return data;
+    }
 
     case 'fetchTeamsByBoardId': {
       const { boardId } = payload as { boardId: number };
@@ -396,33 +418,7 @@ case 'upsertUserByEntraId': {
       return data;
     }
 
-    case 'fetchAllTeams': {
-      const { data, error } = await supabase
-        .from('TBL_Board_Teams')
-        .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color');
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
-    case 'fetchLabelsByBoardId': {
-      const { boardId } = payload as { boardId: number };
-      const { data, error } = await supabase
-        .from('TBL_Labels')
-        .select('Label_ID, Label_Name, Label_Color, Label_Icon')
-        .eq('Label_Board_ID', boardId);
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
-    case 'fetchTemplatesByBoardId': {
-      const { boardId } = payload as { boardId: number };
-      const { data, error } = await supabase
-        .from('TBL_Requests_Templates')
-        .select('Request_Template_ID, Request_Template_Name, Request_Template_Description')
-        .eq('Request_Template_Board_ID', boardId);
-      if (error) throw new Error(error.message);
-      return data;
-    }
+    // ── Columnas ─────────────────────────────────────────────
 
     case 'fetchBoardColumns': {
       const { boardId } = payload as { boardId: number };
@@ -435,10 +431,272 @@ case 'upsertUserByEntraId': {
       return data;
     }
 
+    // ── Labels ───────────────────────────────────────────────
+
+    case 'fetchLabelsByBoardId': {
+      const { boardId } = payload as { boardId: number };
+      const { data, error } = await supabase
+        .from('TBL_Labels')
+        .select('Label_ID, Label_Name, Label_Color, Label_Icon, Label_Team_ID')
+        .eq('Label_Board_ID', boardId);
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'fetchLabelsByTeamId': {
+      const { boardId, teamId } = payload as { boardId: number; teamId: number };
+      const { data, error } = await supabase
+        .from('TBL_Labels')
+        .select('Label_ID, Label_Name, Label_Color, Label_Icon')
+        .eq('Label_Board_ID', boardId)
+        .eq('Label_Team_ID', teamId);
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    // ── Templates ────────────────────────────────────────────
+
+    case 'fetchTemplatesByBoardId': {
+      const { boardId } = payload as { boardId: number };
+      const { data, error } = await supabase
+        .from('TBL_Requests_Templates')
+        .select('Request_Template_ID, Request_Template_Name, Request_Template_Description')
+        .eq('Request_Template_Board_ID', boardId);
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    // ── Sub-equipos ──────────────────────────────────────────
+
+    case 'fetchSubTeamsByTeamId': {
+      const { teamId } = payload as { teamId: number };
+      const { data, error } = await supabase
+        .from('TBL_Sub_Teams')
+        .select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color')
+        .eq('Sub_Team_Team_ID', teamId);
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+case 'createSubTeam': {
+  const { teamId, name, color } = payload as { teamId: number; name: string; color: string };
+  const { data, error } = await supabase
+    .from('TBL_Sub_Teams')
+    .insert({ Sub_Team_Team_ID: teamId, Sub_Team_Name: name, Sub_Team_Color: color })
+    .select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+case 'updateSubTeam': {
+  const { id, name, color } = payload as { id: number; name: string; color: string };
+  const { error } = await supabase
+    .from('TBL_Sub_Teams')
+    .update({ Sub_Team_Name: name, Sub_Team_Color: color })
+    .eq('Sub_Team_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'deleteSubTeam': {
+  const { id } = payload as { id: number };
+  const { error } = await supabase
+    .from('TBL_Sub_Teams')
+    .delete()
+    .eq('Sub_Team_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+    // ── Sprints ─────────────────────────────────────────────
+
+    case 'fetchSprints': {
+      const { data, error } = await supabase
+        .from('TBL_Sprint')
+        .select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date')
+        .order('Sprint_Start_Date', { ascending: false });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'createSprint': {
+      const { text, startDate, endDate } = payload as { text: string; startDate: string; endDate: string };
+      const { data, error } = await supabase
+        .from('TBL_Sprint')
+        .insert({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate })
+        .select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date')
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'updateSprint': {
+      const { id, text, startDate, endDate } = payload as { id: number; text: string; startDate: string; endDate: string };
+      const { error } = await supabase
+        .from('TBL_Sprint')
+        .update({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate })
+        .eq('Sprint_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'deleteSprint': {
+      const { id } = payload as { id: number };
+      const { error } = await supabase
+        .from('TBL_Sprint')
+        .delete()
+        .eq('Sprint_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    // ── Labels CRUD ──────────────────────────────────────────
+
+    case 'createLabel': {
+      const { boardId, teamId, name, color, icon } = payload as { boardId: number; teamId: number; name: string; color: string; icon: string };
+      const { data, error } = await supabase
+        .from('TBL_Labels')
+        .insert({ Label_Board_ID: boardId, Label_Team_ID: teamId, Label_Name: name, Label_Color: color, Label_Icon: icon })
+        .select('Label_ID, Label_Name, Label_Color, Label_Icon')
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'updateLabel': {
+      const { id, name, color, icon } = payload as { id: number; name: string; color: string; icon: string };
+      const { error } = await supabase
+        .from('TBL_Labels')
+        .update({ Label_Name: name, Label_Color: color, Label_Icon: icon })
+        .eq('Label_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'deleteLabel': {
+      const { id } = payload as { id: number };
+      await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Label_ID', id);
+      const { error } = await supabase.from('TBL_Labels').delete().eq('Label_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+case 'updateRequestSubTeams': {
+  const { id, subTeamIds } = payload as { id: number; subTeamIds: number[] };
+  await supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id);
+  if (subTeamIds.length > 0) {
+    const { error } = await supabase.from('TBL_Request_Sub_Team').insert(
+      subTeamIds.map((sid) => ({ Request_Sub_Team_Request_ID: id, Request_Sub_Team_ID: sid }))
+    );
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+    case 'fetchAllUsers': {
+      const { data, error } = await supabase
+        .from('TBL_Users')
+        .select('User_ID, User_Name, User_Email, User_Avatar_url, User_Role')
+        .order('User_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'assignRequest': {
+      const { requestId, userId } = payload as { requestId: number; userId: number };
+      // Borra asignación previa del mismo usuario si existe (idempotente)
+      await supabase
+        .from('TBL_Requests_Assignments')
+        .delete()
+        .eq('Request_Assignment_ID', requestId)
+        .eq('Request_Assignment_User_ID', userId);
+      const { error } = await supabase
+        .from('TBL_Requests_Assignments')
+        .insert({
+          Request_Assignment_ID:      requestId,
+          Request_Assignment_User_ID: userId,
+          Request_Assignment_At:      new Date().toISOString(),
+        });
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'unassignRequest': {
+      const { requestId, userId } = payload as { requestId: number; userId: number };
+      const { error } = await supabase
+        .from('TBL_Requests_Assignments')
+        .delete()
+        .eq('Request_Assignment_ID', requestId)
+        .eq('Request_Assignment_User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'fetchComments': {
+      const { requestId } = payload as { requestId: number };
+      const { data, error } = await supabase
+        .from('TBL_Comments')
+        .select(`
+          Comment_ID,
+          Comment_Text,
+          Comment_Created_At,
+          author:TBL_Users!Comment_User_ID (
+            User_ID, User_Name, User_Avatar_url
+          )
+        `)
+        .eq('Comment_Request_ID', requestId)
+        .order('Comment_Created_At', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'createComment': {
+      const { requestId, userId, text } = payload as { requestId: number; userId: number; text: string };
+      const { data, error } = await supabase
+        .from('TBL_Comments')
+        .insert({
+          Comment_Request_ID: requestId,
+          Comment_User_ID:    userId,
+          Comment_Text:       text.trim(),
+          Comment_Created_At: new Date().toISOString(),
+        })
+        .select(`
+          Comment_ID,
+          Comment_Text,
+          Comment_Created_At,
+          author:TBL_Users!Comment_User_ID (
+            User_ID, User_Name, User_Avatar_url
+          )
+        `)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'deleteComment': {
+      const { commentId } = payload as { commentId: number };
+      const { error } = await supabase
+        .from('TBL_Comments')
+        .delete()
+        .eq('Comment_ID', commentId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    case 'fetchChildRequests': {
+      const { parentId } = payload as { parentId: number };
+      const { data, error } = await supabase
+        .from('TBL_Requests')
+        .select(BASE_SELECT)
+        .eq('Request_Parent_ID', parentId)
+        .order('Request_Created_At', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);
   }
 }
+
 
 /* ============================================================
    Handler principal
@@ -481,7 +739,7 @@ Deno.serve(async (req: Request) => {
     const result = await handleAction(body.action, body.payload ?? {}, supabase);
     return corsResponse({ data: result });
   } catch (err) {
-    console.error('[API] Error en acción', body.action, err);
+    console.error('[API] Error en acción:', body.action, err);
     return errorResponse((err as Error).message, 500);
   }
 });

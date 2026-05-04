@@ -10,19 +10,24 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useBoardStyle } from '../hooks/useCustomizationStyles';
 import { KanbanColumn } from './KanbanColumn';
 import { RequestCard } from './RequestCard';
 import { RequestModal } from './RequestModal';
-import { CreateRequestModal } from './CreateRequestModal';
 import { COLUMNAS_BOARD } from '../types';
 import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
+import { useGraphServices } from '@/graph/GraphServicesProvider';
+import { config } from '@/config';
 
 type Props = {
-  board:  BoardData;
-  equipo: Equipo;
-  onMove: (id: string, columna: KanbanColumna) => void;
+  board:         BoardData;
+  equipo:        Equipo;
+  onMove:        (id: string, columna: KanbanColumna) => void;
+  extraRequest?: Request | null;
+  onModalId?:    (id: string | null) => void;
 };
 
 const COLUMN_IDS = new Set<string>([
@@ -38,42 +43,64 @@ const COLUMN_LABELS: Record<KanbanColumna, string> = {
   hecho:           'Hecho',
 };
 
-export function KanbanBoard({ board, equipo, onMove }: Props) {
-  const [activeCard, setActiveCard]     = useState<Request | null>(null);
-  const [overColumn, setOverColumn]     = useState<KanbanColumna | null>(null);
-  const [modalId, setModalId]           = useState<string | null>(null);
-  const [createColumn, setCreateColumn] = useState<KanbanColumna | null>(null);
-  const [localCreatedRequests, setLocalCreatedRequests] = useState<Request[]>([]);
+export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
+  const [activeCard,      setActiveCard]      = useState<Request | null>(null);
+  const [overColumn,      setOverColumn]      = useState<KanbanColumna | null>(null);
+  const [modalId,         setModalId]         = useState<string | null>(null);
+  // Modal padre apilado encima — siempre readOnly
+  const [parentModalId,   setParentModalId]   = useState<string | null>(null);
 
+  const navigate = useNavigate();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
+  const { Requests }    = useGraphServices();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  const mergedBoard: BoardData = {
-    sin_categorizar: [...(board.sin_categorizar ?? []), ...localCreatedRequests.filter((r) => r.columna === 'sin_categorizar')],
-    icebox:          [...(board.icebox          ?? []), ...localCreatedRequests.filter((r) => r.columna === 'icebox')],
-    backlog:         [...(board.backlog         ?? []), ...localCreatedRequests.filter((r) => r.columna === 'backlog')],
-    todo:            [...(board.todo            ?? []), ...localCreatedRequests.filter((r) => r.columna === 'todo')],
-    en_progreso:     [...(board.en_progreso     ?? []), ...localCreatedRequests.filter((r) => r.columna === 'en_progreso')],
-    hecho:           [...(board.hecho           ?? []), ...localCreatedRequests.filter((r) => r.columna === 'hecho')],
-  };
-
+  // Request principal (hija o raíz normal)
   const modalCard = modalId
-    ? Object.values(mergedBoard).flat().find((r) => r.id === modalId) ?? null
+    ? (Object.values(board).flat().find((r) => r.id === modalId) ?? extraRequest ?? null)
     : null;
 
+  // Request padre — fetch si no está en el board local
+  const parentInBoard = parentModalId
+    ? Object.values(board).flat().find((r) => r.id === parentModalId) ?? null
+    : null;
+
+  const { data: parentFetched } = useQuery<Request>({
+    queryKey: ['request', parentModalId],
+    queryFn:  () => Requests.fetchById(Number(parentModalId)),
+    enabled:  !!parentModalId && !parentInBoard && !config.USE_MOCK,
+    staleTime: 30_000,
+  });
+
+  const parentCard = parentInBoard ?? parentFetched ?? null;
+
+  function setModal(id: string | null) {
+    setModalId(id);
+    setParentModalId(null); // cerrar padre al cambiar de hija
+    onModalId?.(id);
+  }
+
+  function openParentModal(parentId: string) {
+    setParentModalId(parentId);
+  }
+
+  function closeParentModal() {
+    setParentModalId(null);
+  }
+
   function findColumn(id: string): KanbanColumna | null {
-    for (const [col, items] of Object.entries(mergedBoard)) {
+    for (const [col, items] of Object.entries(board)) {
       if (items.some((r) => r.id === id)) return col as KanbanColumna;
     }
     return null;
   }
 
   function handleDragStart({ active }: DragStartEvent) {
-    const card = Object.values(mergedBoard).flat().find((r) => r.id === String(active.id));
+    const card = Object.values(board).flat().find((r) => r.id === String(active.id));
     setActiveCard(card ?? null);
   }
 
@@ -88,39 +115,13 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
     setOverColumn(null);
     if (!over) return;
 
-    const activeId  = String(active.id);
-    const overId    = String(over.id);
-    const targetCol = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
+    const activeId   = String(active.id);
+    const overId     = String(over.id);
+    const targetCol  = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
-
-    const isLocalCreated = localCreatedRequests.some((r) => r.id === activeId);
-    if (isLocalCreated) {
-      setLocalCreatedRequests((prev) =>
-        prev.map((r) => (r.id === activeId ? { ...r, columna: targetCol } : r)),
-      );
-      return;
-    }
-
     onMove(activeId, targetCol);
-  }
-
-  function handleModalMove(id: string, columna: KanbanColumna) {
-    const isLocalCreated = localCreatedRequests.some((r) => r.id === id);
-    if (isLocalCreated) {
-      setLocalCreatedRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, columna } : r)),
-      );
-      return;
-    }
-    onMove(id, columna);
-  }
-
-  function handleCreateRequest(newRequest: Request) {
-    setLocalCreatedRequests((prev) => [newRequest, ...prev]);
-    setCreateColumn(null);
-    setModalId(newRequest.id);
   }
 
   const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
@@ -134,21 +135,16 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div
-          ref={scrollRef}
-          className="kanban"
-          style={kanbanStyle}
-          {...scrollHandlers}
-        >
+        <div ref={scrollRef} className="kanban" style={kanbanStyle} {...scrollHandlers}>
           {columnas.map((col) => (
             <KanbanColumn
               key={col}
               id={col}
               titulo={COLUMN_LABELS[col]}
-              requests={mergedBoard[col] ?? []}
+              requests={board[col] ?? []}
               isOver={overColumn === col}
-              onCardClick={(card) => setModalId(card.id)}
-              onAddClick={(columna) => setCreateColumn(columna)}
+              onCardClick={(card) => setModal(card.id)}
+              onAddClick={() => navigate('/new')}
             />
           ))}
         </div>
@@ -162,21 +158,33 @@ export function KanbanBoard({ board, equipo, onMove }: Props) {
         </DragOverlay>
       </DndContext>
 
+      {/* Modal principal (hija o raíz normal) */}
       {modalCard && (
         <RequestModal
           request={modalCard}
           equipo={equipo}
-          onClose={() => setModalId(null)}
-          onMove={handleModalMove}
+          onClose={() => setModal(null)}
+          onMove={(id, columna) => onMove(id, columna)}
+onOpenRequest={(id) => {
+  // Si la request actual es una hija, el id que llega es el padre → readOnly
+  // Si la request actual es una raíz, el id que llega es una hija → editable
+  if (modalCard?.parentId !== null) {
+    openParentModal(id);   // es el padre → readOnly
+  } else {
+    setModal(id);          // es una hija → editable normal
+  }
+}}
         />
       )}
 
-      {createColumn && (
-        <CreateRequestModal
+      {/* Modal padre apilado encima — readOnly */}
+      {parentCard && (
+        <RequestModal
+          request={parentCard}
           equipo={equipo}
-          initialColumn={createColumn}
-          onClose={() => setCreateColumn(null)}
-          onCreate={handleCreateRequest}
+          readOnly
+          onClose={closeParentModal}
+          onMove={() => {/* no-op en readOnly */}}
         />
       )}
     </>

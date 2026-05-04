@@ -5,7 +5,7 @@ import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { requestKeys } from '@/features/requests/hooks/useRequests';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
-import { useBoardTeams, useBoardLabels, useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
+import { useBoardTeams, useLabelsByTeamId, useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
 import { getTemplateDefinition } from '@/features/requests/templates/registry';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
@@ -84,7 +84,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function inputStyle(focused: boolean): React.CSSProperties {
   return {
     width:        '100%',
-    background:   'var(--bg-deep)',
+    background:   'transparent',
     border:       `1px solid ${focused ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`,
     borderRadius: 6,
     padding:      '10px 13px',
@@ -142,7 +142,6 @@ function StepEquipo({
           const Icon     = EQUIPO_ICONS[code];
           const selected = selectedTeamId === team.Board_Team_ID;
 
-          // Fallback si el código no está mapeado
           const dot    = colors?.dot    ?? team.Board_Team_Color;
           const glow   = colors?.glow   ?? `${team.Board_Team_Color}12`;
           const border = colors?.border ?? `${team.Board_Team_Color}30`;
@@ -153,18 +152,18 @@ function StepEquipo({
               type="button"
               onClick={() => onSelect(team.Board_Team_ID)}
               style={{
-                padding:      '22px 20px',
-                borderRadius: 10,
-                border:       `1.5px solid ${selected ? border : 'var(--border)'}`,
-                background:   selected ? glow : 'var(--bg-panel)',
-                cursor:       'pointer',
-                textAlign:    'left',
-                transition:   'all 0.15s',
-                position:     'relative',
-                overflow:     'hidden',
-                display:      'flex',
+                padding:       '22px 20px',
+                borderRadius:  10,
+                border:        `1.5px solid ${selected ? border : 'var(--border)'}`,
+                background:    selected ? glow : 'var(--bg-panel)',
+                cursor:        'pointer',
+                textAlign:     'left',
+                transition:    'all 0.15s',
+                position:      'relative',
+                overflow:      'hidden',
+                display:       'flex',
                 flexDirection: 'column',
-                gap:          10,
+                gap:           10,
               }}
               onMouseEnter={(e) => {
                 if (!selected) {
@@ -179,7 +178,6 @@ function StepEquipo({
                 }
               }}
             >
-              {/* Línea de acento superior */}
               <div style={{
                 position:   'absolute',
                 top:        0, left: 0, right: 0,
@@ -190,7 +188,6 @@ function StepEquipo({
                 transition: 'background 0.2s',
               }} />
 
-              {/* Check */}
               {selected && (
                 <div style={{
                   position:       'absolute',
@@ -209,7 +206,6 @@ function StepEquipo({
                 </div>
               )}
 
-              {/* Icono del equipo — mismo que el Sidebar */}
               <div style={{
                 width:          36,
                 height:         36,
@@ -236,7 +232,6 @@ function StepEquipo({
                 )}
               </div>
 
-              {/* Nombre y código */}
               <div>
                 <div style={{
                   fontFamily:    'var(--font-display)',
@@ -313,7 +308,6 @@ function StepTemplate({
   onNext:             () => void;
   onBack:             () => void;
 }) {
-  // Calcular la unión de templates permitidos por todos los equipos seleccionados
   const allowedTemplateIds = new Set<number>();
   for (const code of selectedTeamCodes) {
     const allowed = TEAM_TEMPLATES[code] ?? [1];
@@ -556,11 +550,10 @@ function StepForm({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Badge del template seleccionado */}
       <div style={{
-        display:      'flex',
-        alignItems:   'center',
-        gap:          10,
+        display:    'flex',
+        alignItems: 'center',
+        gap:        10,
         marginBottom: 4,
       }}>
         <span style={{ fontSize: 20 }}>{def.visual.icon}</span>
@@ -857,6 +850,89 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 /* ============================================================
+   Pantalla de éxito
+   ============================================================ */
+function SuccessScreen({ onHome }: { onHome: () => void }) {
+  return (
+    <div style={{
+      flex:           1,
+      display:        'flex',
+      flexDirection:  'column',
+      alignItems:     'center',
+      justifyContent: 'center',
+      gap:            28,
+      padding:        '0 28px',
+      textAlign:      'center',
+    }}>
+      {/* Ícono animado */}
+      <div style={{
+        width:        80, height: 80,
+        borderRadius: '50%',
+        background:   'rgba(0,229,160,0.08)',
+        border:       '1.5px solid rgba(0,229,160,0.3)',
+        display:      'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow:    '0 0 40px rgba(0,229,160,0.12)',
+      }}>
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <path
+            d="M6 17l8 8 14-14"
+            stroke="#00e5a0"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      {/* Texto */}
+      <div style={{ maxWidth: 400 }}>
+        <h2 style={{
+          fontFamily:    'var(--font-display)',
+          fontSize:      24,
+          fontWeight:    700,
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          color:         'var(--txt)',
+          marginBottom:  12,
+        }}>
+          Solicitud enviada
+        </h2>
+        <p style={{
+          fontSize:   14,
+          color:      'var(--txt-muted)',
+          lineHeight: 1.75,
+        }}>
+          Recibimos tu pedido. El equipo correspondiente
+          lo revisará y estará trabajando en él a la brevedad.
+        </p>
+      </div>
+
+      {/* Botón */}
+      <button
+        type="button"
+        onClick={onHome}
+        style={{
+          marginTop:     4,
+          padding:       '12px 36px',
+          borderRadius:  7,
+          border:        'none',
+          background:    'linear-gradient(135deg, var(--accent-2), var(--accent))',
+          color:         'white',
+          fontFamily:    'var(--font-display)',
+          fontSize:      13,
+          fontWeight:    700,
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+          cursor:        'pointer',
+        }}
+      >
+        ← Volver al inicio
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
    Página principal
    ============================================================ */
 export function NuevaSolicitudPage() {
@@ -865,15 +941,15 @@ export function NuevaSolicitudPage() {
   const { Requests } = useGraphServices();
   const boardId      = config.DEFAULT_BOARD_ID;
 
-  const { data: currentUser }     = useCurrentUser();
-  const columnMap                 = useColumnMap(boardId);
-  const { data: teams    = [] }   = useBoardTeams(boardId);
-  const { data: labels   = [] }   = useBoardLabels(boardId);
-  const { data: templates = [] }  = useBoardTemplates(boardId);
+  const { data: currentUser }   = useCurrentUser();
+  const columnMap               = useColumnMap(boardId);
+  const { data: teams    = [] } = useBoardTeams(boardId);
 
   // Estado del flujo
   const [step,               setStep]               = useState<Step>('equipo');
   const [selectedTeamId,     setSelectedTeamId]     = useState<number | null>(null);
+  const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedTeamId);
+  const { data: templates = [] } = useBoardTemplates(boardId);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
 
   // Estado del formulario
@@ -885,9 +961,11 @@ export function NuevaSolicitudPage() {
   const [extraValues,      setExtraValues]      = useState<Record<string, string>>({});
   const [error,            setError]            = useState<string | null>(null);
 
+  // ── Estado de éxito ──
+  const [submitted, setSubmitted] = useState(false);
+
   function selectTeam(id: number) {
     setSelectedTeamId(id);
-    // Resetear template al cambiar equipo
     setSelectedTemplateId(null);
   }
 
@@ -901,7 +979,6 @@ export function NuevaSolicitudPage() {
     setExtraValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  // Código del equipo actualmente seleccionado
   const selectedTeamCodes = teams
     .filter((t) => t.Board_Team_ID === selectedTeamId)
     .map((t) => t.Board_Team_Code);
@@ -914,7 +991,6 @@ export function NuevaSolicitudPage() {
       const sinCategorizarColumnId = columnMap['sin_categorizar'];
       if (!sinCategorizarColumnId) throw new Error('Columna sin_categorizar no encontrada');
 
-      // Validar campos extra requeridos
       const def = getTemplateDefinition(selectedTemplateId);
       for (const field of def.extraFields) {
         if (field.required && !extraValues[field.key]?.trim()) {
@@ -932,13 +1008,14 @@ export function NuevaSolicitudPage() {
         prioridad,
         equipoIds:   selectedTeamId ? [selectedTeamId] : [],
         labelIds:    selectedLabelIds,
+        subTeamIds:  [],
         sprintId:    null,
         deadline:    deadline || null,
       });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: requestKeys.all });
-      navigate('/');
+      setSubmitted(true);
     },
     onError: (err: Error) => setError(err.message ?? 'Error al crear la solicitud.'),
   });
@@ -954,6 +1031,23 @@ export function NuevaSolicitudPage() {
   }
 
   const isReady = !!currentUser && !!columnMap && !!selectedTemplateId;
+
+  // ── Pantalla de éxito ──
+  if (submitted) {
+    return (
+      <div style={{
+        height:        '100%',
+        display:       'flex',
+        flexDirection: 'column',
+        maxWidth:      900,
+        width:         '100%',
+        margin:        '0 auto',
+        padding:       '0 28px 32px',
+      }}>
+        <SuccessScreen onHome={() => navigate('/home')} />
+      </div>
+    );
+  }
 
   return (
     <form
