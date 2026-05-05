@@ -1,38 +1,33 @@
 // src/features/requests/templates/types.ts
-// Tipos compartidos del sistema de templates de solicitudes.
-
-import type { Request, Prioridad } from '../types';
+import type { Request } from '../types';
 
 /* ============================================================
-   Configuración visual de un template
+   Tipos de campo soportados
+   ============================================================ */
+export type FieldType = 'text' | 'textarea' | 'select' | 'radio';
+
+export type TemplateExtraField = {
+  key:          string;
+  label:        string;
+  placeholder?: string;
+  required:     boolean;
+  type:         FieldType;
+  options?:     string[];   // select | radio
+  collapsible?: boolean;
+};
+
+/* ============================================================
+   Visual del template
    ============================================================ */
 export type TemplateVisual = {
-  /** Color dominante del template — usado en bordes, badges, accents */
-  accentColor:   string;
-  /** Color de fondo de la card */
-  cardBg?:       string;
-  /** Emoji o icono representativo */
-  icon:          string;
-  /** Etiqueta corta que aparece en la card */
-  badgeLabel:    string;
+  accentColor: string;
+  cardBg?:     string;
+  icon:        string;
+  badgeLabel:  string;
 };
 
 /* ============================================================
-   Campos extra por template
-   Define qué campos adicionales renderiza el formulario
-   y el modal para este template.
-   ============================================================ */
-export type TemplateExtraField = {
-  key:         string;
-  label:       string;
-  placeholder: string;
-  required:    boolean;
-  type:        'text' | 'textarea' | 'select';
-  options?:    string[]; // solo para type === 'select'
-};
-
-/* ============================================================
-   Definición completa de un template
+   Definición completa — viene de la DB
    ============================================================ */
 export type TemplateDefinition = {
   id:          number;
@@ -40,19 +35,18 @@ export type TemplateDefinition = {
   descripcion: string;
   visual:      TemplateVisual;
   extraFields: TemplateExtraField[];
+  teamIds:     number[];
+  isActive:    boolean;
 };
 
 /* ============================================================
-   Props del componente de card por template
+   Props de componentes
    ============================================================ */
 export type TemplateCardProps = {
-  request:    Request;
+  request:     Request;
   isDragging?: boolean;
 };
 
-/* ============================================================
-   Props del bloque de campos extra en formularios
-   ============================================================ */
 export type TemplateExtraFieldsProps = {
   values:   Record<string, string>;
   onChange: (key: string, value: string) => void;

@@ -1,3 +1,4 @@
+// src/features/requests/components/RequestCard.tsx
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -8,7 +9,8 @@ import {
   usePriorityColor,
 } from '../hooks/useCustomizationStyles';
 import { useTheme } from '@/store/useTheme';
-import { getTemplateDefinition } from '../templates/registry';
+import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/hooks/useBoardMetadata';
+import { config } from '@/config';
 import type { Request } from '../types';
 
 type Props = {
@@ -83,10 +85,13 @@ function Chips({ items, accent }: { items: string[]; accent?: string }) {
 export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
-  const { theme: uiTheme } = useTheme();
-  const isBeingDragged     = isSortableDragging || isDragging;
-  const progreso           = request.progreso ?? 0;
-  const showProgressCol    = request.columna === 'en_progreso' || request.columna === 'hecho';
+  // Templates desde cache — staleTime: Infinity, sin refetch extra
+  const { data: allTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
+
+  const { theme: uiTheme }         = useTheme();
+  const isBeingDragged             = isSortableDragging || isDragging;
+  const progreso                   = request.progreso ?? 0;
+  const showProgressCol            = request.columna === 'en_progreso' || request.columna === 'hecho';
 
   const cardClasses                = useCardClasses(request.prioridad);
   const { showDesc, showProgress } = useCardVisibility();
@@ -95,13 +100,12 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const shouldShowProgress         = showProgressCol && showProgress;
 
   const templateId   = request.templateId ?? 1;
-  const template     = getTemplateDefinition(templateId);
+  const template     = getTemplateDefinition(templateId, allTemplates);
   const isNonDefault = templateId !== 1;
   const accent       = template.visual.accentColor;
 
-  const isSubRequest = (request.parentId ?? null) !== null;
-  const childCount   = request.childCount ?? 0;
-
+  const isSubRequest   = (request.parentId ?? null) !== null;
+  const childCount     = request.childCount ?? 0;
   const hasDeadline    = !!request.deadline;
   const isVencida      = hasDeadline && new Date(request.deadline!) < new Date();
   const primerAsignado = request.assignees?.[0] ?? null;
@@ -208,14 +212,12 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
           <MetaRow icon={<IconCal />} label="Fecha límite">
             <span style={{ color: isVencida ? 'var(--danger)' : 'var(--txt)', fontSize: 11 }}>
               {new Date(request.deadline!).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric' })}
-              {isVencida && <span style={{ marginLeft: 5, fontSize: 8, fontWeight: 700, color: 'var(--danger)', background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.25)', borderRadius: 3, padding: '1px 4px' }}>VENCIDA</span>}
+              {isVencida && (
+                <span style={{ marginLeft: 5, fontSize: 8, fontWeight: 700, color: 'var(--danger)', background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.25)', borderRadius: 3, padding: '1px 4px' }}>
+                  VENCIDA
+                </span>
+              )}
             </span>
-          </MetaRow>
-        )}
-
-        {request.extraFields?.templateType === 'crm' && request.extraFields.storeName && (
-          <MetaRow icon={<span style={{ fontSize: 10 }}>🏪</span>} label="Tienda">
-            <span style={{ color: accent, fontWeight: 600, fontSize: 11 }}>{request.extraFields.storeName}</span>
           </MetaRow>
         )}
       </div>

@@ -5,6 +5,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-001',
       templateId: 1,
+      parentId: null,
       titulo: 'Botón de pago no responde en Safari',
       descripcion: 'El botón de checkout no dispara el evento en Safari 17',
       solicitante: 'Juan Esteban',
@@ -33,6 +34,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-002',
       templateId: 1,
+      parentId: null,
       titulo: 'Cambiar texto en footer del catálogo',
       descripcion: 'Actualizar copyright a 2026',
       solicitante: 'Pedro Gomez',
@@ -63,6 +65,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-003',
       templateId: 1,
+      parentId: null,
       titulo: 'Rediseño de pantalla de inicio v3',
       descripcion: 'Propuesta de nuevo diseño para homepage',
       solicitante: 'Juan Esteban',
@@ -91,6 +94,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-009',
       templateId: 1,
+      parentId: null,
       titulo: 'Migración de base de datos a Azure SQL',
       descripcion: 'Evaluar migración del servidor actual a Azure SQL',
       solicitante: 'Carlos Ruiz',
@@ -121,6 +125,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-004',
       templateId: 1,
+      parentId: null,
       titulo: 'Validación de formulario falla con correos que tienen +',
       descripcion: 'El campo email rechaza correos con + en el alias',
       solicitante: 'Juan Esteban',
@@ -149,6 +154,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-005',
       templateId: 1,
+      parentId: null,
       titulo: 'Tooltip de precio no visible en pantallas pequeñas',
       descripcion: 'En viewport 320px el tooltip se sale del contenedor',
       solicitante: 'Maria Lopez',
@@ -177,6 +183,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-010',
       templateId: 1,
+      parentId: null,
       titulo: 'Dashboard de retención de clientes',
       descripcion: 'Crear vista con métricas de churn mensual',
       solicitante: 'Juan Esteban',
@@ -207,6 +214,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-006',
       templateId: 1,
+      parentId: null,
       titulo: 'Página de checkout rompe en IE11',
       descripcion: 'Clientes corporativos reportan pantalla en blanco',
       solicitante: 'Sofia Mejia',
@@ -235,6 +243,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-011',
       templateId: 1,
+      parentId: null,
       titulo: 'Integrar CRM con Salesforce',
       descripcion: 'Sincronizar contactos y deals con la API de Salesforce',
       solicitante: 'Juan Esteban',
@@ -265,6 +274,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-007',
       templateId: 1,
+      parentId: null,
       titulo: 'Ajustar paleta de colores según guía de marca 2026',
       descripcion: 'Actualizar variables CSS con nuevos tokens de diseño',
       solicitante: 'Juan Esteban',
@@ -293,6 +303,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-012',
       templateId: 1,
+      parentId: null,
       titulo: 'Pipeline de datos para reporte semanal',
       descripcion: 'Automatizar extracción y limpieza de datos de ventas',
       solicitante: 'Carlos Ruiz',
@@ -323,6 +334,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-008',
       templateId: 1,
+      parentId: null,
       titulo: 'Integrar Google Tag Manager en landing',
       descripcion: 'Script GTM instalado y verificado',
       solicitante: 'Juan Esteban',
@@ -351,6 +363,7 @@ export const MOCK_BOARD: BoardData = {
     {
       id: 'mock-013',
       templateId: 1,
+      parentId: null,
       titulo: 'Segmentación de leads por comportamiento',
       descripcion: 'Reglas de scoring implementadas en HubSpot',
       solicitante: 'Ana Torres',

@@ -4,27 +4,24 @@ import { createPortal } from 'react-dom';
 import { X, ChevronDown as ChevDown, GitFork } from 'lucide-react';
 import { PRIORIDADES } from '../types';
 import type { Prioridad } from '../types';
-import { useLabelsByTeamId, useBoardTeams, useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
-import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
-import { useSprints } from '@/features/requests/hooks/useSprints';
-import { useUsers } from '@/features/requests/hooks/useUsers';
+import {
+  useLabelsByTeamId,
+  useBoardTeams,
+  useBoardTemplates,
+  getTemplateDefinition,
+} from '@/features/requests/hooks/useBoardMetadata';
+import { useSubTeams }    from '@/features/requests/hooks/useSubTeams';
+import { useSprints }     from '@/features/requests/hooks/useSprints';
+import { useUsers }       from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
-import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
+import { useColumnMap }   from '@/features/requests/hooks/useColumnMap';
 import { useCreateRequest } from '@/features/requests/hooks/useCreateRequest';
-import { getTemplateDefinition } from '@/features/requests/templates/registry';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 
 /* ── Tipos ── */
 type Step = 'equipo' | 'template' | 'form';
-
-const TEAM_TEMPLATES: Record<string, number[]> = {
-  desarrollo: [1],
-  crm:        [1, 2],
-  sistemas:   [1],
-  analisis:   [1],
-};
 
 const PRI_COLOR: Record<Prioridad, string> = {
   baja:    'var(--txt-muted)',
@@ -117,7 +114,7 @@ function CalendarPickerDropdown({ value, onChange }: { value: string; onChange: 
     setOpen(false);
   }
 
-  const sel = value ? new Date(value + 'T12:00:00') : null;
+  const sel        = value ? new Date(value + 'T12:00:00') : null;
   const selectedDay = sel && sel.getFullYear() === viewYear && sel.getMonth() === viewMonth ? sel.getDate() : null;
   const todayDay    = today.getFullYear() === viewYear && today.getMonth() === viewMonth ? today.getDate() : null;
   const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
@@ -145,7 +142,9 @@ function CalendarPickerDropdown({ value, onChange }: { value: string; onChange: 
               const isSelected = day === selectedDay;
               const isToday    = day === todayDay;
               return (
-                <button key={i} onClick={() => selectDay(day)} style={{ width: '100%', aspectRatio: '1', borderRadius: 5, fontSize: 11, fontWeight: isSelected ? 700 : 400, border: isSelected ? 'none' : isToday ? '1px solid var(--accent)' : '1px solid transparent', background: isSelected ? 'var(--accent)' : 'transparent', color: isSelected ? 'white' : isToday ? 'var(--accent)' : 'var(--txt)', cursor: 'pointer', transition: 'all 0.1s' }} onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)'; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
+                <button key={i} onClick={() => selectDay(day)} style={{ width: '100%', aspectRatio: '1', borderRadius: 5, fontSize: 11, fontWeight: isSelected ? 700 : 400, border: isSelected ? 'none' : isToday ? '1px solid var(--accent)' : '1px solid transparent', background: isSelected ? 'var(--accent)' : 'transparent', color: isSelected ? 'white' : isToday ? 'var(--accent)' : 'var(--txt)', cursor: 'pointer', transition: 'all 0.1s' }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
                   {day}
                 </button>
               );
@@ -189,7 +188,9 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 /* ── Step 1: Equipo ── */
-function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void }) {
+function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
+  teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void;
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ marginBottom: 20, flexShrink: 0 }}>
@@ -239,12 +240,20 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
 }
 
 /* ── Step 2: Template ── */
-function StepTemplate({ templates, selectedTeamCodes, selectedTemplateId, onSelect, onNext, onBack }: { templates: BoardTemplate[]; selectedTeamCodes: string[]; selectedTemplateId: number | null; onSelect: (id: number) => void; onNext: () => void; onBack: () => void }) {
-  const allowedIds = new Set<number>();
-  for (const code of selectedTeamCodes) {
-    (TEAM_TEMPLATES[code] ?? [1]).forEach((id) => allowedIds.add(id));
-  }
-  const filtered = templates.filter((t) => allowedIds.has(t.Request_Template_ID));
+function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: {
+  templates:           BoardTemplate[];
+  selectedBoardTeamId: number | null;
+  selectedTemplateId:  number | null;
+  onSelect:            (id: number) => void;
+  onNext:              () => void;
+  onBack:              () => void;
+}) {
+  // Filtrar por equipo usando Request_Template_Teams de la DB
+  const filtered = templates.filter((t) =>
+    t.Request_Template_Is_Active &&
+    (t.Request_Template_Teams?.length === 0 || // sin restricción = disponible para todos
+     (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId)))
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -254,9 +263,10 @@ function StepTemplate({ templates, selectedTeamCodes, selectedTemplateId, onSele
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 10, flex: 1, overflowY: 'auto' }}>
         {filtered.map((t) => {
-          const def      = getTemplateDefinition(t.Request_Template_ID);
-          const selected = selectedTemplateId === t.Request_Template_ID;
-          const accent   = def.visual.accentColor;
+          const selected   = selectedTemplateId === t.Request_Template_ID;
+          const accent     = t.Request_Template_Color ?? '#00c8ff';
+          const icon       = t.Request_Template_Icon  ?? '📋';
+          const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
           return (
             <button key={t.Request_Template_ID} type="button" onClick={() => onSelect(t.Request_Template_ID)}
               style={{ padding: '20px 16px', borderRadius: 8, border: `1.5px solid ${selected ? accent + '70' : 'var(--border)'}`, background: selected ? `linear-gradient(135deg, ${accent}12, ${accent}06)` : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden' }}
@@ -264,13 +274,17 @@ function StepTemplate({ templates, selectedTeamCodes, selectedTemplateId, onSele
               onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${accent}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
-              {selected && <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{def.visual.icon}</div>
+              {selected && (
+                <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+              )}
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: selected ? accent : 'var(--txt)', marginBottom: 6 }}>{t.Request_Template_Name}</div>
               <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5 }}>{t.Request_Template_Description}</div>
-              {def.extraFields.length > 0 && (
+              {fieldCount > 0 && (
                 <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {def.extraFields.map((f) => (
+                  {t.Request_Template_Form_Schema.map((f) => (
                     <span key={f.key} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>+ {f.label}</span>
                   ))}
                 </div>
@@ -293,7 +307,12 @@ function StepTemplate({ templates, selectedTeamCodes, selectedTemplateId, onSele
 /* ── Primitivos ── */
 function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
-  return <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent', color: selected ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: selected ? 600 : 400, transition: 'background 0.1s' }}>{children}</div>;
+  return (
+    <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent', color: selected ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: selected ? 600 : 400, transition: 'background 0.1s' }}>
+      {children}
+    </div>
+  );
 }
 
 function Checkmark() {
@@ -301,7 +320,10 @@ function Checkmark() {
 }
 
 function SprintDot({ sprint }: { sprint: { Sprint_Start_Date: string; Sprint_End_Date: string } }) {
-  const now = new Date(); const color = now >= new Date(sprint.Sprint_Start_Date) && now <= new Date(sprint.Sprint_End_Date) ? '#00e5a0' : now > new Date(sprint.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
+  const now   = new Date();
+  const color = now >= new Date(sprint.Sprint_Start_Date) && now <= new Date(sprint.Sprint_End_Date)
+    ? '#00e5a0'
+    : now > new Date(sprint.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
   return <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />;
 }
 
@@ -317,8 +339,66 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
 }
 
+/* ── ExtraField renderer — soporta text, textarea, select, radio, collapsible ── */
+function ExtraFieldRenderer({ field, value, onChange, accent }: {
+  field:    import('@/features/requests/templates/types').TemplateExtraField;
+  value:    string;
+  onChange: (v: string) => void;
+  accent:   string;
+}) {
+  const [collapsed, setCollapsed] = useState(field.collapsible ?? false);
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: collapsed ? 0 : 8 }}>
+        <FieldLabel>{field.label}{field.required && ' *'}</FieldLabel>
+        {field.collapsible && (
+          <button type="button" onClick={() => setCollapsed((v) => !v)}
+            style={{ marginLeft: 'auto', marginBottom: 8, fontSize: 9, color: accent, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.7 }}>
+            {collapsed ? '▼ mostrar' : '▲ ocultar'}
+          </button>
+        )}
+      </div>
+      {!collapsed && (
+        <>
+          {field.type === 'textarea' && (
+            <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={3}
+              style={{ width: '100%', minHeight: 80, padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
+          )}
+          {field.type === 'text' && (
+            <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
+          )}
+          {field.type === 'select' && (
+            <select value={value} onChange={(e) => onChange(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: value ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer' }}>
+              <option value="">Seleccioná una opción…</option>
+              {(field.options ?? []).map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          {field.type === 'radio' && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {(field.options ?? []).map((opt) => {
+                const active = value === opt;
+                return (
+                  <button key={opt} type="button" onClick={() => onChange(opt)}
+                    style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 5, border: `1px solid ${active ? accent + '60' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.12s' }}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════
-   Step 3: Form — campos completos del modal original
+   CreateRequestModal
    ══════════════════════════════════════════════════════════════ */
 type Props = {
   onClose:      () => void;
@@ -331,18 +411,18 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const overlayRef = useRef<HTMLDivElement>(null);
   const boardId    = config.DEFAULT_BOARD_ID;
 
-  const { data: currentUser }     = useCurrentUser();
-  const { data: users       = [] } = useUsers();
-  const { data: sprints     = [] } = useSprints();
-  const { data: teams       = [] } = useBoardTeams(boardId);
+  const { data: currentUser }      = useCurrentUser();
+  const { data: users        = [] } = useUsers();
+  const { data: sprints      = [] } = useSprints();
+  const { data: teams        = [] } = useBoardTeams(boardId);
   const { data: allTemplates = [] } = useBoardTemplates(boardId);
-  const columnMap                  = useColumnMap(boardId);
+  const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
 
   // Wizard state
-  const [step, setStep] = useState<Step>('equipo');
-  const [selectedBoardTeamId,  setSelectedBoardTeamId]  = useState<number | null>(null);
-  const [selectedTemplateId,   setSelectedTemplateId]   = useState<number | null>(null);
+  const [step,               setStep]               = useState<Step>('equipo');
+  const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(null);
+  const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
   const { data: subTeams = [] } = useSubTeams(selectedBoardTeamId);
   const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedBoardTeamId);
@@ -359,7 +439,6 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const [userSearch,       setUserSearch]       = useState('');
   const [extraValues,      setExtraValues]      = useState<Record<string, string>>({});
 
-  const teamDD     = usePortalDropdown();
   const subDD      = usePortalDropdown();
   const catDD      = usePortalDropdown();
   const sprintDD   = usePortalDropdown();
@@ -381,13 +460,17 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
     cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s', textAlign: 'left',
   });
 
-  const selectedTeam   = teams.find((t) => t.Board_Team_ID === selectedBoardTeamId) ?? null;
-  const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers  = users.filter((u) => u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) || u.User_Email.toLowerCase().includes(userSearch.toLowerCase()));
-  const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
-  const selectedTeamCodes = teams.filter((t) => t.Board_Team_ID === selectedBoardTeamId).map((t) => t.Board_Team_Code);
-  const templateDef    = selectedTemplateId ? getTemplateDefinition(selectedTemplateId) : null;
+  // Derivar templateDef desde la DB — sin registry
+  const templateDef    = selectedTemplateId !== null
+    ? getTemplateDefinition(selectedTemplateId, allTemplates)
+    : null;
   const accent         = templateDef?.visual.accentColor ?? 'var(--accent)';
+  const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
+  const filteredUsers  = users.filter((u) =>
+    u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+  const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
 
   function handleToggleAssignee(userId: number) {
     setAssigneeIds((prev) => prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]);
@@ -396,13 +479,13 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   function selectTeam(id: number) {
     setSelectedBoardTeamId(id);
     setSelectedTemplateId(null);
+    setExtraValues({});
   }
 
   function handleCreate() {
     if (!titulo.trim() || !currentUser || !selectedTemplateId) return;
     const columnId = columnMap?.['sin_categorizar'] ?? 1;
 
-    // Validar campos extra del template
     if (templateDef) {
       for (const field of templateDef.extraFields) {
         if (field.required && !extraValues[field.key]?.trim()) return;
@@ -430,15 +513,13 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   }
 
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
-    (templateDef?.extraFields.filter((f) => f.required).every((f) => extraValues[f.key]?.trim()) ?? true);
+    (templateDef?.extraFields.filter((f) => f.required).every((f) => !!extraValues[f.key]?.trim()) ?? true);
 
-  // Header title por step
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}
-    >
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}>
       <div style={{ width: '100%', maxWidth: step === 'form' ? 780 : 680, maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: parentId ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
 
@@ -469,17 +550,21 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
           <StepIndicator step={step} />
 
-          {/* Step 1 */}
           {step === 'equipo' && (
             <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />
           )}
 
-          {/* Step 2 */}
           {step === 'template' && (
-            <StepTemplate templates={allTemplates} selectedTeamCodes={selectedTeamCodes} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />
+            <StepTemplate
+              templates={allTemplates}
+              selectedBoardTeamId={selectedBoardTeamId}
+              selectedTemplateId={selectedTemplateId}
+              onSelect={setSelectedTemplateId}
+              onNext={() => setStep('form')}
+              onBack={() => setStep('equipo')}
+            />
           )}
 
-          {/* Step 3: Form */}
           {step === 'form' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -487,7 +572,7 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
               {templateDef && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 16 }}>{templateDef.visual.icon}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: accent, background: `${accent}10`, border: `1px solid ${accent}30` }}>{templateDef.nombre}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: accent, background: `${accent}10`, border: `1px solid ${accent}30` }}>{templateDef.visual.badgeLabel}</span>
                   <button type="button" onClick={() => setStep('template')} style={{ fontSize: 10, color: 'var(--txt-muted)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 4, textDecoration: 'underline' }}>cambiar</button>
                 </div>
               )}
@@ -495,7 +580,8 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
               {/* Título */}
               <div>
                 <FieldLabel>Nombre de la solicitud *</FieldLabel>
-                <input autoFocus value={titulo} onChange={(e) => setTitulo(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && isFormReady) handleCreate(); }}
+                <input autoFocus value={titulo} onChange={(e) => setTitulo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && isFormReady) handleCreate(); }}
                   placeholder={parentId !== null ? 'Nombre de la sub-solicitud…' : 'Nombre de la solicitud…'}
                   style={{ width: '100%', border: `1px solid ${titulo ? `${accent}40` : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', borderRadius: 8, padding: '12px 14px', fontSize: 18, fontWeight: 600, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', transition: 'border-color 0.15s' }}
                   onFocus={(e) => { e.currentTarget.style.borderColor = parentId !== null ? 'rgba(167,139,250,0.45)' : 'rgba(0,200,255,0.4)'; }}
@@ -506,25 +592,21 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
               {/* Descripción */}
               <FieldBlock label="Descripción">
                 <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Describe el problema con detalle..." rows={3}
-                  style={{ width: '100%', minHeight: 80, padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }}
-                />
+                  style={{ width: '100%', minHeight: 80, padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
               </FieldBlock>
 
-              {/* Campos extra del template */}
+              {/* Campos extra del template — renderizados desde la DB */}
               {templateDef && templateDef.extraFields.length > 0 && (
                 <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${accent}20`, background: `${accent}05` }}>
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 14 }}>{templateDef.nombre} — Datos adicionales</div>
                   {templateDef.extraFields.map((field) => (
-                    <div key={field.key} style={{ marginBottom: 12 }}>
-                      <FieldLabel>{field.label}{field.required && ' *'}</FieldLabel>
-                      {field.type === 'textarea' ? (
-                        <textarea value={extraValues[field.key] ?? ''} onChange={(e) => setExtraValues((p) => ({ ...p, [field.key]: e.target.value }))} placeholder={field.placeholder} rows={3}
-                          style={{ width: '100%', minHeight: 80, padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
-                      ) : (
-                        <input value={extraValues[field.key] ?? ''} onChange={(e) => setExtraValues((p) => ({ ...p, [field.key]: e.target.value }))} placeholder={field.placeholder}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
-                      )}
-                    </div>
+                    <ExtraFieldRenderer
+                      key={field.key}
+                      field={field}
+                      value={extraValues[field.key] ?? ''}
+                      onChange={(v) => setExtraValues((p) => ({ ...p, [field.key]: v }))}
+                      accent={accent}
+                    />
                   ))}
                 </div>
               )}
@@ -536,7 +618,12 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
                       const active = prioridad === p;
-                      return <button key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
+                      return (
+                        <button key={p} onClick={() => setPrioridad(p)}
+                          style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>
+                          {PRIORIDADES[p]}
+                        </button>
+                      );
                     })}
                   </div>
                 </FieldBlock>
@@ -586,11 +673,16 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                   <div style={{ position: 'relative' }}>
                     <button ref={subDD.triggerRef} onClick={subDD.toggle} disabled={!selectedBoardTeamId} style={{ ...triggerStyle(subDD.open, '0,200,255'), opacity: selectedBoardTeamId ? 1 : 0.5 }}>
                       {selectedSubIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>{selectedBoardTeamId ? 'Sin sub-equipo' : 'Sin sub-equipo'}</span>
+                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin sub-equipo</span>
                         : selectedSubIds.map((sid) => {
                             const sub = subTeams.find((s) => s.Sub_Team_ID === sid);
                             if (!sub) return null;
-                            return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>;
+                            return (
+                              <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>
+                                {sub.Sub_Team_Name}
+                                <span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>
+                              </span>
+                            );
                           })}
                       <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
@@ -600,7 +692,13 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                           ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sub-equipos.</div>
                           : subTeams.map((sub) => {
                               const sel = selectedSubIds.includes(sub.Sub_Team_ID);
-                              return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>;
+                              return (
+                                <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}>
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} />
+                                  <span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>
+                                  {sel && <Checkmark />}
+                                </DropdownItem>
+                              );
                             })}
                       </PortalPanel>
                     )}
@@ -615,7 +713,8 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
                             <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>
-                              {label.Label_Icon && <span>{label.Label_Icon}</span>}{label.Label_Name}
+                              {label.Label_Icon && <span>{label.Label_Icon}</span>}
+                              {label.Label_Name}
                               <span onMouseDown={(e) => { e.stopPropagation(); setSelectedLabelIds((p) => p.filter((x) => x !== label.Label_ID)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>
                             </span>
                           ))}
@@ -627,7 +726,14 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                           ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas.</div>
                           : labels.map((label) => {
                               const sel = selectedLabelIds.includes(label.Label_ID);
-                              return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>;
+                              return (
+                                <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>
+                                  {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
+                                  <span style={{ flex: 1 }}>{label.Label_Name}</span>
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
+                                  {sel && <Checkmark />}
+                                </DropdownItem>
+                              );
                             })}
                       </PortalPanel>
                     )}
@@ -638,7 +744,9 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                 <FieldBlock label="Sprint">
                   <div style={{ position: 'relative' }}>
                     <button ref={sprintDD.triggerRef} onClick={sprintDD.toggle} style={{ ...triggerStyle(sprintDD.open, '162,155,254'), flexWrap: 'nowrap' }}>
-                      {selectedSprint ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></> : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
+                      {selectedSprint
+                        ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></>
+                        : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
                       <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
                     {sprintDD.open && (
@@ -646,9 +754,16 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                         {sprints.length === 0
                           ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
                           : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
-                              const sel = selectedSprintId === sp.Sprint_ID;
+                              const sel  = selectedSprintId === sp.Sprint_ID;
                               const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                              return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
+                              return (
+                                <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}>
+                                  <SprintDot sprint={sp} />
+                                  <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
+                                  <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>
+                                  {sel && <Checkmark />}
+                                </DropdownItem>
+                              );
                             })}
                       </PortalPanel>
                     )}
