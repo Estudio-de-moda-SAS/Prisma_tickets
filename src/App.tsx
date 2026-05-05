@@ -11,6 +11,7 @@ import { RequestsPage } from '@/pages/RequestsPage';
 import { StatsPage } from '@/pages/StatsPage';
 import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
+import EmailPreviewPage from '@/pages/EmailPreview';
 
 /* ============================================================
    ScrollToEquipo — cuando la URL tiene ?section=equipo-XXX
@@ -19,22 +20,25 @@ import { LoginPage } from '@/pages/LoginPage';
    ============================================================ */
 function ScrollToSection() {
   const { search } = useLocation();
+
   useEffect(() => {
-    const params  = new URLSearchParams(search);
+    const params = new URLSearchParams(search);
     const section = params.get('section');
+
     if (!section) return;
 
-    // Pequeño delay para que React haya renderizado la sección
     const timer = setTimeout(() => {
       const el = document.getElementById(section);
+
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Efecto de highlight breve
+
         const prev = el.style.transition;
         el.style.transition = 'box-shadow 0.3s';
-        el.style.boxShadow  = '0 0 0 2px rgba(0,200,255,0.45)';
+        el.style.boxShadow = '0 0 0 2px rgba(0,200,255,0.45)';
+
         setTimeout(() => {
-          el.style.boxShadow  = '';
+          el.style.boxShadow = '';
           el.style.transition = prev;
         }, 1200);
       }
@@ -63,6 +67,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!account) return <Navigate to="/login" replace />;
+
   return <>{children}</>;
 }
 
@@ -74,6 +79,9 @@ export default function App() {
     <Routes>
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Preview de correos */}
+      <Route path="/email-preview" element={<EmailPreviewPage />} />
 
       {/* Protegidas — todas dentro del AppLayout */}
       <Route
