@@ -19,7 +19,7 @@ export type ResolvedRole =
 // → Add groups claim → Security groups.
 
 function resolveRoleFromGroups(groups: string[]): ResolvedRole {
-  const g = config.GROUPS;
+  const g = (config as any).GROUPS;   ///esto lo cambio la ia de vs, no se que pueda pasar...
 
   // Admin tiene prioridad absoluta — si está en el grupo admin, es admin
   if (g.admin && groups.includes(g.admin)) {
