@@ -9,7 +9,7 @@ import { useRole } from '@/auth/roles';
 import { useBoardStore } from '@/store/boardStore';
 import { EQUIPOS } from '@/features/requests/types';
 import type { Equipo } from '@/features/requests/types';
-import { ConfigPopover } from '@/components/ConfigPopover';
+import { ConfigPanelTrigger } from '@/components/ConfigPanel';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
 
 export function Sidebar() {
@@ -219,7 +219,7 @@ function handleHomeEquipo(key: Equipo) {
         title="Contraer panel" style={{ flex: 1 }}>
         <PanelLeftClose size={14} /><span>Contraer</span>
       </button>
-      <ConfigPopover />
+      <ConfigPanelTrigger />
     </div>
   ) : (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -227,7 +227,7 @@ function handleHomeEquipo(key: Equipo) {
         title="Expandir panel" style={{ width: '100%' }}>
         <PanelLeftOpen size={14} />
       </button>
-      <ConfigPopover />
+      <ConfigPanelTrigger />
     </div>
   )}        {sidebarAbierto ? (
           <div className="sidebar__user">

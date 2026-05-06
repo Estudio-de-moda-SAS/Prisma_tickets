@@ -5,33 +5,40 @@ import { requestKeys } from './useRequests';
 import type { BoardData, Equipo, KanbanColumna } from '../types';
 
 type MovePayload = {
-  id:      string;
-  columna: KanbanColumna;
-  equipo?: Equipo;
+  id:       string;
+  columna:  KanbanColumna;
+  columnId?: number; // requerido en modo real para actualizar Supabase
 };
+
+type MutationContext = { snapshot: BoardData | undefined };
 
 export function useMoveRequest(equipo: Equipo) {
   const queryClient  = useQueryClient();
   const { Requests } = useGraphServices();
   const queryKey     = requestKeys.byEquipo(equipo);
 
-  return useMutation({
-mutationFn: (payload: MovePayload) =>
-  config.USE_MOCK
-    ? Promise.resolve({} as Awaited<ReturnType<typeof Requests.mover>>)
-    : Requests.mover({ id: payload.id, columna: payload.columna, equipo: payload.equipo }),
-    // 1. Mueve la tarjeta localmente de inmediato
-    onMutate: async (payload) => {
+  return useMutation<void, Error, MovePayload, MutationContext>({
+    mutationFn: async (payload) => {
+      if (config.USE_MOCK) return;
+      if (!payload.columnId) {
+        throw new Error('[useMoveRequest] columnId es requerido en modo real');
+      }
+      await Requests.moveToColumn({
+        id:       payload.id,
+        columna:  payload.columna,
+        columnId: payload.columnId,
+      });
+    },
+
+    // Actualización optimista — mueve la tarjeta localmente de inmediato
+    onMutate: async (payload): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey });
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
 
       queryClient.setQueryData<BoardData>(queryKey, (prev) => {
         if (!prev) return prev;
 
-        const card = Object.values(prev)
-          .flat()
-          .find((r) => r.id === payload.id);
-
+        const card = Object.values(prev).flat().find((r) => r.id === payload.id);
         if (!card) return prev;
 
         const next: BoardData = {
@@ -43,15 +50,19 @@ mutationFn: (payload: MovePayload) =>
           hecho:           [...prev.hecho],
         };
 
-        // Quita de todas las columnas
+        // Quita de la columna origen
         for (const col of Object.keys(next) as KanbanColumna[]) {
           next[col] = next[col].filter((r) => r.id !== payload.id);
         }
 
-        // Inserta en la columna destino
+        // Inserta en la columna destino con columnId actualizado si viene
         next[payload.columna] = [
           ...next[payload.columna],
-          { ...card, columna: payload.columna },
+          {
+            ...card,
+            columna:  payload.columna,
+            columnId: payload.columnId ?? card.columnId,
+          },
         ];
 
         return next;
@@ -60,18 +71,19 @@ mutationFn: (payload: MovePayload) =>
       return { snapshot };
     },
 
-    // 2. Revertir si falla
+    // Revertir si Supabase falla
     onError: (_err, _payload, context) => {
       if (context?.snapshot) {
         queryClient.setQueryData<BoardData>(queryKey, context.snapshot);
       }
     },
 
-    // 3. Solo revalida con SP real — en mock el estado local es la verdad
+    // Revalidar desde Supabase solo en modo real
     onSettled: () => {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });
       }
     },
   });
+  
 }

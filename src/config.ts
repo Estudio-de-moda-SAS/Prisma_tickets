@@ -1,25 +1,14 @@
 export const config = {
-  USE_MOCK: true,
-  BYPASS_AUTH: false,
-  // ── Azure AD Group GUIDs ────────────────────────────────────────────────────
-  // Reemplaza cada string vacío con el Object ID del grupo en Azure AD.
-  // Portal: Azure Active Directory → Groups → selecciona el grupo → Object ID
-  //
-  // Nombres de grupos en Azure AD:
-  //   desarrolloandux-ejecutor
-  //   crm-ejecutor
-  //   sistemasinfo-ejecutor
-  //   analisisdatos-ejecutor
-  //   admin
-  GROUPS: {
-    desarrollo: '',   // desarrolloandux-ejecutor  → Object ID
-    crm:        '',   // crm-ejecutor              → Object ID
-    sistemas:   '',   // sistemasinfo-ejecutor     → Object ID
-    analisis:   '',   // analisisdatos-ejecutor    → Object ID
-    admin:      '',   // admin                     → Object ID
-  },
+  // ── Modo de datos ────────────────────────────────────────────
+  // true  → usa mock data local (desarrollo sin backend)
+  // false → usa Supabase
+  USE_MOCK: false,
 
-  // ── Bypass de rol (solo desarrollo) ─────────────────────────────────────────
+  // ── Auth ─────────────────────────────────────────────────────
+  // true  → salta el login de Azure AD (solo desarrollo UI)
+  BYPASS_AUTH: false,
+
+  // ── Bypass de rol (solo desarrollo) ──────────────────────────
   // null       → comportamiento real: rol resuelto desde el token de Azure AD
   // 'admin'    → ve todo
   // 'member'   → home + stats + board de BYPASS_TEAM
@@ -28,4 +17,8 @@ export const config = {
 
   // Equipo activo cuando BYPASS_ROLE === 'member'
   BYPASS_TEAM: 'desarrollo' as 'desarrollo' | 'crm' | 'sistemas' | 'analisis',
+
+  // ── Board por defecto ────────────────────────────────────────
+  // Board_ID en Supabase que usa la app al inicializar
+  DEFAULT_BOARD_ID: 1,
 } as const;

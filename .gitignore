@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Env files
+# Supabase
+supabase/.temp
+
+# Environment variables — nunca commitear credenciales
+.env.local
+.env.*.local
 .env
-.env.*
