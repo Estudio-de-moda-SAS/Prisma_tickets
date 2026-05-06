@@ -11,7 +11,10 @@ import { RequestsPage } from '@/pages/RequestsPage';
 import { StatsPage } from '@/pages/StatsPage';
 import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { FullPageLoader } from '@/components/states/FullPageLoader';
+import { ForbiddenPage } from '@/components/states/ForbiddenPage';
 
+import { StatesPreviewPage } from '@/pages/StatesPreviewPage';
 /* ============================================================
    ScrollToEquipo — cuando la URL tiene ?section=equipo-XXX
    hace scroll suave al elemento con ese id una vez que el
@@ -19,22 +22,25 @@ import { LoginPage } from '@/pages/LoginPage';
    ============================================================ */
 function ScrollToSection() {
   const { search } = useLocation();
+
   useEffect(() => {
-    const params  = new URLSearchParams(search);
+    const params = new URLSearchParams(search);
     const section = params.get('section');
+
     if (!section) return;
 
-    // Pequeño delay para que React haya renderizado la sección
     const timer = setTimeout(() => {
       const el = document.getElementById(section);
+
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Efecto de highlight breve
+
         const prev = el.style.transition;
         el.style.transition = 'box-shadow 0.3s';
-        el.style.boxShadow  = '0 0 0 2px rgba(0,200,255,0.45)';
+        el.style.boxShadow = '0 0 0 2px rgba(0,200,255,0.45)';
+
         setTimeout(() => {
-          el.style.boxShadow  = '';
+          el.style.boxShadow = '';
           el.style.transition = prev;
         }, 1200);
       }
@@ -47,22 +53,29 @@ function ScrollToSection() {
 }
 
 /* ============================================================
-   Guard — redirige a /login si no hay sesión activa
+   Guard — valida sesión y, opcionalmente, roles permitidos
    ============================================================ */
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { ready, account } = useAuth();
+function RequireAuth({
+  children,
+  allowedRoles,
+}: {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}) {
+  const { ready, account, role } = useAuth();
 
   if (!ready) {
-    return (
-      <div className="login-page">
-        <span style={{ color: 'var(--txt-muted)', fontSize: 12, letterSpacing: 1 }}>
-          Iniciando...
-        </span>
-      </div>
-    );
+    return <FullPageLoader message="Validando sesión..." />;
   }
 
-  if (!account) return <Navigate to="/login" replace />;
+  if (!account) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles?.length && (!role || !allowedRoles.includes(role))) {
+    return <Navigate to="/forbidden" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -74,6 +87,11 @@ export default function App() {
     <Routes>
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
+
+<Route path="/states-preview" element={<StatesPreviewPage />} />
+
+      {/* Sin permisos */}
+      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       {/* Protegidas — todas dentro del AppLayout */}
       <Route
@@ -107,14 +125,43 @@ export default function App() {
         <Route path="requests/team/:equipo" element={<TeamRequestsPage />} />
 
         {/* Todas las solicitudes — vista admin/resolutor */}
-        <Route path="requests" element={<RequestsPage />} />
+        <Route
+          path="requests"
+          element={
+            <RequireAuth allowedRoles={['admin', 'resolutor']}>
+              <RequestsPage />
+            </RequireAuth>
+          }
+        />
 
         {/* Estadísticas */}
-        <Route path="stats" element={<StatsPage />} />
+        <Route
+          path="stats"
+          element={
+            <RequireAuth allowedRoles={['admin', 'lider']}>
+              <StatsPage />
+            </RequireAuth>
+          }
+        />
 
         {/* Automatizaciones */}
-        <Route path="automations" element={<AutomationsPage />} />
-        <Route path="automations/logs" element={<AutomationsPage />} />
+        <Route
+          path="automations"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <AutomationsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="automations/logs"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <AutomationsPage />
+            </RequireAuth>
+          }
+        />
       </Route>
 
       {/* Fallback */}
