@@ -1,0 +1,162 @@
+/* ============================================================
+   kanbanSkeleton.css — Prisma Tickets skeleton loader
+   ============================================================ */
+
+@keyframes sk-shimmer {
+  0%   { background-position: -700px 0; }
+  100% { background-position:  700px 0; }
+}
+
+@keyframes sk-pulse-border {
+  0%, 100% { border-color: rgba(0, 210, 200, 0.10); }
+  50%       { border-color: rgba(0, 210, 200, 0.22); }
+}
+
+.sk-shine {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.00)  0%,
+    rgba(0,210,200,0.07)   40%,
+    rgba(0,210,200,0.13)   50%,
+    rgba(0,210,200,0.07)   60%,
+    rgba(255,255,255,0.00) 100%
+  );
+  background-size: 700px 100%;
+  animation: sk-shimmer 2.2s infinite linear;
+}
+
+.sk-block { border-radius: 3px; }
+
+.sk-bg-base { background: rgba(0,0,0,0.05); }
+.sk-bg-mid  { background: rgba(0,0,0,0.03); }
+.sk-bg-low  { background: rgba(0,0,0,0.06); }
+
+.sk-accent-sin  { background: rgba(90,  106, 138, 0.25); }
+.sk-accent-ice  { background: rgba(96,  165, 250, 0.30); }
+.sk-accent-back { background: rgba(167, 139, 250, 0.30); }
+.sk-accent-todo { background: rgba(255, 165,   2, 0.30); }
+.sk-accent-prog { background: rgba(0,   200, 255, 0.30); }
+.sk-accent-done { background: rgba(0,   229, 160, 0.30); }/* ---- Board row: idéntico a .kanban ---- */
+.sk-board {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+
+/* ---- Columna base ---- */
+.sk-col {
+  flex: 0 0 320px;
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 500px;   /* ← igual que .kanban__col */
+  animation: sk-pulse-border 3s ease-in-out infinite;
+}
+
+.sk-col--narrow { flex: 0 0 280px; }
+
+.sk-col--sin  { background: rgba(46,  58,  85,  0.15); border: 1px dashed rgba(90,106,138,0.3); }
+.sk-col--ice  { background: rgba(96,  165, 250, 0.03); border: 1px solid  rgba(96,165,250,0.08); }
+.sk-col--back { background: rgba(167, 139, 250, 0.03); border: 1px solid  rgba(167,139,250,0.08); }
+.sk-col--todo { background: rgba(255, 165,   2, 0.03); border: 1px solid  rgba(255,165,2,0.08); }
+.sk-col--prog { background: rgba(0,   200, 255, 0.03); border: 1px solid  rgba(0,200,255,0.10); }
+.sk-col--done { background: rgba(0,   229, 160, 0.03); border: 1px solid  rgba(0,229,160,0.08); }
+
+/* ---- Header ---- */
+.sk-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sk-col-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sk-col-title { height: 11px; width: 90px; border-radius: 3px; }
+.sk-col-count { width: 28px; height: 18px; border-radius: 10px; }
+.sk-col-btn   { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; }
+
+/* ---- Card ---- */
+.sk-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(0,200,255,0.06);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 13px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.00)  0%,
+    rgba(0,210,200,0.07)   40%,
+    rgba(0,210,200,0.13)   50%,
+    rgba(0,210,200,0.07)   60%,
+    rgba(255,255,255,0.00) 100%
+  );
+  background-size: 700px 100%;
+  animation: sk-shimmer 2.2s infinite linear;
+  pointer-events: none;
+}
+
+.sk-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sk-tag  { height: 14px; width: 54px; border-radius: 10px; }
+.sk-prio { height: 14px; width: 38px; border-radius: 10px; }
+
+.sk-title-lg { height: 12px; width: 88%; }
+.sk-title-sm { height: 10px; width: 62%; }
+
+.sk-divider { height: 1px; background: var(--border-subtle); }
+
+.sk-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sk-avatar-row { display: flex; gap: 5px; }
+
+.sk-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--bg-deep, #0a0b10);
+  flex-shrink: 0;
+}
+
+.sk-date { height: 10px; width: 50px; border-radius: 3px; }
+
+.sk-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+
+.sk-progress-inner {
+  height: 100%;
+  border-radius: 2px;
+  opacity: 0.85;
+}

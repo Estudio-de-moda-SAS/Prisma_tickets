@@ -1,36 +1,71 @@
 import { useMemo } from 'react';
 import { useFilterStore } from '@/store/filterStore';
 import type { BoardData, Request } from '../types';
-import type { FilterCondition, FilterOperator } from '@/store/filterStore';
+import type { FilterCondition, FilterField, FilterOperator } from '@/store/filterStore';
 
 /* ============================================================
-   Evaluador de una condición individual
+   Extrae valores del campo como string[] normalizado.
+   Cada campo mapea al campo real del modelo Request.
+   ============================================================ */
+function extractValues(request: Request, field: FilterField): string[] {
+  const norm = (v: unknown) => String(v ?? '').toLowerCase().trim();
+
+  switch (field) {
+    // string[] directo
+    case 'subequipo':
+      return (request.subTeamNames ?? []).map(norm);
+
+    case 'categoria':
+      return (request.categoria ?? []).map(norm);
+
+    // array de objetos → extraer userName
+    case 'assignee':
+      return (request.assignees ?? []).map((a) => norm(a.userName));
+
+    // escalares
+    case 'titulo':
+    case 'prioridad':
+    case 'columna':
+    case 'solicitante': {
+      const raw = request[field as keyof Request];
+      return [norm(raw)];
+    }
+
+    default:
+      return [''];
+  }
+}
+
+function isEmpty(values: string[]): boolean {
+  return values.length === 0 || values.every((v) => v === '' || v === 'null' || v === 'undefined');
+}
+
+/* ============================================================
+   Evaluador de una condición
    ============================================================ */
 function evaluate(request: Request, cond: FilterCondition): boolean {
-  const raw        = request[cond.field as keyof Request];
-  const fieldValue = raw == null ? '' : String(raw).toLowerCase();
-  const condValue  = cond.value.toLowerCase().trim();
+  const values  = extractValues(request, cond.field);
+  const empty   = isEmpty(values);
+  const condVal = cond.value.toLowerCase().trim();
 
   switch (cond.operator as FilterOperator) {
-    case 'contiene':
-      return fieldValue.includes(condValue);
-    case 'no_contiene':
-      return !fieldValue.includes(condValue);
-    case 'es':
-      return condValue.split(',').map((v) => v.trim()).some((v) => fieldValue === v);
-    case 'no_es':
-      return condValue.split(',').map((v) => v.trim()).every((v) => fieldValue !== v);
-    case 'esta_vacio':
-      return fieldValue === '' || fieldValue === 'null' || fieldValue === 'undefined';
-    case 'no_esta_vacio':
-      return fieldValue !== '' && fieldValue !== 'null' && fieldValue !== 'undefined';
-    default:
-      return true;
+    case 'esta_vacio':    return empty;
+    case 'no_esta_vacio': return !empty;
+
+    // Coincidencia exacta con algún elemento del campo
+    case 'es':    return values.includes(condVal);
+    case 'no_es': return !values.includes(condVal);
+
+    // Texto libre — algún elemento contiene el substring
+    case 'contiene':    return values.some((v) => v.includes(condVal));
+    case 'no_contiene': return values.every((v) => !v.includes(condVal));
+
+    default: return true;
   }
 }
 
 /* ============================================================
-   Hook principal — ahora recibe boardId
+   Hook principal
    ============================================================ */
 export function useFilteredBoard(
   boardId: string,
@@ -44,24 +79,21 @@ export function useFilteredBoard(
   return useMemo(() => {
     if (!board) return undefined;
 
-    const activeConditions = conditions.filter((c) => {
+    const active = conditions.filter((c) => {
       if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
       return c.value.trim() !== '';
     });
 
-    if (activeConditions.length === 0) return board;
+    if (active.length === 0) return board;
 
-    function matches(request: Request): boolean {
-      if (conjunction === 'AND') {
-        return activeConditions.every((c) => evaluate(request, c));
-      } else {
-        return activeConditions.some((c) => evaluate(request, c));
-      }
-    }
+    const matches = (req: Request): boolean =>
+      conjunction === 'AND'
+        ? active.every((c) => evaluate(req, c))
+        : active.some((c) => evaluate(req, c));
 
-    const filtered: BoardData = {} as BoardData;
-    for (const [col, items] of Object.entries(board)) {
-      (filtered as Record<string, Request[]>)[col] = items.filter(matches);
+    const filtered = {} as BoardData;
+    for (const [col, items] of Object.entries(board) as [keyof BoardData, Request[]][]) {
+      filtered[col] = items.filter(matches);
     }
     return filtered;
   }, [board, conditions, conjunction]);

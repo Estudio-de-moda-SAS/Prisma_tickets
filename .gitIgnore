@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase
+supabase/.temp
+
+# Environment variables — nunca commitear credenciales
+.env.local
+.env.*.local
+.env
