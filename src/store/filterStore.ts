@@ -1,15 +1,24 @@
 import { create } from 'zustand';
 
 /* ============================================================
-   Tipos de filtro  (sin cambios)
+   Tipos de filtro — alineados 1:1 con el modelo Request
+   ─────────────────────────────────────────────────────────────
+   titulo      → request.titulo               string
+   prioridad   → request.prioridad            Prioridad (enum)
+   columna     → request.columna              KanbanColumna (enum)
+   subequipo   → request.subTeamNames[]       string[]  ← dinámico por board
+   categoria   → request.categoria[]          string[]  ← dinámico por board
+   solicitante → request.solicitante          string
+   assignee    → request.assignees[].userName string[]  ← dinámico por board
    ============================================================ */
 export type FilterField =
   | 'titulo'
   | 'prioridad'
-  | 'categoria'
   | 'columna'
+  | 'subequipo'
+  | 'categoria'
   | 'solicitante'
-  | 'resolutor';
+  | 'assignee';
 
 export type FilterOperator =
   | 'contiene'
@@ -23,7 +32,7 @@ export type FilterCondition = {
   id:       string;
   field:    FilterField;
   operator: FilterOperator;
-  value:    string; // serializado; para multi-select separado por ','
+  value:    string;
 };
 
 export type FilterConjunction = 'AND' | 'OR';
@@ -53,28 +62,25 @@ function newCondition(boardId: string): FilterCondition {
 }
 
 /* ============================================================
-   Store — todas las acciones reciben boardId como primer arg
+   Store
    ============================================================ */
 type FilterState = {
   byBoard: Record<string, BoardFilterState>;
 
-  // Selectores
   getConditions:  (boardId: string) => FilterCondition[];
   getConjunction: (boardId: string) => FilterConjunction;
   isOpen:         (boardId: string) => boolean;
   activeCount:    (boardId: string) => number;
 
-  // Mutaciones
-  addCondition:    (boardId: string)                                              => void;
-  removeCondition: (boardId: string, id: string)                                  => void;
-  updateCondition: (boardId: string, id: string, patch: Partial<FilterCondition>) => void;
-  clearAll:        (boardId: string)                                              => void;
-  setConjunction:  (boardId: string, c: FilterConjunction)                        => void;
-  togglePanel:     (boardId: string)                                              => void;
-  setOpen:         (boardId: string, v: boolean)                                  => void;
+  addCondition:    (boardId: string)                                               => void;
+  removeCondition: (boardId: string, id: string)                                   => void;
+  updateCondition: (boardId: string, id: string, patch: Partial<FilterCondition>)  => void;
+  clearAll:        (boardId: string)                                               => void;
+  setConjunction:  (boardId: string, c: FilterConjunction)                         => void;
+  togglePanel:     (boardId: string)                                               => void;
+  setOpen:         (boardId: string, v: boolean)                                   => void;
 };
 
-/* ── Helper: actualiza un board sin tocar el resto ── */
 function patchBoard(
   byBoard: Record<string, BoardFilterState>,
   boardId: string,
@@ -87,69 +93,54 @@ function patchBoard(
 export const useFilterStore = create<FilterState>((set, get) => ({
   byBoard: {},
 
-  /* ── Selectores ── */
-  getConditions:  (boardId) => (get().byBoard[boardId] ?? defaultBoardState()).conditions,
-  getConjunction: (boardId) => (get().byBoard[boardId] ?? defaultBoardState()).conjunction,
-  isOpen:         (boardId) => (get().byBoard[boardId] ?? defaultBoardState()).isOpen,
-  activeCount:    (boardId) =>
-    (get().byBoard[boardId] ?? defaultBoardState()).conditions.filter((c) => {
+  getConditions:  (id) => (get().byBoard[id] ?? defaultBoardState()).conditions,
+  getConjunction: (id) => (get().byBoard[id] ?? defaultBoardState()).conjunction,
+  isOpen:         (id) => (get().byBoard[id] ?? defaultBoardState()).isOpen,
+  activeCount:    (id) =>
+    (get().byBoard[id] ?? defaultBoardState()).conditions.filter((c) => {
       if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
       return c.value.trim() !== '';
     }).length,
 
-  /* ── Mutaciones ── */
   addCondition: (boardId) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
-        conditions: [...prev.conditions, newCondition(boardId)],
-      })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
+      conditions: [...prev.conditions, newCondition(boardId)],
+    })) })),
 
   removeCondition: (boardId, id) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
-        conditions: prev.conditions.filter((c) => c.id !== id),
-      })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
+      conditions: prev.conditions.filter((c) => c.id !== id),
+    })) })),
 
   updateCondition: (boardId, id, change) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
-        conditions: prev.conditions.map((c) => (c.id === id ? { ...c, ...change } : c)),
-      })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
+      conditions: prev.conditions.map((c) => (c.id === id ? { ...c, ...change } : c)),
+    })) })),
 
   clearAll: (boardId) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, () => ({ conditions: [] })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ conditions: [] })) })),
 
   setConjunction: (boardId, conjunction) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, () => ({ conjunction })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ conjunction })) })),
 
   togglePanel: (boardId) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, (prev) => ({ isOpen: !prev.isOpen })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => ({ isOpen: !prev.isOpen })) })),
 
   setOpen: (boardId, isOpen) =>
-    set((s) => ({
-      byBoard: patchBoard(s.byBoard, boardId, () => ({ isOpen })),
-    })),
+    set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ isOpen })) })),
 }));
 
 /* ============================================================
-   Labels para UI  (sin cambios)
+   Metadatos de UI
    ============================================================ */
 export const FIELD_LABELS: Record<FilterField, string> = {
   titulo:      'Título',
   prioridad:   'Prioridad',
-  categoria:   'Categoría',
   columna:     'Columna',
+  subequipo:   'Equipo',        // label visible = "Equipo", field interno = subequipo
+  categoria:   'Categoría',
   solicitante: 'Solicitante',
-  resolutor:   'Resolutor',
+  assignee:    'Resolutor',
 };
 
 export const OPERATOR_LABELS: Record<FilterOperator, string> = {
@@ -162,14 +153,20 @@ export const OPERATOR_LABELS: Record<FilterOperator, string> = {
 };
 
 export const FIELD_OPERATORS: Record<FilterField, FilterOperator[]> = {
-  titulo:      ['contiene', 'no_contiene', 'es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
+  titulo:      ['contiene', 'no_contiene', 'esta_vacio', 'no_esta_vacio'],
   prioridad:   ['es', 'no_es'],
-  categoria:   ['es', 'no_es', 'contiene', 'esta_vacio', 'no_esta_vacio'],
   columna:     ['es', 'no_es'],
-  solicitante: ['contiene', 'no_contiene', 'es', 'esta_vacio', 'no_esta_vacio'],
-  resolutor:   ['contiene', 'no_contiene', 'es', 'esta_vacio', 'no_esta_vacio'],
+  subequipo:   ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
+  categoria:   ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
+  solicitante: ['contiene', 'no_contiene', 'esta_vacio', 'no_esta_vacio'],
+  assignee:    ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
 };
 
+/**
+ * Solo opciones ESTÁTICAS (enums con valores fijos).
+ * subequipo, categoria y assignee son dinámicos → se pasan
+ * como prop `dynamicOptions` a BoardFilters desde BoardPage.
+ */
 export const FIELD_SELECT_OPTIONS: Partial<Record<FilterField, { value: string; label: string }[]>> = {
   prioridad: [
     { value: 'baja',    label: 'Baja'    },
@@ -185,4 +182,5 @@ export const FIELD_SELECT_OPTIONS: Partial<Record<FilterField, { value: string; 
     { value: 'en_progreso',     label: 'En progreso'     },
     { value: 'hecho',           label: 'Hecho'           },
   ],
+  // subequipo, categoria, assignee: SIN opciones estáticas → dinámicas por prop
 };
