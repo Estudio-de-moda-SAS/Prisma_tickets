@@ -18,7 +18,7 @@ export const requestKeys = {
 /* ============================================================
    Agrupa array plano en el shape del board
    ============================================================ */
-function groupByColumn(requests: Request[]): BoardData {
+function groupRequestsByColumn(requests: Request[]): BoardData {
   const board: BoardData = {
     sin_categorizar: [],
     icebox:          [],
@@ -35,11 +35,9 @@ function groupByColumn(requests: Request[]): BoardData {
 }
 
 /* ============================================================
-   Mock: en modo demo el board muestra TODAS las solicitudes
-   del equipo activo (sin filtrar por solicitante).
-   En producción, el filtro vendrá del query a SharePoint.
+   Mock helpers
    ============================================================ */
-function mockBoardParaEquipo(equipo: Equipo): BoardData {
+function getMockBoardForTeam(equipo: Equipo): BoardData {
   const board: BoardData = {
     sin_categorizar: [],
     icebox:          [],
@@ -54,15 +52,12 @@ function mockBoardParaEquipo(equipo: Equipo): BoardData {
   return board;
 }
 
-/* ============================================================
-   Mock: board global sin filtro de equipo (para admins / board completo)
-   ============================================================ */
-function mockBoardCompleto(): BoardData {
+function getMockBoardFull(): BoardData {
   return structuredClone(MOCK_BOARD);
 }
 
 /* ============================================================
-   Hook principal — board de un equipo
+   Hook — board de un equipo
    ============================================================ */
 export function useBoardEquipo(equipo: Equipo) {
   const { Requests } = useGraphServices();
@@ -70,19 +65,19 @@ export function useBoardEquipo(equipo: Equipo) {
   return useQuery<BoardData>({
     queryKey: requestKeys.byEquipo(equipo),
     queryFn:  config.USE_MOCK
-      ? () => Promise.resolve(mockBoardParaEquipo(equipo))
-      : () => Requests.getByEquipo(equipo).then(groupByColumn),
+      ? () => Promise.resolve(getMockBoardForTeam(equipo))
+      : () => Requests.fetchByTeamCode(equipo).then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
 /* ============================================================
-   Hook para el board completo (sin filtro de equipo)
-   Usado en BoardPage cuando se quiere ver todo
+   Hook — board completo (sin filtro de equipo, para admins)
    ============================================================ */
 export function useBoardCompleto() {
   const { Requests } = useGraphServices();
@@ -90,18 +85,19 @@ export function useBoardCompleto() {
   return useQuery<BoardData>({
     queryKey: [...ALL, 'completo'],
     queryFn:  config.USE_MOCK
-      ? () => Promise.resolve(mockBoardCompleto())
-      : () => Requests.getAllPlain().then(groupByColumn),
+      ? () => Promise.resolve(getMockBoardFull())
+      : () => Requests.fetchAllByBoard().then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
 /* ============================================================
-   Hook para bandeja global (sin categorizar)
+   Hook — bandeja de entrada (sin categorizar)
    ============================================================ */
 export function useSinCategorizar() {
   const { Requests } = useGraphServices();
@@ -110,27 +106,32 @@ export function useSinCategorizar() {
     queryKey: requestKeys.sinCategorizar,
     queryFn:  config.USE_MOCK
       ? () => Promise.resolve(MOCK_BOARD.sin_categorizar)
-      : () => Requests.getSinCategorizar(),
+      : () => Requests.fetchUncategorized(),
 
-    staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false    : 20_000,
-    refetchOnWindowFocus: !config.USE_MOCK,
-    retry:                config.USE_MOCK ? false    : 1,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    retry:                config.USE_MOCK ? false : 1,
   });
 }
 
 /* ============================================================
-   Hook para mis solicitudes (filtrado por solicitante)
+   Hook — mis solicitudes (filtrado local por nombre)
    ============================================================ */
 export function useMisSolicitudes(nombre: string) {
   return useQuery<Request[]>({
     queryKey: [...ALL, 'mis-solicitudes', nombre],
     queryFn:  () => Promise.resolve(
       Object.values(MOCK_BOARD).flat().filter((r) =>
-        r.solicitante.toLowerCase().includes(nombre.split(' ')[0]?.toLowerCase() ?? '')
-      )
+        r.solicitante.toLowerCase().includes(
+          nombre.split(' ')[0]?.toLowerCase() ?? '',
+        ),
+      ),
     ),
-    enabled:   !!nombre,
-    staleTime: Infinity,
+    enabled:              !!nombre,
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
   });
 }

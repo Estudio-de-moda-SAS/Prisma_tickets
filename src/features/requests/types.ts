@@ -50,49 +50,156 @@ export const PRIORIDADES: Record<Prioridad, string> = {
   critica: 'Crítica',
 };
 
+export const SCORE_TO_PRIORIDAD: Record<number, Prioridad> = {
+  1: 'baja',
+  3: 'media',
+  5: 'alta',
+  8: 'critica',
+};
+
+export const PRIORIDAD_TO_SCORE: Record<Prioridad, number> = {
+  baja:    1,
+  media:   3,
+  alta:    5,
+  critica: 8,
+};
+
 /* ============================================================
-   Modelo principal — Solicitud
+   Assignee
+   ============================================================ */
+export type RequestAssignee = {
+  userId:     number;
+  userName:   string;
+  userEmail:  string;
+  avatarUrl:  string;
+  assignedAt: string;
+};
+
+/* ============================================================
+   Label
+   ============================================================ */
+export type RequestLabel = {
+  labelId: number;
+  nombre:  string;
+  color:   string;
+  icon:    string;
+};
+
+/* ============================================================
+   Template
+   ============================================================ */
+export type RequestTemplate = {
+  templateId:  number;
+  nombre:      string;
+  descripcion: string;
+};
+
+/* ============================================================
+   Campos extra por tipo de template
+   ============================================================ */
+export type RequestExtraFields =
+  | { templateType: 'crm';     storeName: string }
+  | { templateType: 'default' };
+
+/* ============================================================
+   Modelo principal — Request
    ============================================================ */
 export type Request = {
-  id:            string;
-  titulo:        string;
-  descripcion:   string;
-  solicitante:   string;
-  resolutor:     string | null;
-  equipo:        Equipo[];    // multi
-  columna:       KanbanColumna;
-  prioridad:     Prioridad;
-  categoria:     string[];    // multi
-  fechaApertura: string;
-  fechaMaxima:   string | null;
-  progreso:      number;
-};
+  // ── Identidad ──────────────────────────────────────────────
+  id:           string;
+  templateId:   number;
 
-/* ============================================================
-   Payload para crear una solicitud
-   ============================================================ */
-export type CrearSolicitudPayload = {
+  // ── Jerarquía ──────────────────────────────────────────────
+  parentId:     number | null;   // null = request raíz; number = es hija de esa request
+
+  // ── Contenido ──────────────────────────────────────────────
   titulo:       string;
   descripcion:  string;
-  solicitante:  string;
-  resolutor:    string | null;
-  equipo:       Equipo[];
+
+  // ── Estado del board ───────────────────────────────────────
+  columna:      KanbanColumna;
+  columnId:     number;
+
+  // ── Prioridad / puntaje ────────────────────────────────────
   prioridad:    Prioridad;
-  categoria:    string[];
-  fechaMaxima:  string | null;
-  columna?:     KanbanColumna;
+  score:        number;
+
+  // ── Progreso ───────────────────────────────────────────────
+  progreso:     number;
+
+  // ── Personas ───────────────────────────────────────────────
+  solicitante:   string;
+  solicitanteId: number;
+  assignees:     RequestAssignee[];
+
+  // ── Relaciones de board ────────────────────────────────────
+  equipo:       Equipo[];      // Board_Team_Code[] — para display
+  equipoIds:    number[];      // Board_Team_ID[]   — para writes
+  boardTeamId:  number | null;
+
+  // ── Sub-equipos (TBL_Sub_Teams) ────────────────────────────
+  subTeamIds:   number[];      // Sub_Team_ID[] — para writes
+  subTeamNames: string[];      // Sub_Team_Name[] — para display en card
+
+  // ── Labels ─────────────────────────────────────────────────
+  categoria:    string[];      // Label_Name[] — para display en card
+  labelIds:     number[];      // Label_ID[]   — para writes
+
+  // ── Sprint ─────────────────────────────────────────────────
+  sprintId:     number | null;
+  sprintName:   string | null; // Sprint_Text — para display en card
+
+  // ── Fechas ─────────────────────────────────────────────────
+  fechaApertura: string;
+  deadline:      string | null;
+  fechaCierre:   string | null;
+
+  // ── Tiempo ─────────────────────────────────────────────────
+  tiempoConsuмido: string | null;
+
+  // ── Campos extra del template ──────────────────────────────
+  extraFields:  RequestExtraFields | null;
+
+  // ── Hijos (cargados bajo demanda) ──────────────────────────
+  childCount?:  number;        // cuántas sub-requests tiene (opcional, para la card)
 };
 
 /* ============================================================
-   Payload para mover una tarjeta (optimistic update)
+   Payloads
    ============================================================ */
-export type MoverSolicitudPayload = {
-  id:      string;
-  columna: KanbanColumna;
-  equipo?: Equipo;
+export type CrearRequestPayload = {
+  boardId:     number;
+  columnId:    number;
+  requestedBy: number;
+  templateId:  number;
+  titulo:      string;
+  descripcion: string;
+  prioridad:   Prioridad;
+  equipoIds:   number[];
+  subTeamIds:  number[];
+  labelIds:    number[];
+  sprintId:    number | null;
+  deadline:    string | null;
+  parentId:    number | null;  // null = raíz; number = sub-request
 };
 
-/* ============================================================
-   Estado agrupado para el board
-   ============================================================ */
+export type MoverRequestPayload = {
+  id:       string;
+  columna:  KanbanColumna;
+  columnId: number;
+};
+
+export type ActualizarRequestPayload = {
+  id:           string;
+  titulo?:      string;
+  descripcion?: string;
+  prioridad?:   Prioridad;
+  progreso?:    number;
+  equipoIds?:   number[];
+  subTeamIds?:  number[];
+  labelIds?:    number[];
+  sprintId?:    number | null;
+  deadline?:    string | null;
+};
+
 export type BoardData = Record<KanbanColumna, Request[]>;

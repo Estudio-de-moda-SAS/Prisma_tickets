@@ -226,7 +226,7 @@ type CustomizationState = {
   global:        GlobalCustomization;
   byBoard:       Record<string, BoardLocalCustomization>;
   isPanelOpen:   boolean;
-  activeSection: 'theme' | 'columns' | 'cards';
+activeSection: 'theme' | 'columns' | 'cards' | 'teams';
 
   /* ── Selector unificado ── */
   getCustomization: (boardId: string) => BoardCustomizationView;

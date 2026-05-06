@@ -3,7 +3,7 @@
    ============================================================ */
 .kanban {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   height: 100%;
   align-items: flex-start;
   overflow-x: auto;
@@ -11,7 +11,7 @@
 }
 
 .kanban__col {
-  flex: 0 0 280px;
+  flex: 0 0 320px;
   border-radius: var(--radius-lg);
   padding: 12px;
   display: flex;
@@ -22,7 +22,7 @@
 }
 
 .kanban__col--sin-categorizar {
-  flex: 0 0 240px;
+  flex: 0 0 280px;
   background: rgba(46, 58, 85, 0.15);
   border: 1px dashed rgba(90, 106, 138, 0.3);
 }
