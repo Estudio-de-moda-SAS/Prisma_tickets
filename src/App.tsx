@@ -11,25 +11,18 @@ import { RequestsPage } from '@/pages/RequestsPage';
 import { StatsPage } from '@/pages/StatsPage';
 import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { OnboardingPage } from '@/pages/OnBoardingPage';
 
-/* ============================================================
-   ScrollToEquipo — cuando la URL tiene ?section=equipo-XXX
-   hace scroll suave al elemento con ese id una vez que el
-   DOM está disponible.
-   ============================================================ */
 function ScrollToSection() {
   const { search } = useLocation();
   useEffect(() => {
     const params  = new URLSearchParams(search);
     const section = params.get('section');
     if (!section) return;
-
-    // Pequeño delay para que React haya renderizado la sección
     const timer = setTimeout(() => {
       const el = document.getElementById(section);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Efecto de highlight breve
         const prev = el.style.transition;
         el.style.transition = 'box-shadow 0.3s';
         el.style.boxShadow  = '0 0 0 2px rgba(0,200,255,0.45)';
@@ -39,19 +32,13 @@ function ScrollToSection() {
         }, 1200);
       }
     }, 120);
-
     return () => clearTimeout(timer);
   }, [search]);
-
   return null;
 }
 
-/* ============================================================
-   Guard — redirige a /login si no hay sesión activa
-   ============================================================ */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, account } = useAuth();
-
   if (!ready) {
     return (
       <div className="login-page">
@@ -61,19 +48,25 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
   if (!account) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
-/* ============================================================
-   App
-   ============================================================ */
 export default function App() {
   return (
     <Routes>
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Onboarding — protegida pero fuera del AppLayout */}
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
 
       {/* Protegidas — todas dentro del AppLayout */}
       <Route
@@ -83,10 +76,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* Board de equipo (raíz) */}
         <Route index element={<BoardPage />} />
-
-        {/* Inicio — panel con resumen por equipo + CTA */}
         <Route
           path="home"
           element={
@@ -96,28 +86,15 @@ export default function App() {
             </>
           }
         />
-
-        {/* Crear nueva solicitud */}
-        <Route path="new" element={<NuevaSolicitudPage />} />
-
-        {/* Mis solicitudes — lista personal global */}
-        <Route path="my-requests" element={<MisSolicitudesPage />} />
-
-        {/* Solicitudes por equipo — con filtro mes/año */}
-        <Route path="requests/team/:equipo" element={<TeamRequestsPage />} />
-
-        {/* Todas las solicitudes — vista admin/resolutor */}
-        <Route path="requests" element={<RequestsPage />} />
-
-        {/* Estadísticas */}
-        <Route path="stats" element={<StatsPage />} />
-
-        {/* Automatizaciones */}
-        <Route path="automations" element={<AutomationsPage />} />
-        <Route path="automations/logs" element={<AutomationsPage />} />
+        <Route path="new"                        element={<NuevaSolicitudPage />} />
+        <Route path="my-requests"                element={<MisSolicitudesPage />} />
+        <Route path="requests/team/:equipo"      element={<TeamRequestsPage />} />
+        <Route path="requests"                   element={<RequestsPage />} />
+        <Route path="stats"                      element={<StatsPage />} />
+        <Route path="automations"                element={<AutomationsPage />} />
+        <Route path="automations/logs"           element={<AutomationsPage />} />
       </Route>
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

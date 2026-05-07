@@ -1,7 +1,11 @@
-import { Outlet, useLocation } from 'react-router-dom';
+// src/components/layout/AppLayout.tsx
+
+import * as React from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useBoardTheme } from '@/store/useBoardTheme';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 
 const TITULOS: Record<string, string> = {
   '/home':         'Home',
@@ -14,7 +18,17 @@ const TITULOS: Record<string, string> = {
 export function AppLayout() {
   useBoardTheme();
   const { pathname } = useLocation();
-  const titulo = TITULOS[pathname] ?? 'Prisma Tickets';
+  const navigate     = useNavigate();
+  const titulo       = TITULOS[pathname] ?? 'Prisma Tickets';
+
+  const { data: currentUser, isLoading } = useCurrentUser();
+
+  // Redirigir en effect, no durante el render
+  React.useEffect(() => {
+    if (!isLoading && currentUser?.Is_New) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [isLoading, currentUser, navigate]);
 
   return (
     <>
@@ -27,9 +41,6 @@ export function AppLayout() {
           </main>
         </div>
       </div>
-
-      {/* Portal root — fuera del app-layout para evitar que
-          overflow:hidden bloquee modales con position:fixed */}
       <div id="portal-root" />
     </>
   );

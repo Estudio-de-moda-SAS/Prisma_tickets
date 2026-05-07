@@ -130,6 +130,7 @@ export type Request = {
   // ── Personas ───────────────────────────────────────────────
   solicitante:   string;
   solicitanteId: number;
+  requesterTeamId: number | null;
   assignees:     RequestAssignee[];
 
   // ── Relaciones de board ────────────────────────────────────
@@ -167,20 +168,23 @@ export type Request = {
 /* ============================================================
    Payloads
    ============================================================ */
+// Reemplaza CrearRequestPayload en src/features/requests/types.ts
+
 export type CrearRequestPayload = {
-  boardId:     number;
-  columnId:    number;
-  requestedBy: number;
-  templateId:  number;
-  titulo:      string;
-  descripcion: string;
-  prioridad:   Prioridad;
-  equipoIds:   number[];
-  subTeamIds:  number[];
-  labelIds:    number[];
-  sprintId:    number | null;
-  deadline:    string | null;
-  parentId:    number | null;  // null = raíz; number = sub-request
+  boardId:          number;
+  columnId:         number;
+  requestedBy:      number;
+  templateId:       number;
+  titulo:           string;
+  descripcion:      string;
+  prioridad:        Prioridad;
+  equipoIds:        number[];
+  subTeamIds:       number[];
+  labelIds:         number[];
+  sprintId:         number | null;
+  deadline:         string | null;
+  parentId:         number | null;
+  requesterTeamId: number | null;        // true = solicitante es el equipo
 };
 
 export type MoverRequestPayload = {

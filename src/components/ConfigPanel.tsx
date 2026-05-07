@@ -34,8 +34,8 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'textarea', label: 'Texto largo'  },
   { value: 'select',   label: 'Desplegable'  },
   { value: 'radio',    label: 'Selección'    },
+  { value: 'checkbox', label: 'Casilla'      },
 ];
-
 // Colores canónicos por Board_Team_Code — fallback si la DB no trae color
 const TEAM_CODE_COLORS: Record<string, string> = {
   desarrollo: '#378ADD',
@@ -673,16 +673,46 @@ function FieldEditor({ field, index, total, accentColor, onChange, onRemove, onM
       {expanded && (
         <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>Tipo de campo</FieldLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
-              {FIELD_TYPES.map((ft) => <button key={ft.value} onClick={() => onChange({ type: ft.value, options: ft.value === 'select' || ft.value === 'radio' ? (field.options ?? []) : undefined })}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5 }}>
+              {FIELD_TYPES.map((ft) => <button key={ft.value} onClick={() => {
+  const patch: Partial<TemplateExtraField> = { type: ft.value };
+  if (ft.value === 'checkbox') patch.placeholder = undefined;
+  onChange(patch);
+}}
                 style={{ padding: '6px 4px', borderRadius: 6, border: `1px solid ${field.type === ft.value ? accentColor : 'var(--border-subtle)'}`, background: field.type === ft.value ? `${accentColor}15` : 'transparent', color: field.type === ft.value ? accentColor : 'var(--txt-muted)', fontSize: 10, fontWeight: field.type === ft.value ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s', textAlign: 'center' }}>{ft.label}</button>)}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><FieldLabel>Etiqueta *</FieldLabel><input value={field.label} onChange={(e) => onChange({ label: e.target.value })} placeholder="Ej: Repositorio" className="cpop-input" /></div>
-            <div><FieldLabel>Clave interna</FieldLabel><input value={field.key} onChange={(e) => onChange({ key: e.target.value.replace(/\s+/g, '_').toLowerCase() })} placeholder="repo" className="cpop-input" style={{ fontFamily: 'monospace', color: accentColor }} /></div>
-          </div>
-          {(field.type === 'text' || field.type === 'textarea') && <div><FieldLabel>Texto de ayuda</FieldLabel><input value={field.placeholder ?? ''} onChange={(e) => onChange({ placeholder: e.target.value })} placeholder="Ej: Pegá el nombre del repositorio..." className="cpop-input" /></div>}
+<div>
+  <FieldLabel>Etiqueta *</FieldLabel>
+  <input
+    value={field.label}
+    onChange={(e) => {
+      const label = e.target.value;
+      const key = label
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .toLowerCase();
+      onChange({ label, key });
+    }}
+    placeholder="Ej: Repositorio"
+    className="cpop-input"
+  />
+</div>         
+          {(field.type === 'text' || field.type === 'textarea') && (
+            <div>
+              <FieldLabel>Texto de ayuda</FieldLabel>
+              <input value={field.placeholder ?? ''} onChange={(e) => onChange({ placeholder: e.target.value })} placeholder="Ej: Pegá el nombre del repositorio..." className="cpop-input" />
+            </div>
+          )}
+          {field.type === 'checkbox' && (
+            <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${accentColor}`, background: `${accentColor}15`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5L8.5 2" stroke={accentColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>{field.label || 'Etiqueta de la casilla'}</span>
+            </div>
+          )}
           {needsOptions && (
             <div><FieldLabel>Opciones</FieldLabel>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 6 }}>
@@ -702,14 +732,15 @@ function FieldEditor({ field, index, total, accentColor, onChange, onRemove, onM
           )}
           <div style={{ display: 'flex', gap: 12, padding: '8px 10px', borderRadius: 7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}><input type="checkbox" checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} style={{ accentColor, width: 13, height: 13 }} /><span style={{ color: field.required ? accentColor : 'var(--txt-muted)', fontWeight: field.required ? 600 : 400 }}>Requerido</span></label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}><input type="checkbox" checked={field.collapsible ?? false} onChange={(e) => onChange({ collapsible: e.target.checked })} style={{ accentColor, width: 13, height: 13 }} /><span style={{ color: (field.collapsible ?? false) ? accentColor : 'var(--txt-muted)', fontWeight: (field.collapsible ?? false) ? 600 : 400 }}>Colapsable</span></label>
+            {field.type !== 'checkbox' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}><input type="checkbox" checked={field.collapsible ?? false} onChange={(e) => onChange({ collapsible: e.target.checked })} style={{ accentColor, width: 13, height: 13 }} /><span style={{ color: (field.collapsible ?? false) ? accentColor : 'var(--txt-muted)', fontWeight: (field.collapsible ?? false) ? 600 : 400 }}>Colapsable</span></label>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
 /* ============================================================
    LabelList
    ============================================================ */
@@ -760,25 +791,52 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
 /* ============================================================
    Formularios reutilizables
    ============================================================ */
-function LabelForm({ initial, onSave, onCancel }: { initial?: { name: string; color: string; icon: string }; onSave: (d: { name: string; color: string; icon: string }) => void; onCancel: () => void }) {
-  const [name, setName] = useState(initial?.name ?? ''); const [color, setColor] = useState(initial?.color ?? '#00c8ff'); const [icon, setIcon] = useState(initial?.icon ?? '');
+function LabelForm({ initial, onSave, onCancel }: {
+  initial?: { name: string; color: string; icon: string };
+  onSave: (d: { name: string; color: string; icon: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name,  setName]  = useState(initial?.name  ?? '');
+  const [color, setColor] = useState(initial?.color ?? '#00c8ff');
+  const [icon,  setIcon]  = useState(initial?.icon  ?? '');
   const canSave = name.trim().length > 0;
   return (
     <div className="cpop-form">
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color, icon }); if (e.key === 'Escape') onCancel(); }} placeholder="Nombre de la etiqueta..." className="cpop-input" />
-      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>{EMOJIS.map((e) => <button key={e} type="button" onClick={() => setIcon(icon === e ? '' : e)} className={`cpop-emoji${icon === e ? ' cpop-emoji--active' : ''}`}>{e}</button>)}</div>
+      <input
+        autoFocus value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color, icon });
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder="Nombre de la etiqueta..." className="cpop-input"
+      />
+      <EmojiPicker value={icon} onChange={setIcon} />
       <ColorPicker color={color} onChange={setColor} />
       <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color, icon })} onCancel={onCancel} />
     </div>
   );
 }
-
-function SimpleColorForm({ initial, onSave, onCancel }: { initial?: { name: string; color: string }; onSave: (d: { name: string; color: string }) => void; onCancel: () => void }) {
-  const [name, setName] = useState(initial?.name ?? ''); const [color, setColor] = useState(initial?.color ?? '#00c8ff');
+/* ============================================================
+   SimpleColorForm — mejorado (sub-equipos)
+   ============================================================ */
+function SimpleColorForm({ initial, onSave, onCancel }: {
+  initial?: { name: string; color: string };
+  onSave: (d: { name: string; color: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName]   = useState(initial?.name  ?? '');
+  const [color, setColor] = useState(initial?.color ?? '#00c8ff');
   const canSave = name.trim().length > 0;
   return (
     <div className="cpop-form">
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color }); if (e.key === 'Escape') onCancel(); }} placeholder="Nombre..." className="cpop-input" />
+      <input
+        autoFocus value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color });
+          if (e.key === 'Escape') onCancel();
+        }}
+        placeholder="Nombre..." className="cpop-input"
+      />
       <ColorPicker color={color} onChange={setColor} />
       <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color })} onCancel={onCancel} />
     </div>
@@ -808,22 +866,67 @@ function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () =>
   );
 }
 
-function SprintForm({ initial, onSave, onCancel }: { initial?: { text: string; startDate: string; endDate: string }; onSave: (d: { text: string; startDate: string; endDate: string }) => void; onCancel: () => void }) {
-  const [text, setText] = useState(initial?.text ?? ''); const [startDate, setStartDate] = useState(initial?.startDate ?? ''); const [endDate, setEndDate] = useState(initial?.endDate ?? '');
-  const canSave = text.trim() && startDate && endDate && endDate >= startDate;
+/* ============================================================
+   SprintForm — mejorado
+   ============================================================ */
+function SprintForm({ initial, onSave, onCancel }: {
+  initial?: { text: string; startDate: string; endDate: string };
+  onSave: (d: { text: string; startDate: string; endDate: string }) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText]         = useState(initial?.text      ?? '');
+  const [startDate, setStart]   = useState(initial?.startDate ?? '');
+  const [endDate, setEnd]       = useState(initial?.endDate   ?? '');
+  const dateError = endDate && startDate && endDate < startDate;
+  const canSave   = !!(text.trim() && startDate && endDate && !dateError);
+
   return (
     <div className="cpop-form">
-      <input autoFocus value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} placeholder="Nombre del sprint..." className="cpop-input" />
+      <input
+        autoFocus value={text} onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+        placeholder="Nombre del sprint..." className="cpop-input"
+      />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div><FieldLabel>Inicio</FieldLabel><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="cpop-input cpop-input--date" /></div>
-        <div><FieldLabel>Fin</FieldLabel><input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="cpop-input cpop-input--date" /></div>
+        <div>
+          <FieldLabel>Inicio</FieldLabel>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="date" value={startDate} onChange={(e) => setStart(e.target.value)}
+              className="cpop-input cpop-input--date"
+              style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }}
+            />
+          </div>
+        </div>
+        <div>
+          <FieldLabel>Fin</FieldLabel>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="date" value={endDate} min={startDate}
+              onChange={(e) => setEnd(e.target.value)}
+              className="cpop-input cpop-input--date"
+              style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }}
+            />
+          </div>
+        </div>
       </div>
-      {endDate && startDate && endDate < startDate && <p style={{ fontSize: 10, color: '#ff4757', margin: 0 }}>La fecha de fin debe ser posterior al inicio.</p>}
-      <FormActions canSave={!!canSave} onSave={() => canSave && onSave({ text: text.trim(), startDate, endDate })} onCancel={onCancel} />
+      {dateError && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '6px 10px', borderRadius: 6,
+          background: '#ff475715', border: '1px solid #ff475740',
+        }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="#ff4757" strokeWidth="1.3"/>
+            <path d="M6 3.5v3M6 8.5v.5" stroke="#ff4757" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontSize: 10, color: '#ff4757' }}>La fecha fin debe ser posterior al inicio.</span>
+        </div>
+      )}
+      <FormActions canSave={canSave} onSave={() => canSave && onSave({ text: text.trim(), startDate, endDate })} onCancel={onCancel} />
     </div>
   );
 }
-
 /* ============================================================
    Primitivos compartidos
    ============================================================ */
@@ -842,14 +945,72 @@ function ItemRow({ color, icon, name, onEdit, onDelete }: { color: string; icon?
   );
 }
 
-function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
+/* ============================================================
+   EmojiPicker — nuevo componente
+   ============================================================ */
+function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
-      {COLORS.map((c) => <div key={c} onClick={() => onChange(c)} className="cpop-swatch" style={{ background: c, border: color === c ? '2px solid var(--txt)' : '2px solid transparent', transform: color === c ? 'scale(1.3)' : 'scale(1)', width: 18, height: 18 }} />)}
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(8, 1fr)',
+      gap: 3,
+      padding: '8px',
+      background: 'var(--bg-panel)',
+      border: '1px solid var(--border-subtle)',
+      borderRadius: 8,
+      maxHeight: 96,
+      overflowY: 'auto',
+    }}>
+      {EMOJIS.map((e) => (
+        <button
+          key={e} type="button"
+          onClick={() => onChange(value === e ? '' : e)}
+          style={{
+            width: '100%', aspectRatio: '1', borderRadius: 6, border: 'none',
+            fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', transition: 'all 0.12s',
+            background: value === e ? 'var(--accent)22' : 'transparent',
+            outline: value === e ? '2px solid var(--accent)' : '2px solid transparent',
+            transform: value === e ? 'scale(1.15)' : 'scale(1)',
+          }}
+        >{e}</button>
+      ))}
     </div>
   );
 }
 
+function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(8, 1fr)',
+      gap: 5,
+      padding: '8px',
+      background: 'var(--bg-panel)',
+      border: '1px solid var(--border-subtle)',
+      borderRadius: 8,
+    }}>
+      {COLORS.map((c) => (
+        <button
+          key={c} type="button" onClick={() => onChange(c)}
+          title={c}
+          style={{
+            width: '100%',
+            aspectRatio: '1',
+            borderRadius: 5,
+            border: 'none',
+            background: c,
+            cursor: 'pointer',
+            transition: 'transform 0.14s ease, outline 0.1s',
+            outline: color === c ? `2px solid var(--txt)` : `2px solid transparent`,
+            outlineOffset: 1,
+            transform: color === c ? 'scale(1.12)' : 'scale(1)',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 function FormActions({ canSave, onSave, onCancel }: { canSave: boolean; onSave: () => void; onCancel: () => void }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
