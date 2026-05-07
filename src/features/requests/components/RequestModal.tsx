@@ -707,18 +707,40 @@ export function RequestModal({ request, equipo, onClose, onMove, onOpenRequest, 
               </FieldBlock>
             </div>
 
-            {/* Fechas */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <FieldBlock label="Fecha de apertura">
-                <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(request.fechaApertura)}</span>
-              </FieldBlock>
-              {request.deadline && (
-                <FieldBlock label="Fecha límite">
-                  <span style={{ fontSize: 13, color: 'var(--warn)' }}>{fmtColombia(request.deadline)}</span>
-                </FieldBlock>
-              )}
-            </div>
+{/* Fechas */}
+<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+  <FieldBlock label="Fecha de apertura">
+    <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(request.fechaApertura)}</span>
+  </FieldBlock>
 
+  <FieldBlock label="Fecha límite">
+    {readOnly ? (
+      <span style={{ fontSize: 13, color: request.deadline ? 'var(--warn)' : 'var(--txt-muted)' }}>
+        {request.deadline ? fmtColombia(request.deadline) : 'Sin fecha límite'}
+      </span>
+    ) : (
+      <input
+        type="date"
+        defaultValue={request.deadline ? request.deadline.split('T')[0] : ''}
+        onChange={(e) => {
+          update({
+            id: request.id,
+            patch: { deadline: e.target.value ? e.target.value + 'T00:00:00' : null },
+          });
+        }}
+        style={{
+          width: '100%', padding: '5px 10px', borderRadius: 6,
+          border: '1px solid var(--border-subtle)',
+background: 'transparent',
+          color: 'var(--warn)',
+          fontSize: 12, outline: 'none',
+          fontFamily: 'var(--font-body)', boxSizing: 'border-box',
+          cursor: 'pointer', height: 34,
+        }}
+      />
+    )}
+  </FieldBlock>
+</div>
             {/* Timer — oculto en readOnly */}
             {!readOnly && (
               <FieldBlock label="Contador de tiempo">
