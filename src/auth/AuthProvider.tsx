@@ -48,7 +48,7 @@ function getAccountRole(account: AccountInfo | null): string | null {
 
   const claims = account.idTokenClaims as AppIdTokenClaims | undefined;
 
-  return claims?.roles?.[0] ?? null;   /*Modificar a "admin" acá para probar en desarrollo, dejarlo en null para producción*/
+  return claims?.roles?.[0] ?? "admin";   /*Modificar a "admin" acá para probar en desarrollo, dejarlo en null para producción. para visualizar los estados usar la ruta http://localhost:5173/states-preview*/
 }
 
 const Ctx = React.createContext<AuthCtx | null>(null);

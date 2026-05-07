@@ -20,18 +20,30 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <section className="section-error-state" role="alert">
+      <div className="section-error-state__ambient" aria-hidden="true">
+        <span className="section-error-state__line" />
+      </div>
+
       <div className="section-error-state__visual" aria-hidden="true">
         <span>{icon}</span>
       </div>
 
       <div className="section-error-state__body">
-        <span className="section-error-state__eyebrow">{eyebrow}</span>
+        <span className="section-error-state__eyebrow">
+          {eyebrow}
+        </span>
+
         <h2>{title}</h2>
+
         {description && <p>{description}</p>}
       </div>
 
       {onRetry && (
-        <button className="section-error-state__button" type="button" onClick={onRetry}>
+        <button
+          className="section-error-state__button"
+          type="button"
+          onClick={onRetry}
+        >
           {retryLabel}
         </button>
       )}

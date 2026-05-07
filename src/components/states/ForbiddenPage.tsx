@@ -4,36 +4,46 @@ import './ForbiddenPage.css';
 export function ForbiddenPage() {
   return (
     <main className="forbidden-page">
-      <section className="forbidden-page__card">
-        <div className="forbidden-page__brand">
-          <span className="forbidden-page__pulse" />
-          ACCESO CONTROLADO
-        </div>
+      <div className="forbidden-page__ambient" aria-hidden="true">
+        <span className="forbidden-page__glow forbidden-page__glow--one" />
+        <span className="forbidden-page__glow forbidden-page__glow--two" />
+        <span className="forbidden-page__grid" />
+        <span className="forbidden-page__line forbidden-page__line--one" />
+        <span className="forbidden-page__line forbidden-page__line--two" />
+      </div>
 
-        <div className="forbidden-page__orb" aria-hidden="true">
-          <span className="forbidden-page__lock">🔒</span>
+      <section className="forbidden-page__experience">
+        <div className="forbidden-page__lock-wrap">
+          <div className="forbidden-page__lock-ring" />
+
+          <div className="forbidden-page__lock-core">
+            <img
+              src="/favicon.svg"
+              width="42"
+              height="42"
+              alt="Prisma"
+            />
+          </div>
         </div>
 
         <div className="forbidden-page__content">
-          <h1>Acceso restringido</h1>
+          <span className="forbidden-page__eyebrow">
+            Acceso controlado
+          </span>
+
+          <h1>
+            Acceso <span>restringido</span>
+          </h1>
+
           <p>
-            Tu perfil no cuenta con permisos para visualizar esta sección.
+            Tu perfil actual no cuenta con permisos suficientes
+            para visualizar este módulo o realizar esta acción.
           </p>
         </div>
 
-        <div className="forbidden-page__actions">
-          <Link className="forbidden-page__button forbidden-page__button--primary" to="/">
-            Volver al inicio
-          </Link>
-
-          <button
-            className="forbidden-page__button forbidden-page__button--ghost"
-            type="button"
-            onClick={() => window.history.back()}
-          >
-            Regresar
-          </button>
-        </div>
+        <Link className="forbidden-page__button" to="/">
+          Volver al inicio
+        </Link>
       </section>
     </main>
   );

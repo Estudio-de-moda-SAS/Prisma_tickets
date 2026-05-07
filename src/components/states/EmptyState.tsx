@@ -20,6 +20,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <section className="section-empty-state" aria-live="polite">
+      <div className="section-empty-state__ambient" aria-hidden="true">
+        <span className="section-empty-state__line" />
+      </div>
+
       <div className="section-empty-state__visual" aria-hidden="true">
         <span>{icon}</span>
       </div>
@@ -31,7 +35,11 @@ export function EmptyState({
       </div>
 
       {actionLabel && onAction && (
-        <button className="section-empty-state__button" type="button" onClick={onAction}>
+        <button
+          className="section-empty-state__button"
+          type="button"
+          onClick={onAction}
+        >
           {actionLabel}
         </button>
       )}
