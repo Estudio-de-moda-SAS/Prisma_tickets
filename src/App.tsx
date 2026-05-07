@@ -11,7 +11,7 @@ import { RequestsPage } from '@/pages/RequestsPage';
 import { StatsPage } from '@/pages/StatsPage';
 import { AutomationsPage } from '@/pages/AutomationsPage';
 import { LoginPage } from '@/pages/LoginPage';
-import EmailPreviewPage from '@/pages/EmailPreview';
+import EmailsPage from '@/pages/EmailsPage';
 
 /* ============================================================
    ScrollToEquipo — cuando la URL tiene ?section=equipo-XXX
@@ -80,9 +80,6 @@ export default function App() {
       {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Preview de correos */}
-      <Route path="/email-preview" element={<EmailPreviewPage />} />
-
       {/* Protegidas — todas dentro del AppLayout */}
       <Route
         element={
@@ -123,6 +120,9 @@ export default function App() {
         {/* Automatizaciones */}
         <Route path="automations" element={<AutomationsPage />} />
         <Route path="automations/logs" element={<AutomationsPage />} />
+
+        {/* Correos */}
+        <Route path="emails" element={<EmailsPage />} />
       </Route>
 
       {/* Fallback */}
