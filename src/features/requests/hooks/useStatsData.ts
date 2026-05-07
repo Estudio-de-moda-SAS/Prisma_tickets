@@ -199,7 +199,6 @@ function calcBoard(requests: Request[], equipo: Equipo): BoardStatsReal {
 function calcSprint(requests: Request[], sprint: Sprint | null): SprintStats {
   if (!sprint) {
     // Sin sprint seleccionado: métricas globales del mes
-    const now = new Date();
     const all = requests;
     return {
       sprint:           null,
@@ -216,7 +215,6 @@ function calcSprint(requests: Request[], sprint: Sprint | null): SprintStats {
   }
 
   const start = new Date(sprint.Sprint_Start_Date);
-  const end   = new Date(sprint.Sprint_End_Date);
 
   // Requests asociadas al sprint
   const inSprint = requests.filter((r) => r.sprintId === sprint.Sprint_ID);
