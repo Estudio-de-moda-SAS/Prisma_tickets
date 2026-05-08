@@ -1,4 +1,5 @@
 import { TicketDropdown } from "./TicketDropdown";
+import { TicketToggle } from "./TicketToggle";
 import type { TicketField } from "./ticketFormTypes";
 
 type TicketRequestFieldProps = {
@@ -46,22 +47,11 @@ export function TicketRequestField({
 
   if (field.type === "radio") {
     return (
-      <fieldset className="create-ticket-modal__radio-group">
-        <legend>{field.label}</legend>
-
-        {(field.options ?? []).map((option) => (
-          <label key={option.value}>
-            <input
-              type="radio"
-              name={field.id}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => onChange?.(field.id, option.value)}
-            />
-            <span>{option.label}</span>
-          </label>
-        ))}
-      </fieldset>
+      <TicketToggle
+        label={field.label}
+        value={value === "yes"}
+        onChange={(checked) => onChange?.(field.id, checked ? "yes" : "no")}
+      />
     );
   }
 
