@@ -76,6 +76,7 @@ const COL_META: Record<KanbanColumna, { label: string; color: string }> = {
   backlog:         { label: 'Backlog',     color: 'rgba(127,119,221,0.7)' },
   todo:            { label: 'To do',       color: 'rgba(239,159,39,0.7)'  },
   en_progreso:     { label: 'En prog.',    color: 'rgba(0,200,255,0.7)'   },
+  ready_to_deploy: { label: 'Ready',       color: 'rgba(167,139,250,0.7)' },
   hecho:           { label: 'Hecho',       color: 'rgba(0,229,160,0.7)'   },
 };
 
@@ -158,7 +159,7 @@ function calcBoard(requests: Request[], equipo: Equipo): BoardStatsReal {
     ? Math.round(conDl.filter((r) => new Date(r.fechaCierre!) <= new Date(r.deadline!)).length / conDl.length * 100)
     : mine.length > 0 ? 85 : 0;
 
-  const colOrder: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'hecho'];
+const colOrder: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'ready_to_deploy', 'hecho'];
   const porColumna: ColStatReal[] = colOrder.map((col) => ({
     label: COL_META[col].label,
     value: mine.filter((r) => r.columna === col).length,

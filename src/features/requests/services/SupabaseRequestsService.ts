@@ -2,7 +2,8 @@
 import { apiClient } from '@/lib/apiClient';
 import type {
   Request, CrearRequestPayload, ActualizarRequestPayload,
-  MoverRequestPayload, KanbanColumna, Prioridad, RequestAssignee, RequestExtraFields,
+  MoverRequestPayload, KanbanColumna, Prioridad,
+  RequestAssignee, RequestExtraFields, CierreInfo, CerrarRequestPayload,
 } from '../types';
 import { SCORE_TO_PRIORIDAD, PRIORIDAD_TO_SCORE } from '../types';
 
@@ -36,11 +37,27 @@ type RawRequestRow = {
   sprints:    { Request_Sprint_ID: number; sprint: { Sprint_Text: string } | null }[];
   crm_extra:  { Request_CRM_Example_Store_Name: string } | null;
   child_count?: { count: number }[];
+
+  // Cierre — join con TBL_Request_Closure
+  closure: {
+    Closure_ID:      number;
+    Closure_Note:    string;
+    Attachment_URL:  string | null;
+    Attachment_Name: string | null;
+    Attachment_Mime: string | null;
+    Closed_At:       string;
+    closer: { User_ID: number; User_Name: string } | null;
+  } | null;
 };
 
 const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
-  'Sin categorizar': 'sin_categorizar', 'Icebox': 'icebox', 'Backlog': 'backlog',
-  'To do': 'todo', 'En progreso': 'en_progreso', 'Hecho': 'hecho',
+  'Sin categorizar': 'sin_categorizar',
+  'Icebox':          'icebox',
+  'Backlog':         'backlog',
+  'To do':           'todo',
+  'En progreso':     'en_progreso',
+  'Ready to Deploy': 'ready_to_deploy',
+  'Hecho':           'hecho',
 };
 
 function mapRowToRequest(row: RawRequestRow): Request {
@@ -51,8 +68,10 @@ function mapRowToRequest(row: RawRequestRow): Request {
   const assignees: RequestAssignee[] = (row.assignments ?? [])
     .filter((a) => a.assignee !== null)
     .map((a) => ({
-      userId: a.assignee!.User_ID, userName: a.assignee!.User_Name,
-      userEmail: a.assignee!.User_Email, avatarUrl: a.assignee!.User_Avatar_url,
+      userId:     a.assignee!.User_ID,
+      userName:   a.assignee!.User_Name,
+      userEmail:  a.assignee!.User_Email,
+      avatarUrl:  a.assignee!.User_Avatar_url,
       assignedAt: a.Request_Assignment_At,
     }));
 
@@ -64,36 +83,67 @@ function mapRowToRequest(row: RawRequestRow): Request {
   const labelNames   = (row.labels ?? []).filter((l) => l.label !== null).map((l) => l.label!.Label_Name);
   const labelIds     = (row.labels ?? []).filter((l) => l.label !== null).map((l) => l.label!.Label_ID);
 
-  const firstSprint    = row.sprints?.[0] ?? null;
-  const sprintId       = firstSprint?.Request_Sprint_ID ?? null;
-  const sprintName     = firstSprint?.sprint?.Sprint_Text ?? null;
-  const childCount     = row.child_count?.[0]?.count ?? undefined;
+  const firstSprint     = row.sprints?.[0] ?? null;
+  const sprintId        = firstSprint?.Request_Sprint_ID ?? null;
+  const sprintName      = firstSprint?.sprint?.Sprint_Text ?? null;
+  const childCount      = row.child_count?.[0]?.count ?? undefined;
   const requesterTeamId = row.Request_Requester_Team_ID ?? null;
 
   let extraFields: RequestExtraFields | null = null;
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
-  // NULL = solicitud pers|onal → nombre del usuario
-  // número = en nombre del equipo → nombre del equipo via join con TBL_Teams
   const solicitante = requesterTeamId !== null
     ? (row.requester_team?.Team_Name ?? row.requester?.User_Name ?? '')
     : (row.requester?.User_Name ?? '');
 
+  // Mapear cierre si existe
+  let cierreInfo: CierreInfo | null = null;
+  if (row.closure) {
+    cierreInfo = {
+      closureId:      row.closure.Closure_ID,
+      closureNote:    row.closure.Closure_Note,
+      attachmentUrl:  row.closure.Attachment_URL,
+      attachmentName: row.closure.Attachment_Name,
+      attachmentMime: row.closure.Attachment_Mime,
+      closedAt:       row.closure.Closed_At,
+      closedBy: {
+        userId:   row.closure.closer?.User_ID   ?? 0,
+        userName: row.closure.closer?.User_Name ?? '',
+      },
+    };
+  }
+
   return {
-    id: String(row.Request_ID), templateId: row.Request_Template_ID,
-    parentId: row.Request_Parent_ID ?? null,
-    titulo: row.Request_Title ?? '', descripcion: row.Request_Description ?? '',
-    columna, columnId: row.Request_Board_Column_ID, prioridad, score,
-    progreso: row.Request_Progress ?? 0,
-    solicitante, solicitanteId: row.Request_Requested_By, requesterTeamId,
-    assignees, equipo: equipoCodes, equipoIds, boardTeamId,
-    subTeamIds, subTeamNames, categoria: labelNames, labelIds,
-    sprintId, sprintName,
-    fechaApertura: row.Request_Created_At ?? new Date().toISOString(),
-    deadline: row.Request_Deadline ?? null,
-    fechaCierre: row.Request_Finished_At ?? null,
+    id:              String(row.Request_ID),
+    templateId:      row.Request_Template_ID,
+    parentId:        row.Request_Parent_ID ?? null,
+    titulo:          row.Request_Title ?? '',
+    descripcion:     row.Request_Description ?? '',
+    columna,
+    columnId:        row.Request_Board_Column_ID,
+    prioridad,
+    score,
+    progreso:        row.Request_Progress ?? 0,
+    solicitante,
+    solicitanteId:   row.Request_Requested_By,
+    requesterTeamId,
+    assignees,
+    equipo:          equipoCodes,
+    equipoIds,
+    boardTeamId,
+    subTeamIds,
+    subTeamNames,
+    categoria:       labelNames,
+    labelIds,
+    sprintId,
+    sprintName,
+    fechaApertura:   row.Request_Created_At ?? new Date().toISOString(),
+    deadline:        row.Request_Deadline ?? null,
+    fechaCierre:     row.Request_Finished_At ?? null,
     tiempoConsuмido: row.Request_Time_Consumed ?? null,
-    extraFields, childCount,
+    extraFields,
+    childCount,
+    cierreInfo,
   };
 }
 
@@ -105,26 +155,32 @@ export class SupabaseRequestsService {
     const rows = await apiClient.call<RawRequestRow[]>('fetchAllByBoard', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
+
   async fetchByTeamCode(teamCode: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchByTeamCode', { boardId: this.boardId, teamCode });
     return rows.map(mapRowToRequest);
   }
+
   async fetchUncategorized(): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchUncategorized', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
+
   async fetchById(id: number): Promise<Request> {
     const row = await apiClient.call<RawRequestRow>('fetchById', { id });
     return mapRowToRequest(row);
   }
+
   async fetchByRequestedBy(userId: number): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchByRequestedBy', { userId, boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
+
   async fetchChildRequests(parentId: number): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchChildRequests', { parentId });
     return rows.map(mapRowToRequest);
   }
+
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
     const row = await apiClient.call<RawRequestRow>('createRequest', {
       boardId:         payload.boardId,
@@ -143,20 +199,89 @@ export class SupabaseRequestsService {
     });
     return mapRowToRequest(row);
   }
+
   async moveToColumn({ id, columnId }: MoverRequestPayload): Promise<void> {
     await apiClient.call('moveToColumn', { id: Number(id), columnId });
   }
+
   async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     await apiClient.call('updateRequest', {
-      id: Number(id), titulo: patch.titulo, descripcion: patch.descripcion,
-      score: patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
-      progreso: patch.progreso, equipoIds: patch.equipoIds, labelIds: patch.labelIds,
-      sprintId: patch.sprintId, deadline: patch.deadline,
+      id:          Number(id),
+      titulo:      patch.titulo,
+      descripcion: patch.descripcion,
+      score:       patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
+      progreso:    patch.progreso,
+      equipoIds:   patch.equipoIds,
+      labelIds:    patch.labelIds,
+      sprintId:    patch.sprintId,
+      deadline:    patch.deadline,
     });
-    if (patch.subTeamIds !== undefined)
+    if (patch.subTeamIds !== undefined) {
       await apiClient.call('updateRequestSubTeams', { id: Number(id), subTeamIds: patch.subTeamIds });
+    }
   }
+
   async deleteRequest(id: string): Promise<void> {
     await apiClient.call('deleteRequest', { id: Number(id) });
+  }
+
+  /**
+   * Cierra una request:
+   * 1. Sube el adjunto si existe (reutiliza endpoint de attachments)
+   * 2. Inserta registro en TBL_Request_Closure
+   * 3. Actualiza Request_Finished_At y mueve de columna en TBL_Requests
+   */
+  async closeRequest(payload: CerrarRequestPayload): Promise<CierreInfo> {
+    let attachmentUrl:  string | null = null;
+    let attachmentName: string | null = null;
+    let attachmentMime: string | null = null;
+
+    // Subir adjunto si existe
+    if (payload.attachment) {
+      const uploaded = await apiClient.call<{
+        url:      string;
+        fileName: string;
+        mimeType: string;
+      }>('uploadClosureAttachment', {
+        requestId: payload.requestId,
+        userId:    payload.closedBy,
+        file:      payload.attachment,
+      });
+      attachmentUrl  = uploaded.url;
+      attachmentName = uploaded.fileName;
+      attachmentMime = uploaded.mimeType;
+    }
+
+    // Crear registro de cierre + mover columna + setear fechaCierre
+    const row = await apiClient.call<{
+      Closure_ID:      number;
+      Closure_Note:    string;
+      Attachment_URL:  string | null;
+      Attachment_Name: string | null;
+      Attachment_Mime: string | null;
+      Closed_At:       string;
+      closer: { User_ID: number; User_Name: string } | null;
+    }>('closeRequest', {
+      requestId:      payload.requestId,
+      closedBy:       payload.closedBy,
+      closureNote:    payload.closureNote,
+      targetColumnId: payload.targetColumnId,
+      attachmentUrl,
+      attachmentName,
+      attachmentMime,
+    });
+
+    return {
+      closureId:      row.Closure_ID,
+      closureNote:    row.Closure_Note,
+      attachmentUrl:  row.Attachment_URL,
+      attachmentName: row.Attachment_Name,
+      attachmentMime: row.Attachment_Mime,
+      closedAt:       row.Closed_At,
+      closedBy: {
+        userId:   row.closer?.User_ID   ?? payload.closedBy,
+        userName: row.closer?.User_Name ?? '',
+      },
+    };
   }
 }

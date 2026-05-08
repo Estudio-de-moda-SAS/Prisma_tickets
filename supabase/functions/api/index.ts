@@ -102,9 +102,17 @@ const BASE_SELECT = `
       Sprint_Text
     )
   ),
-  child_count:TBL_Requests!Request_Parent_ID ( count )
+  child_count:TBL_Requests!Request_Parent_ID ( count ),
+  closure:TBL_Request_Closure (
+    Closure_ID,
+    Closure_Note,
+    Attachment_URL,
+    Attachment_Name,
+    Attachment_Mime,
+    Closed_At,
+    closer:TBL_Users!Closed_By ( User_ID, User_Name )
+  )
 `.trim();
-
 async function handleAction(
   action: string,
   payload: Record<string, unknown>,
@@ -665,6 +673,55 @@ async function handleAction(
       if (error) throw new Error(error.message);
       return { ok: true };
     }
+    case 'closeRequest': {
+  const p = payload as {
+    requestId:      number;
+    closedBy:       number;
+    closureNote:    string;
+    targetColumnId: number;
+    attachmentUrl:  string | null;
+    attachmentName: string | null;
+    attachmentMime: string | null;
+  };
+
+  // 1. Insertar en TBL_Request_Closure
+  const { data: closure, error: closureErr } = await supabase
+    .from('TBL_Request_Closure')
+    .insert({
+      Request_ID:       p.requestId,
+      Closed_By:        p.closedBy,
+      Closure_Note:     p.closureNote,
+      Target_Column_ID: p.targetColumnId,
+      Attachment_URL:   p.attachmentUrl  ?? null,
+      Attachment_Name:  p.attachmentName ?? null,
+      Attachment_Mime:  p.attachmentMime ?? null,
+      Closed_At:        new Date().toISOString(),
+    })
+    .select(`
+      Closure_ID,
+      Closure_Note,
+      Attachment_URL,
+      Attachment_Name,
+      Attachment_Mime,
+      Closed_At,
+      closer:TBL_Users!Closed_By ( User_ID, User_Name )
+    `)
+    .single();
+  if (closureErr) throw new Error(closureErr.message);
+
+  // 2. Mover columna + marcar fecha de cierre en TBL_Requests
+  const { error: updateErr } = await supabase
+    .from('TBL_Requests')
+    .update({
+      Request_Board_Column_ID: p.targetColumnId,
+      Request_Finished_At:     new Date().toISOString(),
+      Request_Progress:        100,
+    })
+    .eq('Request_ID', p.requestId);
+  if (updateErr) throw new Error(updateErr.message);
+
+  return closure;
+}
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);

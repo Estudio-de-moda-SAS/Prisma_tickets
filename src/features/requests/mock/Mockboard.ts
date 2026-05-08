@@ -216,7 +216,7 @@ export const MOCK_BOARD: BoardData = {
       progreso: 0,
       extraFields: null,
     },
-  ],
+  ],ready_to_deploy: [],
   todo: [
     {
       id: 'mock-006',
