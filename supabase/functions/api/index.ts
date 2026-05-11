@@ -7,25 +7,32 @@ declare const Deno: {
 
 // @ts-ignore
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+// @ts-ignore
+import { createRemoteJWKSet, jwtVerify } from 'npm:jose@5';
 
 const TENANT_ID    = Deno.env.get('AZURE_TENANT_ID')!;
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const CLIENT_ID    = Deno.env.get('AZURE_CLIENT_ID')!;
+const ENTRA_ISSUER_V2 = `https://login.microsoftonline.com/${TENANT_ID}/v2.0`;
+const ENTRA_ISSUER_V1 = `https://sts.windows.net/${TENANT_ID}/`;
+
+const ENTRA_JWKS = createRemoteJWKSet(
+  new URL(`https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys`)
+);
 
 async function verifyAzureToken(token: string): Promise<Record<string, unknown>> {
   const parts = token.split('.');
-  if (parts.length !== 3) throw new Error('[API] Formato de token inválido');
-  const payload = JSON.parse(
-    atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
-  ) as Record<string, unknown>;
+  const raw = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+  const issuer = raw.iss?.includes('sts.windows.net') ? ENTRA_ISSUER_V1 : ENTRA_ISSUER_V2;
+
+  const { payload } = await jwtVerify(token, ENTRA_JWKS, {
+    issuer,
+    audience: `api://${CLIENT_ID}`,
+  });
   if (payload['tid'] !== TENANT_ID)
     throw new Error('[API] Token de tenant no autorizado: ' + payload['tid']);
-  const iss = String(payload['iss'] ?? '');
-  if (!iss.includes(TENANT_ID))
-    throw new Error('[API] Issuer no autorizado: ' + iss);
-  if ((payload['exp'] as number) < Math.floor(Date.now() / 1000))
-    throw new Error('[API] Token expirado');
-  return payload;
+  return payload as Record<string, unknown>;
 }
 
 function createServiceClient() {
@@ -734,8 +741,10 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get('Authorization') ?? '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return errorResponse('Token de autorización requerido', 401);
-  try { await verifyAzureToken(token); } catch (err) { return errorResponse(`No autorizado: ${(err as Error).message}`, 401); }
-  let body: { action: string; payload: Record<string, unknown> };
+try { await verifyAzureToken(token); } catch (err) {
+  console.error('[API] auth error:', (err as Error).message);
+  return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
+}  let body: { action: string; payload: Record<string, unknown> };
   try { body = await req.json(); } catch { return errorResponse('Body inválido', 400); }
   if (!body.action) return errorResponse('Campo "action" requerido', 400);
   const supabase = createServiceClient();
