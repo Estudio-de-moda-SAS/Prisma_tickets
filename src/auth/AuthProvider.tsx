@@ -66,7 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     (async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
         await initMSAL();
         const acc = ensureActiveAccount();
 
