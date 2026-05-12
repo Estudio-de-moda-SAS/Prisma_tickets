@@ -1,0 +1,218 @@
+/* ============================================================
+   OnboardingPage — usa variables CSS del tema (claro/oscuro)
+   Agregar al final de src/styles/globals.css
+   ============================================================ */
+
+.ob-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  padding: 1.5rem;
+}
+
+.ob-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Línea accent superior — igual que login-card::before */
+.ob-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* ── Logo ─────────────────────────────────────────────────── */
+.ob-card__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ob-card__logo-icon {
+  flex-shrink: 0;
+}
+
+.ob-card__logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.ob-card__logo-prisma {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--txt);
+  letter-spacing: 0.04em;
+}
+
+.ob-card__logo-sub {
+  font-size: 0.68rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.ob-card__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--txt);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.ob-card__subtitle {
+  font-size: 0.875rem;
+  color: var(--txt-muted);
+  margin: 0;
+  line-height: 1.6;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Campos ───────────────────────────────────────────────── */
+.ob-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: opacity 0.2s;
+}
+
+.ob-field--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ob-field__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--txt-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ob-field__select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--txt);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.ob-field__select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ob-field__select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.ob-field__skeleton {
+  height: 2.7rem;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 25%,
+    var(--bg-hover)   50%,
+    var(--bg-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: ob-shimmer 1.4s ease infinite;
+}
+
+@keyframes ob-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Nota de contacto ─────────────────────────────────────── */
+.ob-card__note {
+  font-size: 0.8rem;
+  color: var(--txt-muted);
+  margin: 0;
+  line-height: 1.5;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.ob-card__note-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ob-card__note-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Error ────────────────────────────────────────────────── */
+.ob-card__error {
+  font-size: 0.82rem;
+  color: var(--danger);
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  border: 1px solid var(--danger);
+}
+
+/* ── Botón — igual que login-card__btn ───────────────────── */
+.ob-card__btn {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  margin-top: 0.25rem;
+}
+
+.ob-card__btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.ob-card__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}

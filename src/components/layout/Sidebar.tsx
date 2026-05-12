@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart2, ChevronDown, Home, LogOut,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole } from '@/auth/roles';
@@ -98,6 +98,18 @@ function handleHomeEquipo(key: Equipo) {
             {sidebarAbierto && <span>Estadísticas</span>}
           </NavLink>
         )}
+        {/* ── PREVIEW FORMULARIOS ── */}
+{isAdmin && (
+  <NavLink
+    to="/preview/create-ticket-modal"
+    className={({ isActive }) =>
+      ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+    }
+  >
+    <ClipboardList size={16} />
+    {sidebarAbierto && <span>Preview formularios</span>}
+  </NavLink>
+)}
 
         {/* ── AUTOMATIZACIONES ── */}
         {isAdmin && (

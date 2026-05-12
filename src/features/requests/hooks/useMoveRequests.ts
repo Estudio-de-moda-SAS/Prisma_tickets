@@ -1,3 +1,4 @@
+// src/features/requests/hooks/useMoveRequests.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
@@ -5,9 +6,9 @@ import { requestKeys } from './useRequests';
 import type { BoardData, Equipo, KanbanColumna } from '../types';
 
 type MovePayload = {
-  id:       string;
-  columna:  KanbanColumna;
-  columnId?: number; // requerido en modo real para actualizar Supabase
+  id:        string;
+  columna:   KanbanColumna;
+  columnId?: number;
 };
 
 type MutationContext = { snapshot: BoardData | undefined };
@@ -30,7 +31,6 @@ export function useMoveRequest(equipo: Equipo) {
       });
     },
 
-    // Actualización optimista — mueve la tarjeta localmente de inmediato
     onMutate: async (payload): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey });
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
@@ -47,15 +47,14 @@ export function useMoveRequest(equipo: Equipo) {
           backlog:         [...prev.backlog],
           todo:            [...prev.todo],
           en_progreso:     [...prev.en_progreso],
+          ready_to_deploy: [...(prev.ready_to_deploy ?? [])],
           hecho:           [...prev.hecho],
         };
 
-        // Quita de la columna origen
         for (const col of Object.keys(next) as KanbanColumna[]) {
           next[col] = next[col].filter((r) => r.id !== payload.id);
         }
 
-        // Inserta en la columna destino con columnId actualizado si viene
         next[payload.columna] = [
           ...next[payload.columna],
           {
@@ -71,19 +70,16 @@ export function useMoveRequest(equipo: Equipo) {
       return { snapshot };
     },
 
-    // Revertir si Supabase falla
     onError: (_err, _payload, context) => {
       if (context?.snapshot) {
         queryClient.setQueryData<BoardData>(queryKey, context.snapshot);
       }
     },
 
-    // Revalidar desde Supabase solo en modo real
     onSettled: () => {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });
       }
     },
   });
-  
 }

@@ -4,7 +4,7 @@ import type { Request } from '../types';
 /* ============================================================
    Tipos de campo soportados
    ============================================================ */
-export type FieldType = 'text' | 'textarea' | 'select' | 'radio';
+export type FieldType = 'text' | 'textarea' | 'select' | 'radio' | 'checkbox';
 
 export type TemplateExtraField = {
   key:          string;

@@ -53,10 +53,25 @@ export const msal = new PublicClientApplication({
 let initialized = false;
 
 /** Scopes centralizados para login/token */
-export const SCOPES = ['openid', 'profile', 'email', 'User.Read'] as const;
+export const SCOPES = ['openid', 'profile', 'email', 'api://e812277c-a88f-4484-bc55-b2af34ad99bd/access_as_users'] as const;
 
-const loginPopupRequest: PopupRequest     = { scopes: [...SCOPES], prompt: 'select_account' };
+const loginPopupRequest: PopupRequest       = { scopes: [...SCOPES], prompt: 'select_account' };
 const loginRedirectRequest: RedirectRequest = { scopes: [...SCOPES], prompt: 'select_account' };
+
+/** Limpia el flag interaction_in_progress que MSAL deja en sessionStorage
+ *  cuando un popup falla o se cierra antes de completar.
+ *  Sin esto, el siguiente intento de login lanza interaction_in_progress. */
+function clearInteractionInProgress() {
+  try {
+    // MSAL guarda la key con el formato: msal.<clientId>.interaction.status
+    const key = Object.keys(sessionStorage).find(
+      (k) => k.includes('interaction.status'),
+    );
+    if (key) sessionStorage.removeItem(key);
+  } catch {
+    // sessionStorage puede no estar disponible en algunos contextos
+  }
+}
 
 /** Inicializa MSAL y procesa el retorno de redirect */
 export async function initMSAL(): Promise<void> {
@@ -102,6 +117,11 @@ export async function ensureLoginPopup(): Promise<AccountInfo> {
       msal.setActiveAccount(account);
     } catch (e) {
       console.warn('[MSAL] loginPopup falló, fallback a redirect…', e);
+      // ── FIX: limpiar interaction_in_progress antes del redirect ──
+      // MSAL marca la interacción como "en progreso" al abrir el popup.
+      // Si el popup falla (bloqueado, COOP, etc.) ese flag queda sucio
+      // y el siguiente llamado a loginRedirect lanza interaction_in_progress.
+      clearInteractionInProgress();
       await msal.loginRedirect(loginRedirectRequest);
       return new Promise<AccountInfo>(() => {});
     }
@@ -128,9 +148,9 @@ export async function ensureLogin(mode: 'popup' | 'redirect' = 'redirect'): Prom
    =========================== */
 
 export async function getAccessToken(opts?: {
-  interactionMode?:           'popup' | 'redirect';
+  interactionMode?:            'popup' | 'redirect';
   silentExtraScopesToConsent?: string[];
-  forceSilent?:               boolean;
+  forceSilent?:                boolean;
 }): Promise<string> {
   await initMSAL();
   const account = ensureActiveAccount();
@@ -142,6 +162,7 @@ export async function getAccessToken(opts?: {
         const res = await msal.loginPopup(loginPopupRequest);
         msal.setActiveAccount(res.account ?? null);
       } catch {
+        clearInteractionInProgress();
         await msal.loginRedirect(loginRedirectRequest);
         return new Promise<string>(() => {});
       }
@@ -170,6 +191,7 @@ export async function getAccessToken(opts?: {
           return res.accessToken;
         } catch (popupErr) {
           console.warn('[MSAL] popup bloqueado/cancelado; fallback a redirect para token…', popupErr);
+          clearInteractionInProgress();
           await msal.acquireTokenRedirect({ scopes: [...SCOPES], account: silentReq.account });
           return new Promise<string>(() => {});
         }
