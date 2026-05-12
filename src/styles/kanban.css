@@ -31,6 +31,7 @@
 .kanban__col--backlog     { background: rgba(167, 139, 250, 0.03); border: 1px solid rgba(167, 139, 250, 0.08); }
 .kanban__col--todo        { background: rgba(255, 165, 2, 0.03);   border: 1px solid rgba(255, 165, 2, 0.08); }
 .kanban__col--en-progreso { background: rgba(0, 200, 255, 0.03);   border: 1px solid rgba(0, 200, 255, 0.1); }
+.kanban__col--ready-to-deploy  { background: rgba(167, 139, 250, 0.03); border: 1px solid rgba(167, 139, 250, 0.08); }
 .kanban__col--hecho       { background: rgba(0, 229, 160, 0.03);   border: 1px solid rgba(0, 229, 160, 0.08); }
 
 .kanban__col--over {
@@ -59,6 +60,7 @@
 .kanban__col--backlog          .kanban__col-title { color: var(--info); }
 .kanban__col--todo             .kanban__col-title { color: var(--warn); }
 .kanban__col--en-progreso      .kanban__col-title { color: var(--accent); }
+.kanban__col--ready-to-deploy  .kanban__col-title { color: var(--purple); }
 .kanban__col--hecho            .kanban__col-title { color: var(--success); }
 
 .kanban__col-count {

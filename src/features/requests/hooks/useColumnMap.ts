@@ -10,7 +10,8 @@ const MOCK_COLUMN_MAP: Record<KanbanColumna, number> = {
   backlog:         3,
   todo:            4,
   en_progreso:     5,
-  hecho:           6,
+  ready_to_deploy: 6,
+  hecho:           7,
 };
 
 type ColumnRow = {
@@ -24,6 +25,7 @@ const KANBAN_NAME_TO_COLUMNA: Record<string, KanbanColumna> = {
   'Backlog':         'backlog',
   'To do':           'todo',
   'En progreso':     'en_progreso',
+  'Ready to deploy': 'ready_to_deploy',
   'Hecho':           'hecho',
 };
 

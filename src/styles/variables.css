@@ -28,6 +28,7 @@
   --accent-2:      #0055cc;
   --accent-glow:   rgba(0, 200, 255, 0.12);
   --accent-border: rgba(0, 200, 255, 0.2);
+  --purple: #a78bfa;
 
   --border:        rgba(0, 200, 255, 0.14);
   --border-subtle: rgba(255, 255, 255, 0.06);
@@ -40,7 +41,7 @@
   --warn:    #ffa502;
   --danger:  #ff4757;
   --info:    #a78bfa;
-
+  
   --sidebar-w:           220px;
   --sidebar-w-collapsed: 56px;
   --topbar-h:            52px;
