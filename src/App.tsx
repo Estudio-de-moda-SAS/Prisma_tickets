@@ -1,23 +1,26 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useAuth } from '@/auth/AuthProvider';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { BoardPage } from '@/pages/BoardPage';
-import { HomePage } from '@/pages/HomePage';
-import { NuevaSolicitudPage } from '@/pages/NewRequestPage';
-import { MisSolicitudesPage } from '@/pages/MyRequestsPage';
-import { TeamRequestsPage } from '@/pages/TeamRequestsPage';
-import { RequestsPage } from '@/pages/RequestsPage';
-import { StatsPage } from '@/pages/StatsPage';
-import { AutomationsPage } from '@/pages/AutomationsPage';
-import { LoginPage } from '@/pages/LoginPage';
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "@/auth/AuthProvider";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { BoardPage } from "@/pages/BoardPage";
+import { HomePage } from "@/pages/HomePage";
+import { NuevaSolicitudPage } from "@/pages/NewRequestPage";
+import { MisSolicitudesPage } from "@/pages/MyRequestsPage";
+import { TeamRequestsPage } from "@/pages/TeamRequestsPage";
+import { RequestsPage } from "@/pages/RequestsPage";
+import { StatsPage } from "@/pages/StatsPage";
+import { AutomationsPage } from "@/pages/AutomationsPage";
+import { LoginPage } from "@/pages/LoginPage";
+import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
 
 function ScrollToSection() {
   const { search } = useLocation();
+
   useEffect(() => {
-    const params  = new URLSearchParams(search);
-    const section = params.get('section');
+    const params = new URLSearchParams(search);
+    const section = params.get("section");
+
     if (!section) return;
     const timer = setTimeout(() => {
       const el = document.getElementById(section);
@@ -42,20 +45,26 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="login-page">
-        <span style={{ color: 'var(--txt-muted)', fontSize: 12, letterSpacing: 1 }}>
+        <span
+          style={{
+            color: "var(--txt-muted)",
+            fontSize: 12,
+            letterSpacing: 1,
+          }}
+        >
           Iniciando...
         </span>
       </div>
     );
   }
   if (!account) return <Navigate to="/login" replace />;
+
   return <>{children}</>;
 }
 
 export default function App() {
   return (
     <Routes>
-      {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
       {/* Onboarding — protegida pero fuera del AppLayout */}
@@ -68,7 +77,16 @@ export default function App() {
         }
       />
 
-      {/* Protegidas — todas dentro del AppLayout */}
+      {/* Onboarding — protegida pero fuera del AppLayout */}
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
+
       <Route
         element={
           <RequireAuth>
@@ -76,7 +94,13 @@ export default function App() {
           </RequireAuth>
         }
       >
+      <Route
+  path="preview/create-ticket-modal"
+  element={<TicketModalPreviewPage />}
+/>
+
         <Route index element={<BoardPage />} />
+
         <Route
           path="home"
           element={
