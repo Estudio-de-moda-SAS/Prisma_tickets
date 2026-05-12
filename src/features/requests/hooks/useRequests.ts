@@ -25,6 +25,7 @@ function groupRequestsByColumn(requests: Request[]): BoardData {
     backlog:         [],
     todo:            [],
     en_progreso:     [],
+    ready_to_deploy: [],
     hecho:           [],
   };
   for (const r of requests) {
@@ -44,6 +45,7 @@ function getMockBoardForTeam(equipo: Equipo): BoardData {
     backlog:         [],
     todo:            [],
     en_progreso:     [],
+    ready_to_deploy: [],
     hecho:           [],
   };
   for (const col of Object.keys(board) as KanbanColumna[]) {

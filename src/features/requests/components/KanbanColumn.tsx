@@ -20,6 +20,7 @@ const COL_CLASS: Record<KanbanColumna, string> = {
   backlog:         'kanban__col--backlog',
   todo:            'kanban__col--todo',
   en_progreso:     'kanban__col--en-progreso',
+  ready_to_deploy: 'kanban__col--ready-to-deploy',
   hecho:           'kanban__col--hecho',
 };
 
