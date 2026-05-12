@@ -28,9 +28,22 @@
   --accent-2:      #0055cc;
   --accent-glow:   rgba(0, 200, 255, 0.12);
   --accent-border: rgba(0, 200, 255, 0.2);
+  --purple: #a78bfa;
 
   --border:        rgba(0, 200, 255, 0.14);
   --border-subtle: rgba(255, 255, 255, 0.06);
+
+    /* Sidebar */
+  --sidebar-bg:
+    radial-gradient(circle at 18% 0%, rgba(126, 34, 206, 0.45), transparent 34%),
+    linear-gradient(180deg, #2b0757 0%, #3a0a73 45%, #1b0338 100%);
+
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-text: rgba(255, 255, 255, 0.76);
+  --sidebar-text-strong: #ffffff;
+  --sidebar-label: rgba(216, 180, 254, 0.95);
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-active: rgba(255, 255, 255, 0.14);
 
   --txt:       #e8ecf4;
   --txt-muted: #5a6a8a;
@@ -40,7 +53,7 @@
   --warn:    #ffa502;
   --danger:  #ff4757;
   --info:    #a78bfa;
-
+  
   --sidebar-w:           220px;
   --sidebar-w-collapsed: 56px;
   --topbar-h:            52px;

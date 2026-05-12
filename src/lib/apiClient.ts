@@ -24,7 +24,7 @@ async function callApi<T>(action: string, payload: Record<string, unknown> = {})
   //console.log('[apiClient] status:', res.status);
   //console.log('[apiClient] headers:', Object.fromEntries(res.headers.entries()));
   const rawText = await res.text();
-  console.log('[apiClient] body raw:', rawText);
+  //console.log('[apiClient] body raw:', rawText);
 
   if (!res.ok) {
     throw new Error(`[API] ${action} → ${res.status}: ${rawText}`);

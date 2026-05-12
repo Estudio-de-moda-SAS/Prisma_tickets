@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart2, ChevronDown, Home, LogOut,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, ClipboardList, Mail,
 } from 'lucide-react';
+
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole } from '@/auth/roles';
 import { useBoardStore } from '@/store/boardStore';
@@ -15,48 +16,87 @@ import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
 export function Sidebar() {
   const { account, signOut } = useAuth();
   const role = useRole();
-  const { sidebarAbierto, toggleSidebar, equipoActivo, setEquipoActivo } = useBoardStore();
+
+  const {
+    sidebarAbierto,
+    toggleSidebar,
+    equipoActivo,
+    setEquipoActivo,
+  } = useBoardStore();
+
   const navigate = useNavigate();
+
   const [automatizacionesOpen, setAutomatizacionesOpen] = useState(false);
 
   const initiales =
-    account?.name?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() ?? 'U';
+    account?.name
+      ?.split(' ')
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() ?? 'U';
 
-  const isAdmin  = role.role === 'admin';
+  const isAdmin = role.role === 'admin';
   const isMember = role.role === 'member';
 
-  const equiposVisibles = (Object.entries(EQUIPOS) as [Equipo, string][]).filter(([key]) =>
-    isAdmin || (isMember && role.team === key)
-  );
+  const equiposVisibles = (
+    Object.entries(EQUIPOS) as [Equipo, string][]
+  ).filter(([key]) => isAdmin || (isMember && role.team === key));
 
   function handleEquipo(key: Equipo) {
     setEquipoActivo(key);
     navigate('/');
   }
 
-function handleHomeEquipo(key: Equipo) {
-  navigate(`/requests/team/${key}`);
-}
+  function handleHomeEquipo(key: Equipo) {
+    navigate(`/requests/team/${key}`);
+  }
 
   const roleLabel =
-    isAdmin  ? 'Administrador' :
-    isMember ? EQUIPOS[role.team] :
-               'Cliente';
+    isAdmin
+      ? 'Administrador'
+      : isMember
+        ? EQUIPOS[role.team]
+        : 'Cliente';
 
   // Helper: renderiza el label de sección o un separador si está colapsado
-  function NavLabel({ children, top = false }: { children: string; top?: boolean }) {
+  function NavLabel({
+    children,
+    top = false,
+  }: {
+    children: string;
+    top?: boolean;
+  }) {
     if (sidebarAbierto) {
       return (
-        <span className={['sidebar__nav-label', top ? 'sidebar__nav-label--top' : ''].join(' ')}>
+        <span
+          className={[
+            'sidebar__nav-label',
+            top ? 'sidebar__nav-label--top' : '',
+          ].join(' ')}
+        >
           {children}
         </span>
       );
     }
-    return <span className={['sidebar__nav-sep', top ? 'sidebar__nav-sep--top' : ''].join(' ')} />;
+
+    return (
+      <span
+        className={[
+          'sidebar__nav-sep',
+          top ? 'sidebar__nav-sep--top' : '',
+        ].join(' ')}
+      />
+    );
   }
 
   return (
-    <aside className={['sidebar', sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed'].join(' ')}>
+    <aside
+      className={[
+        'sidebar',
+        sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed',
+      ].join(' ')}
+    >
       <div className="sidebar__accent-line" />
 
       {/* ── Logo ── */}
@@ -64,6 +104,7 @@ function handleHomeEquipo(key: Equipo) {
         <div className="-icon">
           <img src="/favicon.svg" width="38" height="35" alt="Prisma" />
         </div>
+
         {sidebarAbierto && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <span className="sidebar__logo-title">Prisma</span>
@@ -79,7 +120,10 @@ function handleHomeEquipo(key: Equipo) {
         <NavLink
           to="/home"
           className={({ isActive }) =>
-            ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+            [
+              'sidebar__nav-item',
+              isActive ? 'sidebar__nav-item--active' : '',
+            ].join(' ')
           }
         >
           <Home size={16} />
@@ -91,13 +135,28 @@ function handleHomeEquipo(key: Equipo) {
           <NavLink
             to="/stats"
             className={({ isActive }) =>
-              ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+              [
+                'sidebar__nav-item',
+                isActive ? 'sidebar__nav-item--active' : '',
+              ].join(' ')
             }
           >
             <BarChart2 size={16} />
             {sidebarAbierto && <span>Estadísticas</span>}
           </NavLink>
         )}
+        {/* ── PREVIEW FORMULARIOS ── */}
+{isAdmin && (
+  <NavLink
+    to="/preview/create-ticket-modal"
+    className={({ isActive }) =>
+      ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+    }
+  >
+    <ClipboardList size={16} />
+    {sidebarAbierto && <span>Preview formularios</span>}
+  </NavLink>
+)}
 
         {/* ── AUTOMATIZACIONES ── */}
         {isAdmin && (
@@ -111,30 +170,63 @@ function handleHomeEquipo(key: Equipo) {
                   onClick={() => setAutomatizacionesOpen((v) => !v)}
                 >
                   <Zap size={16} />
-                  <span style={{ flex: 1 }}>Automatizaciones</span>
+
+                  <span style={{ flex: 1 }}>
+                    Automatizaciones
+                  </span>
+
                   <ChevronDown
                     size={12}
-                    className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
+                    className={[
+                      'sidebar__chevron',
+                      automatizacionesOpen
+                        ? 'sidebar__chevron--open'
+                        : '',
+                    ].join(' ')}
                   />
                 </button>
+
                 {automatizacionesOpen && (
                   <div className="sidebar__nav-sub">
                     <NavLink
                       to="/automations"
                       end
                       className={({ isActive }) =>
-                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                        [
+                          'sidebar__nav-item sidebar__nav-item--sub',
+                          isActive ? 'sidebar__nav-item--active' : '',
+                        ].join(' ')
                       }
                     >
-                      <span className="sidebar__sub-dot" /><span>Todas las reglas</span>
+                      <span className="sidebar__sub-dot" />
+                      <span>Todas las reglas</span>
                     </NavLink>
+
                     <NavLink
                       to="/automations/logs"
                       className={({ isActive }) =>
-                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                        [
+                          'sidebar__nav-item sidebar__nav-item--sub',
+                          isActive ? 'sidebar__nav-item--active' : '',
+                        ].join(' ')
                       }
                     >
-                      <span className="sidebar__sub-dot" /><span>Historial</span>
+                      <span className="sidebar__sub-dot" />
+                      <span>Historial</span>
+                    </NavLink>
+
+                    {/* ── CORREOS ── */}
+                    <NavLink
+                      to="/emails"
+                      className={({ isActive }) =>
+                        [
+                          'sidebar__nav-item sidebar__nav-item--sub',
+                          isActive ? 'sidebar__nav-item--active' : '',
+                        ].join(' ')
+                      }
+                    >
+                      <Mail size={12} />
+                      <span>Correos</span>
                     </NavLink>
                   </div>
                 )}
@@ -144,7 +236,10 @@ function handleHomeEquipo(key: Equipo) {
                 to="/automations"
                 title="Automatizaciones"
                 className={({ isActive }) =>
-                  ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                  [
+                    'sidebar__nav-item',
+                    isActive ? 'sidebar__nav-item--active' : '',
+                  ].join(' ')
                 }
               >
                 <Zap size={16} />
@@ -159,16 +254,25 @@ function handleHomeEquipo(key: Equipo) {
             <NavLabel top>Equipos</NavLabel>
 
             {equiposVisibles.map(([key, label]) => {
-              const c    = EQUIPO_COLORS[key];
-              const ia   = equipoActivo === key;
+              const c = EQUIPO_COLORS[key];
+              const ia = equipoActivo === key;
               const Icon = EQUIPO_ICONS[key];
+
               return (
                 <div key={key} className="sidebar__nav-group">
                   <button
                     onClick={() => handleEquipo(key)}
                     title={sidebarAbierto ? undefined : label}
                     className="sidebar__nav-item sidebar__nav-item--team"
-                    style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
+                    style={
+                      ia
+                        ? {
+                            background: c.glow,
+                            borderColor: c.border,
+                            color: c.dot,
+                          }
+                        : {}
+                    }
                   >
                     <Icon
                       size={15}
@@ -179,8 +283,11 @@ function handleHomeEquipo(key: Equipo) {
                         transition: 'color 0.12s, opacity 0.12s',
                       }}
                     />
+
                     {sidebarAbierto && (
-                      <span style={{ color: ia ? c.dot : undefined }}>{label}</span>
+                      <span style={{ color: ia ? c.dot : undefined }}>
+                        {label}
+                      </span>
                     )}
                   </button>
 
@@ -189,12 +296,19 @@ function handleHomeEquipo(key: Equipo) {
                       <NavLink
                         to="/"
                         className={({ isActive: active }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+                          [
+                            'sidebar__nav-item sidebar__nav-item--sub',
+                            active ? 'sidebar__nav-item--active' : '',
+                          ].join(' ')
                         }
-                        style={({ isActive: active }) => active ? { color: c.dot } : {}}
+                        style={({ isActive: active }) =>
+                          active ? { color: c.dot } : {}
+                        }
                       >
-                        <LayoutGrid size={12} /><span>Board</span>
+                        <LayoutGrid size={12} />
+                        <span>Board</span>
                       </NavLink>
+
                       <button
                         onClick={() => handleHomeEquipo(key)}
                         className="sidebar__nav-item sidebar__nav-item--sub"
@@ -212,36 +326,79 @@ function handleHomeEquipo(key: Equipo) {
       </nav>
 
       {/* ── Footer ── */}
-<div className="sidebar__footer">
-  {sidebarAbierto ? (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-      <button className="sidebar__toggle-btn" onClick={toggleSidebar}
-        title="Contraer panel" style={{ flex: 1 }}>
-        <PanelLeftClose size={14} /><span>Contraer</span>
-      </button>
-      <ConfigPanelTrigger />
-    </div>
-  ) : (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-      <button className="sidebar__toggle-btn" onClick={toggleSidebar}
-        title="Expandir panel" style={{ width: '100%' }}>
-        <PanelLeftOpen size={14} />
-      </button>
-      <ConfigPanelTrigger />
-    </div>
-  )}        {sidebarAbierto ? (
+      <div className="sidebar__footer">
+        {sidebarAbierto ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            <button
+              className="sidebar__toggle-btn"
+              onClick={toggleSidebar}
+              title="Contraer panel"
+              style={{ flex: 1 }}
+            >
+              <PanelLeftClose size={14} />
+              <span>Contraer</span>
+            </button>
+
+            <ConfigPanelTrigger />
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            <button
+              className="sidebar__toggle-btn"
+              onClick={toggleSidebar}
+              title="Expandir panel"
+              style={{ width: '100%' }}
+            >
+              <PanelLeftOpen size={14} />
+            </button>
+
+            <ConfigPanelTrigger />
+          </div>
+        )}
+
+        {sidebarAbierto ? (
           <div className="sidebar__user">
             <div className="sidebar__avatar">{initiales}</div>
+
             <div className="sidebar__user-info">
-              <span className="sidebar__user-name">{account?.name ?? 'Usuario'}</span>
-              <span className="sidebar__user-role">{roleLabel}</span>
+              <span className="sidebar__user-name">
+                {account?.name ?? 'Usuario'}
+              </span>
+
+              <span className="sidebar__user-role">
+                {roleLabel}
+              </span>
             </div>
-            <button onClick={signOut} className="sidebar__logout-btn" title="Cerrar sesión">
+
+            <button
+              onClick={signOut}
+              className="sidebar__logout-btn"
+              title="Cerrar sesión"
+            >
               <LogOut size={14} />
             </button>
           </div>
         ) : (
-          <button onClick={signOut} className="sidebar__nav-item" title="Cerrar sesión">
+          <button
+            onClick={signOut}
+            className="sidebar__nav-item"
+            title="Cerrar sesión"
+          >
             <LogOut size={16} />
           </button>
         )}

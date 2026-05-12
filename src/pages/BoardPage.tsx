@@ -74,10 +74,11 @@ export function BoardPage() {
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
-  function handleMove(id: string, columna: KanbanColumna) {
-    const columnId = columnMap?.[columna];
-    mover({ id, columna, columnId });
-  }
+function handleMove(id: string, columna: KanbanColumna) {
+  const columnId = columnMap?.[columna];
+  if (!columnId && !config.USE_MOCK) return; // columnMap aún no cargó, ignorar
+  mover({ id, columna, columnId });
+}
 
   // Cuando el board notifica que cambió el modalId, verificar si está en el board
   // Si no está, guardar como externalModalId para fetcharlo
