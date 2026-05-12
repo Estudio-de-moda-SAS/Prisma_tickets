@@ -13,6 +13,7 @@ import { AutomationsPage } from "@/pages/AutomationsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
+import EmailsPage from "@/pages/EmailsPage";
 
 function ScrollToSection() {
   const { search } = useLocation();
@@ -24,13 +25,15 @@ function ScrollToSection() {
     if (!section) return;
     const timer = setTimeout(() => {
       const el = document.getElementById(section);
+
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const prev = el.style.transition;
         el.style.transition = 'box-shadow 0.3s';
-        el.style.boxShadow  = '0 0 0 2px rgba(0,200,255,0.45)';
+        el.style.boxShadow = '0 0 0 2px rgba(0,200,255,0.45)';
+
         setTimeout(() => {
-          el.style.boxShadow  = '';
+          el.style.boxShadow = '';
           el.style.transition = prev;
         }, 1200);
       }
@@ -117,6 +120,7 @@ export default function App() {
         <Route path="stats"                      element={<StatsPage />} />
         <Route path="automations"                element={<AutomationsPage />} />
         <Route path="automations/logs"           element={<AutomationsPage />} />
+        <Route path="emails"                     element={<EmailsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
