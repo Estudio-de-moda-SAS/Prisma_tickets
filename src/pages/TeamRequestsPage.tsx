@@ -21,6 +21,7 @@ const COL_COLOR: Record<KanbanColumna, string> = {
   backlog:         'var(--info)',
   todo:            'var(--warn)',
   en_progreso:     'var(--accent)',
+  ready_to_deploy: 'var(--purple)',
   hecho:           'var(--success)',
 };
 
@@ -30,6 +31,7 @@ const COL_BG: Record<KanbanColumna, string> = {
   backlog:         'rgba(167,139,250,0.08)',
   todo:            'rgba(255,165,2,0.08)',
   en_progreso:     'rgba(0,200,255,0.08)',
+  ready_to_deploy: 'rgba(167,139,250,0.08)',
   hecho:           'rgba(0,229,160,0.08)',
 };
 
@@ -111,7 +113,7 @@ export function TeamRequestsPage() {
   const selectedLabel = monthOptions.find((o) => o.value === selectedMonth)?.label
     ?? format(new Date(), 'MMMM yyyy', { locale: es });
 
-  const tabColumnas: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'hecho'];
+  const tabColumnas: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'ready_to_deploy', 'hecho'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 960, margin: '0 auto', width: '100%', padding: '4px 0 48px' }}>

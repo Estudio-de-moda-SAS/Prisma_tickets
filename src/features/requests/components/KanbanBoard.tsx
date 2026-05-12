@@ -1,3 +1,4 @@
+// src/features/requests/components/KanbanBoard.tsx
 import {
   DndContext,
   DragOverlay,
@@ -17,10 +18,24 @@ import { useBoardStyle } from '../hooks/useCustomizationStyles';
 import { KanbanColumn } from './KanbanColumn';
 import { RequestCard } from './RequestCard';
 import { RequestModal } from './RequestModal';
-import { COLUMNAS_BOARD } from '../types';
+import { ClosureModal } from './ClosureModal';
+import { COLUMNAS_BOARD, COLUMNAS_CIERRE } from '../types';
 import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
+import { useCloseRequest } from '../hooks/useCloseRequest';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { config } from '@/config';
+
+// Board_Column_ID por nombre de columna — sincronizado con TBL_Board_Columns
+const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
+  sin_categorizar: 1,
+  icebox:          2,
+  backlog:         3,
+  todo:            4,
+  en_progreso:     5,
+  ready_to_deploy: 7,
+  hecho:           6,
+};
 
 type Props = {
   board:         BoardData;
@@ -31,7 +46,7 @@ type Props = {
 };
 
 const COLUMN_IDS = new Set<string>([
-  'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'hecho',
+  'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'ready_to_deploy', 'hecho',
 ]);
 
 const COLUMN_LABELS: Record<KanbanColumna, string> = {
@@ -40,31 +55,40 @@ const COLUMN_LABELS: Record<KanbanColumna, string> = {
   backlog:         'Backlog',
   todo:            'To do',
   en_progreso:     'En progreso',
+  ready_to_deploy: 'Ready to Deploy',
   hecho:           'Hecho',
 };
 
-export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
-  const [activeCard,      setActiveCard]      = useState<Request | null>(null);
-  const [overColumn,      setOverColumn]      = useState<KanbanColumna | null>(null);
-  const [modalId,         setModalId]         = useState<string | null>(null);
-  // Modal padre apilado encima — siempre readOnly
-  const [parentModalId,   setParentModalId]   = useState<string | null>(null);
+// Estado pendiente de cierre — tarjeta que se acaba de soltar en columna de cierre
+type PendingClosure = {
+  card:            Request;
+  targetColumna:   KanbanColumna;
+  targetColumnId:  number;
+};
 
-  const navigate = useNavigate();
+export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
+  const [activeCard,    setActiveCard]    = useState<Request | null>(null);
+  const [overColumn,    setOverColumn]    = useState<KanbanColumna | null>(null);
+  const [modalId,       setModalId]       = useState<string | null>(null);
+  const [parentModalId, setParentModalId] = useState<string | null>(null);
+  const [pendingClosure, setPendingClosure] = useState<PendingClosure | null>(null);
+
+  const navigate     = useNavigate();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
   const { Requests }    = useGraphServices();
+  const { data: currentUser } = useCurrentUser();
+
+  const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  // Request principal (hija o raíz normal)
   const modalCard = modalId
     ? (Object.values(board).flat().find((r) => r.id === modalId) ?? extraRequest ?? null)
     : null;
 
-  // Request padre — fetch si no está en el board local
   const parentInBoard = parentModalId
     ? Object.values(board).flat().find((r) => r.id === parentModalId) ?? null
     : null;
@@ -80,17 +104,12 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   function setModal(id: string | null) {
     setModalId(id);
-    setParentModalId(null); // cerrar padre al cambiar de hija
+    setParentModalId(null);
     onModalId?.(id);
   }
 
-  function openParentModal(parentId: string) {
-    setParentModalId(parentId);
-  }
-
-  function closeParentModal() {
-    setParentModalId(null);
-  }
+  function openParentModal(parentId: string) { setParentModalId(parentId); }
+  function closeParentModal()                { setParentModalId(null); }
 
   function findColumn(id: string): KanbanColumna | null {
     for (const [col, items] of Object.entries(board)) {
@@ -121,7 +140,72 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
+
+    // Si la columna destino requiere evidencia → abrir ClosureModal en lugar de mover
+    if (COLUMNAS_CIERRE.has(targetCol)) {
+      const card = Object.values(board).flat().find((r) => r.id === activeId);
+      if (card) {
+        setPendingClosure({
+          card,
+          targetColumna:  targetCol,
+          targetColumnId: COLUMN_ID_MAP[targetCol],
+        });
+        return; // no llamar onMove todavía
+      }
+    }
+
     onMove(activeId, targetCol);
+  }
+
+  // Confirmación del ClosureModal al arrastrar
+  function handleClosureConfirm(note: string, attachment: File | null) {
+    if (!pendingClosure || !currentUser) return;
+    closeRequest(
+      {
+        requestId:      Number(pendingClosure.card.id),
+        closedBy:       currentUser.User_ID,
+        closureNote:    note,
+        targetColumnId: pendingClosure.targetColumnId,
+        attachment,
+      },
+      {
+        onSuccess: () => {
+          onMove(pendingClosure.card.id, pendingClosure.targetColumna);
+          setPendingClosure(null);
+        },
+        onError: () => {
+          setPendingClosure(null);
+        },
+      },
+    );
+  }
+
+  // Confirmación del ClosureModal al mover desde el RequestModal
+  function handleModalMoveWithClosure(
+    id: string,
+    columna: KanbanColumna,
+    note: string,
+    attachment: File | null,
+  ) {
+    if (!currentUser) return;
+    closeRequest(
+      {
+        requestId:      Number(id),
+        closedBy:       currentUser.User_ID,
+        closureNote:    note,
+        targetColumnId: COLUMN_ID_MAP[columna],
+        attachment,
+      },
+      {
+        onSuccess: () => {
+          onMove(id, columna);
+          setPendingClosure(null);
+        },
+        onError: () => {
+          setPendingClosure(null);
+        },
+      },
+    );
   }
 
   const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
@@ -158,33 +242,45 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
         </DragOverlay>
       </DndContext>
 
-      {/* Modal principal (hija o raíz normal) */}
+      {/* ── ClosureModal al arrastrar ── */}
+      {pendingClosure && (
+        <ClosureModal
+          request={pendingClosure.card}
+          targetColumna={pendingClosure.targetColumna}
+          targetColumnId={pendingClosure.targetColumnId}
+          onConfirm={handleClosureConfirm}
+          onCancel={() => setPendingClosure(null)}
+          isPending={isClosing}
+        />
+      )}
+
+      {/* ── Modal principal ── */}
       {modalCard && (
         <RequestModal
           request={modalCard}
           equipo={equipo}
           onClose={() => setModal(null)}
           onMove={(id, columna) => onMove(id, columna)}
-onOpenRequest={(id) => {
-  // Si la request actual es una hija, el id que llega es el padre → readOnly
-  // Si la request actual es una raíz, el id que llega es una hija → editable
-  if (modalCard?.parentId !== null) {
-    openParentModal(id);   // es el padre → readOnly
-  } else {
-    setModal(id);          // es una hija → editable normal
-  }
-}}
+          onMoveWithClosure={handleModalMoveWithClosure}
+          onOpenRequest={(id) => {
+            if (modalCard?.parentId !== null) {
+              openParentModal(id);
+            } else {
+              setModal(id);
+            }
+          }}
         />
       )}
 
-      {/* Modal padre apilado encima — readOnly */}
+      {/* ── Modal padre (readOnly) ── */}
       {parentCard && (
         <RequestModal
           request={parentCard}
           equipo={equipo}
           readOnly
           onClose={closeParentModal}
-          onMove={() => {/* no-op en readOnly */}}
+          onMove={() => {/* no-op */}}
+          onMoveWithClosure={() => {/* no-op */}}
         />
       )}
     </>

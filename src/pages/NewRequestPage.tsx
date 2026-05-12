@@ -19,9 +19,6 @@ import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField } from '@/features/requests/templates/types';
 
-/* ============================================================
-   Tipos del flujo
-   ============================================================ */
 type Step = 'equipo' | 'template' | 'form';
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -31,9 +28,6 @@ const PRI_COLOR: Record<Prioridad, string> = {
   critica: 'var(--danger)',
 };
 
-/* ============================================================
-   Helpers de estilo
-   ============================================================ */
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <label style={{
@@ -79,20 +73,11 @@ function cardStyle(accent: string): React.CSSProperties {
   };
 }
 
-/* ============================================================
-   ExtraFieldRenderer — soporta text, textarea, select, radio, collapsible
-   ============================================================ */
 function ExtraFieldRenderer({ field, value, onChange, accent, focused, onFocus, onBlur }: {
-  field:    TemplateExtraField;
-  value:    string;
-  onChange: (v: string) => void;
-  accent:   string;
-  focused:  boolean;
-  onFocus:  () => void;
-  onBlur:   () => void;
+  field: TemplateExtraField; value: string; onChange: (v: string) => void;
+  accent: string; focused: boolean; onFocus: () => void; onBlur: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(field.collapsible ?? false);
-
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: collapsed ? 0 : 7 }}>
@@ -104,46 +89,21 @@ function ExtraFieldRenderer({ field, value, onChange, accent, focused, onFocus, 
           </button>
         )}
       </div>
-
       {!collapsed && (
         <>
           {field.type === 'textarea' && (
-            <textarea
-              style={{ ...inputStyle(focused), minHeight: 80, resize: 'vertical' }}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              placeholder={field.placeholder}
-              rows={3}
-            />
+            <textarea style={{ ...inputStyle(focused), minHeight: 80, resize: 'vertical' }} value={value}
+              onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur} placeholder={field.placeholder} rows={3} />
           )}
           {field.type === 'text' && (
-            <input
-              style={inputStyle(focused)}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              placeholder={field.placeholder}
-            />
+            <input style={inputStyle(focused)} value={value} onChange={(e) => onChange(e.target.value)}
+              onFocus={onFocus} onBlur={onBlur} placeholder={field.placeholder} />
           )}
           {field.type === 'select' && (
-            <select
-              style={{
-                ...inputStyle(focused),
-                color: value ? 'var(--txt)' : 'var(--txt-muted)',
-                cursor: 'pointer',
-              }}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            >
+            <select style={{ ...inputStyle(focused), color: value ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+              value={value} onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur}>
               <option value="">Seleccioná una opción…</option>
-              {(field.options ?? []).map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
+              {(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
             </select>
           )}
           {field.type === 'radio' && (
@@ -152,14 +112,7 @@ function ExtraFieldRenderer({ field, value, onChange, accent, focused, onFocus, 
                 const active = value === opt;
                 return (
                   <button key={opt} type="button" onClick={() => onChange(opt)}
-                    style={{
-                      padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700,
-                      letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer',
-                      border: `1px solid ${active ? accent + '50' : 'var(--border-subtle)'}`,
-                      background: active ? `${accent}15` : 'transparent',
-                      color: active ? accent : 'var(--txt-muted)',
-                      transition: 'all 0.12s',
-                    }}>
+                    style={{ padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', border: `1px solid ${active ? accent + '50' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', transition: 'all 0.12s' }}>
                     {opt}
                   </button>
                 );
@@ -172,50 +125,24 @@ function ExtraFieldRenderer({ field, value, onChange, accent, focused, onFocus, 
   );
 }
 
-/* ============================================================
-   StepIndicator
-   ============================================================ */
 function StepIndicator({ step }: { step: Step }) {
   const steps: { key: Step; label: string }[] = [
-    { key: 'equipo',   label: 'Equipo'   },
-    { key: 'template', label: 'Tipo'     },
-    { key: 'form',     label: 'Detalles' },
+    { key: 'equipo', label: 'Equipo' }, { key: 'template', label: 'Tipo' }, { key: 'form', label: 'Detalles' },
   ];
   const currentIndex = steps.findIndex((s) => s.key === step);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 32 }}>
       {steps.map((s, i) => {
-        const done   = i < currentIndex;
-        const active = i === currentIndex;
+        const done = i < currentIndex; const active = i === currentIndex;
         return (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%',
-                background: done ? 'var(--success)' : active ? 'var(--accent)' : 'var(--bg-surface)',
-                border: `1.5px solid ${done ? 'var(--success)' : active ? 'var(--accent)' : 'var(--border-subtle)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 10, fontWeight: 700,
-                color: done || active ? 'white' : 'var(--txt-muted)',
-                transition: 'all 0.2s',
-              }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: done ? 'var(--success)' : active ? 'var(--accent)' : 'var(--bg-surface)', border: `1.5px solid ${done ? 'var(--success)' : active ? 'var(--accent)' : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: done || active ? 'white' : 'var(--txt-muted)', transition: 'all 0.2s' }}>
                 {done ? '✓' : i + 1}
               </div>
-              <span style={{
-                fontSize: 11, fontWeight: active ? 700 : 500, letterSpacing: 0.5,
-                color: active ? 'var(--txt)' : 'var(--txt-muted)',
-                fontFamily: active ? 'var(--font-display)' : 'var(--font-body)',
-              }}>
-                {s.label}
-              </span>
+              <span style={{ fontSize: 11, fontWeight: active ? 700 : 500, letterSpacing: 0.5, color: active ? 'var(--txt)' : 'var(--txt-muted)', fontFamily: active ? 'var(--font-display)' : 'var(--font-body)' }}>{s.label}</span>
             </div>
-            {i < steps.length - 1 && (
-              <div style={{
-                flex: 1, height: 1, marginLeft: 10,
-                background: done ? 'var(--success)' : 'var(--border-subtle)',
-                transition: 'background 0.2s',
-              }} />
-            )}
+            {i < steps.length - 1 && <div style={{ flex: 1, height: 1, marginLeft: 10, background: done ? 'var(--success)' : 'var(--border-subtle)', transition: 'background 0.2s' }} />}
           </div>
         );
       })}
@@ -223,45 +150,28 @@ function StepIndicator({ step }: { step: Step }) {
   );
 }
 
-/* ============================================================
-   StepEquipo
-   ============================================================ */
 function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
-  teams: BoardTeam[]; selectedTeamId: number | null;
-  onSelect: (id: number) => void; onNext: () => void;
+  teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>
-          ¿A qué equipo va dirigida?
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
-          Seleccioná el equipo que va a atender esta solicitud.
-        </p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
+        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1 }}>
         {teams.map((team) => {
-          const code     = team.Board_Team_Code as keyof typeof EQUIPO_COLORS;
-          const colors   = EQUIPO_COLORS[code];
-          const Icon     = EQUIPO_ICONS[code];
+          const code = team.Board_Team_Code as keyof typeof EQUIPO_COLORS;
+          const colors = EQUIPO_COLORS[code]; const Icon = EQUIPO_ICONS[code];
           const selected = selectedTeamId === team.Board_Team_ID;
-          const dot      = colors?.dot    ?? team.Board_Team_Color;
-          const glow     = colors?.glow   ?? `${team.Board_Team_Color}12`;
-          const border   = colors?.border ?? `${team.Board_Team_Color}30`;
+          const dot = colors?.dot ?? team.Board_Team_Color;
+          const glow = colors?.glow ?? `${team.Board_Team_Color}12`;
+          const border = colors?.border ?? `${team.Board_Team_Color}30`;
           return (
             <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
-              style={{
-                padding: '22px 20px', borderRadius: 10,
-                border: `1.5px solid ${selected ? border : 'var(--border)'}`,
-                background: selected ? glow : 'var(--bg-panel)',
-                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                position: 'relative', overflow: 'hidden',
-                display: 'flex', flexDirection: 'column', gap: 10,
-              }}
+              style={{ padding: '22px 20px', borderRadius: 10, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-panel)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 10 }}
               onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
-              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
-            >
+              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
               {selected && (
                 <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}>
@@ -289,45 +199,32 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
   );
 }
 
-/* ============================================================
-   StepTemplate — filtrado desde DB via Request_Template_Teams
-   ============================================================ */
 function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: {
-  templates:           BoardTemplate[];
-  selectedBoardTeamId: number | null;
-  selectedTemplateId:  number | null;
-  onSelect:            (id: number) => void;
-  onNext:              () => void;
-  onBack:              () => void;
+  templates: BoardTemplate[]; selectedBoardTeamId: number | null; selectedTemplateId: number | null;
+  onSelect: (id: number) => void; onNext: () => void; onBack: () => void;
 }) {
   const filtered = templates.filter((t) =>
     t.Request_Template_Is_Active &&
     (t.Request_Template_Teams?.length === 0 ||
      (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId)))
   );
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>
-          ¿Qué tipo de solicitud es?
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
-          El tipo determina qué información adicional se necesita.
-        </p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿Qué tipo de solicitud es?</h2>
+        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>El tipo determina qué información adicional se necesita.</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 16, flex: 1 }}>
         {filtered.map((t) => {
-          const selected   = selectedTemplateId === t.Request_Template_ID;
-          const accent     = t.Request_Template_Color ?? '#00c8ff';
-          const icon       = t.Request_Template_Icon  ?? '📋';
+          const selected = selectedTemplateId === t.Request_Template_ID;
+          const accent = t.Request_Template_Color ?? '#00c8ff';
+          const icon = t.Request_Template_Icon ?? '📋';
           const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
           return (
             <button key={t.Request_Template_ID} type="button" onClick={() => onSelect(t.Request_Template_ID)}
               style={{ padding: '28px 24px', borderRadius: 10, border: `1.5px solid ${selected ? accent + '70' : 'var(--border)'}`, background: selected ? `linear-gradient(135deg, ${accent}12, ${accent}06)` : 'var(--bg-panel)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden' }}
               onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = accent + '40'; e.currentTarget.style.background = `${accent}06`; }}}
-              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
-            >
+              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${accent}, transparent)` : 'transparent' }} />
               {selected && (
                 <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${accent}60` }}>
@@ -340,9 +237,7 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
               {fieldCount > 0 && (
                 <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {t.Request_Template_Form_Schema.map((f) => (
-                    <span key={f.key} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 7px', borderRadius: 3, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>
-                      + {f.label}
-                    </span>
+                    <span key={f.key} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 7px', borderRadius: 3, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>+ {f.label}</span>
                   ))}
                 </div>
               )}
@@ -361,34 +256,92 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
   );
 }
 
-/* ============================================================
-   StepForm
-   ============================================================ */
-function StepForm({
-  allTemplates, templateId, currentUserName, labels, prioridad, setPrioridad,
-  selectedLabelIds, toggleLabel, titulo, setTitulo, descripcion, setDescripcion,
-  deadline, setDeadline, extraValues, setExtraValue, error, isPending, isReady, onBack,
+// ── Toggle de solicitante ─────────────────────────────────────
+// requesterTeamId: null = personal, Team_ID = en nombre del equipo
+function RequesterToggle({
+  requesterTeamId, onChange, userName, teamName, userTeamId, accent,
 }: {
-  allTemplates:     BoardTemplate[];
-  templateId:       number;
-  currentUserName:  string;
-  labels:           { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string }[];
-  prioridad:        Prioridad;
-  setPrioridad:     (p: Prioridad) => void;
-  selectedLabelIds: number[];
-  toggleLabel:      (id: number) => void;
-  titulo:           string;
-  setTitulo:        (v: string) => void;
-  descripcion:      string;
-  setDescripcion:   (v: string) => void;
-  deadline:         string;
-  setDeadline:      (v: string) => void;
-  extraValues:      Record<string, string>;
-  setExtraValue:    (key: string, value: string) => void;
-  error:            string | null;
-  isPending:        boolean;
-  isReady:          boolean;
-  onBack:           () => void;
+  requesterTeamId: number | null;
+  onChange: (v: number | null) => void;
+  userName: string;
+  teamName: string | null;
+  userTeamId: number | null;
+  accent: string;
+}) {
+  const isTeam = requesterTeamId !== null;
+  return (
+    <div>
+      <FieldLabel>Solicitante</FieldLabel>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {/* Opción: personal */}
+        <button type="button" onClick={() => onChange(null)}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${!isTeam ? 'rgba(0,200,255,0.45)' : 'var(--border-subtle)'}`, background: !isTeam ? 'rgba(0,200,255,0.07)' : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+            {userName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: !isTeam ? 'var(--txt)' : 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
+            <div style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 1 }}>Personal</div>
+          </div>
+          {!isTeam && (
+            <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          )}
+        </button>
+
+        {/* Opción: en nombre del equipo */}
+        {teamName && userTeamId !== null && (
+          <button type="button" onClick={() => onChange(userTeamId)}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${isTeam ? accent + '60' : 'var(--border-subtle)'}`, background: isTeam ? `${accent}08` : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, background: isTeam ? `${accent}20` : 'var(--bg-surface)', border: `1px solid ${isTeam ? accent + '40' : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
+              🏢
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: isTeam ? 'var(--txt)' : 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</div>
+              <div style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 1 }}>En nombre del equipo</div>
+            </div>
+            {isTeam && (
+              <div style={{ width: 16, height: 16, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StepForm({
+  allTemplates, templateId, currentUserName, userTeamName, userTeamId,
+  labels, prioridad, setPrioridad, selectedLabelIds, toggleLabel,
+  titulo, setTitulo, descripcion, setDescripcion,
+  requesterTeamId, setRequesterTeamId,
+  extraValues, setExtraValue, error, isPending, isReady, onBack,
+}: {
+  allTemplates:        BoardTemplate[];
+  templateId:          number;
+  currentUserName:     string;
+  userTeamName:        string | null;
+  userTeamId:          number | null;
+  labels:              { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string }[];
+  prioridad:           Prioridad;
+  setPrioridad:        (p: Prioridad) => void;
+  selectedLabelIds:    number[];
+  toggleLabel:         (id: number) => void;
+  titulo:              string;
+  setTitulo:           (v: string) => void;
+  descripcion:         string;
+  setDescripcion:      (v: string) => void;
+  requesterTeamId:     number | null;
+  setRequesterTeamId:  (v: number | null) => void;
+  extraValues:         Record<string, string>;
+  setExtraValue:       (key: string, value: string) => void;
+  error:               string | null;
+  isPending:           boolean;
+  isReady:             boolean;
+  onBack:              () => void;
 }) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const def    = getTemplateDefinition(templateId, allTemplates);
@@ -396,8 +349,6 @@ function StepForm({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-      {/* Badge template */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <span style={{ fontSize: 20 }}>{def.visual.icon}</span>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, background: `${accent}10`, border: `1px solid ${accent}30`, padding: '3px 10px', borderRadius: 3 }}>
@@ -405,79 +356,53 @@ function StepForm({
         </span>
       </div>
 
-      {/* Solicitud */}
       <div style={cardStyle(accent)}>
         <SectionLabel>Solicitud</SectionLabel>
         <div style={{ marginBottom: 16 }}>
           <FieldLabel>Asunto *</FieldLabel>
           <input
             style={{ ...inputStyle(focusedField === 'titulo'), fontSize: 15, fontWeight: 500, padding: '12px 14px' }}
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            onFocus={() => setFocusedField('titulo')}
-            onBlur={() => setFocusedField(null)}
+            value={titulo} onChange={(e) => setTitulo(e.target.value)}
+            onFocus={() => setFocusedField('titulo')} onBlur={() => setFocusedField(null)}
             placeholder="Describe brevemente el problema..."
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div>
-            <FieldLabel>Solicitante</FieldLabel>
-            <div style={{ ...inputStyle(false), display: 'flex', alignItems: 'center', gap: 10, opacity: 0.65 }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-                {currentUserName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
-              </div>
-              <span style={{ fontSize: 13 }}>{currentUserName}</span>
-            </div>
-          </div>
-          <div>
-            <FieldLabel>Fecha límite</FieldLabel>
-            <input type="date"
-              style={{ ...inputStyle(focusedField === 'deadline'), colorScheme: 'dark' }}
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              onFocus={() => setFocusedField('deadline')}
-              onBlur={() => setFocusedField(null)}
-            />
-          </div>
-        </div>
+        <RequesterToggle
+          requesterTeamId={requesterTeamId}
+          onChange={setRequesterTeamId}
+          userName={currentUserName}
+          teamName={userTeamName}
+          userTeamId={userTeamId}
+          accent={accent}
+        />
       </div>
 
-      {/* Descripción */}
       <div style={cardStyle(accent)}>
         <SectionLabel>Descripción</SectionLabel>
         <textarea
           style={{ ...inputStyle(focusedField === 'desc'), minHeight: 110, resize: 'vertical', lineHeight: 1.65 }}
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          onFocus={() => setFocusedField('desc')}
-          onBlur={() => setFocusedField(null)}
-          placeholder="Describe el problema con detalle..."
-          rows={4}
+          value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+          onFocus={() => setFocusedField('desc')} onBlur={() => setFocusedField(null)}
+          placeholder="Describe el problema con detalle..." rows={4}
         />
       </div>
 
-      {/* Campos extra del template — desde DB */}
       {def.extraFields.length > 0 && (
         <div style={cardStyle(accent)}>
           <SectionLabel>{def.nombre} — Datos adicionales</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {def.extraFields.map((field) => (
               <ExtraFieldRenderer
-                key={field.key}
-                field={field}
-                value={extraValues[field.key] ?? ''}
-                onChange={(v) => setExtraValue(field.key, v)}
-                accent={accent}
+                key={field.key} field={field} value={extraValues[field.key] ?? ''}
+                onChange={(v) => setExtraValue(field.key, v)} accent={accent}
                 focused={focusedField === field.key}
-                onFocus={() => setFocusedField(field.key)}
-                onBlur={() => setFocusedField(null)}
+                onFocus={() => setFocusedField(field.key)} onBlur={() => setFocusedField(null)}
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* Clasificación */}
       <div style={cardStyle(accent)}>
         <SectionLabel>Clasificación</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -495,7 +420,6 @@ function StepForm({
               })}
             </div>
           </div>
-
           {labels.length > 0 && (
             <div>
               <FieldLabel>Etiquetas</FieldLabel>
@@ -536,9 +460,6 @@ function StepForm({
   );
 }
 
-/* ============================================================
-   SuccessScreen
-   ============================================================ */
 function SuccessScreen({ onHome }: { onHome: () => void }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '0 28px', textAlign: 'center' }}>
@@ -559,17 +480,14 @@ function SuccessScreen({ onHome }: { onHome: () => void }) {
   );
 }
 
-/* ============================================================
-   NuevaSolicitudPage
-   ============================================================ */
 export function NuevaSolicitudPage() {
   const navigate     = useNavigate();
   const qc           = useQueryClient();
   const { Requests } = useGraphServices();
   const boardId      = config.DEFAULT_BOARD_ID;
 
-  const { data: currentUser }    = useCurrentUser();
-  const columnMap                = useColumnMap(boardId);
+  const { data: currentUser }     = useCurrentUser();
+  const columnMap                 = useColumnMap(boardId);
   const { data: teams      = [] } = useBoardTeams(boardId);
   const { data: templates  = [] } = useBoardTemplates(boardId);
 
@@ -583,15 +501,20 @@ export function NuevaSolicitudPage() {
   const [descripcion,      setDescripcion]      = useState('');
   const [prioridad,        setPrioridad]        = useState<Prioridad>('media');
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
-  const [deadline,         setDeadline]         = useState('');
+  const [requesterTeamId,  setRequesterTeamId]  = useState<number | null>(null);
   const [extraValues,      setExtraValues]      = useState<Record<string, string>>({});
   const [error,            setError]            = useState<string | null>(null);
   const [submitted,        setSubmitted]        = useState(false);
+
+  // Equipo del usuario desde el onboarding
+  const userTeamName = currentUser?.team?.Team_Name ?? null;
+  const userTeamId   = currentUser?.Team_ID ?? null;
 
   function selectTeam(id: number) {
     setSelectedTeamId(id);
     setSelectedTemplateId(null);
     setExtraValues({});
+    setRequesterTeamId(null);
   }
 
   function toggleLabel(id: number) {
@@ -606,31 +529,28 @@ export function NuevaSolicitudPage() {
     mutationFn: () => {
       if (!currentUser || !columnMap || !selectedTemplateId)
         throw new Error('Datos incompletos');
-
       const sinCategorizarColumnId = columnMap['sin_categorizar'];
       if (!sinCategorizarColumnId) throw new Error('Columna sin_categorizar no encontrada');
-
-      // Validar campos requeridos del template desde DB
       const def = getTemplateDefinition(selectedTemplateId, templates);
       for (const field of def.extraFields) {
         if (field.required && !extraValues[field.key]?.trim())
           throw new Error(`El campo "${field.label}" es obligatorio.`);
       }
-
       return Requests.createRequest({
         boardId,
-        columnId:    sinCategorizarColumnId,
-        requestedBy: currentUser.User_ID,
-        templateId:  selectedTemplateId,
-        titulo:      titulo.trim(),
-        descripcion: descripcion.trim(),
+        columnId:        sinCategorizarColumnId,
+        requestedBy:     currentUser.User_ID,
+        templateId:      selectedTemplateId,
+        titulo:          titulo.trim(),
+        descripcion:     descripcion.trim(),
         prioridad,
-        equipoIds:   selectedTeamId ? [selectedTeamId] : [],
-        labelIds:    selectedLabelIds,
-        subTeamIds:  [],
-        sprintId:    null,
-        deadline:    deadline || null,
-        parentId:    null,
+        equipoIds:       selectedTeamId ? [selectedTeamId] : [],
+        labelIds:        selectedLabelIds,
+        subTeamIds:      [],
+        sprintId:        null,
+        deadline:        null,
+        parentId:        null,
+        requesterTeamId,
       });
     },
     onSuccess: () => {
@@ -670,12 +590,9 @@ export function NuevaSolicitudPage() {
 
       {step === 'template' && (
         <StepTemplate
-          templates={templates}
-          selectedBoardTeamId={selectedTeamId}
-          selectedTemplateId={selectedTemplateId}
-          onSelect={setSelectedTemplateId}
-          onNext={() => setStep('form')}
-          onBack={() => setStep('equipo')}
+          templates={templates} selectedBoardTeamId={selectedTeamId}
+          selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId}
+          onNext={() => setStep('form')} onBack={() => setStep('equipo')}
         />
       )}
 
@@ -684,6 +601,8 @@ export function NuevaSolicitudPage() {
           allTemplates={templates}
           templateId={selectedTemplateId}
           currentUserName={currentUser?.User_Name ?? 'Cargando...'}
+          userTeamName={userTeamName}
+          userTeamId={userTeamId}
           labels={labels}
           prioridad={prioridad}
           setPrioridad={setPrioridad}
@@ -693,8 +612,8 @@ export function NuevaSolicitudPage() {
           setTitulo={(v) => { setTitulo(v); setError(null); }}
           descripcion={descripcion}
           setDescripcion={setDescripcion}
-          deadline={deadline}
-          setDeadline={setDeadline}
+          requesterTeamId={requesterTeamId}
+          setRequesterTeamId={setRequesterTeamId}
           extraValues={extraValues}
           setExtraValue={setExtraValue}
           error={error}

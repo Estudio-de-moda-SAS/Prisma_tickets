@@ -12,6 +12,7 @@ import { StatsPage } from "@/pages/StatsPage";
 import { AutomationsPage } from "@/pages/AutomationsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
+import { OnboardingPage } from '@/pages/OnBoardingPage';
 
 function ScrollToSection() {
   const { search } = useLocation();
@@ -21,34 +22,26 @@ function ScrollToSection() {
     const section = params.get("section");
 
     if (!section) return;
-
     const timer = setTimeout(() => {
-      const element = document.getElementById(section);
-
-      if (!element) return;
-
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-
-      const previousTransition = element.style.transition;
-
-      element.style.transition = "box-shadow 0.3s";
-      element.style.boxShadow = "0 0 0 2px rgba(0,200,255,0.45)";
-
-      setTimeout(() => {
-        element.style.boxShadow = "";
-        element.style.transition = previousTransition;
-      }, 1200);
+      const el = document.getElementById(section);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const prev = el.style.transition;
+        el.style.transition = 'box-shadow 0.3s';
+        el.style.boxShadow  = '0 0 0 2px rgba(0,200,255,0.45)';
+        setTimeout(() => {
+          el.style.boxShadow  = '';
+          el.style.transition = prev;
+        }, 1200);
+      }
     }, 120);
-
     return () => clearTimeout(timer);
   }, [search]);
-
   return null;
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, account } = useAuth();
-
   if (!ready) {
     return (
       <div className="login-page">
@@ -64,7 +57,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
   if (!account) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
@@ -74,6 +66,26 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Onboarding — protegida pero fuera del AppLayout */}
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
+
+      {/* Onboarding — protegida pero fuera del AppLayout */}
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
 
       <Route
         element={
@@ -98,14 +110,13 @@ export default function App() {
             </>
           }
         />
-
-        <Route path="new" element={<NuevaSolicitudPage />} />
-        <Route path="my-requests" element={<MisSolicitudesPage />} />
-        <Route path="requests/team/:equipo" element={<TeamRequestsPage />} />
-        <Route path="requests" element={<RequestsPage />} />
-        <Route path="stats" element={<StatsPage />} />
-        <Route path="automations" element={<AutomationsPage />} />
-        <Route path="automations/logs" element={<AutomationsPage />} />
+        <Route path="new"                        element={<NuevaSolicitudPage />} />
+        <Route path="my-requests"                element={<MisSolicitudesPage />} />
+        <Route path="requests/team/:equipo"      element={<TeamRequestsPage />} />
+        <Route path="requests"                   element={<RequestsPage />} />
+        <Route path="stats"                      element={<StatsPage />} />
+        <Route path="automations"                element={<AutomationsPage />} />
+        <Route path="automations/logs"           element={<AutomationsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

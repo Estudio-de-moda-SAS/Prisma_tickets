@@ -19,6 +19,7 @@ export type KanbanColumna =
   | 'backlog'
   | 'todo'
   | 'en_progreso'
+  | 'ready_to_deploy'
   | 'hecho';
 
 export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
@@ -27,6 +28,7 @@ export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
   backlog:         'Backlog',
   todo:            'To do',
   en_progreso:     'En progreso',
+  ready_to_deploy: 'Ready to Deploy',
   hecho:           'Hecho',
 };
 
@@ -35,8 +37,12 @@ export const COLUMNAS_BOARD: KanbanColumna[] = [
   'backlog',
   'todo',
   'en_progreso',
+  'ready_to_deploy',
   'hecho',
 ];
+
+/** Columnas que requieren evidencia de cierre al mover una tarjeta a ellas */
+export const COLUMNAS_CIERRE = new Set<KanbanColumna>(['ready_to_deploy', 'hecho']);
 
 /* ============================================================
    Prioridades
@@ -62,6 +68,22 @@ export const PRIORIDAD_TO_SCORE: Record<Prioridad, number> = {
   media:   3,
   alta:    5,
   critica: 8,
+};
+
+/* ============================================================
+   Cierre
+   ============================================================ */
+export type CierreInfo = {
+  closureId:      number;
+  closureNote:    string;
+  attachmentUrl:  string | null;
+  attachmentName: string | null;
+  attachmentMime: string | null;
+  closedAt:       string;
+  closedBy: {
+    userId:   number;
+    userName: string;
+  };
 };
 
 /* ============================================================
@@ -110,7 +132,7 @@ export type Request = {
   templateId:   number;
 
   // ── Jerarquía ──────────────────────────────────────────────
-  parentId:     number | null;   // null = request raíz; number = es hija de esa request
+  parentId:     number | null;
 
   // ── Contenido ──────────────────────────────────────────────
   titulo:       string;
@@ -128,26 +150,27 @@ export type Request = {
   progreso:     number;
 
   // ── Personas ───────────────────────────────────────────────
-  solicitante:   string;
-  solicitanteId: number;
-  assignees:     RequestAssignee[];
+  solicitante:     string;
+  solicitanteId:   number;
+  requesterTeamId: number | null;
+  assignees:       RequestAssignee[];
 
   // ── Relaciones de board ────────────────────────────────────
-  equipo:       Equipo[];      // Board_Team_Code[] — para display
-  equipoIds:    number[];      // Board_Team_ID[]   — para writes
+  equipo:       Equipo[];
+  equipoIds:    number[];
   boardTeamId:  number | null;
 
-  // ── Sub-equipos (TBL_Sub_Teams) ────────────────────────────
-  subTeamIds:   number[];      // Sub_Team_ID[] — para writes
-  subTeamNames: string[];      // Sub_Team_Name[] — para display en card
+  // ── Sub-equipos ────────────────────────────────────────────
+  subTeamIds:   number[];
+  subTeamNames: string[];
 
   // ── Labels ─────────────────────────────────────────────────
-  categoria:    string[];      // Label_Name[] — para display en card
-  labelIds:     number[];      // Label_ID[]   — para writes
+  categoria:    string[];
+  labelIds:     number[];
 
   // ── Sprint ─────────────────────────────────────────────────
   sprintId:     number | null;
-  sprintName:   string | null; // Sprint_Text — para display en card
+  sprintName:   string | null;
 
   // ── Fechas ─────────────────────────────────────────────────
   fechaApertura: string;
@@ -160,27 +183,31 @@ export type Request = {
   // ── Campos extra del template ──────────────────────────────
   extraFields:  RequestExtraFields | null;
 
-  // ── Hijos (cargados bajo demanda) ──────────────────────────
-  childCount?:  number;        // cuántas sub-requests tiene (opcional, para la card)
+  // ── Hijos ──────────────────────────────────────────────────
+  childCount?:  number;
+
+  // ── Cierre ─────────────────────────────────────────────────
+  cierreInfo?:  CierreInfo | null;
 };
 
 /* ============================================================
    Payloads
    ============================================================ */
 export type CrearRequestPayload = {
-  boardId:     number;
-  columnId:    number;
-  requestedBy: number;
-  templateId:  number;
-  titulo:      string;
-  descripcion: string;
-  prioridad:   Prioridad;
-  equipoIds:   number[];
-  subTeamIds:  number[];
-  labelIds:    number[];
-  sprintId:    number | null;
-  deadline:    string | null;
-  parentId:    number | null;  // null = raíz; number = sub-request
+  boardId:         number;
+  columnId:        number;
+  requestedBy:     number;
+  templateId:      number;
+  titulo:          string;
+  descripcion:     string;
+  prioridad:       Prioridad;
+  equipoIds:       number[];
+  subTeamIds:      number[];
+  labelIds:        number[];
+  sprintId:        number | null;
+  deadline:        string | null;
+  parentId:        number | null;
+  requesterTeamId: number | null;
 };
 
 export type MoverRequestPayload = {
@@ -200,6 +227,14 @@ export type ActualizarRequestPayload = {
   labelIds?:    number[];
   sprintId?:    number | null;
   deadline?:    string | null;
+};
+
+export type CerrarRequestPayload = {
+  requestId:      number;
+  closedBy:       number;
+  closureNote:    string;
+  targetColumnId: number;
+  attachment?:    File | null;
 };
 
 export type BoardData = Record<KanbanColumna, Request[]>;
