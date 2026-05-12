@@ -13,6 +13,7 @@ import { AutomationsPage } from "@/pages/AutomationsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
+import EmailsPage from "@/pages/EmailsPage";
 
 function ScrollToSection() {
   const { search } = useLocation();
@@ -119,6 +120,7 @@ export default function App() {
         <Route path="stats"                      element={<StatsPage />} />
         <Route path="automations"                element={<AutomationsPage />} />
         <Route path="automations/logs"           element={<AutomationsPage />} />
+        <Route path="emails"                     element={<EmailsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
