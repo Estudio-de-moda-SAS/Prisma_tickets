@@ -63,6 +63,7 @@ const IconCal    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="n
 const IconTag    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>;
 const IconZap    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
 const IconSprint = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>;
+const IconCheck  = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 
 function Chips({ items, accent }: { items: string[]; accent?: string }) {
   if (items.length === 0) return null;
@@ -85,13 +86,12 @@ function Chips({ items, accent }: { items: string[]; accent?: string }) {
 export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
-  // Templates desde cache — staleTime: Infinity, sin refetch extra
   const { data: allTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
 
   const { theme: uiTheme }         = useTheme();
   const isBeingDragged             = isSortableDragging || isDragging;
   const progreso                   = request.progreso ?? 0;
-  const showProgressCol            = request.columna === 'en_progreso' || request.columna === 'hecho';
+  const showProgressCol            = request.columna === 'en_progreso' || request.columna === 'hecho' || request.columna === 'ready_to_deploy';
 
   const cardClasses                = useCardClasses(request.prioridad);
   const { showDesc, showProgress } = useCardVisibility();
@@ -111,12 +111,20 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const primerAsignado = request.assignees?.[0] ?? null;
   const allLabels      = request.categoria    ?? [];
   const allSubTeams    = request.subTeamNames ?? [];
+  const isCerrada      = !!request.cierreInfo || !!request.fechaCierre;
 
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
     e.stopPropagation();
     onClick?.();
   }
+
+  // Borde izquierdo para tarjetas cerradas en ready_to_deploy
+  const closureBorderStyle = isCerrada && request.columna === 'ready_to_deploy'
+    ? { boxShadow: 'inset 3px 0 0 #a78bfa', borderColor: 'rgba(167,139,250,0.3)' }
+    : isCerrada && request.columna === 'hecho'
+      ? { boxShadow: 'inset 3px 0 0 var(--success)', borderColor: 'rgba(0,229,160,0.3)' }
+      : {};
 
   return (
     <div
@@ -130,7 +138,9 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
           ? { boxShadow: 'inset 3px 0 0 #a78bfa', borderColor: 'rgba(167,139,250,0.3)' }
           : isNonDefault
             ? { boxShadow: `inset 3px 0 0 ${accent}`, borderColor: `${accent}30` }
-            : {}),
+            : isCerrada
+              ? closureBorderStyle
+              : {}),
       }}
       className={[cardClasses, isBeingDragged ? 'request-card--dragging' : ''].filter(Boolean).join(' ')}
       {...attributes}
@@ -139,7 +149,17 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
     >
       {/* Header */}
       <div className="request-card__header">
-        {isSubRequest ? (
+        {isCerrada ? (
+          <span style={{
+            background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)',
+            color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa',
+            border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`,
+            fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px',
+            borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3,
+          }}>
+            <IconCheck /> Cerrada
+          </span>
+        ) : isSubRequest ? (
           <span style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
             ↳ Sub-solicitud
           </span>
@@ -156,7 +176,7 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
       </div>
 
       {/* Título */}
-      <p className="request-card__title" style={{ marginBottom: 10 }}>{request.titulo}</p>
+      <p className="request-card__title" style={{ marginBottom: 10, opacity: isCerrada ? 0.8 : 1 }}>{request.titulo}</p>
 
       {/* Descripción */}
       {showDesc && request.descripcion && (
@@ -208,7 +228,19 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
           </MetaRow>
         )}
 
-        {hasDeadline && (
+        {/* Fecha de cierre si está cerrada */}
+        {isCerrada && request.fechaCierre && (
+          <MetaRow icon={<IconCal />} label="Cerrada el">
+            <span style={{ color: 'var(--success)', fontSize: 11 }}>
+              {new Date(request.fechaCierre).toLocaleDateString('es-CO', {
+                timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric',
+              })}
+            </span>
+          </MetaRow>
+        )}
+
+        {/* Deadline solo si no está cerrada */}
+        {!isCerrada && hasDeadline && (
           <MetaRow icon={<IconCal />} label="Fecha límite">
             <span style={{ color: isVencida ? 'var(--danger)' : 'var(--txt)', fontSize: 11 }}>
               {new Date(request.deadline!).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric' })}

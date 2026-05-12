@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Plus, ArrowRight, CheckCircle2, Loader2, CalendarDays, Zap } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { EQUIPOS } from '@/features/requests/types';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
+import { useSprints } from '@/features/requests/hooks/useSprints';
 import { HomeRequestModal } from '@/features/requests/components/HomeRequestModal';
 import type { Equipo, Request } from '@/features/requests/types';
+import type { Sprint } from '@/features/requests/hooks/useSprints';
 import { config } from '@/config';
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -53,6 +55,32 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
+/** Devuelve el sprint cuyo rango de fechas incluye hoy */
+function getActiveSprint(sprints: Sprint[]): Sprint | null {
+  const now = Date.now();
+  return (
+    sprints.find((s) => {
+      const start = new Date(s.Sprint_Start_Date).getTime();
+      const end   = new Date(s.Sprint_End_Date).getTime() + 86_400_000; // inclusive
+      return now >= start && now <= end;
+    }) ?? null
+  );
+}
+
+/** Progreso temporal del sprint (0–100) */
+function sprintProgress(sprint: Sprint): number {
+  const start = new Date(sprint.Sprint_Start_Date).getTime();
+  const end   = new Date(sprint.Sprint_End_Date).getTime() + 86_400_000;
+  const now   = Date.now();
+  return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+}
+
+/** Días restantes del sprint */
+function sprintDaysLeft(sprint: Sprint): number {
+  const end = new Date(sprint.Sprint_End_Date).getTime() + 86_400_000;
+  return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
+}
+
 /* ── useMyRequests ───────────────────────────────────────────── */
 function useMyRequests(equipo: Equipo, userName: string) {
   const { data: board, isLoading } = useBoardEquipo(equipo);
@@ -64,6 +92,88 @@ function useMyRequests(equipo: Equipo, userName: string) {
       )
     : [];
   return { requests, isLoading };
+}
+
+/* ── SprintBanner ────────────────────────────────────────────── */
+function SprintBanner() {
+  const { data: sprints = [], isLoading } = useSprints();
+  const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
+
+  if (isLoading) return null;
+  if (!activeSprint) return null;
+
+  const pct      = sprintProgress(activeSprint);
+  const daysLeft = sprintDaysLeft(activeSprint);
+  const startFmt = new Date(activeSprint.Sprint_Start_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  const endFmt   = new Date(activeSprint.Sprint_End_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+
+  // Color del indicador según tiempo restante
+  const urgencyColor = daysLeft <= 2 ? '#E05C5C' : daysLeft <= 4 ? '#EF9F27' : 'var(--accent)';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '12px 18px',
+        borderRadius: 10,
+        background: 'var(--surface-1)',
+        border: '1px solid rgba(0,200,255,0.18)',
+        boxShadow: '0 0 20px rgba(0,200,255,0.06)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Accent line */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent), var(--accent)00)' }} />
+
+      {/* Icon */}
+      <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(0,200,255,0.10)', border: '1px solid rgba(0,200,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Zap size={15} style={{ color: 'var(--accent)' }} />
+      </div>
+
+      {/* Label + fechas */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Sprint activo</span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)' }}>
+            En curso
+          </span>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>
+          {activeSprint.Sprint_Text}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
+            <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{startFmt} — {endFmt}</span>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 600, color: urgencyColor }}>
+            {daysLeft === 0 ? 'Último día' : `${daysLeft}d restantes`}
+          </span>
+        </div>
+        <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${pct}%`,
+            borderRadius: 3,
+            background: `linear-gradient(90deg, var(--accent), ${urgencyColor})`,
+            transition: 'width 0.6s ease',
+          }} />
+        </div>
+      </div>
+
+      {/* Pct */}
+      <span style={{ fontSize: 13, fontWeight: 700, color: urgencyColor, fontFamily: 'var(--font-display)', flexShrink: 0, minWidth: 36, textAlign: 'right' }}>
+        {pct}%
+      </span>
+    </div>
+  );
 }
 
 /* ── EquipoSummaryCard ───────────────────────────────────────── */
@@ -79,6 +189,14 @@ function EquipoSummaryCard({ equipo, label, userName, onClick }: {
 
   const active = requests.filter((r) => r.columna !== 'hecho').length;
   const done   = requests.filter((r) => r.columna === 'hecho').length;
+
+  // Progreso promedio solo si hay solicitudes activas con progreso definido
+  const progressValues = requests
+    .filter((r) => r.columna !== 'hecho' && typeof r.progreso === 'number')
+    .map((r) => r.progreso as number);
+  const avgProgress = progressValues.length > 0
+    ? Math.round(progressValues.reduce((a, b) => a + b, 0) / progressValues.length)
+    : null;
 
   return (
     <button
@@ -115,6 +233,7 @@ function EquipoSummaryCard({ equipo, label, userName, onClick }: {
         <span style={{ fontSize: 11, fontWeight: 700, color: c.dot, fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', display: 'block' }}>{label}</span>
         <span style={{ fontSize: 11, color: 'var(--txt-muted)', display: 'block', marginTop: 4, lineHeight: 1.45 }}>{EQUIPO_DESCRIPTIONS[equipo]}</span>
       </div>
+
       <div style={{ display: 'flex', gap: 14, marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         {isLoading ? (
           <Loader2 size={11} style={{ color: 'var(--txt-muted)', animation: 'spin 1s linear infinite' }} />
@@ -129,6 +248,20 @@ function EquipoSummaryCard({ equipo, label, userName, onClick }: {
               <span style={{ fontSize: 20, fontWeight: 700, color: '#4CAF50', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{done}</span>
               <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.3px' }}>resueltas</span>
             </div>
+            {avgProgress !== null && (
+              <>
+                <div style={{ width: 1, background: 'rgba(255,255,255,0.06)', alignSelf: 'stretch' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, justifyContent: 'center', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.3px' }}>progreso</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: c.dot }}>{avgProgress}%</span>
+                  </div>
+                  <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${avgProgress}%`, borderRadius: 2, background: c.dot, transition: 'width 0.4s ease' }} />
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
@@ -137,7 +270,16 @@ function EquipoSummaryCard({ equipo, label, userName, onClick }: {
 }
 
 /* ── TicketRow ───────────────────────────────────────────────── */
-function TicketRow({ r, isLast, onClick }: { r: Request; isLast: boolean; onClick: () => void }) {
+function TicketRow({ r, isLast, onClick, activeSprint }: {
+  r: Request;
+  isLast: boolean;
+  onClick: () => void;
+  activeSprint: Sprint | null;
+}) {
+  // Determinar si el ticket pertenece al sprint activo
+  // Asumimos que el request tiene un campo sprintId o similar; si no existe, no se muestra tag
+  const inSprint = activeSprint && (r as Record<string, unknown>).sprintId === activeSprint.Sprint_ID;
+
   return (
     <div
       onClick={onClick}
@@ -156,6 +298,17 @@ function TicketRow({ r, isLast, onClick }: { r: Request; isLast: boolean; onClic
       <span style={{ flex: 1, fontSize: 13, color: 'var(--txt)', fontWeight: 400, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
         {r.titulo}
       </span>
+
+      {/* Sprint tag — solo si el ticket está en el sprint activo */}
+      {inSprint && (
+        <div style={{ flexShrink: 0 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)', whiteSpace: 'nowrap' }}>
+            <Zap size={8} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />
+            {activeSprint!.Sprint_Text}
+          </span>
+        </div>
+      )}
+
       <div style={{ width: 88, display: 'flex', justifyContent: 'center' }}>
         <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: PRIORIDAD_COLOR[r.prioridad] + '18', color: PRIORIDAD_COLOR[r.prioridad], border: `1px solid ${PRIORIDAD_COLOR[r.prioridad]}35` }}>
           {r.prioridad.charAt(0).toUpperCase() + r.prioridad.slice(1)}
@@ -174,12 +327,13 @@ function TicketRow({ r, isLast, onClick }: { r: Request; isLast: boolean; onClic
 }
 
 /* ── EquipoSection ───────────────────────────────────────────── */
-function EquipoSection({ equipo, label, userName, onVerMas, onRowClick }: {
+function EquipoSection({ equipo, label, userName, onVerMas, onRowClick, activeSprint }: {
   equipo: Equipo;
   label: string;
   userName: string;
   onVerMas: () => void;
   onRowClick: (r: Request) => void;
+  activeSprint: Sprint | null;
 }) {
   const c    = EQUIPO_COLORS[equipo];
   const Icon = EQUIPO_ICONS[equipo];
@@ -247,6 +401,7 @@ function EquipoSection({ equipo, label, userName, onVerMas, onRowClick }: {
               r={r}
               isLast={i === visible.length - 1 && extra <= 0}
               onClick={() => onRowClick(r)}
+              activeSprint={activeSprint}
             />
           ))}
           {extra > 0 && (
@@ -274,6 +429,9 @@ export function HomePage() {
   const navigate    = useNavigate();
 
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+
+  const { data: sprints = [] } = useSprints();
+  const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
   const userName  = account?.name ?? '';
   const firstName = userName.split(' ')[0] ?? 'Usuario';
@@ -312,17 +470,25 @@ export function HomePage() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/new')}
-          style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)' }}
-          onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.20)', boxShadow: '0 0 44px rgba(0,200,255,0.32), 0 0 0 5px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.20)', borderColor: 'rgba(0,200,255,0.80)', transform: 'translateY(-2px)' })}
-          onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.12)', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)', borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(0)' })}
-        >
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(0,200,255,0.18)', border: '1.5px solid rgba(0,200,255,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={21} strokeWidth={2.5} />
+        {/* Sprint banner + CTA en la misma fila si hay sprint activo */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+          <button
+            onClick={() => navigate('/new')}
+            style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)', flexShrink: 0, whiteSpace: 'nowrap' }}
+            onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.20)', boxShadow: '0 0 44px rgba(0,200,255,0.32), 0 0 0 5px rgba(0,200,255,0.10), inset 0 1px 0 rgba(0,200,255,0.20)', borderColor: 'rgba(0,200,255,0.80)', transform: 'translateY(-2px)' })}
+            onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.12)', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06), inset 0 1px 0 rgba(0,200,255,0.12)', borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(0)' })}
+          >
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(0,200,255,0.18)', border: '1.5px solid rgba(0,200,255,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={21} strokeWidth={2.5} />
+            </div>
+            Crear nueva solicitud
+          </button>
+
+          {/* Sprint banner ocupa el espacio restante */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <SprintBanner />
           </div>
-          Crear nueva solicitud
-        </button>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -351,6 +517,7 @@ export function HomePage() {
             userName={userName}
             onVerMas={() => handleVerMas(eq)}
             onRowClick={(r) => setSelectedRequest(r)}
+            activeSprint={activeSprint}
           />
         ))}
       </div>

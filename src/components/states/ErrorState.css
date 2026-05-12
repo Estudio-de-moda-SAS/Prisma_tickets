@@ -1,0 +1,195 @@
+.section-error-state {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 240px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: 42px 32px;
+  text-align: center;
+  isolation: isolate;
+  border-radius: 28px;
+  border: 1px solid rgba(239, 68, 68, 0.10);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 249, 249, 0.90)
+    );
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+.section-error-state__ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.section-error-state__ambient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgba(239, 68, 68, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+}
+
+.section-error-state__line {
+  position: absolute;
+  top: 28%;
+  left: -10%;
+  width: 120%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239, 68, 68, 0.10),
+    transparent
+  );
+  transform: rotate(-4deg);
+}
+
+.section-error-state::after {
+  content: '';
+  position: absolute;
+  inset: auto -100px -120px auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(239, 68, 68, 0.08),
+    transparent 72%
+  );
+  filter: blur(10px);
+  z-index: -1;
+}
+
+.section-error-state__visual {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 255, 255, 0.72)
+    );
+  border: 1px solid rgba(239, 68, 68, 0.14);
+  box-shadow:
+    0 16px 38px rgba(239, 68, 68, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+.section-error-state__visual span {
+  font-size: 28px;
+  filter: drop-shadow(0 8px 16px rgba(239, 68, 68, 0.14));
+}
+
+.section-error-state__body {
+  display: grid;
+  gap: 8px;
+}
+
+.section-error-state__eyebrow {
+  color: #dc2626;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.section-error-state__body h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.section-error-state__body p {
+  max-width: 520px;
+  margin: 0 auto;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+.section-error-state__button {
+  margin-top: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, #ef4444, #f97316);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow:
+    0 14px 34px rgba(239, 68, 68, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.section-error-state__button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow:
+    0 18px 42px rgba(239, 68, 68, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+@media (max-width: 768px) {
+  .section-error-state {
+    min-height: 220px;
+    padding: 34px 24px;
+    border-radius: 24px;
+  }
+
+  .section-error-state__visual {
+    width: 58px;
+    height: 58px;
+    border-radius: 20px;
+  }
+
+  .section-error-state__visual span {
+    font-size: 24px;
+  }
+
+  .section-error-state__body h2 {
+    font-size: 24px;
+  }
+
+  .section-error-state__body p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .section-error-state__button {
+    width: 100%;
+    max-width: 220px;
+  }
+}

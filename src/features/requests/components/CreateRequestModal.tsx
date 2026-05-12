@@ -391,6 +391,37 @@ function ExtraFieldRenderer({ field, value, onChange, accent }: {
               })}
             </div>
           )}
+          {field.type === 'checkbox' && (
+            <button
+              type="button"
+              onClick={() => onChange(value === 'true' ? 'false' : 'true')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderRadius: 8, width: '100%',
+                border: `1px solid ${value === 'true' ? accent + '50' : 'var(--border-subtle)'}`,
+                background: value === 'true' ? `${accent}0d` : 'var(--bg-surface)',
+                cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+              }}
+            >
+              <div style={{
+                width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                border: `2px solid ${value === 'true' ? accent : 'var(--border)'}`,
+                background: value === 'true' ? accent : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.15s',
+              }}>
+                {value === 'true' && (
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                    <path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span style={{ fontSize: 13, color: value === 'true' ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: value === 'true' ? 600 : 400, transition: 'color 0.15s' }}>
+                {field.label}
+                {field.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+              </span>
+            </button>
+          )}
         </>
       )}
     </div>
@@ -507,14 +538,17 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
         sprintId:    selectedSprintId,
         deadline:    deadline || null,
         parentId,
+        requesterTeamId: null,
       },
       { onSuccess: () => { onCreated?.(); onClose(); } },
     );
   }
 
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
-    (templateDef?.extraFields.filter((f) => f.required).every((f) => !!extraValues[f.key]?.trim()) ?? true);
-
+(templateDef?.extraFields.filter((f) => f.required).every((f) => {
+  if (f.type === 'checkbox') return extraValues[f.key] === 'true';
+  return !!extraValues[f.key]?.trim();
+}) ?? true);
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
 
   return (

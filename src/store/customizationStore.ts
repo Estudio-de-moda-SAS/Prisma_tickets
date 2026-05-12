@@ -60,6 +60,7 @@ export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
   backlog:         { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)', emoji: '', hidden: false, width: 280 },
   todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',   emoji: '', hidden: false, width: 280 },
   en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',   emoji: '', hidden: false, width: 280 },
+  ready_to_deploy: { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)', emoji: '', hidden: false, width: 280 },
   hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',   emoji: '', hidden: false, width: 280 },
 };
 

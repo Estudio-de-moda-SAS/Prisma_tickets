@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useBoardStore } from '@/store/boardStore';
 import { config as appConfig } from '@/config';
+import { COLUMNAS_CIERRE } from '@/features/requests/types';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
@@ -19,6 +20,7 @@ const COL_COLOR: Record<KanbanColumna, string> = {
   backlog:         'var(--info)',
   todo:            'var(--warn)',
   en_progreso:     'var(--accent)',
+  ready_to_deploy: 'var(--purple)',
   hecho:           'var(--success)',
 };
 
@@ -176,9 +178,10 @@ function RequestRow({ request: r, isSelected, onClick }: { request: Request; isS
 function RequestDetail({ request, onClose, onGoToBoard, onUpdate }: { request: Request; onClose: () => void; onGoToBoard: (r: Request) => void; onUpdate: (r: Request) => void }) {
   const { mutate: mover } = useMoveRequest(request.equipo[0] ?? 'desarrollo');
 
-  function handleMover(columna: KanbanColumna) {
-    mover({ id: request.id, columna }, { onSuccess: () => onUpdate({ ...request, columna }) });
-  }
+function handleMover(columna: KanbanColumna) {
+  if (COLUMNAS_CIERRE.has(columna)) return; // desde esta vista no se puede cerrar sin evidencia
+  mover({ id: request.id, columna }, { onSuccess: () => onUpdate({ ...request, columna }) });
+}
 
   const labelStyle: React.CSSProperties = { fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 6, display: 'block' };
   const sectionStyle: React.CSSProperties = { paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 };
