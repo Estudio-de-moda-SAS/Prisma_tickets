@@ -1,3 +1,5 @@
+// src/features/requests/types.ts
+
 /* ============================================================
    Equipos disponibles
    ============================================================ */
@@ -19,17 +21,21 @@ export type KanbanColumna =
   | 'backlog'
   | 'todo'
   | 'en_progreso'
+  | 'en_revision_qas'
   | 'ready_to_deploy'
-  | 'hecho';
+  | 'hecho'
+  | 'historial';
 
 export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
-  sin_categorizar: 'Sin categorizar',
-  icebox:          'Icebox',
-  backlog:         'Backlog',
-  todo:            'To do',
-  en_progreso:     'En progreso',
-  ready_to_deploy: 'Ready to Deploy',
-  hecho:           'Hecho',
+  sin_categorizar:  'Sin categorizar',
+  icebox:           'Icebox',
+  backlog:          'Backlog',
+  todo:             'To do',
+  en_progreso:      'En progreso',
+  en_revision_qas:  'En revisión QAS',
+  ready_to_deploy:  'Ready to Deploy',
+  hecho:            'Hecho',
+  historial:        'Historial',
 };
 
 export const COLUMNAS_BOARD: KanbanColumna[] = [
@@ -37,12 +43,18 @@ export const COLUMNAS_BOARD: KanbanColumna[] = [
   'backlog',
   'todo',
   'en_progreso',
+  'en_revision_qas',
   'ready_to_deploy',
   'hecho',
+  'historial',
 ];
 
 /** Columnas que requieren evidencia de cierre al mover una tarjeta a ellas */
-export const COLUMNAS_CIERRE = new Set<KanbanColumna>(['ready_to_deploy', 'hecho']);
+export const COLUMNAS_CIERRE = new Set<KanbanColumna>([
+  'ready_to_deploy',
+  'hecho',
+  'historial',
+]);
 
 /* ============================================================
    Prioridades
@@ -71,19 +83,35 @@ export const PRIORIDAD_TO_SCORE: Record<Prioridad, number> = {
 };
 
 /* ============================================================
+   Cierre — adjunto individual
+   ============================================================ */
+export type ClosureAttachment = {
+  attachmentId: number;
+  storagePath:  string;
+  fileName:     string;
+  mimeType:     string;
+  fileSize:     number;
+  createdAt:    string;
+  signedUrl:    string | null;
+};
+
+/* ============================================================
    Cierre
    ============================================================ */
 export type CierreInfo = {
-  closureId:      number;
-  closureNote:    string;
-  attachmentUrl:  string | null;
-  attachmentName: string | null;
-  attachmentMime: string | null;
-  closedAt:       string;
+  closureId:   number;
+  closureNote: string;
+  closedAt:    string;
   closedBy: {
     userId:   number;
     userName: string;
   };
+  // Lista de adjuntos (nueva tabla TBL_Closure_Attachments)
+  attachments: ClosureAttachment[];
+  // Campos legacy — para registros anteriores a la migración
+  attachmentUrl:  string | null;
+  attachmentName: string | null;
+  attachmentMime: string | null;
 };
 
 /* ============================================================
@@ -128,11 +156,11 @@ export type RequestExtraFields =
    ============================================================ */
 export type Request = {
   // ── Identidad ──────────────────────────────────────────────
-  id:           string;
+  id:           string;          // hex 8 dígitos, ej: '00000001'
   templateId:   number;
 
   // ── Jerarquía ──────────────────────────────────────────────
-  parentId:     number | null;
+  parentId:     string | null;   // string porque Request_ID es text
 
   // ── Contenido ──────────────────────────────────────────────
   titulo:       string;
@@ -206,18 +234,18 @@ export type CrearRequestPayload = {
   labelIds:        number[];
   sprintId:        number | null;
   deadline:        string | null;
-  parentId:        number | null;
+  parentId:        string | null;
   requesterTeamId: number | null;
 };
 
 export type MoverRequestPayload = {
-  id:       string;
+  id:       string;   // hex
   columna:  KanbanColumna;
   columnId: number;
 };
 
 export type ActualizarRequestPayload = {
-  id:           string;
+  id:           string;   // hex
   titulo?:      string;
   descripcion?: string;
   prioridad?:   Prioridad;
@@ -230,11 +258,11 @@ export type ActualizarRequestPayload = {
 };
 
 export type CerrarRequestPayload = {
-  requestId:      number;
+  requestId:      string;   // hex
   closedBy:       number;
   closureNote:    string;
   targetColumnId: number;
-  attachment?:    File | null;
+  attachments:    File[];   // ← lista de hasta 5 archivos
 };
 
 export type BoardData = Record<KanbanColumna, Request[]>;

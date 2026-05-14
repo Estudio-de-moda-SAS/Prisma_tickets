@@ -74,9 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setReady(true);
         }
 
-        console.log('[AuthProvider] MSAL initialized');
+        //console.log('[AuthProvider] MSAL initialized');
       } catch (err) {
-        console.error('[AuthProvider] init error:', err);
+        //console.error('[AuthProvider] init error:', err);
 
         if (!cancel) {
           setReady(true);

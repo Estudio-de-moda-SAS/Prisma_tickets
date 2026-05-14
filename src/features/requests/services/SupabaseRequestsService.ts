@@ -4,11 +4,22 @@ import type {
   Request, CrearRequestPayload, ActualizarRequestPayload,
   MoverRequestPayload, KanbanColumna, Prioridad,
   RequestAssignee, RequestExtraFields, CierreInfo, CerrarRequestPayload,
+  ClosureAttachment,
 } from '../types';
 import { SCORE_TO_PRIORIDAD, PRIORIDAD_TO_SCORE } from '../types';
 
+type RawClosureAttachment = {
+  Closure_Attachment_ID: number;
+  Storage_Path:          string;
+  File_Name:             string;
+  Mime_Type:             string;
+  File_Size:             number;
+  Created_At:            string;
+  Signed_Url:            string | null;
+};
+
 type RawRequestRow = {
-  Request_ID:                number;
+  Request_ID:                string;
   Request_Board_Column_ID:   number;
   Request_Requested_By:      number;
   Request_Template_ID:       number;
@@ -20,7 +31,7 @@ type RawRequestRow = {
   Request_Deadline:          string | null;
   Request_Time_Consumed:     string | null;
   Request_Finished_At:       string | null;
-  Request_Parent_ID:         number | null;
+  Request_Parent_ID:         string | null;
   Request_Requester_Team_ID: number | null;
 
   requester:      { User_Name: string; User_Email: string; User_Avatar_url: string } | null;
@@ -38,7 +49,6 @@ type RawRequestRow = {
   crm_extra:  { Request_CRM_Example_Store_Name: string } | null;
   child_count?: { count: number }[];
 
-  // Cierre — join con TBL_Request_Closure
   closure: {
     Closure_ID:      number;
     Closure_Note:    string;
@@ -47,6 +57,14 @@ type RawRequestRow = {
     Attachment_Mime: string | null;
     Closed_At:       string;
     closer: { User_ID: number; User_Name: string } | null;
+    closure_attachments: {
+      Closure_Attachment_ID: number;
+      Storage_Path:          string;
+      File_Name:             string;
+      Mime_Type:             string;
+      File_Size:             number;
+      Created_At:            string;
+    }[];
   } | null;
 };
 
@@ -56,9 +74,20 @@ const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
   'Backlog':         'backlog',
   'To do':           'todo',
   'En progreso':     'en_progreso',
+  'En revisión QAS': 'en_revision_qas',
   'Ready to Deploy': 'ready_to_deploy',
   'Hecho':           'hecho',
+  'Historial':       'historial',
 };
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = () => reject(new Error('Error leyendo el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
 
 function mapRowToRequest(row: RawRequestRow): Request {
   const columna              = COLUMN_NAME_TO_KANBAN[row.column?.Board_Column_Name ?? ''] ?? 'sin_categorizar';
@@ -92,29 +121,40 @@ function mapRowToRequest(row: RawRequestRow): Request {
   let extraFields: RequestExtraFields | null = null;
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
-  const solicitante = requesterTeamId !== null
-    ? (row.requester_team?.Team_Name ?? row.requester?.User_Name ?? '')
-    : (row.requester?.User_Name ?? '');
+  const solicitante = row.requester?.User_Name ?? '';
 
-  // Mapear cierre si existe
   let cierreInfo: CierreInfo | null = null;
   if (row.closure) {
+    // Los closure_attachments del BASE_SELECT no tienen signed URLs todavía
+    // Se hidratan en fetchById vía fetchClosureAttachments
+    const rawAtts = row.closure.closure_attachments ?? [];
+    const attachments: ClosureAttachment[] = rawAtts.map((a) => ({
+      attachmentId: a.Closure_Attachment_ID,
+      storagePath:  a.Storage_Path,
+      fileName:     a.File_Name,
+      mimeType:     a.Mime_Type,
+      fileSize:     a.File_Size,
+      createdAt:    a.Created_At,
+      signedUrl:    null, // se genera en fetchById
+    }));
+
     cierreInfo = {
       closureId:      row.closure.Closure_ID,
       closureNote:    row.closure.Closure_Note,
-      attachmentUrl:  row.closure.Attachment_URL,
-      attachmentName: row.closure.Attachment_Name,
-      attachmentMime: row.closure.Attachment_Mime,
       closedAt:       row.closure.Closed_At,
       closedBy: {
         userId:   row.closure.closer?.User_ID   ?? 0,
         userName: row.closure.closer?.User_Name ?? '',
       },
+      attachments,
+      attachmentUrl:  row.closure.Attachment_URL,
+      attachmentName: row.closure.Attachment_Name,
+      attachmentMime: row.closure.Attachment_Mime,
     };
   }
 
   return {
-    id:              String(row.Request_ID),
+    id:              row.Request_ID,
     templateId:      row.Request_Template_ID,
     parentId:        row.Request_Parent_ID ?? null,
     titulo:          row.Request_Title ?? '',
@@ -166,9 +206,15 @@ export class SupabaseRequestsService {
     return rows.map(mapRowToRequest);
   }
 
-  async fetchById(id: number): Promise<Request> {
-    const row = await apiClient.call<RawRequestRow>('fetchById', { id });
-    return mapRowToRequest(row);
+  async fetchById(id: string): Promise<Request> {
+    const row    = await apiClient.call<RawRequestRow>('fetchById', { id });
+    const mapped = mapRowToRequest(row);
+
+    // Hidratar signed URLs de adjuntos de cierre
+    if (mapped.cierreInfo && mapped.cierreInfo.attachments.length > 0) {
+      mapped.cierreInfo.attachments = await this.fetchClosureAttachments(mapped.cierreInfo.closureId);
+    }
+    return mapped;
   }
 
   async fetchByRequestedBy(userId: number): Promise<Request[]> {
@@ -176,9 +222,22 @@ export class SupabaseRequestsService {
     return rows.map(mapRowToRequest);
   }
 
-  async fetchChildRequests(parentId: number): Promise<Request[]> {
+  async fetchChildRequests(parentId: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchChildRequests', { parentId });
     return rows.map(mapRowToRequest);
+  }
+
+  async fetchClosureAttachments(closureId: number): Promise<ClosureAttachment[]> {
+    const rows = await apiClient.call<RawClosureAttachment[]>('fetchClosureAttachments', { closureId });
+    return rows.map((r) => ({
+      attachmentId: r.Closure_Attachment_ID,
+      storagePath:  r.Storage_Path,
+      fileName:     r.File_Name,
+      mimeType:     r.Mime_Type,
+      fileSize:     r.File_Size,
+      createdAt:    r.Created_At,
+      signedUrl:    r.Signed_Url,
+    }));
   }
 
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
@@ -195,18 +254,18 @@ export class SupabaseRequestsService {
       sprintId:        payload.sprintId,
       deadline:        payload.deadline,
       parentId:        payload.parentId,
-      requesterTeamId: payload.requesterTeamId ?? null,
+      requesterTeamId: payload.requesterTeamId,
     });
     return mapRowToRequest(row);
   }
 
   async moveToColumn({ id, columnId }: MoverRequestPayload): Promise<void> {
-    await apiClient.call('moveToColumn', { id: Number(id), columnId });
+    await apiClient.call('moveToColumn', { id, columnId });
   }
 
   async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     await apiClient.call('updateRequest', {
-      id:          Number(id),
+      id,
       titulo:      patch.titulo,
       descripcion: patch.descripcion,
       score:       patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
@@ -217,71 +276,74 @@ export class SupabaseRequestsService {
       deadline:    patch.deadline,
     });
     if (patch.subTeamIds !== undefined) {
-      await apiClient.call('updateRequestSubTeams', { id: Number(id), subTeamIds: patch.subTeamIds });
+      await apiClient.call('updateRequestSubTeams', { id, subTeamIds: patch.subTeamIds });
     }
   }
 
   async deleteRequest(id: string): Promise<void> {
-    await apiClient.call('deleteRequest', { id: Number(id) });
+    await apiClient.call('deleteRequest', { id });
   }
 
-  /**
-   * Cierra una request:
-   * 1. Sube el adjunto si existe (reutiliza endpoint de attachments)
-   * 2. Inserta registro en TBL_Request_Closure
-   * 3. Actualiza Request_Finished_At y mueve de columna en TBL_Requests
-   */
   async closeRequest(payload: CerrarRequestPayload): Promise<CierreInfo> {
-    let attachmentUrl:  string | null = null;
-    let attachmentName: string | null = null;
-    let attachmentMime: string | null = null;
-
-    // Subir adjunto si existe
-    if (payload.attachment) {
-      const uploaded = await apiClient.call<{
-        url:      string;
-        fileName: string;
-        mimeType: string;
-      }>('uploadClosureAttachment', {
-        requestId: payload.requestId,
-        userId:    payload.closedBy,
-        file:      payload.attachment,
-      });
-      attachmentUrl  = uploaded.url;
-      attachmentName = uploaded.fileName;
-      attachmentMime = uploaded.mimeType;
-    }
-
-    // Crear registro de cierre + mover columna + setear fechaCierre
     const row = await apiClient.call<{
-      Closure_ID:      number;
-      Closure_Note:    string;
-      Attachment_URL:  string | null;
-      Attachment_Name: string | null;
-      Attachment_Mime: string | null;
-      Closed_At:       string;
+      Closure_ID:   number;
+      Closure_Note: string;
+      Closed_At:    string;
       closer: { User_ID: number; User_Name: string } | null;
     }>('closeRequest', {
       requestId:      payload.requestId,
       closedBy:       payload.closedBy,
       closureNote:    payload.closureNote,
       targetColumnId: payload.targetColumnId,
-      attachmentUrl,
-      attachmentName,
-      attachmentMime,
+      attachmentUrl:  null,
+      attachmentName: null,
+      attachmentMime: null,
     });
 
+    const closureId = row.Closure_ID;
+    const uploadedAttachments: ClosureAttachment[] = [];
+
+    if (payload.attachments.length > 0) {
+      const uploads = await Promise.all(
+        payload.attachments.map(async (file) => {
+          const base64 = await fileToBase64(file);
+          return apiClient.call<RawClosureAttachment>('uploadClosureAttachment', {
+            closureId,
+            requestId: payload.requestId,
+            userId:    payload.closedBy,
+            fileName:  file.name,
+            mimeType:  file.type,
+            sizeBytes: file.size,
+            base64,
+          });
+        }),
+      );
+
+      for (const u of uploads) {
+        uploadedAttachments.push({
+          attachmentId: u.Closure_Attachment_ID,
+          storagePath:  u.Storage_Path,
+          fileName:     u.File_Name,
+          mimeType:     u.Mime_Type,
+          fileSize:     u.File_Size,
+          createdAt:    u.Created_At,
+          signedUrl:    u.Signed_Url,
+        });
+      }
+    }
+
     return {
-      closureId:      row.Closure_ID,
+      closureId,
       closureNote:    row.Closure_Note,
-      attachmentUrl:  row.Attachment_URL,
-      attachmentName: row.Attachment_Name,
-      attachmentMime: row.Attachment_Mime,
       closedAt:       row.Closed_At,
       closedBy: {
         userId:   row.closer?.User_ID   ?? payload.closedBy,
         userName: row.closer?.User_Name ?? '',
       },
+      attachments:    uploadedAttachments,
+      attachmentUrl:  null,
+      attachmentName: null,
+      attachmentMime: null,
     };
   }
 }

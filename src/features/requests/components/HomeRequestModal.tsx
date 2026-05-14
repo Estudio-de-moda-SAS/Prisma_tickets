@@ -141,7 +141,7 @@ export function HomeRequestModal({ request, onClose }: Props) {
           display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
         }}>
           <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--txt-muted)', letterSpacing: 1 }}>
-            #{request.id.slice(-6).toUpperCase()}
+            {request.id}
           </span>
           {/* Badge "Solo lectura" */}
           <span style={{

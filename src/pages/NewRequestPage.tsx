@@ -1,5 +1,5 @@
 // src/pages/NewRequestPage.tsx
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
@@ -14,12 +14,16 @@ import {
 } from '@/features/requests/hooks/useBoardMetadata';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
+import { apiClient } from '@/lib/apiClient';
 import type { Prioridad } from '@/features/requests/types';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField } from '@/features/requests/templates/types';
+import { Upload, X, FileText, Image, File as FileIcon2 } from 'lucide-react';
 
 type Step = 'equipo' | 'template' | 'form';
+
+const MAX_ATTACHMENTS = 5;
 
 const PRI_COLOR: Record<Prioridad, string> = {
   baja:    'var(--txt-muted)',
@@ -27,6 +31,27 @@ const PRI_COLOR: Record<Prioridad, string> = {
   alta:    'var(--warn)',
   critica: 'var(--danger)',
 };
+
+function fmtBytes(bytes: number) {
+  if (bytes < 1024)        return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = () => reject(new Error('Error leyendo archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function AttachmentIcon({ mime }: { mime: string }) {
+  if (mime.startsWith('image/')) return <Image size={13} />;
+  if (mime === 'application/pdf' || mime.includes('text')) return <FileText size={13} />;
+  return <FileIcon2 size={13} />;
+}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -256,96 +281,51 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
   );
 }
 
-// ── Toggle de solicitante ─────────────────────────────────────
-// requesterTeamId: null = personal, Team_ID = en nombre del equipo
-function RequesterToggle({
-  requesterTeamId, onChange, userName, teamName, userTeamId, accent,
-}: {
-  requesterTeamId: number | null;
-  onChange: (v: number | null) => void;
-  userName: string;
-  teamName: string | null;
-  userTeamId: number | null;
-  accent: string;
-}) {
-  const isTeam = requesterTeamId !== null;
-  return (
-    <div>
-      <FieldLabel>Solicitante</FieldLabel>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {/* Opción: personal */}
-        <button type="button" onClick={() => onChange(null)}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${!isTeam ? 'rgba(0,200,255,0.45)' : 'var(--border-subtle)'}`, background: !isTeam ? 'rgba(0,200,255,0.07)' : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-            {userName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: !isTeam ? 'var(--txt)' : 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
-            <div style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 1 }}>Personal</div>
-          </div>
-          {!isTeam && (
-            <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-          )}
-        </button>
-
-        {/* Opción: en nombre del equipo */}
-        {teamName && userTeamId !== null && (
-          <button type="button" onClick={() => onChange(userTeamId)}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: `1.5px solid ${isTeam ? accent + '60' : 'var(--border-subtle)'}`, background: isTeam ? `${accent}08` : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 7, background: isTeam ? `${accent}20` : 'var(--bg-surface)', border: `1px solid ${isTeam ? accent + '40' : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
-              🏢
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: isTeam ? 'var(--txt)' : 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</div>
-              <div style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 1 }}>En nombre del equipo</div>
-            </div>
-            {isTeam && (
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function StepForm({
-  allTemplates, templateId, currentUserName, userTeamName, userTeamId,
+  allTemplates, templateId, currentUserName, userTeamName,
   labels, prioridad, setPrioridad, selectedLabelIds, toggleLabel,
   titulo, setTitulo, descripcion, setDescripcion,
-  requesterTeamId, setRequesterTeamId,
-  extraValues, setExtraValue, error, isPending, isReady, onBack,
+  extraValues, setExtraValue,
+  pendingFiles, setPendingFiles,
+  error, isPending, isReady, onBack,
 }: {
-  allTemplates:        BoardTemplate[];
-  templateId:          number;
-  currentUserName:     string;
-  userTeamName:        string | null;
-  userTeamId:          number | null;
-  labels:              { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string }[];
-  prioridad:           Prioridad;
-  setPrioridad:        (p: Prioridad) => void;
-  selectedLabelIds:    number[];
-  toggleLabel:         (id: number) => void;
-  titulo:              string;
-  setTitulo:           (v: string) => void;
-  descripcion:         string;
-  setDescripcion:      (v: string) => void;
-  requesterTeamId:     number | null;
-  setRequesterTeamId:  (v: number | null) => void;
-  extraValues:         Record<string, string>;
-  setExtraValue:       (key: string, value: string) => void;
-  error:               string | null;
-  isPending:           boolean;
-  isReady:             boolean;
-  onBack:              () => void;
+  allTemplates:     BoardTemplate[];
+  templateId:       number;
+  currentUserName:  string;
+  userTeamName:     string | null;
+  labels:           { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string }[];
+  prioridad:        Prioridad;
+  setPrioridad:     (p: Prioridad) => void;
+  selectedLabelIds: number[];
+  toggleLabel:      (id: number) => void;
+  titulo:           string;
+  setTitulo:        (v: string) => void;
+  descripcion:      string;
+  setDescripcion:   (v: string) => void;
+  extraValues:      Record<string, string>;
+  setExtraValue:    (key: string, value: string) => void;
+  pendingFiles:     File[];
+  setPendingFiles:  (files: File[]) => void;
+  error:            string | null;
+  isPending:        boolean;
+  isReady:          boolean;
+  onBack:           () => void;
 }) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [dragOver,     setDragOver]     = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const def    = getTemplateDefinition(templateId, allTemplates);
   const accent = def.visual.accentColor;
+
+  function addFiles(incoming: File[]) {
+    const slots = MAX_ATTACHMENTS - pendingFiles.length;
+    const toAdd = incoming.slice(0, slots);
+    if (toAdd.length > 0) setPendingFiles([...pendingFiles, ...toAdd]);
+  }
+
+  function removeFile(idx: number) {
+    setPendingFiles(pendingFiles.filter((_, i) => i !== idx));
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -367,14 +347,18 @@ function StepForm({
             placeholder="Describe brevemente el problema..."
           />
         </div>
-        <RequesterToggle
-          requesterTeamId={requesterTeamId}
-          onChange={setRequesterTeamId}
-          userName={currentUserName}
-          teamName={userTeamName}
-          userTeamId={userTeamId}
-          accent={accent}
-        />
+        <div>
+          <FieldLabel>Solicitante</FieldLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+              {currentUserName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{currentUserName}</div>
+              {userTeamName && <div style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', marginTop: 1 }}>{userTeamName}</div>}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style={cardStyle(accent)}>
@@ -440,6 +424,69 @@ function StepForm({
         </div>
       </div>
 
+      {/* Adjuntos */}
+      <div style={cardStyle(accent)}>
+        <SectionLabel>Adjuntos <span style={{ fontWeight: 400, letterSpacing: 0, textTransform: 'none', fontSize: 9 }}>(opcional · máx. {MAX_ATTACHMENTS})</span></SectionLabel>
+
+        {pendingFiles.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+            {pendingFiles.map((file, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: `${accent}08`, border: `1px solid ${accent}25` }}>
+                <div style={{ width: 30, height: 30, borderRadius: 6, background: `${accent}12`, border: `1px solid ${accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, flexShrink: 0 }}>
+                  <AttachmentIcon mime={file.type} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                  <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>{fmtBytes(file.size)}</div>
+                </div>
+                <button type="button" onClick={() => removeFile(idx)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {pendingFiles.length < MAX_ATTACHMENTS && (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); addFiles(Array.from(e.dataTransfer.files)); }}
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+              padding: pendingFiles.length > 0 ? '12px 16px' : '18px 16px', borderRadius: 8,
+              border: `1.5px dashed ${dragOver ? accent : 'var(--border-subtle)'}`,
+              background: dragOver ? `${accent}06` : 'transparent',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            <Upload size={pendingFiles.length > 0 ? 14 : 18} style={{ color: dragOver ? accent : 'var(--txt-muted)' }} />
+            <span style={{ fontSize: 11, color: dragOver ? accent : 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.5 }}>
+              {pendingFiles.length > 0
+                ? <>Agregar más · <span style={{ color: accent, fontWeight: 600 }}>quedan {MAX_ATTACHMENTS - pendingFiles.length} slots</span></>
+                : <>Arrastra archivos o <span style={{ color: accent, fontWeight: 600 }}>haz clic</span> para adjuntar</>
+              }
+            </span>
+            {pendingFiles.length === 0 && (
+              <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.6 }}>Imágenes, PDF, documentos</span>
+            )}
+          </div>
+        )}
+
+        {pendingFiles.length >= MAX_ATTACHMENTS && (
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', textAlign: 'center', opacity: 0.7 }}>
+            Límite de {MAX_ATTACHMENTS} archivos alcanzado
+          </div>
+        )}
+
+        <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }}
+          onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
+      </div>
+
       {error && (
         <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(255,71,87,0.08)', border: '1px solid rgba(255,71,87,0.25)', color: 'var(--danger)', fontSize: 12 }}>
           {error}
@@ -501,12 +548,11 @@ export function NuevaSolicitudPage() {
   const [descripcion,      setDescripcion]      = useState('');
   const [prioridad,        setPrioridad]        = useState<Prioridad>('media');
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
-  const [requesterTeamId,  setRequesterTeamId]  = useState<number | null>(null);
   const [extraValues,      setExtraValues]      = useState<Record<string, string>>({});
+  const [pendingFiles,     setPendingFiles]     = useState<File[]>([]);
   const [error,            setError]            = useState<string | null>(null);
   const [submitted,        setSubmitted]        = useState(false);
 
-  // Equipo del usuario desde el onboarding
   const userTeamName = currentUser?.team?.Team_Name ?? null;
   const userTeamId   = currentUser?.Team_ID ?? null;
 
@@ -514,7 +560,6 @@ export function NuevaSolicitudPage() {
     setSelectedTeamId(id);
     setSelectedTemplateId(null);
     setExtraValues({});
-    setRequesterTeamId(null);
   }
 
   function toggleLabel(id: number) {
@@ -526,7 +571,7 @@ export function NuevaSolicitudPage() {
   }
 
   const { mutate: crear, isPending } = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!currentUser || !columnMap || !selectedTemplateId)
         throw new Error('Datos incompletos');
       const sinCategorizarColumnId = columnMap['sin_categorizar'];
@@ -536,7 +581,9 @@ export function NuevaSolicitudPage() {
         if (field.required && !extraValues[field.key]?.trim())
           throw new Error(`El campo "${field.label}" es obligatorio.`);
       }
-      return Requests.createRequest({
+
+      // 1. Crear el ticket
+      const newRequest = await Requests.createRequest({
         boardId,
         columnId:        sinCategorizarColumnId,
         requestedBy:     currentUser.User_ID,
@@ -550,8 +597,25 @@ export function NuevaSolicitudPage() {
         sprintId:        null,
         deadline:        null,
         parentId:        null,
-        requesterTeamId,
+        requesterTeamId: userTeamId,
       });
+
+      // 2. Subir adjuntos en paralelo si hay
+      if (pendingFiles.length > 0) {
+        await Promise.all(pendingFiles.map(async (file) => {
+          const base64 = await fileToBase64(file);
+          await apiClient.call('uploadAttachment', {
+            requestId: newRequest.id,
+            userId:    currentUser.User_ID,
+            fileName:  file.name,
+            mimeType:  file.type,
+            sizeBytes: file.size,
+            base64,
+          });
+        }));
+      }
+
+      return newRequest;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: requestKeys.all });
@@ -602,7 +666,6 @@ export function NuevaSolicitudPage() {
           templateId={selectedTemplateId}
           currentUserName={currentUser?.User_Name ?? 'Cargando...'}
           userTeamName={userTeamName}
-          userTeamId={userTeamId}
           labels={labels}
           prioridad={prioridad}
           setPrioridad={setPrioridad}
@@ -612,10 +675,10 @@ export function NuevaSolicitudPage() {
           setTitulo={(v) => { setTitulo(v); setError(null); }}
           descripcion={descripcion}
           setDescripcion={setDescripcion}
-          requesterTeamId={requesterTeamId}
-          setRequesterTeamId={setRequesterTeamId}
           extraValues={extraValues}
           setExtraValue={setExtraValue}
+          pendingFiles={pendingFiles}
+          setPendingFiles={setPendingFiles}
           error={error}
           isPending={isPending}
           isReady={isReady}

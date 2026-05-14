@@ -434,10 +434,10 @@ function ExtraFieldRenderer({ field, value, onChange, accent }: {
 type Props = {
   onClose:      () => void;
   onCreated?:   () => void;
-  parentId?:    number | null;
+  parentId?:    string | null;   // ← era: number | null
   parentTitle?: string;
 };
-
+ 
 export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const boardId    = config.DEFAULT_BOARD_ID;

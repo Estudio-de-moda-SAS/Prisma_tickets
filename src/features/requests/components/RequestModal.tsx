@@ -23,13 +23,15 @@ import { config } from '@/config';
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {
-  sin_categorizar: 'var(--txt-muted)',
-  icebox:          '#60a5fa',
-  backlog:         'var(--info)',
-  todo:            'var(--warn)',
-  en_progreso:     'var(--accent)',
-  ready_to_deploy: '#a78bfa',
-  hecho:           'var(--success)',
+  sin_categorizar:  'var(--txt-muted)',
+  icebox:           '#60a5fa',
+  backlog:          'var(--info)',
+  todo:             'var(--warn)',
+  en_progreso:      'var(--accent)',
+  en_revision_qas:  '#f59e0b',
+  ready_to_deploy:  '#a78bfa',
+  hecho:            'var(--success)',
+  historial:        'var(--txt-muted)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -123,7 +125,7 @@ type Props = {
   equipo:              Equipo;
   onClose:             () => void;
   onMove:              (id: string, columna: KanbanColumna) => void;
-  onMoveWithClosure:   (id: string, columna: KanbanColumna, note: string, attachment: File | null) => void;
+  onMoveWithClosure:   (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void; // ← era: attachment: File | null
   onOpenRequest?:      (requestId: string) => void;
   readOnly?:           boolean;
 };
@@ -138,7 +140,7 @@ function SubRequestsPanel({
   parentTitle,
   onOpenChild,
 }: {
-  parentId:    number;
+  parentId:    string;
   parentTitle: string;
   onOpenChild: (requestId: string) => void;
 }) {
@@ -150,23 +152,27 @@ function SubRequestsPanel({
   const pct       = total === 0 ? 0 : Math.round((completed / total) * 100);
 
   const colColorMap: Record<string, string> = {
-    sin_categorizar: 'var(--txt-muted)',
-    icebox:          '#60a5fa',
-    backlog:         'var(--info)',
-    todo:            'var(--warn)',
-    en_progreso:     'var(--accent)',
-    ready_to_deploy: '#a78bfa',
-    hecho:           'var(--success)',
+    sin_categorizar:  'var(--txt-muted)',
+    icebox:           '#60a5fa',
+    backlog:          'var(--info)',
+    todo:             'var(--warn)',
+    en_progreso:      'var(--accent)',
+    en_revision_qas:  '#f59e0b',
+    ready_to_deploy:  '#a78bfa',
+    hecho:            'var(--success)',
+    historial:        'var(--txt-muted)',
   };
 
   const colLabel: Record<string, string> = {
-    sin_categorizar: 'Sin cat.',
-    icebox:          'Icebox',
-    backlog:         'Backlog',
-    todo:            'To do',
-    en_progreso:     'En progreso',
-    ready_to_deploy: 'Ready',
-    hecho:           'Hecho',
+    sin_categorizar:  'Sin cat.',
+    icebox:           'Icebox',
+    backlog:          'Backlog',
+    todo:             'To do',
+    en_progreso:      'En progreso',
+    en_revision_qas:  'QAS',
+    ready_to_deploy:  'Ready',
+    hecho:            'Hecho',
+    historial:        'Historial',
   };
 
   return (
@@ -229,7 +235,7 @@ function SubRequestsPanel({
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Sección de cierre (readonly) — se muestra cuando request.cierreInfo existe
+   Sección de cierre (readonly)
    ══════════════════════════════════════════════════════════════ */
 function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreInfo']> }) {
   function fmtColombia(iso: string) {
@@ -238,29 +244,27 @@ function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreI
     });
   }
 
+  // Unificar: nuevos registros usan attachments[], legacy usa attachmentUrl suelto
+const allAttachments: { url: string | null; name: string | null; mime: string | null }[] = [
+  // Nuevos registros — attachments[] con o sin signedUrl
+  ...(cierreInfo.attachments ?? []).map((a) => ({
+    url:  a.signedUrl,
+    name: a.fileName,
+    mime: a.mimeType,
+  })),
+  // Fallback legacy — solo si attachments[] está vacío Y hay attachmentUrl
+  ...((cierreInfo.attachments ?? []).length === 0 && cierreInfo.attachmentUrl
+    ? [{ url: cierreInfo.attachmentUrl, name: cierreInfo.attachmentName, mime: cierreInfo.attachmentMime }]
+    : []),
+];
+
   return (
-    <div style={{
-      borderRadius: 10, overflow: 'hidden',
-      border: '1px solid rgba(0,229,160,0.25)',
-      background: 'rgba(0,229,160,0.04)',
-    }}>
-      {/* Encabezado */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 9,
-        padding: '10px 14px',
-        borderBottom: '1px solid rgba(0,229,160,0.15)',
-        background: 'rgba(0,229,160,0.06)',
-      }}>
+    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(0,229,160,0.25)', background: 'rgba(0,229,160,0.04)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 14px', borderBottom: '1px solid rgba(0,229,160,0.15)', background: 'rgba(0,229,160,0.06)' }}>
         <CheckCircle size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
-        <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-          color: 'var(--success)', flex: 1,
-        }}>
-          Caso cerrado
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
-          {fmtColombia(cierreInfo.closedAt)}
-        </span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Caso cerrado</span>
+        <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtColombia(cierreInfo.closedAt)}</span>
       </div>
 
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -269,57 +273,50 @@ function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreI
           <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#00b894,#00e5a0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>
             {initials(cierreInfo.closedBy.userName || 'U')}
           </div>
-          <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>
-            {cierreInfo.closedBy.userName || 'Usuario desconocido'}
-          </span>
+          <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{cierreInfo.closedBy.userName || 'Usuario desconocido'}</span>
           <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>cerró este caso</span>
         </div>
 
         {/* Nota */}
-        <div style={{
-          padding: '9px 12px', borderRadius: 7,
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          fontSize: 12, color: 'var(--txt)', lineHeight: 1.6,
-          wordBreak: 'break-word',
-        }}>
+        <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.6, wordBreak: 'break-word' }}>
           {cierreInfo.closureNote}
         </div>
 
-        {/* Adjunto si existe */}
-        {cierreInfo.attachmentUrl && (
-          <a
-            href={cierreInfo.attachmentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 9,
-              padding: '8px 12px', borderRadius: 7,
-              background: 'rgba(0,229,160,0.06)',
-              border: '1px solid rgba(0,229,160,0.2)',
-              textDecoration: 'none', transition: 'border-color 0.15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
-              {cierreInfo.attachmentMime?.startsWith('image/')
-                ? <Image size={13} />
-                : <FileText size={13} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cierreInfo.attachmentName ?? 'Evidencia adjunta'}
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
-            </div>
-          </a>
+        {/* Evidencias */}
+        {allAttachments.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {allAttachments.length > 1 && (
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--success)', opacity: 0.8 }}>
+                {allAttachments.length} evidencias
+              </span>
+            )}
+            {allAttachments.map((att, idx) => {
+              if (!att.url) return null;
+              const isImage = att.mime?.startsWith('image/');
+              return (
+                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', textDecoration: 'none', transition: 'border-color 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
+                    {isImage ? <Image size={13} /> : <FileText size={13} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {att.name ?? 'Evidencia adjunta'}
+                    </div>
+                    <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
   );
 }
-
 /* ══════════════════════════════════════════════════════════════
    Modal principal
    ══════════════════════════════════════════════════════════════ */
@@ -348,12 +345,13 @@ export function RequestModal({
   const fileInputRef           = useRef<HTMLInputElement>(null);
   const boardId                = config.DEFAULT_BOARD_ID;
   const columnMap              = useColumnMap(boardId);
-  const requestIdNum           = Number(request.id);
-  const boardTeamId            = request.boardTeamId ?? null;
-  const isSubRequest           = request.parentId !== null;
-  const isCerrada              = !!request.cierreInfo || !!request.fechaCierre;
 
-  // Estado del ClosureModal interno (mover desde los botones del modal)
+  // request.id es string (hex) — se usa directamente en todos los hooks
+  const requestId   = request.id;
+  const boardTeamId = request.boardTeamId ?? null;
+  const isSubRequest = request.parentId !== null;
+  const isCerrada    = !!request.cierreInfo || !!request.fechaCierre;
+
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
 
@@ -361,9 +359,9 @@ export function RequestModal({
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints     = [] } = useSprints();
   const { data: users       = [] } = useUsers();
-  const { data: comments    = [] } = useComments(requestIdNum);
-  const { data: attachments = [] } = useAttachments(requestIdNum);
-  const { data: children    = [] } = useChildRequests(requestIdNum);
+  const { data: comments    = [] } = useComments(requestId);
+  const { data: attachments = [] } = useAttachments(requestId);
+  const { data: children    = [] } = useChildRequests(requestId);
 
   const { data: parentRequest } = useQuery<Request>({
     queryKey: ['request', request.parentId],
@@ -409,28 +407,25 @@ export function RequestModal({
 
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
-
-    // Si la columna destino requiere cierre → abrir ClosureModal interno
     if (COLUMNAS_CIERRE.has(columna)) {
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
       return;
     }
-
     setColumnaActual(columna);
     mover(
-      { id: request.id, columna, columnId: columnMap?.[columna] },
-      { onSuccess: () => onMove(request.id, columna) },
+      { id: requestId, columna, columnId: columnMap?.[columna] },
+      { onSuccess: () => onMove(requestId, columna) },
     );
   }
 
-  function handleClosureFromModal(note: string, attachment: File | null) {
-    if (!pendingClosureCol) return;
-    const targetCol   = pendingClosureCol;
-    setPendingClosureCol(null);
-    setColumnaActual(targetCol);
-    onMoveWithClosure(request.id, targetCol, note, attachment);
-  }
+function handleClosureFromModal(note: string, attachments: File[]) {  // ← era: attachment: File | null
+  if (!pendingClosureCol) return;
+  const targetCol = pendingClosureCol;
+  setPendingClosureCol(null);
+  setColumnaActual(targetCol);
+  onMoveWithClosure(requestId, targetCol, note, attachments);  // ← era: attachment
+}
 
   function handleToggleLabel(labelId: number) {
     if (readOnly) return;
@@ -438,7 +433,7 @@ export function RequestModal({
       ? selectedLabelIds.filter((l) => l !== labelId)
       : [...selectedLabelIds, labelId];
     setSelectedLabelIds(next);
-    update({ id: request.id, patch: { labelIds: next } });
+    update({ id: requestId, patch: { labelIds: next } });
   }
 
   function handleToggleSubTeam(subId: number) {
@@ -447,13 +442,13 @@ export function RequestModal({
       ? selectedSubIds.filter((s) => s !== subId)
       : [...selectedSubIds, subId];
     setSelectedSubIds(next);
-    update({ id: request.id, patch: { subTeamIds: next } });
+    update({ id: requestId, patch: { subTeamIds: next } });
   }
 
   function handleSprint(sprintId: number | null) {
     if (readOnly) return;
     setSelectedSprintId(sprintId);
-    update({ id: request.id, patch: { sprintId } });
+    update({ id: requestId, patch: { sprintId } });
     sprintDD.setOpen(false);
   }
 
@@ -462,10 +457,10 @@ export function RequestModal({
     const isAssigned = assigneeIds.includes(userId);
     if (isAssigned) {
       setAssigneeIds((prev) => prev.filter((id) => id !== userId));
-      unassign({ requestId: requestIdNum, userId });
+      unassign({ requestId, userId });
     } else {
       setAssigneeIds((prev) => [...prev, userId]);
-      assign({ requestId: requestIdNum, userId });
+      assign({ requestId, userId });
     }
   }
 
@@ -473,7 +468,7 @@ export function RequestModal({
     const text = commentText.trim();
     if (!text || !currentUser) return;
     createComment(
-      { requestId: requestIdNum, userId: currentUser.User_ID, text },
+      { requestId, userId: currentUser.User_ID, text },
       { onSuccess: () => setCommentText('') },
     );
   }
@@ -489,7 +484,7 @@ export function RequestModal({
   function handleUploadFiles(files: FileList | null) {
     if (readOnly || !files || !currentUser) return;
     Array.from(files).forEach((file) => {
-      uploadAttachment({ requestId: requestIdNum, userId: currentUser.User_ID, file });
+      uploadAttachment({ requestId, userId: currentUser.User_ID, file });
     });
   }
 
@@ -552,7 +547,6 @@ export function RequestModal({
               </span>
             )}
 
-            {/* Badge cerrado */}
             {isCerrada && !readOnly && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}>
                 <Lock size={10} />
@@ -562,7 +556,7 @@ export function RequestModal({
 
             {isSubRequest && !readOnly && (
               <span
-                onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(String(request.parentId)); }}
+                onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(request.parentId); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', cursor: onOpenRequest ? 'pointer' : 'default' }}
               >
                 <GitFork size={10} />
@@ -607,7 +601,7 @@ export function RequestModal({
                 <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>— cada una es una solicitud independiente en el board</span>
               </div>
               <SubRequestsPanel
-                parentId={requestIdNum}
+                parentId={requestId}
                 parentTitle={request.titulo}
                 onOpenChild={(childId) => onOpenRequest?.(childId)}
               />
@@ -620,7 +614,6 @@ export function RequestModal({
             {/* Panel izquierdo */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
 
-              {/* Banner solicitud padre */}
               {isSubRequest && !readOnly && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)' }}>
                   <GitFork size={13} style={{ color: '#a78bfa', flexShrink: 0 }} />
@@ -644,7 +637,7 @@ export function RequestModal({
                   </div>
                   {onOpenRequest && (
                     <button
-                      onClick={() => onOpenRequest(String(request.parentId))}
+                      onClick={() => onOpenRequest(request.parentId!)}
                       style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: '#a78bfa', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s', whiteSpace: 'nowrap' }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.18)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.08)'; }}
@@ -664,7 +657,7 @@ export function RequestModal({
                 <textarea
                   value={descripcion}
                   onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }}
-                  onBlur={() => { if (!readOnly) update({ id: request.id, patch: { descripcion } }); }}
+                  onBlur={() => { if (!readOnly) update({ id: requestId, patch: { descripcion } }); }}
                   readOnly={readOnly}
                   placeholder="Escribe una descripción..."
                   rows={4}
@@ -844,7 +837,6 @@ export function RequestModal({
                 <FieldBlock label="Fecha de apertura">
                   <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(request.fechaApertura)}</span>
                 </FieldBlock>
-
                 <FieldBlock label="Fecha límite">
                   {readOnly ? (
                     <span style={{ fontSize: 13, color: request.deadline ? 'var(--warn)' : 'var(--txt-muted)' }}>
@@ -856,7 +848,7 @@ export function RequestModal({
                       defaultValue={request.deadline ? request.deadline.split('T')[0] : ''}
                       onChange={(e) => {
                         update({
-                          id: request.id,
+                          id: requestId,
                           patch: { deadline: e.target.value ? e.target.value + 'T00:00:00' : null },
                         });
                       }}
@@ -866,14 +858,12 @@ export function RequestModal({
                 </FieldBlock>
               </div>
 
-              {/* Sección de cierre — siempre visible si existe */}
               {request.cierreInfo && (
                 <FieldBlock label="Cierre del caso">
                   <CierreBanner cierreInfo={request.cierreInfo} />
                 </FieldBlock>
               )}
 
-              {/* Timer */}
               {!readOnly && !isCerrada && (
                 <FieldBlock label="Contador de tiempo">
                   <div style={{ background: 'var(--bg-surface)', border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`, borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s' }}>
@@ -896,7 +886,6 @@ export function RequestModal({
                 </FieldBlock>
               )}
 
-              {/* Mover a — bloqueado si está cerrada */}
               {!readOnly && (
                 <FieldBlock label="Mover a">
                   {isCerrada ? (
@@ -907,20 +896,11 @@ export function RequestModal({
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                       {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
-                        const active    = columnaActual === col;
-                        const esCierre  = COLUMNAS_CIERRE.has(col);
+                        const active   = columnaActual === col;
+                        const esCierre = COLUMNAS_CIERRE.has(col);
                         return (
                           <button key={col} onClick={() => handleMover(col)}
-                            style={{
-                              padding: '6px 12px', borderRadius: 6, fontSize: 10,
-                              fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-                              border: `1px solid ${active ? COL_COLOR[col] + '60' : esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`,
-                              background: active ? `${COL_COLOR[col]}15` : 'transparent',
-                              color: active ? COL_COLOR[col] : esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)',
-                              cursor: active ? 'default' : 'pointer',
-                              transition: 'all 0.12s',
-                              display: 'flex', alignItems: 'center', gap: 5,
-                            }}
+                            style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}
                             onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; }}}
                             onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; }}}
                           >
@@ -976,7 +956,7 @@ export function RequestModal({
                               <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.author?.User_Name ?? 'Desconocido'}</span>
                               <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtRelative(c.Comment_Created_At)}</span>
                               {isOwn && !readOnly && (
-                                <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId: requestIdNum })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                                <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
                                   <Trash2 size={11} />
                                 </button>
                               )}
@@ -1011,15 +991,25 @@ export function RequestModal({
                         const isImage = a.Attachment_Mime_Type.startsWith('image/');
                         return (
                           <div key={a.Attachment_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', transition: 'border-color 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
-                            {isImage ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
+                            {isImage && a.Attachment_Url
+                              ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} />
+                              : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>
+                            }
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a>
+                              {a.Attachment_Url
+                                ? <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a>
+                                : <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.Attachment_Name}</span>
+                              }
                               <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}>
                                 <span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>
                                 {a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}
                               </div>
                             </div>
-                            {isOwn && !readOnly && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId: requestIdNum })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
+                            {isOwn && !readOnly && (
+                              <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                                <Trash2 size={11} />
+                              </button>
+                            )}
                           </div>
                         );
                       })
@@ -1041,7 +1031,6 @@ export function RequestModal({
         </div>
       </div>
 
-      {/* ClosureModal interno — disparado desde botones "Mover a" */}
       {pendingClosureCol && (
         <ClosureModal
           request={request}

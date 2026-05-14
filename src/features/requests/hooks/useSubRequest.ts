@@ -6,11 +6,11 @@ import type { Request } from '../types';
 
 /* ── Query key ── */
 export const subRequestKeys = {
-  byParent: (parentId: number) => ['requests', 'children', parentId] as const,
+  byParent: (parentId: string) => ['requests', 'children', parentId] as const,
 };
 
 /* ── Hook: listar requests hijas de una request padre ── */
-export function useChildRequests(parentId: number) {
+export function useChildRequests(parentId: string) {
   const { Requests } = useGraphServices();
 
   return useQuery<Request[]>({

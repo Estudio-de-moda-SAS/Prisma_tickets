@@ -13,16 +13,16 @@ export function useCloseRequest(equipo: Equipo) {
   const queryKey     = requestKeys.byEquipo(equipo);
 
   return useMutation<CierreInfo, Error, CerrarRequestPayload, CloseContext>({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload): Promise<CierreInfo> => {
       if (config.USE_MOCK) {
-        // Mock: simular respuesta de cierre
         await new Promise((r) => setTimeout(r, 600));
         return {
           closureId:      Math.floor(Math.random() * 9000) + 1000,
           closureNote:    payload.closureNote,
-          attachmentUrl:  payload.attachment ? URL.createObjectURL(payload.attachment) : null,
-          attachmentName: payload.attachment?.name ?? null,
-          attachmentMime: payload.attachment?.type ?? null,
+          attachments:    [],
+          attachmentUrl:  null,
+          attachmentName: null,
+          attachmentMime: null,
           closedAt:       new Date().toISOString(),
           closedBy: {
             userId:   payload.closedBy,
@@ -33,7 +33,6 @@ export function useCloseRequest(equipo: Equipo) {
       return Requests.closeRequest(payload);
     },
 
-    // Actualización optimista
     onMutate: async (payload): Promise<CloseContext> => {
       await queryClient.cancelQueries({ queryKey });
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
@@ -47,32 +46,33 @@ export function useCloseRequest(equipo: Equipo) {
         if (!card) return prev;
 
         const next: BoardData = {
-          sin_categorizar: [...prev.sin_categorizar],
-          icebox:          [...prev.icebox],
-          backlog:         [...prev.backlog],
-          todo:            [...prev.todo],
-          en_progreso:     [...prev.en_progreso],
-          ready_to_deploy: [...(prev.ready_to_deploy ?? [])],
-          hecho:           [...prev.hecho],
+          sin_categorizar:  [...(prev.sin_categorizar  ?? [])],
+          icebox:           [...(prev.icebox           ?? [])],
+          backlog:          [...(prev.backlog          ?? [])],
+          todo:             [...(prev.todo             ?? [])],
+          en_progreso:      [...(prev.en_progreso      ?? [])],
+          en_revision_qas:  [...(prev.en_revision_qas  ?? [])],
+          ready_to_deploy:  [...(prev.ready_to_deploy  ?? [])],
+          hecho:            [...(prev.hecho            ?? [])],
+          historial:        [...(prev.historial        ?? [])],
         };
 
-        // Quitar de columna origen
         for (const col of Object.keys(next) as KanbanColumna[]) {
           next[col] = next[col].filter((r) => r.id !== String(payload.requestId));
         }
 
-        // Insertar en columna destino con datos optimistas de cierre
         next[targetColumna] = [
           ...next[targetColumna],
           {
             ...card,
-            columna:    targetColumna,
-            columnId:   payload.targetColumnId,
+            columna:     targetColumna,
+            columnId:    payload.targetColumnId,
             fechaCierre: new Date().toISOString(),
-            progreso:   100,
+            progreso:    100,
             cierreInfo: {
-              closureId:      0, // se actualiza en onSuccess
+              closureId:      0,
               closureNote:    payload.closureNote,
+              attachments:    [],       // ← requerido por CierreInfo
               attachmentUrl:  null,
               attachmentName: null,
               attachmentMime: null,
@@ -91,10 +91,8 @@ export function useCloseRequest(equipo: Equipo) {
       return { snapshot };
     },
 
-    // Actualizar cache con datos reales del servidor (closureId real, url del adjunto, etc.)
     onSuccess: (cierreInfo, payload) => {
       const targetColumna = columnIdToKanban(payload.targetColumnId);
-
       queryClient.setQueryData<BoardData>(queryKey, (prev) => {
         if (!prev) return prev;
         return {
@@ -122,8 +120,6 @@ export function useCloseRequest(equipo: Equipo) {
   });
 }
 
-// Board_Column_ID → KanbanColumna
-// IDs según TBL_Board_Columns: 1=sin_cat, 2=icebox, 3=backlog, 4=todo, 5=en_progreso, 7=ready_to_deploy, 6=hecho
 function columnIdToKanban(columnId: number): KanbanColumna {
   const map: Record<number, KanbanColumna> = {
     1: 'sin_categorizar',
@@ -131,8 +127,10 @@ function columnIdToKanban(columnId: number): KanbanColumna {
     3: 'backlog',
     4: 'todo',
     5: 'en_progreso',
+    8: 'en_revision_qas',
     7: 'ready_to_deploy',
     6: 'hecho',
+    9: 'historial',
   };
   return map[columnId] ?? 'hecho';
 }
