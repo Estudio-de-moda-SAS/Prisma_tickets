@@ -10,6 +10,7 @@ import {
 } from '../hooks/useCustomizationStyles';
 import { useTheme } from '@/store/useTheme';
 import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/hooks/useBoardMetadata';
+import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { config } from '@/config';
 import type { Request } from '../types';
 
@@ -65,6 +66,15 @@ const IconZap    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="n
 const IconSprint = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>;
 const IconCheck  = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 
+/* ── Ícono de candado confidencial (inline SVG sin dependencia extra) ── */
+const IconShield = () => (
+  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
 function Chips({ items, accent }: { items: string[]; accent?: string }) {
   if (items.length === 0) return null;
   const color  = accent ?? 'var(--accent)';
@@ -80,6 +90,32 @@ function Chips({ items, accent }: { items: string[]; accent?: string }) {
         </span>
       )}
     </div>
+  );
+}
+
+/* ── Criteria badge mini ── */
+function CriteriaBadge({ requestId }: { requestId: string; accent: string }) {
+  const { data: criteria = [] } = useAcceptanceCriteria(requestId);
+  if (criteria.length === 0) return null;
+
+  const accepted  = criteria.filter((c) => c.status === 'accepted').length;
+  const rejected  = criteria.filter((c) => c.status === 'rejected').length;
+  const total     = criteria.length;
+  const allDone   = accepted === total;
+  const hasReject = rejected > 0;
+
+  const color  = allDone ? 'var(--success)' : hasReject ? 'var(--danger)' : 'var(--txt-muted)';
+  const bg     = allDone ? 'rgba(0,229,160,0.1)' : hasReject ? 'rgba(255,71,87,0.1)' : 'rgba(255,255,255,0.05)';
+  const border = allDone ? 'rgba(0,229,160,0.3)' : hasReject ? 'rgba(255,71,87,0.3)' : 'var(--border-subtle)';
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, letterSpacing: 0.3, padding: '2px 6px', borderRadius: 3, background: bg, border: `1px solid ${border}`, color, flexShrink: 0 }}>
+      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+        <polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      {accepted}/{total}
+      {hasReject && <span style={{ color: 'var(--danger)', marginLeft: 1 }}> · {rejected}✗</span>}
+    </span>
   );
 }
 
@@ -106,12 +142,11 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
 
   const isSubRequest   = (request.parentId ?? null) !== null;
   const childCount     = request.childCount ?? 0;
-  const hasDeadline    = !!request.deadline;
-  const isVencida      = hasDeadline && new Date(request.deadline!) < new Date();
   const primerAsignado = request.assignees?.[0] ?? null;
   const allLabels      = request.categoria    ?? [];
   const allSubTeams    = request.subTeamNames ?? [];
   const isCerrada      = !!request.cierreInfo || !!request.fechaCierre;
+  const isConfidential = request.isConfidential ?? false;
 
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
@@ -119,7 +154,6 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
     onClick?.();
   }
 
-  // Borde izquierdo para tarjetas cerradas en ready_to_deploy
   const closureBorderStyle = isCerrada && request.columna === 'ready_to_deploy'
     ? { boxShadow: 'inset 3px 0 0 #a78bfa', borderColor: 'rgba(167,139,250,0.3)' }
     : isCerrada && request.columna === 'hecho'
@@ -147,33 +181,52 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
       {...listeners}
       onClick={handleClick}
     >
-      {/* Header */}
-      <div className="request-card__header">
-        {isCerrada ? (
-          <span style={{
-            background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)',
-            color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa',
-            border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`,
-            fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px',
-            borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3,
-          }}>
-            <IconCheck /> Cerrada
-          </span>
-        ) : isSubRequest ? (
-          <span style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            ↳ Sub-solicitud
-          </span>
-        ) : isNonDefault ? (
-          <span style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}35`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <span style={{ fontSize: 10 }}>{template.visual.icon}</span>
-            {template.visual.badgeLabel}
-          </span>
-        ) : childCount > 0 ? (
-          <span style={{ background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            ⌥ {childCount} sub
-          </span>
-        ) : null}
+      {/* Header: badge tipo + badges derecha (confidencial + criteria) */}
+      <div className="request-card__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
+        {/* Izquierda — badge de tipo/estado */}
+              {/* ID */}
+      <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.55, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {request.id}
       </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+          {isCerrada ? (
+            <span style={{ background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)', color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa', border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <IconCheck /> Cerrada
+            </span>
+          ) : isSubRequest ? (
+            <span style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+              ↳ Sub-solicitud
+            </span>
+          ) : isNonDefault ? (
+            <span style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}35`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 10 }}>{template.visual.icon}</span>
+              {template.visual.badgeLabel}
+            </span>
+          ) : childCount > 0 ? (
+            <span style={{ background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+              ⌥ {childCount} sub
+            </span>
+            
+          ) : null}
+        </div>
+
+        {/* Derecha — confidencial + criteria */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+          
+          {/* Ícono confidencial — solo visible si aplica */}
+          {isConfidential && (
+            <span
+              title="Información confidencial"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: 4, background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.35)', color: '#fdcb6e', flexShrink: 0 }}
+            >
+              <IconShield />
+            </span>
+          )}
+          <CriteriaBadge requestId={request.id} accent={accent} />
+        </div>
+        
+      </div>
+
 
       {/* Título */}
       <p className="request-card__title" style={{ marginBottom: 10, opacity: isCerrada ? 0.8 : 1 }}>{request.titulo}</p>
@@ -228,27 +281,12 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
           </MetaRow>
         )}
 
-        {/* Fecha de cierre si está cerrada */}
         {isCerrada && request.fechaCierre && (
           <MetaRow icon={<IconCal />} label="Cerrada el">
             <span style={{ color: 'var(--success)', fontSize: 11 }}>
               {new Date(request.fechaCierre).toLocaleDateString('es-CO', {
                 timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric',
               })}
-            </span>
-          </MetaRow>
-        )}
-
-        {/* Deadline solo si no está cerrada */}
-        {!isCerrada && hasDeadline && (
-          <MetaRow icon={<IconCal />} label="Fecha límite">
-            <span style={{ color: isVencida ? 'var(--danger)' : 'var(--txt)', fontSize: 11 }}>
-              {new Date(request.deadline!).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short', year: 'numeric' })}
-              {isVencida && (
-                <span style={{ marginLeft: 5, fontSize: 8, fontWeight: 700, color: 'var(--danger)', background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.25)', borderRadius: 3, padding: '1px 4px' }}>
-                  VENCIDA
-                </span>
-              )}
             </span>
           </MetaRow>
         )}

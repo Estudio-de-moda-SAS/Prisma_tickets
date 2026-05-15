@@ -18,22 +18,22 @@ import type { Sprint }                          from '@/features/requests/hooks/
 
 export type SprintStats = {
   sprint:           Sprint | null;
-  planeadas:        number;   // en columna todo/en_progreso/hecho al inicio del sprint
-  activas:          number;   // en_progreso
-  completadas:      number;   // hecho
-  bloqueadas:       number;   // icebox
-  postPlanning:     number;   // creadas DESPUÉS del inicio del sprint
-  puntajeTotal:     number;   // sum score de todas (planeadas + nuevas)
-  puntajeRealizado: number;   // sum score de las completadas
-  planeadasMes:     number;   // creadas en el mes actual
-  cerradasMes:      number;   // cerradas (fechaCierre) en el mes actual
+  planeadas:        number;
+  activas:          number;
+  completadas:      number;
+  bloqueadas:       number;
+  postPlanning:     number;
+  puntajeTotal:     number;
+  puntajeRealizado: number;
+  planeadasMes:     number;
+  cerradasMes:      number;
 };
 
 export type EquipoStatsReal = {
   equipo:    Equipo;
   creadas:   number;
   resueltas: number;
-  sla:       number;   // % con deadline cumplido
+  sla:       number;
   criticas:  number;
   score:     number;
 };
@@ -42,7 +42,7 @@ export type GeneralStatsReal = {
   total:          number;
   resueltas:      number;
   tasaGlobal:     number;
-  tiempoPromedio: number;   // días promedio hasta cierre
+  tiempoPromedio: number;
   porEquipo:      EquipoStatsReal[];
 };
 
@@ -71,13 +71,15 @@ export type StatsData = {
 };
 
 const COL_META: Record<KanbanColumna, { label: string; color: string }> = {
-  sin_categorizar: { label: 'Sin cat.',    color: 'rgba(90,106,138,0.7)'  },
-  icebox:          { label: 'Icebox',      color: 'rgba(120,130,160,0.7)' },
-  backlog:         { label: 'Backlog',     color: 'rgba(127,119,221,0.7)' },
-  todo:            { label: 'To do',       color: 'rgba(239,159,39,0.7)'  },
-  en_progreso:     { label: 'En prog.',    color: 'rgba(0,200,255,0.7)'   },
-  ready_to_deploy: { label: 'Ready',       color: 'rgba(167,139,250,0.7)' },
-  hecho:           { label: 'Hecho',       color: 'rgba(0,229,160,0.7)'   },
+  sin_categorizar:  { label: 'Sin cat.',    color: 'rgba(90,106,138,0.7)'  },
+  icebox:           { label: 'Icebox',      color: 'rgba(120,130,160,0.7)' },
+  backlog:          { label: 'Backlog',     color: 'rgba(127,119,221,0.7)' },
+  todo:             { label: 'To do',       color: 'rgba(239,159,39,0.7)'  },
+  en_progreso:      { label: 'En prog.',    color: 'rgba(0,200,255,0.7)'   },
+  en_revision_qas:  { label: 'QAS',         color: 'rgba(245,158,11,0.7)'  },
+  ready_to_deploy:  { label: 'Ready',       color: 'rgba(167,139,250,0.7)' },
+  hecho:            { label: 'Hecho',       color: 'rgba(0,229,160,0.7)'   },
+  historial:        { label: 'Historial',   color: 'rgba(90,106,138,0.5)'  },
 };
 
 const PRI_META = [
@@ -131,11 +133,19 @@ function calcGeneral(requests: Request[]): GeneralStatsReal {
     const resuelts = mine.filter((r) => r.columna === 'hecho');
     const criticas = mine.filter((r) => r.prioridad === 'critica' && r.columna !== 'hecho').length;
 
-    // SLA: % de resueltas que cerraron antes o en el deadline
-    const conDl  = resuelts.filter((r) => r.deadline && r.fechaCierre);
-    const sla    = conDl.length > 0
-      ? Math.round(conDl.filter((r) => new Date(r.fechaCierre!) <= new Date(r.deadline!)).length / conDl.length * 100)
-      : mine.length > 0 ? 85 : 0; // fallback si no hay deadlines
+    // SLA basado en tiempo de cierre vs estimatedHours
+    // Si hay estimatedHours: comparamos días reales vs estimado
+    // Si no hay: fallback al 85% default
+    const conEstimado = resuelts.filter((r) => r.estimatedHours != null && r.fechaCierre && r.fechaApertura);
+    const sla = conEstimado.length > 0
+      ? Math.round(
+          conEstimado.filter((r) => {
+            const diasReales    = daysBetween(r.fechaApertura, r.fechaCierre!);
+            const diasEstimados = (r.estimatedHours! / 8); // asumiendo 8h/día
+            return diasReales <= diasEstimados * 1.2; // tolerancia 20%
+          }).length / conEstimado.length * 100
+        )
+      : mine.length > 0 ? 85 : 0;
 
     const score = mine.reduce((acc, r) => acc + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
 
@@ -154,12 +164,22 @@ function calcBoard(requests: Request[], equipo: Equipo): BoardStatsReal {
   const resuelts = mine.filter((r) => r.columna === 'hecho');
   const criticas = mine.filter((r) => r.prioridad === 'critica' && r.columna !== 'hecho').length;
 
-  const conDl = resuelts.filter((r) => r.deadline && r.fechaCierre);
-  const sla   = conDl.length > 0
-    ? Math.round(conDl.filter((r) => new Date(r.fechaCierre!) <= new Date(r.deadline!)).length / conDl.length * 100)
+  const conEstimado = resuelts.filter((r) => r.estimatedHours != null && r.fechaCierre && r.fechaApertura);
+  const sla = conEstimado.length > 0
+    ? Math.round(
+        conEstimado.filter((r) => {
+          const diasReales    = daysBetween(r.fechaApertura, r.fechaCierre!);
+          const diasEstimados = (r.estimatedHours! / 8);
+          return diasReales <= diasEstimados * 1.2;
+        }).length / conEstimado.length * 100
+      )
     : mine.length > 0 ? 85 : 0;
 
-const colOrder: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'ready_to_deploy', 'hecho'];
+  const colOrder: KanbanColumna[] = [
+    'sin_categorizar', 'icebox', 'backlog', 'todo',
+    'en_progreso', 'en_revision_qas', 'ready_to_deploy', 'hecho',
+  ];
+
   const porColumna: ColStatReal[] = colOrder.map((col) => ({
     label: COL_META[col].label,
     value: mine.filter((r) => r.columna === col).length,
@@ -172,7 +192,6 @@ const colOrder: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo
     color: p.color,
   }));
 
-  // Resolutores: agrupa por assignee
   const resolMap = new Map<string, { count: number; idx: number }>();
   let idx = 0;
   for (const r of resuelts) {
@@ -199,7 +218,6 @@ const colOrder: KanbanColumna[] = ['sin_categorizar', 'icebox', 'backlog', 'todo
 /* ─── Cálculo sprint ──────────────────────────────────────── */
 function calcSprint(requests: Request[], sprint: Sprint | null): SprintStats {
   if (!sprint) {
-    // Sin sprint seleccionado: métricas globales del mes
     const all = requests;
     return {
       sprint:           null,
@@ -217,20 +235,15 @@ function calcSprint(requests: Request[], sprint: Sprint | null): SprintStats {
 
   const start = new Date(sprint.Sprint_Start_Date);
 
-  // Requests asociadas al sprint
-  const inSprint = requests.filter((r) => r.sprintId === sprint.Sprint_ID);
-  // Creadas antes o al inicio del sprint = "planeadas"
-  const planeadas = inSprint.filter((r) => new Date(r.fechaApertura) <= start);
-  // Ingresadas post planning
+  const inSprint     = requests.filter((r) => r.sprintId === sprint.Sprint_ID);
+  const planeadas    = inSprint.filter((r) => new Date(r.fechaApertura) <= start);
   const postPlanning = inSprint.filter((r) => new Date(r.fechaApertura) > start);
-
-  const activas     = inSprint.filter((r) => r.columna === 'en_progreso');
-  const completadas = inSprint.filter((r) => r.columna === 'hecho');
-  const bloqueadas  = inSprint.filter((r) => r.columna === 'icebox');
+  const activas      = inSprint.filter((r) => r.columna === 'en_progreso');
+  const completadas  = inSprint.filter((r) => r.columna === 'hecho');
+  const bloqueadas   = inSprint.filter((r) => r.columna === 'icebox');
 
   const score = (rs: Request[]) => rs.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
 
-  // Mes del sprint (usamos fecha de inicio)
   const sprintMonth = start.getMonth();
   const sprintYear  = start.getFullYear();
   const isSprintMonth = (iso: string | null) => {

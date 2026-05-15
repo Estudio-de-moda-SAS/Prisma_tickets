@@ -1,4 +1,4 @@
-// src/types/commons.ts — reemplaza completo
+// src/types/commons.ts
 
 export type PageResult<T> = {
   items: T[];
@@ -32,9 +32,23 @@ export type UserProfile = {
   Department_ID: number | null;
   Team_ID:       number | null;
   Is_New:        boolean;
-  // Join con TBL_Teams — disponible tras el onboarding
   team: {
     Team_Code: string;
     Team_Name: string;
   } | null;
+};
+
+/* ── Criterios de aceptación ── */
+export type AcceptanceCriteriaStatus = 'pending' | 'accepted' | 'rejected';
+
+export type AcceptanceCriteria = {
+  criteriaId:    number;
+  requestId:     string;
+  title:         string;
+  status:        AcceptanceCriteriaStatus;
+  reviewerNotes: string | null;
+  reviewedBy:    number | null;
+  reviewedAt:    string | null;
+  createdAt:     string;
+  updatedAt:     string;
 };

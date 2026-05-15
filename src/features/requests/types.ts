@@ -106,9 +106,7 @@ export type CierreInfo = {
     userId:   number;
     userName: string;
   };
-  // Lista de adjuntos (nueva tabla TBL_Closure_Attachments)
   attachments: ClosureAttachment[];
-  // Campos legacy — para registros anteriores a la migración
   attachmentUrl:  string | null;
   attachmentName: string | null;
   attachmentMime: string | null;
@@ -156,11 +154,11 @@ export type RequestExtraFields =
    ============================================================ */
 export type Request = {
   // ── Identidad ──────────────────────────────────────────────
-  id:           string;          // hex 8 dígitos, ej: '00000001'
+  id:           string;
   templateId:   number;
 
   // ── Jerarquía ──────────────────────────────────────────────
-  parentId:     string | null;   // string porque Request_ID es text
+  parentId:     string | null;
 
   // ── Contenido ──────────────────────────────────────────────
   titulo:       string;
@@ -202,17 +200,26 @@ export type Request = {
 
   // ── Fechas ─────────────────────────────────────────────────
   fechaApertura: string;
-  deadline:      string | null;
   fechaCierre:   string | null;
 
-  // ── Tiempo ─────────────────────────────────────────────────
-  tiempoConsuмido: string | null;
+  // ── Tiempo estimado ────────────────────────────────────────
+  estimatedHours: number | null;
+
+  // ── Confidencialidad ───────────────────────────────────────
+  isConfidential: boolean;
 
   // ── Campos extra del template ──────────────────────────────
   extraFields:  RequestExtraFields | null;
 
   // ── Hijos ──────────────────────────────────────────────────
   childCount?:  number;
+
+  // ── Resumen de criterios de aceptación ─────────────────────
+  criteriaSummary?: {
+    total:    number;
+    accepted: number;
+    rejected: number;
+  } | null;
 
   // ── Cierre ─────────────────────────────────────────────────
   cierreInfo?:  CierreInfo | null;
@@ -222,47 +229,50 @@ export type Request = {
    Payloads
    ============================================================ */
 export type CrearRequestPayload = {
-  boardId:         number;
-  columnId:        number;
-  requestedBy:     number;
-  templateId:      number;
-  titulo:          string;
-  descripcion:     string;
-  prioridad:       Prioridad;
-  equipoIds:       number[];
-  subTeamIds:      number[];
-  labelIds:        number[];
-  sprintId:        number | null;
-  deadline:        string | null;
-  parentId:        string | null;
-  requesterTeamId: number | null;
+  boardId:             number;
+  columnId:            number;
+  requestedBy:         number;
+  templateId:          number;
+  titulo:              string;
+  descripcion:         string;
+  prioridad:           Prioridad;
+  equipoIds:           number[];
+  subTeamIds:          number[];
+  labelIds:            number[];
+  sprintId:            number | null;
+  estimatedHours:      number | null;
+  parentId:            string | null;
+  requesterTeamId:     number | null;
+  isConfidential:      boolean;
+  /** Títulos de criterios de aceptación — mínimo 1 requerido */
+  acceptanceCriteria:  string[];
 };
 
 export type MoverRequestPayload = {
-  id:       string;   // hex
+  id:       string;
   columna:  KanbanColumna;
   columnId: number;
 };
 
 export type ActualizarRequestPayload = {
-  id:           string;   // hex
-  titulo?:      string;
-  descripcion?: string;
-  prioridad?:   Prioridad;
-  progreso?:    number;
-  equipoIds?:   number[];
-  subTeamIds?:  number[];
-  labelIds?:    number[];
-  sprintId?:    number | null;
-  deadline?:    string | null;
+  id:              string;
+  titulo?:         string;
+  descripcion?:    string;
+  prioridad?:      Prioridad;
+  progreso?:       number;
+  equipoIds?:      number[];
+  subTeamIds?:     number[];
+  labelIds?:       number[];
+  sprintId?:       number | null;
+  estimatedHours?: number | null;
 };
 
 export type CerrarRequestPayload = {
-  requestId:      string;   // hex
+  requestId:      string;
   closedBy:       number;
   closureNote:    string;
   targetColumnId: number;
-  attachments:    File[];   // ← lista de hasta 5 archivos
+  attachments:    File[];
 };
 
 export type BoardData = Record<KanbanColumna, Request[]>;

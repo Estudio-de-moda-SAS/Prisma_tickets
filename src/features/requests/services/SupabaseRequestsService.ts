@@ -28,11 +28,11 @@ type RawRequestRow = {
   Request_Score:             number | null;
   Request_Progress:          number | null;
   Request_Created_At:        string | null;
-  Request_Deadline:          string | null;
-  Request_Time_Consumed:     string | null;
+  Request_Estimated_Hours:   number | null;
   Request_Finished_At:       string | null;
   Request_Parent_ID:         string | null;
   Request_Requester_Team_ID: number | null;
+  Request_Is_Confidential: boolean | null;
 
   requester:      { User_Name: string; User_Email: string; User_Avatar_url: string } | null;
   requester_team: { Team_ID: number; Team_Name: string; Team_Code: string } | null;
@@ -48,6 +48,7 @@ type RawRequestRow = {
   sprints:    { Request_Sprint_ID: number; sprint: { Sprint_Text: string } | null }[];
   crm_extra:  { Request_CRM_Example_Store_Name: string } | null;
   child_count?: { count: number }[];
+  criteria_summary?: { total: number; accepted: number; rejected: number } | null;
 
   closure: {
     Closure_ID:      number;
@@ -117,6 +118,11 @@ function mapRowToRequest(row: RawRequestRow): Request {
   const sprintName      = firstSprint?.sprint?.Sprint_Text ?? null;
   const childCount      = row.child_count?.[0]?.count ?? undefined;
   const requesterTeamId = row.Request_Requester_Team_ID ?? null;
+  const criteriaSummary = (() => {
+    const s = (row as Record<string, unknown>).criteria_summary as
+      { total: number; accepted: number; rejected: number } | null | undefined;
+    return (s && s.total > 0) ? s : null;
+  })();
 
   let extraFields: RequestExtraFields | null = null;
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
@@ -125,8 +131,6 @@ function mapRowToRequest(row: RawRequestRow): Request {
 
   let cierreInfo: CierreInfo | null = null;
   if (row.closure) {
-    // Los closure_attachments del BASE_SELECT no tienen signed URLs todavía
-    // Se hidratan en fetchById vía fetchClosureAttachments
     const rawAtts = row.closure.closure_attachments ?? [];
     const attachments: ClosureAttachment[] = rawAtts.map((a) => ({
       attachmentId: a.Closure_Attachment_ID,
@@ -135,7 +139,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
       mimeType:     a.Mime_Type,
       fileSize:     a.File_Size,
       createdAt:    a.Created_At,
-      signedUrl:    null, // se genera en fetchById
+      signedUrl:    null,
     }));
 
     cierreInfo = {
@@ -178,12 +182,13 @@ function mapRowToRequest(row: RawRequestRow): Request {
     sprintId,
     sprintName,
     fechaApertura:   row.Request_Created_At ?? new Date().toISOString(),
-    deadline:        row.Request_Deadline ?? null,
     fechaCierre:     row.Request_Finished_At ?? null,
-    tiempoConsuмido: row.Request_Time_Consumed ?? null,
+    estimatedHours:  row.Request_Estimated_Hours ?? null,
     extraFields,
     childCount,
+    criteriaSummary,
     cierreInfo,
+    isConfidential: row.Request_Is_Confidential ?? false,
   };
 }
 
@@ -210,7 +215,6 @@ export class SupabaseRequestsService {
     const row    = await apiClient.call<RawRequestRow>('fetchById', { id });
     const mapped = mapRowToRequest(row);
 
-    // Hidratar signed URLs de adjuntos de cierre
     if (mapped.cierreInfo && mapped.cierreInfo.attachments.length > 0) {
       mapped.cierreInfo.attachments = await this.fetchClosureAttachments(mapped.cierreInfo.closureId);
     }
@@ -241,20 +245,23 @@ export class SupabaseRequestsService {
   }
 
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
+    const { acceptanceCriteria: _ignored, ...rest } = payload;
+    console.log('[DEBUG] service isConfidential:', rest.isConfidential);
     const row = await apiClient.call<RawRequestRow>('createRequest', {
-      boardId:         payload.boardId,
-      columnId:        payload.columnId,
-      requestedBy:     payload.requestedBy,
-      templateId:      payload.templateId,
-      titulo:          payload.titulo,
-      descripcion:     payload.descripcion,
-      score:           PRIORIDAD_TO_SCORE[payload.prioridad],
-      equipoIds:       payload.equipoIds,
-      labelIds:        payload.labelIds,
-      sprintId:        payload.sprintId,
-      deadline:        payload.deadline,
-      parentId:        payload.parentId,
-      requesterTeamId: payload.requesterTeamId,
+      boardId:         rest.boardId,
+      columnId:        rest.columnId,
+      requestedBy:     rest.requestedBy,
+      templateId:      rest.templateId,
+      titulo:          rest.titulo,
+      descripcion:     rest.descripcion,
+      score:           PRIORIDAD_TO_SCORE[rest.prioridad],
+      equipoIds:       rest.equipoIds,
+      labelIds:        rest.labelIds,
+      sprintId:        rest.sprintId,
+      estimatedHours:  rest.estimatedHours,
+      parentId:        rest.parentId,
+      requesterTeamId: rest.requesterTeamId,
+      isConfidential: rest.isConfidential ?? false,
     });
     return mapRowToRequest(row);
   }
@@ -266,14 +273,14 @@ export class SupabaseRequestsService {
   async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     await apiClient.call('updateRequest', {
       id,
-      titulo:      patch.titulo,
-      descripcion: patch.descripcion,
-      score:       patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
-      progreso:    patch.progreso,
-      equipoIds:   patch.equipoIds,
-      labelIds:    patch.labelIds,
-      sprintId:    patch.sprintId,
-      deadline:    patch.deadline,
+      titulo:         patch.titulo,
+      descripcion:    patch.descripcion,
+      score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
+      progreso:       patch.progreso,
+      equipoIds:      patch.equipoIds,
+      labelIds:       patch.labelIds,
+      sprintId:       patch.sprintId,
+      estimatedHours: patch.estimatedHours,
     });
     if (patch.subTeamIds !== undefined) {
       await apiClient.call('updateRequestSubTeams', { id, subTeamIds: patch.subTeamIds });

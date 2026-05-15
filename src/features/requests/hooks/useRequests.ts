@@ -25,8 +25,10 @@ function groupRequestsByColumn(requests: Request[]): BoardData {
     backlog:         [],
     todo:            [],
     en_progreso:     [],
+    en_revision_qas: [],
     ready_to_deploy: [],
     hecho:           [],
+    historial:       [],
   };
   for (const r of requests) {
     const col = r.columna as KanbanColumna;
@@ -45,8 +47,10 @@ function getMockBoardForTeam(equipo: Equipo): BoardData {
     backlog:         [],
     todo:            [],
     en_progreso:     [],
+    en_revision_qas: [],
     ready_to_deploy: [],
     hecho:           [],
+    historial:       [],
   };
   for (const col of Object.keys(board) as KanbanColumna[]) {
     board[col] = MOCK_BOARD[col].filter((r) => r.equipo.includes(equipo));

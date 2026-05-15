@@ -11,7 +11,6 @@ import type { Equipo, Request } from '@/features/requests/types';
 import type { Sprint } from '@/features/requests/hooks/useSprints';
 import { config } from '@/config';
 
-/* ── helpers ──────────────────────────────────────────────────── */
 const PRIORIDAD_COLOR: Record<string, string> = {
   baja:    '#4EA8DE',
   media:   '#F4C542',
@@ -78,7 +77,6 @@ function sprintDaysLeft(sprint: Sprint): number {
   return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 }
 
-/* ── useMyRequests ───────────────────────────────────────────── */
 function useMyRequests(equipo: Equipo, userName: string) {
   const { data: board, isLoading } = useBoardEquipo(equipo);
   const effectiveName = config.USE_MOCK ? 'Juan Esteban' : userName;
@@ -91,7 +89,37 @@ function useMyRequests(equipo: Equipo, userName: string) {
   return { requests, isLoading };
 }
 
-/* ── SprintBanner ────────────────────────────────────────────── */
+/* ── CriteriaBadge inline ── */
+function CriteriaBadge({ summary }: { summary: Request['criteriaSummary'] }) {
+  if (!summary || summary.total === 0) return null;
+
+  const allDone   = summary.accepted === summary.total;
+  const hasReject = summary.rejected > 0;
+
+  const color  = allDone ? '#4CAF50' : hasReject ? '#E05C5C' : 'var(--txt-muted)';
+  const bg     = allDone ? 'rgba(76,175,80,0.1)' : hasReject ? 'rgba(224,92,92,0.1)' : 'rgba(255,255,255,0.05)';
+  const border = allDone ? 'rgba(76,175,80,0.3)' : hasReject ? 'rgba(224,92,92,0.3)' : 'rgba(255,255,255,0.1)';
+
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
+      padding: '2px 6px', borderRadius: 3, flexShrink: 0,
+      background: bg, border: `1px solid ${border}`, color,
+    }}>
+      {/* mini checkmark */}
+      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+        <polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      {summary.accepted}/{summary.total}
+      {hasReject && !allDone && (
+        <span style={{ opacity: 0.75 }}> · {summary.rejected}✗</span>
+      )}
+    </span>
+  );
+}
+
+/* ── SprintBanner ── */
 function SprintBanner() {
   const { data: sprints = [], isLoading } = useSprints();
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
@@ -137,7 +165,7 @@ function SprintBanner() {
   );
 }
 
-/* ── EquipoSummaryCard ───────────────────────────────────────── */
+/* ── EquipoSummaryCard ── */
 function EquipoSummaryCard({ equipo, label, userName, onClick }: {
   equipo: Equipo; label: string; userName: string; onClick: () => void;
 }) {
@@ -206,7 +234,7 @@ function EquipoSummaryCard({ equipo, label, userName, onClick }: {
   );
 }
 
-/* ── TicketRow ───────────────────────────────────────────────── */
+/* ── TicketRow ── */
 function TicketRow({ r, isLast, onClick, activeSprint }: {
   r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null;
 }) {
@@ -219,13 +247,20 @@ function TicketRow({ r, isLast, onClick, activeSprint }: {
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
-      {/* ID completo — ancho fijo 160px para TCK-YYYY-A-0001 */}
+      {/* ID */}
       <span style={{ width: 160, fontSize: 10, fontWeight: 700, color: 'var(--accent)', opacity: 0.8, fontFamily: 'monospace', flexShrink: 0, letterSpacing: '0.3px' }}>
         {r.id}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: 'var(--txt)', fontWeight: 400, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-        {r.titulo}
-      </span>
+
+      {/* Título + badge criterios */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+        <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 400, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+          {r.titulo}
+        </span>
+        <CriteriaBadge summary={r.criteriaSummary} />
+      </div>
+
+      {/* Sprint badge */}
       {inSprint && (
         <div style={{ flexShrink: 0 }}>
           <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)', whiteSpace: 'nowrap' }}>
@@ -234,6 +269,7 @@ function TicketRow({ r, isLast, onClick, activeSprint }: {
           </span>
         </div>
       )}
+
       <div style={{ width: 88, display: 'flex', justifyContent: 'center' }}>
         <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: PRIORIDAD_COLOR[r.prioridad] + '18', color: PRIORIDAD_COLOR[r.prioridad], border: `1px solid ${PRIORIDAD_COLOR[r.prioridad]}35` }}>
           {r.prioridad.charAt(0).toUpperCase() + r.prioridad.slice(1)}
@@ -251,7 +287,7 @@ function TicketRow({ r, isLast, onClick, activeSprint }: {
   );
 }
 
-/* ── EquipoSection ───────────────────────────────────────────── */
+/* ── EquipoSection ── */
 function EquipoSection({ equipo, label, userName, onVerMas, onRowClick, activeSprint }: {
   equipo: Equipo; label: string; userName: string;
   onVerMas: () => void; onRowClick: (r: Request) => void; activeSprint: Sprint | null;
@@ -305,7 +341,6 @@ function EquipoSection({ equipo, label, userName, onVerMas, onRowClick, activeSp
         </div>
       ) : (
         <>
-          {/* Header de columnas — ID ahora 160px igual que la row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
             <span style={{ width: 160, flexShrink: 0 }}>ID</span>
             <span style={{ flex: 1 }}>Asunto</span>

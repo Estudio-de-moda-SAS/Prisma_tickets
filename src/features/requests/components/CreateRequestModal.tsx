@@ -1,7 +1,7 @@
 // src/features/requests/components/CreateRequestModal.tsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronDown as ChevDown, GitFork } from 'lucide-react';
+import { X, ChevronDown as ChevDown, GitFork, Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { PRIORIDADES } from '../types';
 import type { Prioridad } from '../types';
 import {
@@ -20,7 +20,6 @@ import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstan
 import { config } from '@/config';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 
-/* ── Tipos ── */
 type Step = 'equipo' | 'template' | 'form';
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -66,95 +65,6 @@ function PortalPanel({ rect, children }: { rect: DOMRect | null; children: React
       {children}
     </div>,
     document.body,
-  );
-}
-
-/* ── CalendarPickerDropdown ── */
-function CalendarPickerDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const triggerRef      = useRef<HTMLButtonElement>(null);
-  const today           = new Date();
-  const parsed          = value ? new Date(value + 'T12:00:00') : null;
-  const displayLabel    = parsed ? parsed.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha límite';
-  const [viewYear,  setViewYear]  = useState(parsed?.getFullYear()  ?? today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsed?.getMonth()     ?? today.getMonth());
-  const CAL_HEIGHT = 260;
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const panel = document.querySelector('[data-cal-portal]');
-      if (triggerRef.current && !triggerRef.current.contains(e.target as Node) && (!panel || !panel.contains(e.target as Node))) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const firstDay    = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const DAYS   = ['D','L','M','X','J','V','S'];
-
-  function toggle() {
-    if (!open && triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - r.bottom;
-      const top = spaceBelow >= CAL_HEIGHT + 8 ? r.bottom + 4 : r.top - CAL_HEIGHT - 4;
-      const left = Math.min(r.left, window.innerWidth - 244);
-      setRect({ top, left, width: r.width, height: r.height, bottom: r.bottom, right: r.right, x: r.x, y: r.y, toJSON: () => ({}) } as unknown as DOMRect);
-    }
-    setOpen((o) => !o);
-  }
-
-  function selectDay(day: number) {
-    const d = String(day).padStart(2, '0');
-    const m = String(viewMonth + 1).padStart(2, '0');
-    onChange(`${viewYear}-${m}-${d}`);
-    setOpen(false);
-  }
-
-  const sel        = value ? new Date(value + 'T12:00:00') : null;
-  const selectedDay = sel && sel.getFullYear() === viewYear && sel.getMonth() === viewMonth ? sel.getDate() : null;
-  const todayDay    = today.getFullYear() === viewYear && today.getMonth() === viewMonth ? today.getDate() : null;
-  const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button ref={triggerRef} onClick={toggle} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: `1px solid ${open ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`, background: open ? 'rgba(0,200,255,0.05)' : 'var(--bg-surface)', color: value ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 12, outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--font-body)', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.15s' }}>
-        <span>{displayLabel}</span>
-        <ChevDown size={12} style={{ color: 'var(--txt-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }} />
-      </button>
-      {open && rect && createPortal(
-        <div data-cal-portal style={{ position: 'fixed', top: rect.top, left: rect.left, width: 240, minWidth: 240, zIndex: 99999, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.45)', padding: '10px 12px', userSelect: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <button onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); } else setViewMonth((m) => m - 1); }} style={{ width: 24, height: 24, borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>‹</button>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>{MONTHS[viewMonth]} {viewYear}</span>
-            <button onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); } else setViewMonth((m) => m + 1); }} style={{ width: 24, height: 24, borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>›</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
-            {DAYS.map((d) => <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'var(--txt-muted)', padding: '2px 0' }}>{d}</div>)}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-            {cells.map((day, i) => {
-              if (!day) return <div key={i} />;
-              const isSelected = day === selectedDay;
-              const isToday    = day === todayDay;
-              return (
-                <button key={i} onClick={() => selectDay(day)} style={{ width: '100%', aspectRatio: '1', borderRadius: 5, fontSize: 11, fontWeight: isSelected ? 700 : 400, border: isSelected ? 'none' : isToday ? '1px solid var(--accent)' : '1px solid transparent', background: isSelected ? 'var(--accent)' : 'transparent', color: isSelected ? 'white' : isToday ? 'var(--accent)' : 'var(--txt)', cursor: 'pointer', transition: 'all 0.1s' }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-          {value && <button onClick={() => { onChange(''); setOpen(false); }} style={{ marginTop: 8, width: '100%', padding: '4px', borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 10, cursor: 'pointer' }}>Quitar fecha</button>}
-        </div>,
-        document.body,
-      )}
-    </div>
   );
 }
 
@@ -248,10 +158,9 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
   onNext:              () => void;
   onBack:              () => void;
 }) {
-  // Filtrar por equipo usando Request_Template_Teams de la DB
   const filtered = templates.filter((t) =>
     t.Request_Template_Is_Active &&
-    (t.Request_Template_Teams?.length === 0 || // sin restricción = disponible para todos
+    (t.Request_Template_Teams?.length === 0 ||
      (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId)))
   );
 
@@ -339,7 +248,7 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
 }
 
-/* ── ExtraField renderer — soporta text, textarea, select, radio, collapsible ── */
+/* ── ExtraField renderer ── */
 function ExtraFieldRenderer({ field, value, onChange, accent }: {
   field:    import('@/features/requests/templates/types').TemplateExtraField;
   value:    string;
@@ -361,69 +270,58 @@ function ExtraFieldRenderer({ field, value, onChange, accent }: {
       </div>
       {!collapsed && (
         <>
-          {field.type === 'textarea' && (
-            <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={3}
-              style={{ width: '100%', minHeight: 80, padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
-          )}
-          {field.type === 'text' && (
-            <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
-          )}
-          {field.type === 'select' && (
-            <select value={value} onChange={(e) => onChange(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: value ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer' }}>
-              <option value="">Seleccioná una opción…</option>
-              {(field.options ?? []).map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          )}
-          {field.type === 'radio' && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {(field.options ?? []).map((opt) => {
-                const active = value === opt;
-                return (
-                  <button key={opt} type="button" onClick={() => onChange(opt)}
-                    style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 5, border: `1px solid ${active ? accent + '60' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.12s' }}>
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {field.type === 'checkbox' && (
-            <button
-              type="button"
-              onClick={() => onChange(value === 'true' ? 'false' : 'true')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', borderRadius: 8, width: '100%',
-                border: `1px solid ${value === 'true' ? accent + '50' : 'var(--border-subtle)'}`,
-                background: value === 'true' ? `${accent}0d` : 'var(--bg-surface)',
-                cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
-              }}
-            >
-              <div style={{
-                width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                border: `2px solid ${value === 'true' ? accent : 'var(--border)'}`,
-                background: value === 'true' ? accent : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s',
-              }}>
-                {value === 'true' && (
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </div>
-              <span style={{ fontSize: 13, color: value === 'true' ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: value === 'true' ? 600 : 400, transition: 'color 0.15s' }}>
-                {field.label}
-                {field.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
-              </span>
-            </button>
-          )}
+          {field.type === 'textarea' && <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={3} style={{ width: '100%', minHeight: 80, padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />}
+          {field.type === 'text' && <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />}
+          {field.type === 'select' && <select value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: value ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer' }}><option value="">Seleccioná una opción…</option>{(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}</select>}
+          {field.type === 'radio' && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(field.options ?? []).map((opt) => { const active = value === opt; return <button key={opt} type="button" onClick={() => onChange(opt)} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 5, border: `1px solid ${active ? accent + '60' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.12s' }}>{opt}</button>; })}</div>}
+          {field.type === 'checkbox' && <button type="button" onClick={() => onChange(value === 'true' ? 'false' : 'true')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, width: '100%', border: `1px solid ${value === 'true' ? accent + '50' : 'var(--border-subtle)'}`, background: value === 'true' ? `${accent}0d` : 'var(--bg-surface)', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}><div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: `2px solid ${value === 'true' ? accent : 'var(--border)'}`, background: value === 'true' ? accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>{value === 'true' && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}</div><span style={{ fontSize: 13, color: value === 'true' ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: value === 'true' ? 600 : 400, transition: 'color 0.15s' }}>{field.label}{field.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}</span></button>}
         </>
       )}
+    </div>
+  );
+}
+
+/* ── AcceptanceCriteriaEditor ── */
+function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = false }: {
+  criteria: string[]; onChange: (criteria: string[]) => void; accent: string; showError?: boolean;
+}) {
+  const [newText, setNewText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function addCriteria() {
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+    onChange([...criteria, trimmed]);
+    setNewText('');
+    inputRef.current?.focus();
+  }
+
+  const hasError = showError && criteria.length === 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {criteria.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {criteria.map((c, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: `${accent}08`, border: `1px solid ${accent}20` }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: `${accent}15`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke={accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <input value={c} onChange={(e) => { const next = [...criteria]; next[idx] = e.target.value; onChange(next); }} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: 'var(--txt)', fontFamily: 'var(--font-body)' }} />
+              <button type="button" onClick={() => onChange(criteria.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input ref={inputRef} value={newText} onChange={(e) => setNewText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCriteria(); } }} placeholder="Ej: El usuario puede iniciar sesión con Azure AD…" style={{ flex: 1, padding: '7px 11px', borderRadius: 6, border: `1px solid ${hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = `${accent}50`; }} onBlur={(e) => { e.currentTarget.style.borderColor = hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'; }} />
+        <button type="button" onClick={addCriteria} disabled={!newText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 6, border: `1px solid ${newText.trim() ? accent + '50' : 'var(--border-subtle)'}`, background: newText.trim() ? `${accent}15` : 'transparent', color: newText.trim() ? accent : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: newText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}>
+          <Plus size={12} /> Añadir
+        </button>
+      </div>
+      {hasError && <span style={{ fontSize: 10, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 5 }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" strokeWidth="1.2"/><line x1="5" y1="2.5" x2="5" y2="5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="5" cy="7" r="0.5" fill="currentColor"/></svg>Se requiere al menos un criterio de aceptación.</span>}
     </div>
   );
 }
@@ -432,13 +330,14 @@ function ExtraFieldRenderer({ field, value, onChange, accent }: {
    CreateRequestModal
    ══════════════════════════════════════════════════════════════ */
 type Props = {
-  onClose:      () => void;
-  onCreated?:   () => void;
-  parentId?:    string | null;   // ← era: number | null
-  parentTitle?: string;
+  onClose:               () => void;
+  onCreated?:            () => void;
+  parentId?:             string | null;
+  parentTitle?:          string;
+  parentIsConfidential?: boolean;
 };
- 
-export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle }: Props) {
+
+export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle, parentIsConfidential = false }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const boardId    = config.DEFAULT_BOARD_ID;
 
@@ -450,25 +349,25 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
 
-  // Wizard state
-  const [step,               setStep]               = useState<Step>('equipo');
+  const [step,                setStep]               = useState<Step>('equipo');
   const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(null);
   const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
   const { data: subTeams = [] } = useSubTeams(selectedBoardTeamId);
   const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedBoardTeamId);
 
-  // Form state
-  const [titulo,           setTitulo]           = useState('');
-  const [descripcion,      setDescripcion]      = useState('');
-  const [prioridad,        setPrioridad]        = useState<Prioridad>('media');
-  const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
-  const [selectedSubIds,   setSelectedSubIds]   = useState<number[]>([]);
-  const [selectedSprintId, setSelectedSprintId] = useState<number | null>(null);
-  const [assigneeIds,      setAssigneeIds]      = useState<number[]>([]);
-  const [deadline,         setDeadline]         = useState('');
-  const [userSearch,       setUserSearch]       = useState('');
-  const [extraValues,      setExtraValues]      = useState<Record<string, string>>({});
+  const [titulo,             setTitulo]             = useState('');
+  const [descripcion,        setDescripcion]        = useState('');
+  const [prioridad,          setPrioridad]          = useState<Prioridad>('media');
+  const [selectedLabelIds,   setSelectedLabelIds]   = useState<number[]>([]);
+  const [selectedSubIds,     setSelectedSubIds]     = useState<number[]>([]);
+  const [selectedSprintId,   setSelectedSprintId]   = useState<number | null>(null);
+  const [assigneeIds,        setAssigneeIds]        = useState<number[]>([]);
+  const [estimatedHours,     setEstimatedHours]     = useState<number | null>(null);
+  const [userSearch,         setUserSearch]         = useState('');
+  const [extraValues,        setExtraValues]        = useState<Record<string, string>>({});
+  const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>([]);
+  const [createAttempted,    setCreateAttempted]    = useState(false);
 
   const subDD      = usePortalDropdown();
   const catDD      = usePortalDropdown();
@@ -491,13 +390,10 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
     cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s', textAlign: 'left',
   });
 
-  // Derivar templateDef desde la DB — sin registry
-  const templateDef    = selectedTemplateId !== null
-    ? getTemplateDefinition(selectedTemplateId, allTemplates)
-    : null;
-  const accent         = templateDef?.visual.accentColor ?? 'var(--accent)';
-  const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers  = users.filter((u) =>
+  const templateDef   = selectedTemplateId !== null ? getTemplateDefinition(selectedTemplateId, allTemplates) : null;
+  const accent        = templateDef?.visual.accentColor ?? 'var(--accent)';
+  const assignedUsers = users.filter((u) => assigneeIds.includes(u.User_ID));
+  const filteredUsers = users.filter((u) =>
     u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
     u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
   );
@@ -515,6 +411,7 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
 
   function handleCreate() {
     if (!titulo.trim() || !currentUser || !selectedTemplateId) return;
+    if (acceptanceCriteria.length === 0) { setCreateAttempted(true); return; }
     const columnId = columnMap?.['sin_categorizar'] ?? 1;
 
     if (templateDef) {
@@ -527,29 +424,55 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
       {
         boardId,
         columnId,
-        requestedBy: currentUser.User_ID,
-        templateId:  selectedTemplateId,
-        titulo:      titulo.trim(),
-        descripcion: descripcion.trim(),
+        requestedBy:      currentUser.User_ID,
+        templateId:       selectedTemplateId,
+        titulo:           titulo.trim(),
+        descripcion:      descripcion.trim(),
         prioridad,
-        equipoIds:   selectedBoardTeamId ? [selectedBoardTeamId] : [],
-        subTeamIds:  selectedSubIds,
-        labelIds:    selectedLabelIds,
-        sprintId:    selectedSprintId,
-        deadline:    deadline || null,
+        equipoIds:        selectedBoardTeamId ? [selectedBoardTeamId] : [],
+        subTeamIds:       selectedSubIds,
+        labelIds:         selectedLabelIds,
+        sprintId:         selectedSprintId,
+        estimatedHours,
         parentId,
-        requesterTeamId: null,
+        requesterTeamId:  null,
+        isConfidential:   parentIsConfidential,
+        acceptanceCriteria,
       },
       { onSuccess: () => { onCreated?.(); onClose(); } },
     );
   }
 
+  const extraFieldsReady = templateDef?.extraFields.filter((f) => f.required).every((f) => {
+    if (f.type === 'checkbox') return extraValues[f.key] === 'true';
+    return !!extraValues[f.key]?.trim();
+  }) ?? true;
+
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
-(templateDef?.extraFields.filter((f) => f.required).every((f) => {
-  if (f.type === 'checkbox') return extraValues[f.key] === 'true';
-  return !!extraValues[f.key]?.trim();
-}) ?? true);
+    extraFieldsReady && acceptanceCriteria.length > 0;
+
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
+
+  function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+    const initH = value != null ? Math.floor(value) : 0;
+    const initM = value != null ? Math.round((value % 1) * 60) : 0;
+    const [hrs, setHrs] = useState<string>(value != null ? String(initH) : '');
+    const [mins, setMins] = useState<string>(value != null ? String(initM) : '');
+    function commit(h: string, m: string) {
+      const hVal = parseInt(h) || 0; const mVal = parseInt(m) || 0;
+      if (h === '' && m === '') { onChange(null); return; }
+      onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
+    }
+    const inputStyle: React.CSSProperties = { width: 52, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)', outline: 'none', textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
+        <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
+      </div>
+    );
+  }
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
@@ -561,9 +484,14 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           {parentId !== null && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)' }}>
-              <GitFork size={10} />
-              Sub-solicitud
+              <GitFork size={10} />Sub-solicitud
               {parentTitle && <span style={{ fontWeight: 400, opacity: 0.7 }}>de: {parentTitle.slice(0, 24)}{parentTitle.length > 24 ? '…' : ''}</span>}
+            </span>
+          )}
+          {/* Badge confidencial heredado del padre */}
+          {parentIsConfidential && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
+              <ShieldAlert size={10} />Confidencial
             </span>
           )}
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: 'var(--txt-muted)' }}>{headerTitle}</span>
@@ -584,25 +512,15 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
           <StepIndicator step={step} />
 
-          {step === 'equipo' && (
-            <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />
-          )}
+          {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
 
           {step === 'template' && (
-            <StepTemplate
-              templates={allTemplates}
-              selectedBoardTeamId={selectedBoardTeamId}
-              selectedTemplateId={selectedTemplateId}
-              onSelect={setSelectedTemplateId}
-              onNext={() => setStep('form')}
-              onBack={() => setStep('equipo')}
-            />
+            <StepTemplate templates={allTemplates} selectedBoardTeamId={selectedBoardTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />
           )}
 
           {step === 'form' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-              {/* Badge template */}
               {templateDef && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 16 }}>{templateDef.visual.icon}</span>
@@ -611,7 +529,16 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                 </div>
               )}
 
-              {/* Título */}
+              {/* Banner confidencial en el form si aplica */}
+              {parentIsConfidential && (
+                <div style={{ display: 'flex', gap: 10, padding: '11px 14px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
+                  <ShieldAlert size={14} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.55 }}>
+                    La solicitud padre es confidencial. Esta sub-solicitud heredará esa clasificación.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <FieldLabel>Nombre de la solicitud *</FieldLabel>
                 <input autoFocus value={titulo} onChange={(e) => setTitulo(e.target.value)}
@@ -623,46 +550,39 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                 />
               </div>
 
-              {/* Descripción */}
               <FieldBlock label="Descripción">
                 <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Describe el problema con detalle..." rows={3}
                   style={{ width: '100%', minHeight: 80, padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
               </FieldBlock>
 
-              {/* Campos extra del template — renderizados desde la DB */}
+              <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${acceptanceCriteria.length > 0 ? accent + '30' : 'var(--border-subtle)'}`, background: acceptanceCriteria.length > 0 ? `${accent}05` : 'transparent', transition: 'border-color 0.2s, background 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: acceptanceCriteria.length > 0 ? accent : 'var(--danger)' }}>Criterios de aceptación *</span>
+                  {acceptanceCriteria.length > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>{acceptanceCriteria.length}</span>}
+                  <span style={{ fontSize: 9, color: 'var(--txt-muted)', marginLeft: 'auto' }}>Mínimo 1 requerido</span>
+                </div>
+                <AcceptanceCriteriaEditor criteria={acceptanceCriteria} onChange={setAcceptanceCriteria} accent={accent} showError={createAttempted && acceptanceCriteria.length === 0} />
+              </div>
+
               {templateDef && templateDef.extraFields.length > 0 && (
                 <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${accent}20`, background: `${accent}05` }}>
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 14 }}>{templateDef.nombre} — Datos adicionales</div>
                   {templateDef.extraFields.map((field) => (
-                    <ExtraFieldRenderer
-                      key={field.key}
-                      field={field}
-                      value={extraValues[field.key] ?? ''}
-                      onChange={(v) => setExtraValues((p) => ({ ...p, [field.key]: v }))}
-                      accent={accent}
-                    />
+                    <ExtraFieldRenderer key={field.key} field={field} value={extraValues[field.key] ?? ''} onChange={(v) => setExtraValues((p) => ({ ...p, [field.key]: v }))} accent={accent} />
                   ))}
                 </div>
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-                {/* Prioridad */}
                 <FieldBlock label="Prioridad">
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
                       const active = prioridad === p;
-                      return (
-                        <button key={p} onClick={() => setPrioridad(p)}
-                          style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>
-                          {PRIORIDADES[p]}
-                        </button>
-                      );
+                      return <button key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
                     })}
                   </div>
                 </FieldBlock>
 
-                {/* Resolutor */}
                 <FieldBlock label="Resolutor">
                   <div style={{ position: 'relative' }}>
                     <button ref={assigneeDD.triggerRef} onClick={() => { assigneeDD.toggle(); setUserSearch(''); }} style={triggerStyle(assigneeDD.open, '124,58,237')}>
@@ -702,116 +622,64 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
                   </div>
                 </FieldBlock>
 
-                {/* Sub-equipo */}
                 <FieldBlock label="Sub-equipo">
                   <div style={{ position: 'relative' }}>
                     <button ref={subDD.triggerRef} onClick={subDD.toggle} disabled={!selectedBoardTeamId} style={{ ...triggerStyle(subDD.open, '0,200,255'), opacity: selectedBoardTeamId ? 1 : 0.5 }}>
                       {selectedSubIds.length === 0
                         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin sub-equipo</span>
-                        : selectedSubIds.map((sid) => {
-                            const sub = subTeams.find((s) => s.Sub_Team_ID === sid);
-                            if (!sub) return null;
-                            return (
-                              <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>
-                                {sub.Sub_Team_Name}
-                                <span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>
-                              </span>
-                            );
-                          })}
+                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>; })}
                       <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
                     {subDD.open && selectedBoardTeamId && (
                       <PortalPanel rect={subDD.rect}>
-                        {subTeams.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sub-equipos.</div>
-                          : subTeams.map((sub) => {
-                              const sel = selectedSubIds.includes(sub.Sub_Team_ID);
-                              return (
-                                <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}>
-                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} />
-                                  <span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })}
+                        {subTeams.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sub-equipos.</div>
+                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })}
                       </PortalPanel>
                     )}
                   </div>
                 </FieldBlock>
 
-                {/* Etiquetas */}
                 <FieldBlock label="Etiquetas">
                   <div style={{ position: 'relative' }}>
                     <button ref={catDD.triggerRef} onClick={catDD.toggle} disabled={!selectedBoardTeamId} style={{ ...triggerStyle(catDD.open, '0,200,255'), opacity: selectedBoardTeamId ? 1 : 0.5 }}>
                       {selectedLabelIds.length === 0
                         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
-                        : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
-                            <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>
-                              {label.Label_Icon && <span>{label.Label_Icon}</span>}
-                              {label.Label_Name}
-                              <span onMouseDown={(e) => { e.stopPropagation(); setSelectedLabelIds((p) => p.filter((x) => x !== label.Label_ID)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>
-                            </span>
-                          ))}
+                        : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>{label.Label_Icon && <span>{label.Label_Icon}</span>}{label.Label_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedLabelIds((p) => p.filter((x) => x !== label.Label_ID)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>)}
                       <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
                     {catDD.open && selectedBoardTeamId && (
                       <PortalPanel rect={catDD.rect}>
-                        {labels.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas.</div>
-                          : labels.map((label) => {
-                              const sel = selectedLabelIds.includes(label.Label_ID);
-                              return (
-                                <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>
-                                  {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
-                                  <span style={{ flex: 1 }}>{label.Label_Name}</span>
-                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })}
+                        {labels.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas.</div>
+                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })}
                       </PortalPanel>
                     )}
                   </div>
                 </FieldBlock>
 
-                {/* Sprint */}
                 <FieldBlock label="Sprint">
                   <div style={{ position: 'relative' }}>
                     <button ref={sprintDD.triggerRef} onClick={sprintDD.toggle} style={{ ...triggerStyle(sprintDD.open, '162,155,254'), flexWrap: 'nowrap' }}>
-                      {selectedSprint
-                        ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></>
-                        : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
+                      {selectedSprint ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></> : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
                       <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
                     {sprintDD.open && (
                       <PortalPanel rect={sprintDD.rect}>
-                        {sprints.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
+                        {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
                           : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
                               const sel  = selectedSprintId === sp.Sprint_ID;
                               const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                              return (
-                                <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}>
-                                  <SprintDot sprint={sp} />
-                                  <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
-                                  <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
+                              return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
                             })}
                       </PortalPanel>
                     )}
                   </div>
                 </FieldBlock>
 
-                {/* Fecha límite */}
-                <FieldBlock label="Fecha límite">
-                  <CalendarPickerDropdown value={deadline} onChange={setDeadline} />
+                <FieldBlock label="Horas estimadas">
+                  <HorasInput value={estimatedHours} onChange={setEstimatedHours} />
                 </FieldBlock>
-
               </div>
 
-              {/* Navegación */}
               <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: 4 }}>
                 <button type="button" onClick={() => setStep('template')} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
               </div>

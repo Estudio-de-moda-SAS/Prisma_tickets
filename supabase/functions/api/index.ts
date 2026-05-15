@@ -67,6 +67,21 @@ function extractStoragePath(storedValue: string): string {
   return storedValue;
 }
 
+/* ── Helper: mapear fila DB → AcceptanceCriteria frontend ── */
+function mapCriteria(row: Record<string, unknown>) {
+  return {
+    criteriaId:    row['Criteria_ID'],
+    requestId:     row['Request_ID'],
+    title:         row['Title'],
+    status:        row['Status'],
+    reviewerNotes: row['Reviewer_Notes'] ?? null,
+    reviewedBy:    row['Reviewed_By']    ?? null,
+    reviewedAt:    row['Reviewed_At']    ?? null,
+    createdAt:     row['Created_At'],
+    updatedAt:     row['Updated_At'],
+  };
+}
+
 const BASE_SELECT = `
   Request_ID,
   Request_Board_Column_ID,
@@ -78,10 +93,10 @@ const BASE_SELECT = `
   Request_Progress,
   Request_Created_At,
   Request_Parent_ID,
-  Request_Deadline,
-  Request_Time_Consumed,
+  Request_Estimated_Hours,
   Request_Finished_At,
   Request_Requester_Team_ID,
+  Request_Is_Confidential,
   requester:TBL_Users!Request_Requested_By (
     User_Name, User_Email, User_Avatar_url
   ),
@@ -138,6 +153,34 @@ const BASE_SELECT = `
   )
 `.trim();
 
+
+/* ── Helper: batch fetch criteria summaries ── */
+async function attachCriteriaSummary(
+  rows: Record<string, unknown>[],
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<Record<string, unknown>[]> {
+  if (rows.length === 0) return rows;
+  const ids = rows.map((r) => r['Request_ID'] as string);
+  const { data, error } = await supabase
+    .from('TBL_Acceptance_Criteria')
+    .select('Request_ID, Status')
+    .in('Request_ID', ids);
+  if (error || !data) return rows;
+
+  const map: Record<string, { total: number; accepted: number; rejected: number }> = {};
+  for (const c of data as { Request_ID: string; Status: string }[]) {
+    if (!map[c.Request_ID]) map[c.Request_ID] = { total: 0, accepted: 0, rejected: 0 };
+    map[c.Request_ID].total++;
+    if (c.Status === 'accepted') map[c.Request_ID].accepted++;
+    if (c.Status === 'rejected') map[c.Request_ID].rejected++;
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    criteria_summary: map[r['Request_ID'] as string] ?? null,
+  }));
+}
+
 async function handleAction(
   action: string,
   payload: Record<string, unknown>,
@@ -152,7 +195,7 @@ async function handleAction(
         .eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchByTeamCode': {
@@ -172,7 +215,7 @@ async function handleAction(
         .in('Request_ID', ids).eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchByRequestedBy': {
@@ -182,7 +225,7 @@ async function handleAction(
         .eq('Request_Requested_By', userId).eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchUncategorized': {
@@ -211,8 +254,8 @@ async function handleAction(
       const p = payload as {
         boardId: number; columnId: number; requestedBy: number; templateId: number;
         titulo: string; descripcion: string; score: number; equipoIds: number[];
-        labelIds: number[]; sprintId: number | null; deadline: string | null;
-        parentId: string | null; requesterTeamId: number | null;
+        labelIds: number[]; sprintId: number | null; estimatedHours: number | null;
+        parentId: string | null; requesterTeamId: number | null; isConfidential: boolean | null;
       };
       const { data: inserted, error: insErr } = await supabase
         .from('TBL_Requests')
@@ -226,9 +269,10 @@ async function handleAction(
           Request_Score:             p.score,
           Request_Progress:          0,
           Request_Created_At:        new Date().toISOString(),
-          Request_Deadline:          p.deadline,
+          Request_Estimated_Hours:   p.estimatedHours ?? null,
           Request_Parent_ID:         p.parentId ?? null,
           Request_Requester_Team_ID: p.requesterTeamId ?? null,
+          Request_Is_Confidential: p.isConfidential ?? false,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
@@ -264,15 +308,15 @@ async function handleAction(
     case 'updateRequest': {
       const { id, ...patch } = payload as {
         id: string; titulo?: string; descripcion?: string; score?: number;
-        progreso?: number; deadline?: string | null;
+        progreso?: number; estimatedHours?: number | null;
         equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
       };
       const scalarUpdate: Record<string, unknown> = {};
-      if (patch.titulo      !== undefined) scalarUpdate['Request_Title']       = patch.titulo;
-      if (patch.descripcion !== undefined) scalarUpdate['Request_Description'] = patch.descripcion;
-      if (patch.score       !== undefined) scalarUpdate['Request_Score']       = patch.score;
-      if (patch.progreso    !== undefined) scalarUpdate['Request_Progress']    = Math.min(100, Math.max(0, patch.progreso));
-      if (patch.deadline    !== undefined) scalarUpdate['Request_Deadline']    = patch.deadline;
+      if (patch.titulo          !== undefined) scalarUpdate['Request_Title']            = patch.titulo;
+      if (patch.descripcion     !== undefined) scalarUpdate['Request_Description']      = patch.descripcion;
+      if (patch.score           !== undefined) scalarUpdate['Request_Score']            = patch.score;
+      if (patch.progreso        !== undefined) scalarUpdate['Request_Progress']         = Math.min(100, Math.max(0, patch.progreso));
+      if (patch.estimatedHours  !== undefined) scalarUpdate['Request_Estimated_Hours']  = patch.estimatedHours;
       if (Object.keys(scalarUpdate).length > 0) {
         const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
         if (error) throw new Error(error.message);
@@ -321,6 +365,7 @@ async function handleAction(
         supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id),
         supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', id),
         supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id),
+        supabase.from('TBL_Acceptance_Criteria').delete().eq('Request_ID', id),
       ]);
       const { error } = await supabase.from('TBL_Requests').delete().eq('Request_ID', id);
       if (error) throw new Error(error.message);
@@ -450,6 +495,69 @@ async function handleAction(
       const storagePath = extractStoragePath((existing as any).Attachment_File_url as string);
       await supabase.storage.from('attachments').remove([storagePath]);
       const { error } = await supabase.from('TBL_Attachments').delete().eq('Attachment_ID', attachmentId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    // ── Criterios de aceptación ─────────────────────────────
+
+    case 'fetchAcceptanceCriteria': {
+      const { requestId } = payload as { requestId: string };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .eq('Request_ID', requestId)
+        .order('Created_At', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data as Record<string, unknown>[]).map(mapCriteria);
+    }
+
+    case 'createAcceptanceCriteria': {
+      const { requestId, title } = payload as { requestId: string; title: string };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .insert({
+          Request_ID: requestId,
+          Title:      title.trim(),
+          Status:     'pending',
+          Created_At: new Date().toISOString(),
+          Updated_At: new Date().toISOString(),
+        })
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .single();
+      if (error) throw new Error(error.message);
+      return mapCriteria(data as Record<string, unknown>);
+    }
+
+    case 'updateAcceptanceCriteriaStatus': {
+      const { criteriaId, status, reviewedBy, reviewerNotes } = payload as {
+        criteriaId:    number;
+        status:        'accepted' | 'rejected' | 'pending';
+        reviewedBy:    number;
+        reviewerNotes: string | null;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .update({
+          Status:         status,
+          Reviewed_By:    reviewedBy,
+          Reviewer_Notes: reviewerNotes ?? null,
+          Reviewed_At:    status !== 'pending' ? new Date().toISOString() : null,
+          Updated_At:     new Date().toISOString(),
+        })
+        .eq('Criteria_ID', criteriaId)
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .single();
+      if (error) throw new Error(error.message);
+      return mapCriteria(data as Record<string, unknown>);
+    }
+
+    case 'deleteAcceptanceCriteria': {
+      const { criteriaId } = payload as { criteriaId: number };
+      const { error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .delete()
+        .eq('Criteria_ID', criteriaId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
@@ -908,43 +1016,6 @@ async function handleAction(
         Attachment_Mime_Type:  (data as any).Attachment_Mime_Type,
         Attachment_Created_At: (data as any).Attachment_Created_At,
         uploader:              (data as any).uploader,
-      };
-    }
-
-    case 'uploadClosureAttachment': {
-      const p = payload as {
-        closureId: number; requestId: string; userId: number;
-        fileName: string; mimeType: string; sizeBytes: number; base64: string;
-      };
-      const bucket   = 'attachments';
-      const filePath = `closures/${p.requestId}/${Date.now()}_${p.fileName}`;
-      const bytes    = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
-      const { error: uploadErr } = await supabase.storage
-        .from(bucket).upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
-      if (uploadErr) throw new Error(uploadErr.message);
-      const { data: inserted, error: insertErr } = await supabase
-        .from('TBL_Closure_Attachments')
-        .insert({
-          Closure_ID:   p.closureId,
-          Storage_Path: filePath,
-          File_Name:    p.fileName,
-          Mime_Type:    p.mimeType,
-          File_Size:    p.sizeBytes,
-          Created_At:   new Date().toISOString(),
-        })
-        .select('Closure_Attachment_ID, Storage_Path, File_Name, Mime_Type, File_Size, Created_At')
-        .single();
-      if (insertErr) throw new Error(insertErr.message);
-      const { data: signedData, error: signErr } = await supabase.storage
-        .from(bucket).createSignedUrl(filePath, SIGNED_URL_EXPIRES_IN);
-      return {
-        Closure_Attachment_ID: (inserted as any).Closure_Attachment_ID,
-        Storage_Path:          (inserted as any).Storage_Path,
-        File_Name:             (inserted as any).File_Name,
-        Mime_Type:             (inserted as any).Mime_Type,
-        File_Size:             (inserted as any).File_Size,
-        Created_At:            (inserted as any).Created_At,
-        Signed_Url:            signErr ? null : signedData?.signedUrl ?? null,
       };
     }
 

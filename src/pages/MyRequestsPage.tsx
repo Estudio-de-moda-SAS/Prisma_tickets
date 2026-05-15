@@ -1,3 +1,4 @@
+// src/pages/MyRequestsPage.tsx
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
@@ -11,23 +12,27 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
-  sin_categorizar: 'var(--txt-muted)',
-  icebox:          '#60a5fa',
-  backlog:         'var(--info)',
-  todo:            'var(--warn)',
-  en_progreso:     'var(--accent)',
-  ready_to_deploy: 'var(--purple)',
-  hecho:           'var(--success)',
+  sin_categorizar:  'var(--txt-muted)',
+  icebox:           '#60a5fa',
+  backlog:          'var(--info)',
+  todo:             'var(--warn)',
+  en_progreso:      'var(--accent)',
+  en_revision_qas:  '#f59e0b',
+  ready_to_deploy:  '#a78bfa',
+  hecho:            'var(--success)',
+  historial:        'var(--txt-muted)',
 };
 
 const COL_BG: Record<KanbanColumna, string> = {
-  sin_categorizar: 'rgba(90,106,138,0.08)',
-  icebox:          'rgba(96,165,250,0.08)',
-  backlog:         'rgba(167,139,250,0.08)',
-  todo:            'rgba(255,165,2,0.08)',
-  en_progreso:     'rgba(0,200,255,0.08)',
-  ready_to_deploy: 'rgba(167,139,250,0.08)',
-  hecho:           'rgba(0,229,160,0.08)',
+  sin_categorizar:  'rgba(90,106,138,0.08)',
+  icebox:           'rgba(96,165,250,0.08)',
+  backlog:          'rgba(167,139,250,0.08)',
+  todo:             'rgba(255,165,2,0.08)',
+  en_progreso:      'rgba(0,200,255,0.08)',
+  en_revision_qas:  'rgba(245,158,11,0.08)',
+  ready_to_deploy:  'rgba(167,139,250,0.08)',
+  hecho:            'rgba(0,229,160,0.08)',
+  historial:        'rgba(90,106,138,0.08)',
 };
 
 const PRIORIDAD_COLOR: Record<Prioridad, string> = {
@@ -40,6 +45,13 @@ const PRIORIDAD_COLOR: Record<Prioridad, string> = {
 const PRIORIDAD_LABEL: Record<Prioridad, string> = {
   baja: 'Baja', media: 'Media', alta: 'Alta', critica: 'Crítica',
 };
+
+function fmtHours(h: number): string {
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h % 1) * 60);
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}m`;
+}
 
 const IconClock = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,7 +85,6 @@ export function MisSolicitudesPage() {
     retry:                config.USE_MOCK ? false : 1,
   });
 
-  // Filtrar por equipo activo en modo real
   const todasFiltradas = config.USE_MOCK
     ? todas
     : todas.filter((r) => r.equipo.includes(equipoActivo));
@@ -88,7 +99,8 @@ export function MisSolicitudesPage() {
   }, {});
 
   const tabColumnas: KanbanColumna[] = [
-    'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'hecho',
+    'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso',
+    'en_revision_qas', 'ready_to_deploy', 'hecho', 'historial',
   ];
 
   return (
@@ -107,8 +119,7 @@ export function MisSolicitudesPage() {
 
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
         <button onClick={() => setFiltro('todas')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 5, fontSize: 11, fontWeight: filtro === 'todas' ? 600 : 400, background: filtro === 'todas' ? 'var(--bg-surface)' : 'transparent', border: filtro === 'todas' ? '1px solid var(--border)' : '1px solid transparent', color: filtro === 'todas' ? 'var(--txt)' : 'var(--txt-muted)', transition: 'all 0.12s', cursor: 'pointer' }}
-        >
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 5, fontSize: 11, fontWeight: filtro === 'todas' ? 600 : 400, background: filtro === 'todas' ? 'var(--bg-surface)' : 'transparent', border: filtro === 'todas' ? '1px solid var(--border)' : '1px solid transparent', color: filtro === 'todas' ? 'var(--txt)' : 'var(--txt-muted)', transition: 'all 0.12s', cursor: 'pointer' }}>
           Todas
           <span style={{ fontSize: 10, fontWeight: 700, background: filtro === 'todas' ? 'var(--accent-glow)' : 'var(--bg-surface)', color: filtro === 'todas' ? 'var(--accent)' : 'var(--txt-muted)', padding: '1px 6px', borderRadius: 8 }}>
             {todasFiltradas.length}
@@ -121,8 +132,7 @@ export function MisSolicitudesPage() {
           const active = filtro === col;
           return (
             <button key={col} onClick={() => setFiltro(col)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 5, fontSize: 11, fontWeight: active ? 600 : 400, background: active ? COL_BG[col] : 'transparent', border: active ? `1px solid ${COL_COLOR[col]}40` : '1px solid transparent', color: active ? COL_COLOR[col] : 'var(--txt-muted)', transition: 'all 0.12s', cursor: 'pointer' }}
-            >
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 5, fontSize: 11, fontWeight: active ? 600 : 400, background: active ? COL_BG[col] : 'transparent', border: active ? `1px solid ${COL_COLOR[col]}40` : '1px solid transparent', color: active ? COL_COLOR[col] : 'var(--txt-muted)', transition: 'all 0.12s', cursor: 'pointer' }}>
               {KANBAN_COLUMNAS[col]}
               <span style={{ fontSize: 10, fontWeight: 700, background: active ? `${COL_COLOR[col]}20` : 'var(--bg-surface)', color: active ? COL_COLOR[col] : 'var(--txt-muted)', padding: '1px 6px', borderRadius: 8 }}>
                 {count}
@@ -153,7 +163,6 @@ function RequestRow({ request: r }: { request: Request }) {
   const prioColor      = PRIORIDAD_COLOR[r.prioridad];
   const colColor       = COL_COLOR[r.columna];
   const colBg          = COL_BG[r.columna];
-  const isVencida      = r.deadline && new Date(r.deadline) < new Date();
   const primerAsignado = r.assignees?.[0] ?? null;
 
   return (
@@ -201,6 +210,11 @@ function RequestRow({ request: r }: { request: Request }) {
               <IconUser />{primerAsignado.userName}
             </span>
           )}
+          {r.estimatedHours != null && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--txt-muted)' }}>
+              <IconClock />{fmtHours(r.estimatedHours)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -208,11 +222,6 @@ function RequestRow({ request: r }: { request: Request }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--txt-muted)' }}>
           <IconClock />{format(new Date(r.fechaApertura), 'd MMM yyyy', { locale: es })}
         </div>
-        {r.deadline && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: isVencida ? 'var(--danger)' : 'var(--txt-muted)' }}>
-            <IconClock />{format(new Date(r.deadline), 'd MMM', { locale: es })}
-          </div>
-        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--txt-muted)' }}>
           <IconUser /><span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
         </div>
