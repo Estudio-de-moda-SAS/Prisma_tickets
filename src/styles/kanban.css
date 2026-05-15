@@ -21,24 +21,37 @@
   transition: outline 0.1s, background 0.1s;
 }
 
+/* ── Columnas ──────────────────────────────────────────────── */
 .kanban__col--sin-categorizar {
   flex: 0 0 280px;
   background: rgba(46, 58, 85, 0.15);
   border: 1px dashed rgba(90, 106, 138, 0.3);
 }
 
-.kanban__col--icebox      { background: rgba(96, 165, 250, 0.03);  border: 1px solid rgba(96, 165, 250, 0.08); }
-.kanban__col--backlog     { background: rgba(167, 139, 250, 0.03); border: 1px solid rgba(167, 139, 250, 0.08); }
-.kanban__col--todo        { background: rgba(255, 165, 2, 0.03);   border: 1px solid rgba(255, 165, 2, 0.08); }
-.kanban__col--en-progreso { background: rgba(0, 200, 255, 0.03);   border: 1px solid rgba(0, 200, 255, 0.1); }
-.kanban__col--ready-to-deploy  { background: rgba(167, 139, 250, 0.03); border: 1px solid rgba(167, 139, 250, 0.08); }
-.kanban__col--hecho       { background: rgba(0, 229, 160, 0.03);   border: 1px solid rgba(0, 229, 160, 0.08); }
+/* azul claro */
+.kanban__col--icebox          { background: rgba(96, 165, 250, 0.03);  border: 1px solid rgba(96, 165, 250, 0.08); }
+/* violeta */
+.kanban__col--backlog         { background: rgba(167, 139, 250, 0.03); border: 1px solid rgba(167, 139, 250, 0.08); }
+/* ámbar */
+.kanban__col--todo            { background: rgba(255, 165, 2, 0.03);   border: 1px solid rgba(255, 165, 2, 0.08); }
+/* cyan — accent principal */
+.kanban__col--en-progreso     { background: rgba(0, 200, 255, 0.03);   border: 1px solid rgba(0, 200, 255, 0.10); }
+/* naranja — QAS: revisión cálida, distinta al ámbar de todo */
+.kanban__col--en-revision-qas { background: rgba(251, 113, 33, 0.03);  border: 1px solid rgba(251, 113, 33, 0.10); }
+/* rosa-magenta — ready to deploy */
+.kanban__col--ready-to-deploy { background: rgba(236, 72, 153, 0.03);  border: 1px solid rgba(236, 72, 153, 0.10); }
+/* verde — hecho */
+.kanban__col--hecho           { background: rgba(0, 229, 160, 0.03);   border: 1px solid rgba(0, 229, 160, 0.08); }
+/* gris neutro — historial archivado */
+.kanban__col--historial       { background: rgba(90, 106, 138, 0.03);  border: 1px solid rgba(90, 106, 138, 0.10); }
 
+/* ── Over (drag) ───────────────────────────────────────────── */
 .kanban__col--over {
   outline: 1px solid var(--accent-border);
   background: rgba(0, 200, 255, 0.05) !important;
 }
 
+/* ── Header ────────────────────────────────────────────────── */
 .kanban__col-header {
   display: flex;
   align-items: center;
@@ -55,14 +68,17 @@
   text-transform: uppercase;
 }
 
-.kanban__col--sin-categorizar .kanban__col-title { color: var(--txt-muted); }
+.kanban__col--sin-categorizar  .kanban__col-title { color: var(--txt-muted); }
 .kanban__col--icebox           .kanban__col-title { color: #60a5fa; }
-.kanban__col--backlog          .kanban__col-title { color: var(--info); }
+.kanban__col--backlog          .kanban__col-title { color: #a78bfa; }
 .kanban__col--todo             .kanban__col-title { color: var(--warn); }
 .kanban__col--en-progreso      .kanban__col-title { color: var(--accent); }
-.kanban__col--ready-to-deploy  .kanban__col-title { color: var(--purple); }
+.kanban__col--en-revision-qas  .kanban__col-title { color: #fb7121; }
+.kanban__col--ready-to-deploy  .kanban__col-title { color: #ec4899; }
 .kanban__col--hecho            .kanban__col-title { color: var(--success); }
+.kanban__col--historial        .kanban__col-title { color: var(--txt-muted); }
 
+/* ── Count badge ───────────────────────────────────────────── */
 .kanban__col-count {
   font-size: 10px;
   background: var(--bg-surface);
@@ -72,6 +88,7 @@
   color: var(--txt-muted);
 }
 
+/* ── Drop hint (sin categorizar) ───────────────────────────── */
 .kanban__drop-hint {
   font-size: 10px;
   color: var(--txt-muted);
@@ -81,6 +98,7 @@
   letter-spacing: 0.5px;
 }
 
+/* ── Empty state ───────────────────────────────────────────── */
 .kanban__col-empty {
   flex: 1;
   display: flex;

@@ -20,8 +20,10 @@ const COL_COLOR: Record<KanbanColumna, string> = {
   backlog:         'var(--info)',
   todo:            'var(--warn)',
   en_progreso:     'var(--accent)',
+  en_revision_qas: 'var(--info)',
   ready_to_deploy: 'var(--purple)',
   hecho:           'var(--success)',
+  historial:       'var(--txt-muted)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -241,11 +243,6 @@ function handleMover(columna: KanbanColumna) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={labelStyle}>Fechas</span>
-          <InfoRow label="Apertura" value={format(new Date(request.fechaApertura), "d 'de' MMMM yyyy", { locale: es })} />
-          {request.deadline && <InfoRow label="Límite" value={format(new Date(request.deadline), "d 'de' MMMM yyyy", { locale: es })} />}
-        </div>
       </div>
     </div>
   );

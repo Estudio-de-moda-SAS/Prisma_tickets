@@ -45,23 +45,8 @@ function ScrollToSection() {
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, account } = useAuth();
-  if (!ready) {
-    return (
-      <div className="login-page">
-        <span
-          style={{
-            color: "var(--txt-muted)",
-            fontSize: 12,
-            letterSpacing: 1,
-          }}
-        >
-          Iniciando...
-        </span>
-      </div>
-    );
-  }
+  if (!ready) return null;  // ← antes retornaba el div con "Iniciando..."
   if (!account) return <Navigate to="/login" replace />;
-
   return <>{children}</>;
 }
 

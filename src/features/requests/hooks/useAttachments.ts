@@ -5,8 +5,8 @@ import { apiClient } from '@/lib/apiClient';
 export type Attachment = {
   Attachment_ID:         number;
   Attachment_Name:       string;
-  Attachment_Url:        string;
-  Attachment_Size:       number;   // bytes
+  Attachment_Url:        string | null;
+  Attachment_Size:       number;
   Attachment_Mime_Type:  string;
   Attachment_Created_At: string;
   uploader: {
@@ -15,7 +15,7 @@ export type Attachment = {
   } | null;
 };
 
-export function useAttachments(requestId: number) {
+export function useAttachments(requestId: string) {
   return useQuery<Attachment[]>({
     queryKey:  ['attachments', requestId],
     queryFn:   () => apiClient.call<Attachment[]>('fetchAttachments', { requestId }),
@@ -32,7 +32,7 @@ export function useUploadAttachment() {
       userId,
       file,
     }: {
-      requestId: number;
+      requestId: string;
       userId:    number;
       file:      File;
     }) => {
@@ -71,7 +71,7 @@ export function useDeleteAttachment() {
       attachmentId,
     }: {
       attachmentId: number;
-      requestId:    number;
+      requestId:    string;
     }) => apiClient.call('deleteAttachment', { attachmentId }),
     onSuccess: (_data, { requestId }) => {
       qc.invalidateQueries({ queryKey: ['attachments', requestId] });

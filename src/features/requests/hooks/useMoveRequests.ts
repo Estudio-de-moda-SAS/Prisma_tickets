@@ -42,13 +42,15 @@ export function useMoveRequest(equipo: Equipo) {
         if (!card) return prev;
 
         const next: BoardData = {
-          sin_categorizar: [...prev.sin_categorizar],
-          icebox:          [...prev.icebox],
-          backlog:         [...prev.backlog],
-          todo:            [...prev.todo],
-          en_progreso:     [...prev.en_progreso],
+          sin_categorizar: [...(prev.sin_categorizar ?? [])],
+          icebox:          [...(prev.icebox          ?? [])],
+          backlog:         [...(prev.backlog         ?? [])],
+          todo:            [...(prev.todo            ?? [])],
+          en_progreso:     [...(prev.en_progreso     ?? [])],
+          en_revision_qas: [...(prev.en_revision_qas ?? [])],
           ready_to_deploy: [...(prev.ready_to_deploy ?? [])],
-          hecho:           [...prev.hecho],
+          hecho:           [...(prev.hecho           ?? [])],
+          historial:       [...(prev.historial       ?? [])],
         };
 
         for (const col of Object.keys(next) as KanbanColumna[]) {

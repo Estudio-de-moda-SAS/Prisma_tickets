@@ -26,15 +26,16 @@ import { useCloseRequest } from '../hooks/useCloseRequest';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { config } from '@/config';
 
-// Board_Column_ID por nombre de columna — sincronizado con TBL_Board_Columns
 const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
-  sin_categorizar: 1,
-  icebox:          2,
-  backlog:         3,
-  todo:            4,
-  en_progreso:     5,
-  ready_to_deploy: 7,
-  hecho:           6,
+  sin_categorizar:  1,
+  icebox:           2,
+  backlog:          3,
+  todo:             4,
+  en_progreso:      5,
+  en_revision_qas:  8,
+  ready_to_deploy:  7,
+  hecho:            6,
+  historial:        9,
 };
 
 type Props = {
@@ -46,20 +47,22 @@ type Props = {
 };
 
 const COLUMN_IDS = new Set<string>([
-  'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso', 'ready_to_deploy', 'hecho',
+  'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso',
+  'en_revision_qas', 'ready_to_deploy', 'hecho', 'historial',
 ]);
 
 const COLUMN_LABELS: Record<KanbanColumna, string> = {
-  sin_categorizar: 'Sin categorizar',
-  icebox:          'Icebox',
-  backlog:         'Backlog',
-  todo:            'To do',
-  en_progreso:     'En progreso',
-  ready_to_deploy: 'Ready to Deploy',
-  hecho:           'Hecho',
+  sin_categorizar:  'Sin categorizar',
+  icebox:           'Icebox',
+  backlog:          'Backlog',
+  todo:             'To do',
+  en_progreso:      'En progreso',
+  en_revision_qas:  'En revisión QAS',
+  ready_to_deploy:  'Ready to Deploy',
+  hecho:            'Hecho',
+  historial:        'Historial',
 };
 
-// Estado pendiente de cierre — tarjeta que se acaba de soltar en columna de cierre
 type PendingClosure = {
   card:            Request;
   targetColumna:   KanbanColumna;
@@ -67,10 +70,10 @@ type PendingClosure = {
 };
 
 export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
-  const [activeCard,    setActiveCard]    = useState<Request | null>(null);
-  const [overColumn,    setOverColumn]    = useState<KanbanColumna | null>(null);
-  const [modalId,       setModalId]       = useState<string | null>(null);
-  const [parentModalId, setParentModalId] = useState<string | null>(null);
+  const [activeCard,     setActiveCard]     = useState<Request | null>(null);
+  const [overColumn,     setOverColumn]     = useState<KanbanColumna | null>(null);
+  const [modalId,        setModalId]        = useState<string | null>(null);
+  const [parentModalId,  setParentModalId]  = useState<string | null>(null);
   const [pendingClosure, setPendingClosure] = useState<PendingClosure | null>(null);
 
   const navigate     = useNavigate();
@@ -85,9 +88,21 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  const modalCard = modalId
+  // Buscar en board local primero (instantáneo), luego hidratar con fetchById
+  // fetchById genera las signed URLs de los adjuntos de cierre
+  const modalCardFromBoard = modalId
     ? (Object.values(board).flat().find((r) => r.id === modalId) ?? extraRequest ?? null)
     : null;
+
+  const { data: modalCardFetched } = useQuery<Request>({
+    queryKey: ['request', modalId],
+    queryFn:  () => Requests.fetchById(modalId!),
+    enabled:  !!modalId && !config.USE_MOCK,
+    staleTime: 60_000,
+  });
+
+  // Usar la versión hidratada si ya llegó, sino la del board (sin signed URLs)
+  const modalCard = modalCardFetched ?? modalCardFromBoard;
 
   const parentInBoard = parentModalId
     ? Object.values(board).flat().find((r) => r.id === parentModalId) ?? null
@@ -95,8 +110,8 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const { data: parentFetched } = useQuery<Request>({
     queryKey: ['request', parentModalId],
-    queryFn:  () => Requests.fetchById(Number(parentModalId)),
-    enabled:  !!parentModalId && !parentInBoard && !config.USE_MOCK,
+    queryFn:  () => Requests.fetchById(parentModalId!),
+    enabled:  !!parentModalId && !config.USE_MOCK,
     staleTime: 30_000,
   });
 
@@ -141,7 +156,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
 
-    // Si la columna destino requiere evidencia → abrir ClosureModal en lugar de mover
     if (COLUMNAS_CIERRE.has(targetCol)) {
       const card = Object.values(board).flat().find((r) => r.id === activeId);
       if (card) {
@@ -150,60 +164,48 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           targetColumna:  targetCol,
           targetColumnId: COLUMN_ID_MAP[targetCol],
         });
-        return; // no llamar onMove todavía
+        return;
       }
     }
 
     onMove(activeId, targetCol);
   }
 
-  // Confirmación del ClosureModal al arrastrar
-  function handleClosureConfirm(note: string, attachment: File | null) {
+  function handleClosureConfirm(note: string, attachments: File[]) {
     if (!pendingClosure || !currentUser) return;
     closeRequest(
       {
-        requestId:      Number(pendingClosure.card.id),
+        requestId:      pendingClosure.card.id,
         closedBy:       currentUser.User_ID,
         closureNote:    note,
         targetColumnId: pendingClosure.targetColumnId,
-        attachment,
+        attachments,
       },
       {
-        onSuccess: () => {
-          onMove(pendingClosure.card.id, pendingClosure.targetColumna);
-          setPendingClosure(null);
-        },
-        onError: () => {
-          setPendingClosure(null);
-        },
+        onSuccess: () => { onMove(pendingClosure.card.id, pendingClosure.targetColumna); setPendingClosure(null); },
+        onError:   () => { setPendingClosure(null); },
       },
     );
   }
 
-  // Confirmación del ClosureModal al mover desde el RequestModal
   function handleModalMoveWithClosure(
     id: string,
     columna: KanbanColumna,
     note: string,
-    attachment: File | null,
+    attachments: File[],
   ) {
     if (!currentUser) return;
     closeRequest(
       {
-        requestId:      Number(id),
+        requestId:      id,
         closedBy:       currentUser.User_ID,
         closureNote:    note,
         targetColumnId: COLUMN_ID_MAP[columna],
-        attachment,
+        attachments,
       },
       {
-        onSuccess: () => {
-          onMove(id, columna);
-          setPendingClosure(null);
-        },
-        onError: () => {
-          setPendingClosure(null);
-        },
+        onSuccess: () => { onMove(id, columna); setPendingClosure(null); },
+        onError:   () => { setPendingClosure(null); },
       },
     );
   }
@@ -242,7 +244,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
         </DragOverlay>
       </DndContext>
 
-      {/* ── ClosureModal al arrastrar ── */}
       {pendingClosure && (
         <ClosureModal
           request={pendingClosure.card}
@@ -254,7 +255,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
         />
       )}
 
-      {/* ── Modal principal ── */}
       {modalCard && (
         <RequestModal
           request={modalCard}
@@ -272,7 +272,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
         />
       )}
 
-      {/* ── Modal padre (readOnly) ── */}
       {parentCard && (
         <RequestModal
           request={parentCard}

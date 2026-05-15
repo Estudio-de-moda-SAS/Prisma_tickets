@@ -1,3 +1,4 @@
+// src/pages/BoardPage.tsx
 import { useMemo, useState } from 'react';
 import { useBoardStore } from '@/store/boardStore';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
@@ -22,7 +23,6 @@ export function BoardPage() {
   const columnMap                    = useColumnMap(config.DEFAULT_BOARD_ID);
   const { Requests }                 = useGraphServices();
 
-  // ID de la request que se quiere abrir pero no está en el board actual
   const [externalModalId, setExternalModalId] = useState<string | null>(null);
 
   const boardTeamId = useMemo(() => {
@@ -33,12 +33,10 @@ export function BoardPage() {
   const { data: users    = [] } = useUsers();
   const { data: subTeams = [] } = useSubTeams(boardTeamId);
 
-  // Fetch de request externa (hija de otro equipo o padre no visible en board)
   const { data: externalRequest } = useQuery<Request>({
     queryKey: ['request', externalModalId],
-    queryFn:  () => Requests.fetchById(Number(externalModalId)),
+    queryFn:  () => Requests.fetchById(externalModalId!),
     enabled:  !!externalModalId && !config.USE_MOCK && (() => {
-      // Solo fetcha si la request no está ya en el board local
       const inBoard = Object.values(data ?? {}).flat().some((r) => r.id === externalModalId);
       return !inBoard;
     })(),
@@ -74,14 +72,12 @@ export function BoardPage() {
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
-function handleMove(id: string, columna: KanbanColumna) {
-  const columnId = columnMap?.[columna];
-  if (!columnId && !config.USE_MOCK) return; // columnMap aún no cargó, ignorar
-  mover({ id, columna, columnId });
-}
+  function handleMove(id: string, columna: KanbanColumna) {
+    const columnId = columnMap?.[columna];
+    if (!columnId && !config.USE_MOCK) return;
+    mover({ id, columna, columnId });
+  }
 
-  // Cuando el board notifica que cambió el modalId, verificar si está en el board
-  // Si no está, guardar como externalModalId para fetcharlo
   function handleModalId(id: string | null) {
     if (!id) { setExternalModalId(null); return; }
     const inBoard = Object.values(data ?? {}).flat().some((r) => r.id === id);
@@ -92,31 +88,14 @@ function handleMove(id: string, columna: KanbanColumna) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
 
-      <div style={{
-        display:        'flex',
-        alignItems:     'center',
-        justifyContent: 'space-between',
-        flexWrap:       'wrap',
-        gap:            8,
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
           <BoardCustomizationTrigger />
         </div>
 
         {config.USE_MOCK && (
-          <span style={{
-            fontSize:      10,
-            color:         'var(--warn)',
-            background:    'rgba(255,165,2,0.08)',
-            border:        '1px solid rgba(255,165,2,0.2)',
-            borderRadius:  4,
-            padding:       '3px 10px',
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-            fontWeight:    600,
-            flexShrink:    0,
-          }}>
+          <span style={{ fontSize: 10, color: 'var(--warn)', background: 'rgba(255,165,2,0.08)', border: '1px solid rgba(255,165,2,0.2)', borderRadius: 4, padding: '3px 10px', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600, flexShrink: 0 }}>
             Modo Demo
           </span>
         )}

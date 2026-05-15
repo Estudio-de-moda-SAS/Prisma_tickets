@@ -15,13 +15,15 @@ type Props = {
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
-  sin_categorizar: 'kanban__col--sin-categorizar',
-  icebox:          'kanban__col--icebox',
-  backlog:         'kanban__col--backlog',
-  todo:            'kanban__col--todo',
-  en_progreso:     'kanban__col--en-progreso',
-  ready_to_deploy: 'kanban__col--ready-to-deploy',
-  hecho:           'kanban__col--hecho',
+  sin_categorizar:  'kanban__col--sin-categorizar',
+  icebox:           'kanban__col--icebox',
+  backlog:          'kanban__col--backlog',
+  todo:             'kanban__col--todo',
+  en_progreso:      'kanban__col--en-progreso',
+  en_revision_qas:  'kanban__col--en-revision-qas',
+  ready_to_deploy:  'kanban__col--ready-to-deploy',
+  hecho:            'kanban__col--hecho',
+  historial:        'kanban__col--historial',
 };
 
 export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick }: Props) {
@@ -43,11 +45,11 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
         isOver ? 'kanban__col--over' : '',
       ].join(' ')}
       style={{
-  ...colStyle,
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: 0,
-}}
+        ...colStyle,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+      }}
     >
       <div className="kanban__col-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -97,26 +99,27 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       {id === 'sin_categorizar' && (
         <p className="kanban__drop-hint">↓ Asignar al equipo</p>
       )}
-<div className="kanban__col-body">
-  <SortableContext
-    items={requests.map((r) => r.id)}
-    strategy={verticalListSortingStrategy}
-  >
-    {requests.map((r) => (
-      <RequestCard
-        key={r.id}
-        request={r}
-        onClick={() => onCardClick(r)}
-      />
-    ))}
-  </SortableContext>
 
-  {requests.length === 0 && (
-    <div className="kanban__col-empty">
-      <span>Sin solicitudes</span>
-    </div>
-  )}
-</div>
+      <div className="kanban__col-body">
+        <SortableContext
+          items={requests.map((r) => r.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {requests.map((r) => (
+            <RequestCard
+              key={r.id}
+              request={r}
+              onClick={() => onCardClick(r)}
+            />
+          ))}
+        </SortableContext>
+
+        {requests.length === 0 && (
+          <div className="kanban__col-empty">
+            <span>Sin solicitudes</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

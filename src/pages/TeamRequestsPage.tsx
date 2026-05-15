@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, CalendarDays, ChevronDown, X, ExternalLink, Clock, User, ArrowRight, Calendar } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronDown, X, ExternalLink, Clock, User, ArrowRight} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,8 +21,10 @@ const COL_COLOR: Record<KanbanColumna, string> = {
   backlog:         'var(--info)',
   todo:            'var(--warn)',
   en_progreso:     'var(--accent)',
+  en_revision_qas: 'var(--info)',
   ready_to_deploy: 'var(--purple)',
   hecho:           'var(--success)',
+  historial:       'var(--txt-muted)',
 };
 
 const COL_BG: Record<KanbanColumna, string> = {
@@ -31,8 +33,10 @@ const COL_BG: Record<KanbanColumna, string> = {
   backlog:         'rgba(167,139,250,0.08)',
   todo:            'rgba(255,165,2,0.08)',
   en_progreso:     'rgba(0,200,255,0.08)',
+  en_revision_qas: 'rgba(167,139,250,0.08)',
   ready_to_deploy: 'rgba(167,139,250,0.08)',
   hecho:           'rgba(0,229,160,0.08)',
+  historial:       'rgba(90,106,138,0.08)',
 };
 
 const PRIORIDAD_COLOR: Record<Prioridad, string> = {
@@ -209,7 +213,6 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
   const prioColor = PRIORIDAD_COLOR[r.prioridad];
   const colColor  = COL_COLOR[r.columna];
   const colBg     = COL_BG[r.columna];
-  const isVencida = r.deadline && new Date(r.deadline) < new Date();
 
   return (
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
@@ -243,11 +246,6 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--txt-muted)' }}>
           <Clock size={11} />{format(new Date(r.fechaApertura), 'd MMM yyyy', { locale: es })}
         </div>
-        {r.deadline && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: isVencida ? 'var(--danger)' : 'var(--txt-muted)' }}>
-            <Calendar size={10} />{format(new Date(r.deadline), 'd MMM', { locale: es })}
-          </div>
-        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--txt-muted)' }}>
           <User size={10} /><span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
         </div>
@@ -268,7 +266,6 @@ function RequestDetailModal({ request: r, onClose }: { request: Request; onClose
   const prioColor = PRIORIDAD_COLOR[r.prioridad];
   const colColor  = COL_COLOR[r.columna];
   const colBg     = COL_BG[r.columna];
-  const isVencida = r.deadline && new Date(r.deadline) < new Date();
 
   const equiposAccesibles: Equipo[] = r.equipo.filter((eq) =>
     role.role === 'admin' || (role.role === 'member' && role.team === eq)
@@ -310,14 +307,6 @@ function RequestDetailModal({ request: r, onClose }: { request: Request; onClose
                 {format(new Date(r.fechaApertura), "d 'de' MMMM yyyy", { locale: es })}
               </div>
             </MetaBlock>
-            {r.deadline ? (
-              <MetaBlock label="Fecha límite">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: isVencida ? 'var(--danger)' : 'var(--warn)' }}>
-                  <Calendar size={13} style={{ flexShrink: 0 }} />
-                  {format(new Date(r.deadline), "d 'de' MMMM yyyy", { locale: es })}
-                </div>
-              </MetaBlock>
-            ) : <div />}
             {r.categoria.length > 0 && (
               <MetaBlock label="Etiquetas">
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
