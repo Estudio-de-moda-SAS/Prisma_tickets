@@ -1,4 +1,12 @@
 // src/pages/NewRequestPage.tsx
+import { CreateTicketModal } from '@/features/requests/components/ticket-request-modal/CreateTicketModal';
+import {
+  crmFormConfig,
+  dataScienceFormConfig,
+  developmentUxFormConfig,
+  systemsFormConfig,
+} from '@/features/requests/components/ticket-request-modal/ticketFormConfigs';
+import type { TicketFormConfig } from '@/features/requests/components/ticket-request-modal/ticketFormTypes';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -22,6 +30,24 @@ import type { TemplateExtraField } from '@/features/requests/templates/types';
 import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock } from 'lucide-react';
 
 type Step = 'equipo' | 'template' | 'form';
+
+
+const GENERAL_REQUEST_TEMPLATE_ID = -1;
+
+function getGeneralRequestFormConfig(team?: BoardTeam): TicketFormConfig | null {
+  const code = team?.Board_Team_Code?.toLowerCase() ?? '';
+  const name = team?.Board_Team_Name?.toLowerCase() ?? '';
+  const value = `${code} ${name}`;
+
+  if (value.includes('crm')) return crmFormConfig;
+  if (value.includes('ciencia') || value.includes('datos')) return dataScienceFormConfig;
+  if (value.includes('sistema')) return systemsFormConfig;
+  if (value.includes('desarrollo') || value.includes('ux') || value.includes('ui')) {
+    return developmentUxFormConfig;
+  }
+
+  return null;
+}
 
 const MAX_ATTACHMENTS = 5;
 
@@ -187,32 +213,332 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
   );
 }
 
-function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: { templates: BoardTemplate[]; selectedBoardTeamId: number | null; selectedTemplateId: number | null; onSelect: (id: number) => void; onNext: () => void; onBack: () => void }) {
-  const filtered = templates.filter((t) => t.Request_Template_Is_Active && (t.Request_Template_Teams?.length === 0 || (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId))));
+function StepTemplate({
+  templates,
+  selectedBoardTeamId,
+  selectedTemplateId,
+  onSelect,
+  onNext,
+  onBack,
+  showGeneralRequest,
+}: {
+  templates: BoardTemplate[];
+  selectedBoardTeamId: number | null;
+  selectedTemplateId: number | null;
+  onSelect: (id: number) => void;
+  onNext: () => void;
+  onBack: () => void;
+  showGeneralRequest: boolean;
+}) {
+  const filtered = templates.filter((t) =>
+    t.Request_Template_Is_Active &&
+    (t.Request_Template_Teams?.length === 0 ||
+      (selectedBoardTeamId !== null &&
+        t.Request_Template_Teams?.includes(selectedBoardTeamId)))
+  );
+
+  const totalCards = filtered.length + (showGeneralRequest ? 1 : 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿Qué tipo de solicitud es?</h2>
-        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>El tipo determina qué información adicional se necesita.</p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>
+          ¿Qué tipo de solicitud es?
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
+          El tipo determina qué información adicional se necesita.
+        </p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 16, flex: 1 }}>
-        {filtered.map((t) => {
-          const selected = selectedTemplateId === t.Request_Template_ID; const accent = t.Request_Template_Color ?? '#00c8ff'; const icon = t.Request_Template_Icon ?? '📋'; const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            totalCards <= 2 ? `repeat(${totalCards}, 1fr)` : 'repeat(3, 1fr)',
+          gap: 16,
+          flex: 1,
+        }}
+      >
+        {showGeneralRequest && (() => {
+          const selected = selectedTemplateId === GENERAL_REQUEST_TEMPLATE_ID;
+          const accent = '#7c3aed';
+
           return (
-            <button key={t.Request_Template_ID} type="button" onClick={() => onSelect(t.Request_Template_ID)} style={{ padding: '28px 24px', borderRadius: 10, border: `1.5px solid ${selected ? accent + '70' : 'var(--border)'}`, background: selected ? `linear-gradient(135deg, ${accent}12, ${accent}06)` : 'var(--bg-panel)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden' }} onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = accent + '40'; e.currentTarget.style.background = `${accent}06`; }}} onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${accent}, transparent)` : 'transparent' }} />
-              {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${accent}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+            <button
+              key={GENERAL_REQUEST_TEMPLATE_ID}
+              type="button"
+              onClick={() => onSelect(GENERAL_REQUEST_TEMPLATE_ID)}
+              style={{
+                padding: '28px 24px',
+                borderRadius: 10,
+                border: `1.5px solid ${selected ? accent + '70' : 'var(--border)'}`,
+                background: selected
+                  ? `linear-gradient(135deg, ${accent}12, ${accent}06)`
+                  : 'var(--bg-panel)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.borderColor = accent + '40';
+                  e.currentTarget.style.background = `${accent}06`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.background = 'var(--bg-panel)';
+                }
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: selected
+                    ? `linear-gradient(90deg, transparent, ${accent}, transparent)`
+                    : 'transparent',
+                }}
+              />
+
+              {selected && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 14,
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: accent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 0 8px ${accent}60`,
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path
+                      d="M1.5 5l2.5 2.5 4.5-4.5"
+                      stroke="white"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📝</div>
+
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  color: selected ? accent : 'var(--txt)',
+                  marginBottom: 8,
+                }}
+              >
+                Solicitud General
+              </div>
+
+              <div style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+                Formulario general personalizado según el equipo seleccionado.
+              </div>
+
+              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    padding: '2px 7px',
+                    borderRadius: 3,
+                    background: `${accent}15`,
+                    color: accent,
+                    border: `1px solid ${accent}30`,
+                  }}
+                >
+                  + Formulario dinámico
+                </span>
+              </div>
+            </button>
+          );
+        })()}
+
+        {filtered.map((t) => {
+          const selected = selectedTemplateId === t.Request_Template_ID;
+          const accent = t.Request_Template_Color ?? '#00c8ff';
+          const icon = t.Request_Template_Icon ?? '📋';
+          const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
+
+          return (
+            <button
+              key={t.Request_Template_ID}
+              type="button"
+              onClick={() => onSelect(t.Request_Template_ID)}
+              style={{
+                padding: '28px 24px',
+                borderRadius: 10,
+                border: `1.5px solid ${selected ? accent + '70' : 'var(--border)'}`,
+                background: selected
+                  ? `linear-gradient(135deg, ${accent}12, ${accent}06)`
+                  : 'var(--bg-panel)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.15s',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.borderColor = accent + '40';
+                  e.currentTarget.style.background = `${accent}06`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!selected) {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.background = 'var(--bg-panel)';
+                }
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: selected
+                    ? `linear-gradient(90deg, transparent, ${accent}, transparent)`
+                    : 'transparent',
+                }}
+              />
+
+              {selected && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 14,
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: accent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 0 8px ${accent}60`,
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path
+                      d="M1.5 5l2.5 2.5 4.5-4.5"
+                      stroke="white"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              )}
+
               <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: 1, color: selected ? accent : 'var(--txt)', marginBottom: 8 }}>{t.Request_Template_Name}</div>
-              <div style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.5 }}>{t.Request_Template_Description}</div>
-              {fieldCount > 0 && <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>{t.Request_Template_Form_Schema.map((f) => <span key={f.key} style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 7px', borderRadius: 3, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>+ {f.label}</span>)}</div>}
+
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  color: selected ? accent : 'var(--txt)',
+                  marginBottom: 8,
+                }}
+              >
+                {t.Request_Template_Name}
+              </div>
+
+              <div style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+                {t.Request_Template_Description}
+              </div>
+
+              {fieldCount > 0 && (
+                <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {t.Request_Template_Form_Schema.map((f) => (
+                    <span
+                      key={f.key}
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: 'uppercase',
+                        padding: '2px 7px',
+                        borderRadius: 3,
+                        background: `${accent}15`,
+                        color: accent,
+                        border: `1px solid ${accent}30`,
+                      }}
+                    >
+                      + {f.label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
-        <button type="button" onClick={onBack} style={{ padding: '10px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
-        <button type="button" onClick={onNext} disabled={selectedTemplateId === null} style={{ padding: '10px 28px', borderRadius: 6, border: 'none', background: selectedTemplateId !== null ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: selectedTemplateId !== null ? 'white' : 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: selectedTemplateId !== null ? 'pointer' : 'not-allowed' }}>Continuar →</button>
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            padding: '10px 20px',
+            borderRadius: 6,
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--txt-muted)',
+            fontSize: 12,
+            background: 'transparent',
+            cursor: 'pointer',
+          }}
+        >
+          ← Volver
+        </button>
+
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={selectedTemplateId === null}
+          style={{
+            padding: '10px 28px',
+            borderRadius: 6,
+            border: 'none',
+            background:
+              selectedTemplateId !== null
+                ? 'linear-gradient(135deg, var(--accent-2), var(--accent))'
+                : 'var(--bg-surface)',
+            color: selectedTemplateId !== null ? 'white' : 'var(--txt-muted)',
+            fontFamily: 'var(--font-display)',
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+            cursor: selectedTemplateId !== null ? 'pointer' : 'not-allowed',
+          }}
+        >
+          Continuar →
+        </button>
       </div>
     </div>
   );
@@ -487,11 +813,23 @@ export function NuevaSolicitudPage() {
   const [submitAttempted,    setSubmitAttempted]    = useState(false);
   const [error,              setError]              = useState<string | null>(null);
   const [submitted,          setSubmitted]          = useState(false);
+  const [generalRequestModalOpen, setGeneralRequestModalOpen] = useState(false);
 
   const userTeamName = currentUser?.team?.Team_Name ?? null;
   const userTeamId   = currentUser?.Team_ID ?? null;
+  const selectedTeam = teams.find((team) => team.Board_Team_ID === selectedTeamId);
+  const generalRequestFormConfig = getGeneralRequestFormConfig(selectedTeam);
 
-  function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(null); setExtraValues({}); }
+  function selectTeam(id: number) {
+    setSelectedTeamId(id);
+    setSelectedTemplateId(null);
+    setExtraValues({});
+    setPendingFiles([]);
+    setAcceptanceCriteria([]);
+    setIsConfidential(false);
+    setSubmitAttempted(false);
+    setGeneralRequestModalOpen(false);
+  }
   function toggleLabel(id: number) { setSelectedLabelIds((prev) => prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]); }
   function setExtraValue(key: string, value: string) { setExtraValues((prev) => ({ ...prev, [key]: value })); }
 
@@ -506,7 +844,6 @@ export function NuevaSolicitudPage() {
       for (const field of def.extraFields) {
         if (field.required && !extraValues[field.key]?.trim()) throw new Error(`El campo "${field.label}" es obligatorio.`);
       }
-console.log('[DEBUG] isConfidential:', isConfidential);
       // 1. Crear ticket
       const newRequest = await Requests.createRequest({
         boardId,
@@ -560,6 +897,106 @@ console.log('[DEBUG] isConfidential:', isConfidential);
     crear();
   }
 
+  async function handleGeneralRequestSubmit({
+    values,
+    files,
+  }: {
+    values: Record<string, string>;
+    files: File[];
+  }) {
+    if (!currentUser) return setError('Cargando datos del usuario...');
+    if (!columnMap) return setError('Cargando columnas del board...');
+    if (!selectedTeamId) return setError('Seleccioná un equipo.');
+
+    const sinCategorizarColumnId = columnMap['sin_categorizar'];
+
+    if (!sinCategorizarColumnId) {
+      return setError('Columna sin_categorizar no encontrada.');
+    }
+
+    const defaultTemplate = templates.find((template) => {
+      const isActive = template.Request_Template_Is_Active;
+      const isForSelectedTeam =
+        template.Request_Template_Teams?.length === 0 ||
+        template.Request_Template_Teams?.includes(selectedTeamId);
+
+      return isActive && isForSelectedTeam;
+    });
+
+    if (!defaultTemplate) {
+      return setError('No se encontró una plantilla válida para crear la solicitud.');
+    }
+
+    const title =
+      values.requestName?.trim() ||
+      values.title?.trim() ||
+      values.subject?.trim() ||
+      values.titulo?.trim() ||
+      'Solicitud general';
+
+    const description =
+      values.description?.trim() ||
+      values.requestDescription?.trim() ||
+      values.descripcion?.trim() ||
+      'Solicitud creada desde formulario general dinámico.';
+
+    const mappedPriority: Prioridad =
+      values.priority === 'urgente' || values.priority === 'critica'
+        ? 'critica'
+        : values.priority === 'alto' || values.priority === 'alta'
+          ? 'alta'
+          : values.priority === 'bajo' || values.priority === 'baja'
+            ? 'baja'
+            : 'media';
+
+    try {
+      setError(null);
+
+      const newRequest = await Requests.createRequest({
+        boardId,
+        columnId:        sinCategorizarColumnId,
+        requestedBy:     currentUser.User_ID,
+        templateId:      defaultTemplate.Request_Template_ID,
+        titulo:          title,
+        descripcion:     description,
+        prioridad:       mappedPriority,
+        equipoIds:       [selectedTeamId],
+        labelIds:        [],
+        subTeamIds:      [],
+        sprintId:        null,
+        estimatedHours:  null,
+        parentId:        null,
+        requesterTeamId: userTeamId,
+        isConfidential:  values.confidential === 'yes',
+        acceptanceCriteria: [],
+      });
+
+      if (files.length > 0) {
+        await Promise.all(
+          files.map(async (file) => {
+            const base64 = await fileToBase64(file);
+
+            await apiClient.call('uploadAttachment', {
+              requestId: newRequest.id,
+              userId: currentUser.User_ID,
+              fileName: file.name,
+              mimeType: file.type,
+              sizeBytes: file.size,
+              base64,
+            });
+          }),
+        );
+      }
+
+      qc.invalidateQueries({ queryKey: requestKeys.all });
+      setGeneralRequestModalOpen(false);
+      setSubmitted(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear la solicitud.';
+      setError(message);
+    }
+  }
+
   const isReady = !!currentUser && !!columnMap && !!selectedTemplateId && acceptanceCriteria.length > 0;
 
   if (submitted) {
@@ -571,26 +1008,54 @@ console.log('[DEBUG] isConfidential:', isConfidential);
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 28px 32px', maxWidth: 900, width: '100%', margin: '0 auto' }}>
-      <StepIndicator step={step} />
-      {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
-      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
-      {step === 'form' && selectedTemplateId !== null && (
-        <StepForm
-          allTemplates={templates} templateId={selectedTemplateId}
-          currentUserName={currentUser?.User_Name ?? 'Cargando...'} userTeamName={userTeamName}
-          labels={labels} prioridad={prioridad} setPrioridad={setPrioridad}
-          selectedLabelIds={selectedLabelIds} toggleLabel={toggleLabel}
-          titulo={titulo} setTitulo={(v) => { setTitulo(v); setError(null); }}
-          descripcion={descripcion} setDescripcion={setDescripcion}
-          extraValues={extraValues} setExtraValue={setExtraValue}
-          pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
-          acceptanceCriteria={acceptanceCriteria} setAcceptanceCriteria={setAcceptanceCriteria}
-          showCriteriaError={submitAttempted && acceptanceCriteria.length === 0}
-          isConfidential={isConfidential} setIsConfidential={setIsConfidential}
-          error={error} isPending={isPending} isReady={isReady} onBack={() => setStep('template')}
+    <>
+      <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 28px 32px', maxWidth: 900, width: '100%', margin: '0 auto' }}>
+        <StepIndicator step={step} />
+        {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
+        {step === 'template' && (
+          <StepTemplate
+            templates={templates}
+            selectedBoardTeamId={selectedTeamId}
+            selectedTemplateId={selectedTemplateId}
+            onSelect={setSelectedTemplateId}
+            onNext={() => {
+              if (selectedTemplateId === GENERAL_REQUEST_TEMPLATE_ID) {
+                setGeneralRequestModalOpen(true);
+                return;
+              }
+
+              setStep('form');
+            }}
+            onBack={() => setStep('equipo')}
+            showGeneralRequest={generalRequestFormConfig !== null}
+          />
+        )}
+        {step === 'form' && selectedTemplateId !== null && (
+          <StepForm
+            allTemplates={templates} templateId={selectedTemplateId}
+            currentUserName={currentUser?.User_Name ?? 'Cargando...'} userTeamName={userTeamName}
+            labels={labels} prioridad={prioridad} setPrioridad={setPrioridad}
+            selectedLabelIds={selectedLabelIds} toggleLabel={toggleLabel}
+            titulo={titulo} setTitulo={(v) => { setTitulo(v); setError(null); }}
+            descripcion={descripcion} setDescripcion={setDescripcion}
+            extraValues={extraValues} setExtraValue={setExtraValue}
+            pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
+            acceptanceCriteria={acceptanceCriteria} setAcceptanceCriteria={setAcceptanceCriteria}
+            showCriteriaError={submitAttempted && acceptanceCriteria.length === 0}
+            isConfidential={isConfidential} setIsConfidential={setIsConfidential}
+            error={error} isPending={isPending} isReady={isReady} onBack={() => setStep('template')}
+          />
+        )}
+      </form>
+
+      {generalRequestModalOpen && generalRequestFormConfig && (
+        <CreateTicketModal
+          open
+          config={generalRequestFormConfig}
+          onClose={() => setGeneralRequestModalOpen(false)}
+          onSubmit={handleGeneralRequestSubmit}
         />
       )}
-    </form>
+    </>
   );
 }

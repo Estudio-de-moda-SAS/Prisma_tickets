@@ -29,11 +29,13 @@ export function TicketDropdown({
 
       <button
         type="button"
-        className="create-ticket-modal__dropdown-trigger"
+        className={`create-ticket-modal__dropdown-trigger ${
+          isOpen ? "create-ticket-modal__dropdown-trigger--open" : ""
+        }`}
         onClick={onToggle}
+        aria-expanded={isOpen}
       >
         <span>{getSelectedLabel(options, value)}</span>
-        <span className="create-ticket-modal__dropdown-chevron">⌄</span>
       </button>
 
       {isOpen && (
