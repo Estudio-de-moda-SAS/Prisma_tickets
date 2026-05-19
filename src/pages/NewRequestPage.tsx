@@ -347,11 +347,11 @@ function StepTemplate({
                   marginBottom: 8,
                 }}
               >
-                Solicitud General
+                Solicitud Especializada 
               </div>
 
               <div style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
-                Formulario general personalizado según el equipo seleccionado.
+                Formulario especializado y adaptable según el equipo seleccionado.
               </div>
 
               <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
