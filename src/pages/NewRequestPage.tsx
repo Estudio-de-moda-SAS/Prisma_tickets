@@ -875,6 +875,83 @@ export function NuevaSolicitudPage() {
     crear();
   }
 
+  function handleGeneralRequestSubmit({
+  values,
+  files,
+}: {
+  values: Record<string, string>;
+  files: File[];
+}) {
+  if (!currentUser) return setError('Cargando datos del usuario...');
+  if (!columnMap) return setError('Cargando columnas del board...');
+  if (!selectedTeamId) return setError('Seleccioná un equipo.');
+
+  const sinCategorizarColumnId = columnMap['sin_categorizar'];
+
+  if (!sinCategorizarColumnId) {
+    return setError('Columna sin_categorizar no encontrada.');
+  }
+
+  const title =
+    values.requestName?.trim() ||
+    values.title?.trim() ||
+    'Solicitud general';
+
+  const description =
+    values.description?.trim() ||
+    'Solicitud creada desde formulario general dinámico.';
+
+  const mappedPriority =
+    values.priority === 'urgente'
+      ? 'critica'
+      : values.priority === 'alto'
+        ? 'alta'
+        : values.priority === 'bajo'
+          ? 'baja'
+          : 'media';
+
+  setError(null);
+const defaultTemplate = templates.find((template) => {
+  const isActive = template.Request_Template_Is_Active;
+  const isForSelectedTeam =
+    template.Request_Template_Teams?.length === 0 ||
+    template.Request_Template_Teams?.includes(selectedTeamId);
+
+  return isActive && isForSelectedTeam;
+});
+
+if (!defaultTemplate) {
+  return setError('No se encontró una plantilla válida para crear la solicitud.');
+}
+
+  Requests.createRequest({
+    boardId,
+    columnId: sinCategorizarColumnId,
+    requestedBy: currentUser.User_ID,
+    templateId: defaultTemplate.Request_Template_ID,
+    titulo: title,
+    descripcion: description,
+    prioridad: mappedPriority as Prioridad,
+    equipoIds: [selectedTeamId],
+    labelIds: [],
+    subTeamIds: [],
+    sprintId: null,
+    deadline: null,
+    parentId: null,
+    requesterTeamId: null,
+  })
+    .then(() => {
+      console.log('Archivos pendientes de subir a storage:', files);
+
+      qc.invalidateQueries({ queryKey: requestKeys.all });
+      setGeneralRequestModalOpen(false);
+      setSubmitted(true);
+    })
+    .catch((err: Error) => {
+      setError(err.message ?? 'Error al crear la solicitud.');
+    });
+}
+
   const isReady = !!currentUser && !!columnMap && !!selectedTemplateId;
 
   if (submitted) {
@@ -940,13 +1017,14 @@ export function NuevaSolicitudPage() {
         />
       )}
     </form>
- {generalRequestModalOpen && generalRequestFormConfig && (
-      <CreateTicketModal
-        open
-        config={generalRequestFormConfig}
-        onClose={() => setGeneralRequestModalOpen(false)}
-      />
-    )}
+{generalRequestModalOpen && generalRequestFormConfig && (
+  <CreateTicketModal
+    open
+    config={generalRequestFormConfig}
+    onClose={() => setGeneralRequestModalOpen(false)}
+    onSubmit={handleGeneralRequestSubmit}
+  />
+)}
   </>
-  );
+);
 }

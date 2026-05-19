@@ -15,32 +15,38 @@ const priorityDotClassByColor: Record<string, string> = {
 export function PriorityInfoModal({ info, onClose }: PriorityInfoModalProps) {
   return (
     <div
-      className="create-ticket-modal__priority-info"
-      role="dialog"
-      aria-modal="true"
+      className="create-ticket-modal__priority-info-overlay"
+      onClick={onClose}
     >
-      <button
-        type="button"
-        className="create-ticket-modal__priority-info-close"
-        onClick={onClose}
-        aria-label="Cerrar información de prioridad"
+      <div
+        className="create-ticket-modal__priority-info"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
       >
-        ×
-      </button>
+        <button
+          type="button"
+          className="create-ticket-modal__priority-info-close"
+          onClick={onClose}
+          aria-label="Cerrar información de prioridad"
+        >
+          ×
+        </button>
 
-      <p className="create-ticket-modal__priority-info-title">{info.title}</p>
+        <p className="create-ticket-modal__priority-info-title">{info.title}</p>
 
-      <div className="create-ticket-modal__priority-info-list">
-        {info.items.map((item) => (
-          <p key={item.label}>
-            <span
-              className={`create-ticket-modal__priority-dot ${
-                priorityDotClassByColor[item.color]
-              }`}
-            />
-            <strong>{item.label}:</strong> {item.description}
-          </p>
-        ))}
+        <div className="create-ticket-modal__priority-info-list">
+          {info.items.map((item) => (
+            <p key={item.label}>
+              <span
+                className={`create-ticket-modal__priority-dot ${
+                  priorityDotClassByColor[item.color]
+                }`}
+              />
+              <strong>{item.label}:</strong> {item.description}
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );

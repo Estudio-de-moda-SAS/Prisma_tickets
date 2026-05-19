@@ -8,6 +8,7 @@ type TicketRequestFieldProps = {
   isOpen?: boolean;
   onToggleDropdown?: () => void;
   onChange?: (fieldId: string, value: string) => void;
+  onFilesChange?: (files: FileList | null) => void;
 };
 
 export function TicketRequestField({
@@ -16,6 +17,7 @@ export function TicketRequestField({
   isOpen = false,
   onToggleDropdown,
   onChange,
+  onFilesChange,
 }: TicketRequestFieldProps) {
   if (field.type === "textarea") {
     return (
@@ -57,14 +59,21 @@ export function TicketRequestField({
 
   if (field.type === "upload") {
     return (
-      <div className="create-ticket-modal__field">
+      <label className="create-ticket-modal__field">
         <span>{field.label}</span>
 
-        <button type="button" className="create-ticket-modal__upload">
+        <input
+          className="create-ticket-modal__file-input"
+          type="file"
+          multiple
+          onChange={(event) => onFilesChange?.(event.target.files)}
+        />
+
+        <span className="create-ticket-modal__upload">
           <span className="create-ticket-modal__upload-icon">＋</span>
           <span>Cargar archivo, imágenes, videos o documentos</span>
-        </button>
-      </div>
+        </span>
+      </label>
     );
   }
 
