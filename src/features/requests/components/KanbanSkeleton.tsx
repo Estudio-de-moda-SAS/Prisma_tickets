@@ -59,13 +59,14 @@ const CARD_VARIANTS: SkCardProps[] = [
 export interface KanbanSkeletonProps {
   /** Cuántas columnas mostrar (1-6). Por defecto muestra las 6. */
   columns?: number;
+  style?: React.CSSProperties;   // ← nuevo
 }
 
-const KanbanSkeleton: React.FC<KanbanSkeletonProps> = ({ columns = 6 }) => {
+const KanbanSkeleton: React.FC<KanbanSkeletonProps> = ({ columns = 6, style }) => {
   const visible = COLUMNS.slice(0, columns);
 
   return (
-    <div className="sk-board" aria-busy="true" aria-label="Cargando tablero…">
+    <div className="sk-board" aria-busy="true" aria-label="Cargando tablero…" style={style}>
       {visible.map((col, ci) => (
         <div
           key={col.key}
