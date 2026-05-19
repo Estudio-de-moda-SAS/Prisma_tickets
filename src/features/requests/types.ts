@@ -1,3 +1,5 @@
+// src/features/requests/types.ts
+
 /* ============================================================
    Equipos disponibles
    ============================================================ */
@@ -19,17 +21,21 @@ export type KanbanColumna =
   | 'backlog'
   | 'todo'
   | 'en_progreso'
+  | 'en_revision_qas'
   | 'ready_to_deploy'
-  | 'hecho';
+  | 'hecho'
+  | 'historial';
 
 export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
-  sin_categorizar: 'Sin categorizar',
-  icebox:          'Icebox',
-  backlog:         'Backlog',
-  todo:            'To do',
-  en_progreso:     'En progreso',
-  ready_to_deploy: 'Ready to Deploy',
-  hecho:           'Hecho',
+  sin_categorizar:  'Sin categorizar',
+  icebox:           'Icebox',
+  backlog:          'Backlog',
+  todo:             'To do',
+  en_progreso:      'En progreso',
+  en_revision_qas:  'En revisión QAS',
+  ready_to_deploy:  'Ready to Deploy',
+  hecho:            'Hecho',
+  historial:        'Historial',
 };
 
 export const COLUMNAS_BOARD: KanbanColumna[] = [
@@ -37,12 +43,18 @@ export const COLUMNAS_BOARD: KanbanColumna[] = [
   'backlog',
   'todo',
   'en_progreso',
+  'en_revision_qas',
   'ready_to_deploy',
   'hecho',
+  'historial',
 ];
 
 /** Columnas que requieren evidencia de cierre al mover una tarjeta a ellas */
-export const COLUMNAS_CIERRE = new Set<KanbanColumna>(['ready_to_deploy', 'hecho']);
+export const COLUMNAS_CIERRE = new Set<KanbanColumna>([
+  'ready_to_deploy',
+  'hecho',
+  'historial',
+]);
 
 /* ============================================================
    Prioridades
@@ -71,19 +83,33 @@ export const PRIORIDAD_TO_SCORE: Record<Prioridad, number> = {
 };
 
 /* ============================================================
+   Cierre — adjunto individual
+   ============================================================ */
+export type ClosureAttachment = {
+  attachmentId: number;
+  storagePath:  string;
+  fileName:     string;
+  mimeType:     string;
+  fileSize:     number;
+  createdAt:    string;
+  signedUrl:    string | null;
+};
+
+/* ============================================================
    Cierre
    ============================================================ */
 export type CierreInfo = {
-  closureId:      number;
-  closureNote:    string;
-  attachmentUrl:  string | null;
-  attachmentName: string | null;
-  attachmentMime: string | null;
-  closedAt:       string;
+  closureId:   number;
+  closureNote: string;
+  closedAt:    string;
   closedBy: {
     userId:   number;
     userName: string;
   };
+  attachments: ClosureAttachment[];
+  attachmentUrl:  string | null;
+  attachmentName: string | null;
+  attachmentMime: string | null;
 };
 
 /* ============================================================
@@ -132,7 +158,7 @@ export type Request = {
   templateId:   number;
 
   // ── Jerarquía ──────────────────────────────────────────────
-  parentId:     number | null;
+  parentId:     string | null;
 
   // ── Contenido ──────────────────────────────────────────────
   titulo:       string;
@@ -174,17 +200,26 @@ export type Request = {
 
   // ── Fechas ─────────────────────────────────────────────────
   fechaApertura: string;
-  deadline:      string | null;
   fechaCierre:   string | null;
 
-  // ── Tiempo ─────────────────────────────────────────────────
-  tiempoConsuмido: string | null;
+  // ── Tiempo estimado ────────────────────────────────────────
+  estimatedHours: number | null;
+
+  // ── Confidencialidad ───────────────────────────────────────
+  isConfidential: boolean;
 
   // ── Campos extra del template ──────────────────────────────
   extraFields:  RequestExtraFields | null;
 
   // ── Hijos ──────────────────────────────────────────────────
   childCount?:  number;
+
+  // ── Resumen de criterios de aceptación ─────────────────────
+  criteriaSummary?: {
+    total:    number;
+    accepted: number;
+    rejected: number;
+  } | null;
 
   // ── Cierre ─────────────────────────────────────────────────
   cierreInfo?:  CierreInfo | null;
@@ -194,20 +229,23 @@ export type Request = {
    Payloads
    ============================================================ */
 export type CrearRequestPayload = {
-  boardId:         number;
-  columnId:        number;
-  requestedBy:     number;
-  templateId:      number;
-  titulo:          string;
-  descripcion:     string;
-  prioridad:       Prioridad;
-  equipoIds:       number[];
-  subTeamIds:      number[];
-  labelIds:        number[];
-  sprintId:        number | null;
-  deadline:        string | null;
-  parentId:        number | null;
-  requesterTeamId: number | null;
+  boardId:             number;
+  columnId:            number;
+  requestedBy:         number;
+  templateId:          number;
+  titulo:              string;
+  descripcion:         string;
+  prioridad:           Prioridad;
+  equipoIds:           number[];
+  subTeamIds:          number[];
+  labelIds:            number[];
+  sprintId:            number | null;
+  estimatedHours:      number | null;
+  parentId:            string | null;
+  requesterTeamId:     number | null;
+  isConfidential:      boolean;
+  /** Títulos de criterios de aceptación — mínimo 1 requerido */
+  acceptanceCriteria:  string[];
 };
 
 export type MoverRequestPayload = {
@@ -217,24 +255,24 @@ export type MoverRequestPayload = {
 };
 
 export type ActualizarRequestPayload = {
-  id:           string;
-  titulo?:      string;
-  descripcion?: string;
-  prioridad?:   Prioridad;
-  progreso?:    number;
-  equipoIds?:   number[];
-  subTeamIds?:  number[];
-  labelIds?:    number[];
-  sprintId?:    number | null;
-  deadline?:    string | null;
+  id:              string;
+  titulo?:         string;
+  descripcion?:    string;
+  prioridad?:      Prioridad;
+  progreso?:       number;
+  equipoIds?:      number[];
+  subTeamIds?:     number[];
+  labelIds?:       number[];
+  sprintId?:       number | null;
+  estimatedHours?: number | null;
 };
 
 export type CerrarRequestPayload = {
-  requestId:      number;
+  requestId:      string;
   closedBy:       number;
   closureNote:    string;
   targetColumnId: number;
-  attachment?:    File | null;
+  attachments:    File[];
 };
 
 export type BoardData = Record<KanbanColumna, Request[]>;

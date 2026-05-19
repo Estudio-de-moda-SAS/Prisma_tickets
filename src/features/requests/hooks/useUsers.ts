@@ -14,7 +14,7 @@ export function useUsers() {
   return useQuery<AppUser[]>({
     queryKey:  ['users'],
     queryFn:   () => apiClient.call<AppUser[]>('fetchAllUsers', {}),
-    staleTime: 5 * 60 * 1000, // 5 min — la lista de usuarios no cambia seguido
+    staleTime: 5 * 60 * 1000,
     retry:     1,
   });
 }
@@ -22,7 +22,7 @@ export function useUsers() {
 export function useAssignRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, userId }: { requestId: number; userId: number }) =>
+    mutationFn: ({ requestId, userId }: { requestId: string; userId: number }) =>
       apiClient.call('assignRequest', { requestId, userId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['requests'] });
@@ -33,7 +33,7 @@ export function useAssignRequest() {
 export function useUnassignRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, userId }: { requestId: number; userId: number }) =>
+    mutationFn: ({ requestId, userId }: { requestId: string; userId: number }) =>
       apiClient.call('unassignRequest', { requestId, userId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['requests'] });

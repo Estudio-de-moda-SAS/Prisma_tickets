@@ -13,7 +13,7 @@ export type Comment = {
   } | null;
 };
 
-export function useComments(requestId: number) {
+export function useComments(requestId: string) {
   return useQuery<Comment[]>({
     queryKey:  ['comments', requestId],
     queryFn:   () => apiClient.call<Comment[]>('fetchComments', { requestId }),
@@ -25,8 +25,15 @@ export function useComments(requestId: number) {
 export function useCreateComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, userId, text }: { requestId: number; userId: number; text: string }) =>
-      apiClient.call<Comment>('createComment', { requestId, userId, text }),
+    mutationFn: ({
+      requestId,
+      userId,
+      text,
+    }: {
+      requestId: string;
+      userId:    number;
+      text:      string;
+    }) => apiClient.call<Comment>('createComment', { requestId, userId, text }),
     onSuccess: (_data, { requestId }) => {
       qc.invalidateQueries({ queryKey: ['comments', requestId] });
     },
@@ -36,8 +43,12 @@ export function useCreateComment() {
 export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ commentId}: { commentId: number; requestId: number }) =>
-      apiClient.call('deleteComment', { commentId }),
+    mutationFn: ({
+      commentId,
+    }: {
+      commentId:  number;
+      requestId:  string;
+    }) => apiClient.call('deleteComment', { commentId }),
     onSuccess: (_data, { requestId }) => {
       qc.invalidateQueries({ queryKey: ['comments', requestId] });
     },
