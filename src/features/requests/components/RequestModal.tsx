@@ -1,7 +1,7 @@
 // src/features/requests/components/RequestModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown, Send, Trash2, Paperclip, Upload, FileText, Image, File, GitFork, Plus, ExternalLink, CheckCircle, Lock } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown, Send, Trash2, Paperclip, Upload, FileText, Image, File, GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useUpdateRequest } from '../hooks/UseUpdateRequest';
 import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE } from '../types';
@@ -15,21 +15,25 @@ import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/feat
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useChildRequests } from '@/features/requests/hooks/useSubRequest';
+import { useAcceptanceCriteria, useUpdateCriteriaStatus } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { CreateRequestModal } from './CreateRequestModal';
 import { ClosureModal } from './ClosureModal';
 import { config } from '@/config';
+import type { AcceptanceCriteria } from '@/types/commons';
 
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {
-  sin_categorizar: 'var(--txt-muted)',
-  icebox:          '#60a5fa',
-  backlog:         'var(--info)',
-  todo:            'var(--warn)',
-  en_progreso:     'var(--accent)',
-  ready_to_deploy: '#a78bfa',
-  hecho:           'var(--success)',
+  sin_categorizar:  'var(--txt-muted)',
+  icebox:           '#60a5fa',
+  backlog:          'var(--info)',
+  todo:             'var(--warn)',
+  en_progreso:      'var(--accent)',
+  en_revision_qas:  '#f59e0b',
+  ready_to_deploy:  '#a78bfa',
+  hecho:            'var(--success)',
+  historial:        'var(--txt-muted)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -63,6 +67,13 @@ function fileIcon(mime: string) {
   if (mime.startsWith('image/')) return <Image size={13} />;
   if (mime === 'application/pdf' || mime.includes('text')) return <FileText size={13} />;
   return <File size={13} />;
+}
+
+function fmtHours(h: number): string {
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h % 1) * 60);
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}m`;
 }
 
 function useTimer(requestId: string) {
@@ -123,24 +134,19 @@ type Props = {
   equipo:              Equipo;
   onClose:             () => void;
   onMove:              (id: string, columna: KanbanColumna) => void;
-  onMoveWithClosure:   (id: string, columna: KanbanColumna, note: string, attachment: File | null) => void;
+  onMoveWithClosure:   (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
   onOpenRequest?:      (requestId: string) => void;
   readOnly?:           boolean;
 };
 
 type RightTab = 'comments' | 'attachments';
 
-/* ══════════════════════════════════════════════════════════════
-   Sub-requests panel
-   ══════════════════════════════════════════════════════════════ */
-function SubRequestsPanel({
-  parentId,
-  parentTitle,
-  onOpenChild,
-}: {
-  parentId:    number;
+/* ── Sub-requests panel ── */
+function SubRequestsPanel({ parentId, parentTitle, parentIsConfidential, onOpenChild }: {
+  parentId: string;
   parentTitle: string;
-  onOpenChild: (requestId: string) => void;
+  parentIsConfidential: boolean;
+  onOpenChild: (id: string) => void;
 }) {
   const { data: children = [], isLoading, refetch } = useChildRequests(parentId);
   const [showCreate, setShowCreate] = useState(false);
@@ -149,25 +155,8 @@ function SubRequestsPanel({
   const total     = children.length;
   const pct       = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-  const colColorMap: Record<string, string> = {
-    sin_categorizar: 'var(--txt-muted)',
-    icebox:          '#60a5fa',
-    backlog:         'var(--info)',
-    todo:            'var(--warn)',
-    en_progreso:     'var(--accent)',
-    ready_to_deploy: '#a78bfa',
-    hecho:           'var(--success)',
-  };
-
-  const colLabel: Record<string, string> = {
-    sin_categorizar: 'Sin cat.',
-    icebox:          'Icebox',
-    backlog:         'Backlog',
-    todo:            'To do',
-    en_progreso:     'En progreso',
-    ready_to_deploy: 'Ready',
-    hecho:           'Hecho',
-  };
+  const colColorMap: Record<string, string> = { sin_categorizar: 'var(--txt-muted)', icebox: '#60a5fa', backlog: 'var(--info)', todo: 'var(--warn)', en_progreso: 'var(--accent)', en_revision_qas: '#f59e0b', ready_to_deploy: '#a78bfa', hecho: 'var(--success)', historial: 'var(--txt-muted)' };
+  const colLabel: Record<string, string> = { sin_categorizar: 'Sin cat.', icebox: 'Icebox', backlog: 'Backlog', todo: 'To do', en_progreso: 'En progreso', en_revision_qas: 'QAS', ready_to_deploy: 'Ready', hecho: 'Hecho', historial: 'Historial' };
 
   return (
     <>
@@ -179,12 +168,9 @@ function SubRequestsPanel({
           <span style={{ fontSize: 10, fontWeight: 700, color: pct === 100 ? 'var(--success)' : 'var(--txt-muted)', minWidth: 36, textAlign: 'right', fontFamily: 'var(--font-display)' }}>{pct}%</span>
           {total > 0 && <span style={{ fontSize: 9, color: 'var(--txt-muted)', whiteSpace: 'nowrap' }}>{completed}/{total} en Hecho</span>}
         </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {isLoading && <div style={{ padding: '8px 0', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando…</div>}
-          {!isLoading && children.length === 0 && (
-            <div style={{ padding: '8px 0 4px', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.55, fontStyle: 'italic' }}>Sin sub-solicitudes aún.</div>
-          )}
+          {!isLoading && children.length === 0 && <div style={{ padding: '8px 0 4px', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.55, fontStyle: 'italic' }}>Sin sub-solicitudes aún.</div>}
           {children.map((child) => {
             const isDone   = child.columna === 'hecho';
             const colColor = colColorMap[child.columna] ?? 'var(--txt-muted)';
@@ -197,29 +183,24 @@ function SubRequestsPanel({
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: colColor, flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: 12, color: isDone ? 'var(--txt-muted)' : 'var(--txt)', textDecoration: isDone ? 'line-through' : 'none', wordBreak: 'break-word', lineHeight: 1.4 }}>{child.titulo}</span>
                 {child.assignees?.[0] && <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{child.assignees[0].userName.split(' ')[0]}</span>}
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: colColor, background: `${colColor}15`, border: `1px solid ${colColor}30`, flexShrink: 0 }}>
-                  {colLabel[child.columna] ?? child.columna}
-                </span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: colColor, background: `${colColor}15`, border: `1px solid ${colColor}30`, flexShrink: 0 }}>{colLabel[child.columna] ?? child.columna}</span>
                 <ExternalLink size={10} style={{ color: 'var(--txt-muted)', flexShrink: 0, opacity: 0.4 }} />
               </div>
             );
           })}
         </div>
-
         <button onClick={() => setShowCreate(true)}
           style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 7, border: '1px dashed var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)', width: '100%' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--accent)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
-        >
-          <Plus size={12} />
-          Nueva sub-solicitud
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+          <Plus size={12} />Nueva sub-solicitud
         </button>
       </div>
-
       {showCreate && (
         <CreateRequestModal
           parentId={parentId}
           parentTitle={parentTitle}
+          parentIsConfidential={parentIsConfidential}
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); void refetch(); }}
         />
@@ -228,94 +209,144 @@ function SubRequestsPanel({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   Sección de cierre (readonly) — se muestra cuando request.cierreInfo existe
-   ══════════════════════════════════════════════════════════════ */
+/* ── CierreBanner ── */
 function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreInfo']> }) {
-  function fmtColombia(iso: string) {
-    return new Date(iso).toLocaleDateString('es-CO', {
-      timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
-    });
-  }
-
+  function fmtColombia(iso: string) { return new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' }); }
+  const allAttachments = [
+    ...(cierreInfo.attachments ?? []).map((a) => ({ url: a.signedUrl, name: a.fileName, mime: a.mimeType })),
+    ...((cierreInfo.attachments ?? []).length === 0 && cierreInfo.attachmentUrl ? [{ url: cierreInfo.attachmentUrl, name: cierreInfo.attachmentName, mime: cierreInfo.attachmentMime }] : []),
+  ];
   return (
-    <div style={{
-      borderRadius: 10, overflow: 'hidden',
-      border: '1px solid rgba(0,229,160,0.25)',
-      background: 'rgba(0,229,160,0.04)',
-    }}>
-      {/* Encabezado */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 9,
-        padding: '10px 14px',
-        borderBottom: '1px solid rgba(0,229,160,0.15)',
-        background: 'rgba(0,229,160,0.06)',
-      }}>
+    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(0,229,160,0.25)', background: 'rgba(0,229,160,0.04)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 14px', borderBottom: '1px solid rgba(0,229,160,0.15)', background: 'rgba(0,229,160,0.06)' }}>
         <CheckCircle size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
-        <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
-          color: 'var(--success)', flex: 1,
-        }}>
-          Caso cerrado
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
-          {fmtColombia(cierreInfo.closedAt)}
-        </span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Caso cerrado</span>
+        <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtColombia(cierreInfo.closedAt)}</span>
       </div>
-
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Cerrado por */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#00b894,#00e5a0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-            {initials(cierreInfo.closedBy.userName || 'U')}
-          </div>
-          <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>
-            {cierreInfo.closedBy.userName || 'Usuario desconocido'}
-          </span>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#00b894,#00e5a0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(cierreInfo.closedBy.userName || 'U')}</div>
+          <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{cierreInfo.closedBy.userName || 'Usuario desconocido'}</span>
           <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>cerró este caso</span>
         </div>
-
-        {/* Nota */}
-        <div style={{
-          padding: '9px 12px', borderRadius: 7,
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          fontSize: 12, color: 'var(--txt)', lineHeight: 1.6,
-          wordBreak: 'break-word',
-        }}>
-          {cierreInfo.closureNote}
-        </div>
-
-        {/* Adjunto si existe */}
-        {cierreInfo.attachmentUrl && (
-          <a
-            href={cierreInfo.attachmentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 9,
-              padding: '8px 12px', borderRadius: 7,
-              background: 'rgba(0,229,160,0.06)',
-              border: '1px solid rgba(0,229,160,0.2)',
-              textDecoration: 'none', transition: 'border-color 0.15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
-              {cierreInfo.attachmentMime?.startsWith('image/')
-                ? <Image size={13} />
-                : <FileText size={13} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {cierreInfo.attachmentName ?? 'Evidencia adjunta'}
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
-            </div>
-          </a>
+        <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.6, wordBreak: 'break-word' }}>{cierreInfo.closureNote}</div>
+        {allAttachments.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {allAttachments.map((att, idx) => {
+              if (!att.url) return null;
+              const isImage = att.mime?.startsWith('image/');
+              return (
+                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', textDecoration: 'none', transition: 'border-color 0.15s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>{isImage ? <Image size={13} /> : <FileText size={13} />}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name ?? 'Evidencia adjunta'}</div>
+                    <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── AcceptanceCriteriaPanel ── */
+function AcceptanceCriteriaPanel({ requestId, readOnly, currentUserId }: { requestId: string; readOnly: boolean; currentUserId: number | undefined }) {
+  const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
+  const { mutate: updateStatus, isPending } = useUpdateCriteriaStatus(requestId);
+
+  const [reviewNotes,   setReviewNotes]   = useState<Record<number, string>>({});
+  const [expandedNote,  setExpandedNote]  = useState<number | null>(null);
+
+  const accepted = criteria.filter((c) => c.status === 'accepted').length;
+  const rejected = criteria.filter((c) => c.status === 'rejected').length;
+  const total    = criteria.length;
+
+  function handleAction(c: AcceptanceCriteria, status: 'accepted' | 'rejected' | 'pending') {
+    if (!currentUserId) return;
+    updateStatus({ criteriaId: c.criteriaId, status, reviewedBy: currentUserId, reviewerNotes: reviewNotes[c.criteriaId] });
+    if (status !== 'pending') setExpandedNote(null);
+  }
+
+  const STATUS_COLOR: Record<string, string> = {
+    pending:  'var(--txt-muted)',
+    accepted: 'var(--success)',
+    rejected: 'var(--danger)',
+  };
+  const STATUS_BG: Record<string, string> = {
+    pending:  'rgba(255,255,255,0.04)',
+    accepted: 'rgba(0,229,160,0.06)',
+    rejected: 'rgba(255,71,87,0.06)',
+  };
+  const STATUS_BORDER: Record<string, string> = {
+    pending:  'var(--border-subtle)',
+    accepted: 'rgba(0,229,160,0.25)',
+    rejected: 'rgba(255,71,87,0.25)',
+  };
+  const STATUS_LABEL: Record<string, string> = {
+    pending:  'Pendiente',
+    accepted: 'Aceptado',
+    rejected: 'Rechazado',
+  };
+
+  if (isLoading) return <div style={{ padding: '8px 0', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando criterios…</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {total > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <div style={{ flex: 1, height: 4, borderRadius: 3, background: 'var(--bg-surface)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ height: '100%', width: `${Math.round((accepted / total) * 100)}%`, borderRadius: 3, background: rejected > 0 ? 'var(--danger)' : 'var(--success)', transition: 'width 0.3s ease' }} />
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 700, color: rejected > 0 ? 'var(--danger)' : accepted === total ? 'var(--success)' : 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>
+            {accepted}/{total}
+          </span>
+        </div>
+      )}
+      {total === 0 && (
+        <div style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(255,71,87,0.05)', border: '1px solid rgba(255,71,87,0.2)', fontSize: 11, color: 'var(--danger)' }}>
+          Esta solicitud no tiene criterios de aceptación definidos.
+        </div>
+      )}
+      {criteria.map((c) => (
+        <div key={c.criteriaId} style={{ borderRadius: 8, border: `1px solid ${STATUS_BORDER[c.status]}`, background: STATUS_BG[c.status], overflow: 'hidden', transition: 'all 0.15s' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${STATUS_COLOR[c.status]}15`, border: `1.5px solid ${STATUS_COLOR[c.status]}40` }}>
+              {c.status === 'accepted' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="var(--success)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              {c.status === 'rejected' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+              {c.status === 'pending' && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--txt-muted)' }} />}
+            </div>
+            <span style={{ flex: 1, fontSize: 12, color: c.status === 'rejected' ? 'var(--danger)' : c.status === 'accepted' ? 'var(--txt-muted)' : 'var(--txt)', textDecoration: c.status === 'accepted' ? 'line-through' : 'none', lineHeight: 1.4, wordBreak: 'break-word' }}>{c.title}</span>
+            <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: STATUS_COLOR[c.status], background: `${STATUS_COLOR[c.status]}12`, border: `1px solid ${STATUS_COLOR[c.status]}30`, flexShrink: 0, whiteSpace: 'nowrap' }}>{STATUS_LABEL[c.status]}</span>
+            {!readOnly && c.status === 'pending' && (
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <button onClick={() => handleAction(c, 'accepted')} disabled={isPending} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,229,160,0.4)', background: 'rgba(0,229,160,0.1)', color: 'var(--success)', cursor: 'pointer', transition: 'all 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.1)'; }}>
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>OK
+                </button>
+                <button onClick={() => setExpandedNote((p) => p === c.criteriaId ? null : c.criteriaId)} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,71,87,0.35)', background: expandedNote === c.criteriaId ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.08)', color: 'var(--danger)', cursor: 'pointer', transition: 'all 0.12s' }}>
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>Rechazar
+                </button>
+              </div>
+            )}
+            {!readOnly && c.status !== 'pending' && (
+              <button onClick={() => handleAction(c, 'pending')} disabled={isPending} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', flexShrink: 0 }} title="Restablecer a pendiente">↩</button>
+            )}
+          </div>
+          {expandedNote === c.criteriaId && !readOnly && (
+            <div style={{ padding: '0 12px 10px', display: 'flex', gap: 6 }}>
+              <input autoFocus value={reviewNotes[c.criteriaId] ?? ''} onChange={(e) => setReviewNotes((p) => ({ ...p, [c.criteriaId]: e.target.value }))} placeholder="Nota opcional al rechazar…" style={{ flex: 1, padding: '6px 10px', borderRadius: 5, border: '1px solid rgba(255,71,87,0.3)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 11, outline: 'none', fontFamily: 'var(--font-body)' }} />
+              <button onClick={() => handleAction(c, 'rejected')} disabled={isPending} style={{ padding: '6px 12px', borderRadius: 5, border: 'none', background: 'var(--danger)', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Confirmar</button>
+            </div>
+          )}
+          {c.reviewerNotes && c.status !== 'pending' && (
+            <div style={{ padding: '0 12px 10px' }}>
+              <div style={{ padding: '6px 10px', borderRadius: 5, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>"{c.reviewerNotes}"</div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -323,15 +354,7 @@ function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreI
 /* ══════════════════════════════════════════════════════════════
    Modal principal
    ══════════════════════════════════════════════════════════════ */
-export function RequestModal({
-  request,
-  equipo,
-  onClose,
-  onMove,
-  onMoveWithClosure,
-  onOpenRequest,
-  readOnly = false,
-}: Props) {
+export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false }: Props) {
   const { Requests }     = useGraphServices();
   const { mutate: mover }    = useMoveRequest(equipo);
   const { mutate: update }   = useUpdateRequest(equipo);
@@ -348,12 +371,12 @@ export function RequestModal({
   const fileInputRef           = useRef<HTMLInputElement>(null);
   const boardId                = config.DEFAULT_BOARD_ID;
   const columnMap              = useColumnMap(boardId);
-  const requestIdNum           = Number(request.id);
-  const boardTeamId            = request.boardTeamId ?? null;
-  const isSubRequest           = request.parentId !== null;
-  const isCerrada              = !!request.cierreInfo || !!request.fechaCierre;
 
-  // Estado del ClosureModal interno (mover desde los botones del modal)
+  const requestId    = request.id;
+  const boardTeamId  = request.boardTeamId ?? null;
+  const isSubRequest = request.parentId !== null;
+  const isCerrada    = !!request.cierreInfo || !!request.fechaCierre;
+
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
 
@@ -361,9 +384,9 @@ export function RequestModal({
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints     = [] } = useSprints();
   const { data: users       = [] } = useUsers();
-  const { data: comments    = [] } = useComments(requestIdNum);
-  const { data: attachments = [] } = useAttachments(requestIdNum);
-  const { data: children    = [] } = useChildRequests(requestIdNum);
+  const { data: comments    = [] } = useComments(requestId);
+  const { data: attachments = [] } = useAttachments(requestId);
+  const { data: children    = [] } = useChildRequests(requestId);
 
   const { data: parentRequest } = useQuery<Request>({
     queryKey: ['request', request.parentId],
@@ -378,7 +401,8 @@ export function RequestModal({
   const assigneeDD = useDropdown();
 
   const [rightTab,         setRightTab]         = useState<RightTab>('comments');
-  const [showSubRequests,  setShowSubRequests]  = useState(false);
+  // ── Auto-expandir si ya hay hijos ──
+  const [showSubRequests,  setShowSubRequests]  = useState(children.length > 0);
   const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
   const [descripcion,      setDescripcion]      = useState(request.descripcion ?? '');
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>(request.labelIds ?? []);
@@ -389,6 +413,11 @@ export function RequestModal({
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 
+  // Sync auto-expand cuando children carga (viene de useQuery, puede llegar vacío primero)
+  useEffect(() => {
+    if (children.length > 0) setShowSubRequests(true);
+  }, [children.length]);
+
   useEffect(() => {
     setDescripcion(request.descripcion ?? '');
     setSelectedLabelIds(request.labelIds ?? []);
@@ -397,10 +426,7 @@ export function RequestModal({
     setAssigneeIds(request.assignees?.map((a) => a.userId) ?? []);
   }, [request.id]);
 
-  useEffect(() => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [comments.length]);
-
+  useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', fn);
@@ -409,95 +435,68 @@ export function RequestModal({
 
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
-
-    // Si la columna destino requiere cierre → abrir ClosureModal interno
     if (COLUMNAS_CIERRE.has(columna)) {
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
       return;
     }
-
     setColumnaActual(columna);
-    mover(
-      { id: request.id, columna, columnId: columnMap?.[columna] },
-      { onSuccess: () => onMove(request.id, columna) },
-    );
+    mover({ id: requestId, columna, columnId: columnMap?.[columna] }, { onSuccess: () => onMove(requestId, columna) });
   }
 
-  function handleClosureFromModal(note: string, attachment: File | null) {
+  function handleClosureFromModal(note: string, attachments: File[]) {
     if (!pendingClosureCol) return;
-    const targetCol   = pendingClosureCol;
+    const targetCol = pendingClosureCol;
     setPendingClosureCol(null);
     setColumnaActual(targetCol);
-    onMoveWithClosure(request.id, targetCol, note, attachment);
+    onMoveWithClosure(requestId, targetCol, note, attachments);
   }
 
   function handleToggleLabel(labelId: number) {
     if (readOnly) return;
-    const next = selectedLabelIds.includes(labelId)
-      ? selectedLabelIds.filter((l) => l !== labelId)
-      : [...selectedLabelIds, labelId];
+    const next = selectedLabelIds.includes(labelId) ? selectedLabelIds.filter((l) => l !== labelId) : [...selectedLabelIds, labelId];
     setSelectedLabelIds(next);
-    update({ id: request.id, patch: { labelIds: next } });
+    update({ id: requestId, patch: { labelIds: next } });
   }
 
   function handleToggleSubTeam(subId: number) {
     if (readOnly) return;
-    const next = selectedSubIds.includes(subId)
-      ? selectedSubIds.filter((s) => s !== subId)
-      : [...selectedSubIds, subId];
+    const next = selectedSubIds.includes(subId) ? selectedSubIds.filter((s) => s !== subId) : [...selectedSubIds, subId];
     setSelectedSubIds(next);
-    update({ id: request.id, patch: { subTeamIds: next } });
+    update({ id: requestId, patch: { subTeamIds: next } });
   }
 
   function handleSprint(sprintId: number | null) {
     if (readOnly) return;
     setSelectedSprintId(sprintId);
-    update({ id: request.id, patch: { sprintId } });
+    update({ id: requestId, patch: { sprintId } });
     sprintDD.setOpen(false);
   }
 
   function handleToggleAssignee(userId: number) {
     if (readOnly) return;
     const isAssigned = assigneeIds.includes(userId);
-    if (isAssigned) {
-      setAssigneeIds((prev) => prev.filter((id) => id !== userId));
-      unassign({ requestId: requestIdNum, userId });
-    } else {
-      setAssigneeIds((prev) => [...prev, userId]);
-      assign({ requestId: requestIdNum, userId });
-    }
+    if (isAssigned) { setAssigneeIds((prev) => prev.filter((id) => id !== userId)); unassign({ requestId, userId }); }
+    else { setAssigneeIds((prev) => [...prev, userId]); assign({ requestId, userId }); }
   }
 
   function handleSendComment() {
     const text = commentText.trim();
     if (!text || !currentUser) return;
-    createComment(
-      { requestId: requestIdNum, userId: currentUser.User_ID, text },
-      { onSuccess: () => setCommentText('') },
-    );
+    createComment({ requestId, userId: currentUser.User_ID, text }, { onSuccess: () => setCommentText('') });
   }
 
   function handleCommentKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (readOnly) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSendComment();
-    }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSendComment(); }
   }
 
   function handleUploadFiles(files: FileList | null) {
     if (readOnly || !files || !currentUser) return;
-    Array.from(files).forEach((file) => {
-      uploadAttachment({ requestId: requestIdNum, userId: currentUser.User_ID, file });
-    });
+    Array.from(files).forEach((file) => { uploadAttachment({ requestId, userId: currentUser.User_ID, file }); });
   }
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragOver(false);
-    if (!readOnly) handleUploadFiles(e.dataTransfer.files);
-  }
+  function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragOver(false); if (!readOnly) handleUploadFiles(e.dataTransfer.files); }
 
   const triggerBase = (open: boolean, accentRgb: string): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
@@ -510,29 +509,18 @@ export function RequestModal({
 
   const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
   const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers  = users.filter((u) =>
-    u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.User_Email.toLowerCase().includes(userSearch.toLowerCase()),
-  );
+  const filteredUsers  = users.filter((u) => u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) || u.User_Email.toLowerCase().includes(userSearch.toLowerCase()));
+  const childCount     = children.length;
+  const childDone      = children.filter((r) => r.columna === 'hecho').length;
 
-  const childCount = children.length;
-  const childDone  = children.filter((r) => r.columna === 'hecho').length;
-
-  function fmtColombia(isoString: string) {
-    return new Date(isoString).toLocaleDateString('es-CO', {
-      timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
-    });
-  }
+  function fmtColombia(isoString: string) { return new Date(isoString).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' }); }
 
   const zIndex = readOnly ? 110 : 100;
 
   return (
     <>
-      <div
-        ref={overlayRef}
-        onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
-      >
+      <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}>
         <div style={{ width: '100%', maxWidth: 900, maxHeight: '90vh', background: 'var(--bg-panel)', border: `1px solid ${isSubRequest ? 'rgba(167,139,250,0.35)' : isCerrada ? 'rgba(0,229,160,0.3)' : 'var(--border)'}`, borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: isCerrada ? 'linear-gradient(90deg, transparent, var(--success), transparent)' : isSubRequest ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
 
@@ -540,75 +528,98 @@ export function RequestModal({
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 2 }}>
               {[ChevronUp, ChevronDown].map((Icon, i) => (
-                <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}>
-                  <Icon size={13} />
-                </button>
+                <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}><Icon size={13} /></button>
               ))}
             </div>
-
-            {readOnly && (
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-                Solo lectura
+            <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.7, userSelect: 'all' }}>{request.id}</span>
+            {readOnly && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>Solo lectura</span>}
+            {isCerrada && !readOnly && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}><Lock size={10} />Cerrada</span>}
+            {request.isConfidential && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
+                <ShieldAlert size={10} />Confidencial
               </span>
             )}
-
-            {/* Badge cerrado */}
-            {isCerrada && !readOnly && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}>
-                <Lock size={10} />
-                Cerrada
-              </span>
-            )}
-
             {isSubRequest && !readOnly && (
-              <span
-                onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(String(request.parentId)); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', cursor: onOpenRequest ? 'pointer' : 'default' }}
-              >
-                <GitFork size={10} />
-                Sub-solicitud
+              <span onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(request.parentId); }} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', cursor: onOpenRequest ? 'pointer' : 'default' }}>
+                <GitFork size={10} />Sub-solicitud
               </span>
             )}
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>{KANBAN_COLUMNAS[columnaActual]}</span>
 
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
-              {KANBAN_COLUMNAS[columnaActual]}
-            </span>
-
+            {/* ── Botón DIVIDIR mejorado ── */}
             {!isSubRequest && !readOnly && !isCerrada && (
-              <button
-                onClick={() => setShowSubRequests((v) => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'var(--border-subtle)'}`, background: showSubRequests ? 'rgba(0,200,255,0.1)' : 'transparent', color: showSubRequests ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}
-                onMouseEnter={(e) => { if (!showSubRequests) { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.3)'; e.currentTarget.style.color = 'var(--accent)'; }}}
-                onMouseLeave={(e) => { if (!showSubRequests) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}}
-              >
-                <GitFork size={11} />
-                Dividir
-                {childCount > 0 && (
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: showSubRequests ? 'rgba(0,200,255,0.18)' : 'rgba(255,255,255,0.07)', color: showSubRequests ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}` }}>
-                    {childDone}/{childCount}
-                  </span>
-                )}
-              </button>
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                {/* Botón principal */}
+                <button
+                  onClick={() => setShowSubRequests((v) => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 13px 5px 10px', borderRadius: 6,
+                    fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+                    border: showSubRequests
+                      ? '1px solid rgba(0,200,255,0.65)'
+                      : childCount > 0
+                        ? '1px solid rgba(0,200,255,0.5)'
+                        : '1px solid rgba(0,200,255,0.32)',
+                    background: showSubRequests
+                      ? 'rgba(0,200,255,0.16)'
+                      : childCount > 0
+                        ? 'rgba(0,200,255,0.1)'
+                        : 'rgba(0,200,255,0.05)',
+                    color: showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)',
+                    boxShadow: childCount > 0
+                      ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)'
+                      : 'none',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(0,200,255,0.75)';
+                    e.currentTarget.style.background  = 'rgba(0,200,255,0.2)';
+                    e.currentTarget.style.color       = 'var(--accent)';
+                    e.currentTarget.style.boxShadow   = '0 0 14px rgba(0,200,255,0.28)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = showSubRequests ? 'rgba(0,200,255,0.65)' : childCount > 0 ? 'rgba(0,200,255,0.5)' : 'rgba(0,200,255,0.32)';
+                    e.currentTarget.style.background  = showSubRequests ? 'rgba(0,200,255,0.16)' : childCount > 0 ? 'rgba(0,200,255,0.1)' : 'rgba(0,200,255,0.05)';
+                    e.currentTarget.style.color       = showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)';
+                    e.currentTarget.style.boxShadow   = childCount > 0 ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)' : 'none';
+                  }}
+                >
+                  <GitFork size={11} />
+                  DIVIDIR
+                  {childCount > 0 && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10,
+                      background: showSubRequests ? 'rgba(0,200,255,0.25)' : 'rgba(0,200,255,0.15)',
+                      color: 'var(--accent)',
+                      border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'rgba(0,200,255,0.3)'}`,
+                    }}>
+                      {childDone}/{childCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Botón ? con tooltip */}
+                <DividirTooltip />
+              </div>
             )}
 
             <div style={{ marginLeft: 'auto' }}>
-              <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <X size={15} />
-              </button>
+              <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={15} /></button>
             </div>
           </div>
 
-          {/* Panel sub-requests */}
+          {/* Sub-requests panel */}
           {showSubRequests && !isSubRequest && !readOnly && (
             <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(0,200,255,0.02)', flexShrink: 0, maxHeight: 360, overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                 <GitFork size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)' }}>Sub-solicitudes</span>
-                <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>— cada una es una solicitud independiente en el board</span>
               </div>
               <SubRequestsPanel
-                parentId={requestIdNum}
+                parentId={requestId}
                 parentTitle={request.titulo}
+                parentIsConfidential={request.isConfidential ?? false}
                 onOpenChild={(childId) => onOpenRequest?.(childId)}
               />
             </div>
@@ -620,7 +631,6 @@ export function RequestModal({
             {/* Panel izquierdo */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
 
-              {/* Banner solicitud padre */}
               {isSubRequest && !readOnly && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)' }}>
                   <GitFork size={13} style={{ color: '#a78bfa', flexShrink: 0 }} />
@@ -630,25 +640,16 @@ export function RequestModal({
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{parentRequest.titulo}</span>
-                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: COL_COLOR[parentRequest.columna], background: `${COL_COLOR[parentRequest.columna]}15`, border: `1px solid ${COL_COLOR[parentRequest.columna]}30`, flexShrink: 0 }}>
-                            {KANBAN_COLUMNAS[parentRequest.columna]}
-                          </span>
+                          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: COL_COLOR[parentRequest.columna], background: `${COL_COLOR[parentRequest.columna]}15`, border: `1px solid ${COL_COLOR[parentRequest.columna]}30`, flexShrink: 0 }}>{KANBAN_COLUMNAS[parentRequest.columna]}</span>
                         </div>
                         <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Solicitante: {parentRequest.solicitante}</span>
                       </>
                     ) : (
-                      <span style={{ fontSize: 12, color: 'var(--txt-muted)', fontStyle: 'italic' }}>
-                        {config.USE_MOCK ? `Solicitud #${request.parentId}` : 'Cargando…'}
-                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--txt-muted)', fontStyle: 'italic' }}>{config.USE_MOCK ? `Solicitud #${request.parentId}` : 'Cargando…'}</span>
                     )}
                   </div>
                   {onOpenRequest && (
-                    <button
-                      onClick={() => onOpenRequest(String(request.parentId))}
-                      style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: '#a78bfa', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s', whiteSpace: 'nowrap' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.18)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.08)'; }}
-                    >
+                    <button onClick={() => onOpenRequest(request.parentId!)} style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)', color: '#a78bfa', cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s', whiteSpace: 'nowrap' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.18)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.08)'; }}>
                       Ver detalles →
                     </button>
                   )}
@@ -660,39 +661,38 @@ export function RequestModal({
                 <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{request.titulo}</h2>
               </div>
 
+              {request.isConfidential && (
+                <div style={{ display: 'flex', gap: 12, padding: '12px 16px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
+                  <ShieldAlert size={15} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>
+                    Esta solicitud contiene información confidencial. Recuerda validar el manejo de estos datos con el área de jurídica antes de proceder.
+                  </p>
+                </div>
+              )}
+
               <FieldBlock label="Descripción">
-                <textarea
-                  value={descripcion}
-                  onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }}
-                  onBlur={() => { if (!readOnly) update({ id: request.id, patch: { descripcion } }); }}
-                  readOnly={readOnly}
-                  placeholder="Escribe una descripción..."
-                  rows={4}
-                  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }}
-                />
+                <textarea value={descripcion} onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }} onBlur={() => { if (!readOnly) update({ id: requestId, patch: { descripcion } }); }} readOnly={readOnly} placeholder="Escribe una descripción..." rows={4}
+                  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }} />
+              </FieldBlock>
+
+              <FieldBlock label="Criterios de aceptación">
+                <AcceptanceCriteriaPanel requestId={requestId} readOnly={readOnly} currentUserId={currentUser?.User_ID} />
               </FieldBlock>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-                <FieldBlock label="Solicitante">
-                  <PersonChip name={request.solicitante} color="var(--accent-2)" />
-                </FieldBlock>
+                <FieldBlock label="Solicitante"><PersonChip name={request.solicitante} color="var(--accent-2)" /></FieldBlock>
 
                 <FieldBlock label="Resolutor">
                   <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
-                    <button
-                      onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }}
-                      style={triggerBase(assigneeDD.open, '124,58,237')}
-                    >
-                      {assignedUsers.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
+                    <button onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }} style={triggerBase(assigneeDD.open, '124,58,237')}>
+                      {assignedUsers.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
                         : assignedUsers.map((u) => (
-                            <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                              <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-                              {u.User_Name.split(' ')[0]}
-                              {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
-                            </span>
-                          ))}
+                          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+                            {u.User_Name.split(' ')[0]}
+                            {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
+                          </span>
+                        ))}
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {assigneeDD.open && !readOnly && (
@@ -701,21 +701,20 @@ export function RequestModal({
                           <input autoFocus value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Buscar usuario..." style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                         <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                          {filteredUsers.length === 0
-                            ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin resultados.</div>
+                          {filteredUsers.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin resultados.</div>
                             : filteredUsers.map((u) => {
-                                const sel = assigneeIds.includes(u.User_ID);
-                                return (
-                                  <DropdownItem key={u.User_ID} selected={sel} onClick={() => handleToggleAssignee(u.User_ID)}>
-                                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
-                                      <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
-                                    </div>
-                                    {sel && <Checkmark />}
-                                  </DropdownItem>
-                                );
-                              })}
+                              const sel = assigneeIds.includes(u.User_ID);
+                              return (
+                                <DropdownItem key={u.User_ID} selected={sel} onClick={() => handleToggleAssignee(u.User_ID)}>
+                                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
+                                  </div>
+                                  {sel && <Checkmark />}
+                                </DropdownItem>
+                              );
+                            })}
                         </div>
                       </DropdownPanel>
                     )}
@@ -723,42 +722,20 @@ export function RequestModal({
                 </FieldBlock>
 
                 <FieldBlock label="Prioridad">
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[request.prioridad], background: `${PRI_COLOR[request.prioridad]}15`, border: `1px solid ${PRI_COLOR[request.prioridad]}35` }}>
-                    {PRIORIDADES[request.prioridad]}
-                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[request.prioridad], background: `${PRI_COLOR[request.prioridad]}15`, border: `1px solid ${PRI_COLOR[request.prioridad]}35` }}>{PRIORIDADES[request.prioridad]}</span>
                 </FieldBlock>
 
                 <FieldBlock label="Equipo">
                   <div ref={subDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) subDD.setOpen((o) => !o); }} style={triggerBase(subDD.open, '0,200,255')}>
-                      {selectedSubIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo</span>
-                        : selectedSubIds.map((sid) => {
-                            const sub = subTeams.find((s) => s.Sub_Team_ID === sid);
-                            if (!sub) return null;
-                            return (
-                              <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>
-                                {sub.Sub_Team_Name}
-                                {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleSubTeam(sid); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
-                              </span>
-                            );
-                          })}
+                      {selectedSubIds.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo</span>
+                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}{!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleSubTeam(sid); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}</span>; })}
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {subDD.open && !readOnly && (
                       <DropdownPanel>
-                        {subTeams.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay equipos configurados.</div>
-                          : subTeams.map((sub) => {
-                              const sel = selectedSubIds.includes(sub.Sub_Team_ID);
-                              return (
-                                <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => handleToggleSubTeam(sub.Sub_Team_ID)}>
-                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} />
-                                  <span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })}
+                        {subTeams.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay equipos configurados.</div>
+                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => handleToggleSubTeam(sub.Sub_Team_ID)}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })}
                       </DropdownPanel>
                     )}
                   </div>
@@ -767,32 +744,19 @@ export function RequestModal({
                 <FieldBlock label="Etiquetas">
                   <div ref={catDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) catDD.setOpen((o) => !o); }} style={triggerBase(catDD.open, '0,200,255')}>
-                      {selectedLabelIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
+                      {selectedLabelIds.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
-                            <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>
-                              {label.Label_Icon && <span>{label.Label_Icon}</span>}
-                              {label.Label_Name}
-                              {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleLabel(label.Label_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
-                            </span>
-                          ))}
+                          <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>
+                            {label.Label_Icon && <span>{label.Label_Icon}</span>}{label.Label_Name}
+                            {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleLabel(label.Label_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
+                          </span>
+                        ))}
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {catDD.open && !readOnly && (
                       <DropdownPanel>
-                        {labels.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
-                          : labels.map((label) => {
-                              const sel = selectedLabelIds.includes(label.Label_ID);
-                              return (
-                                <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>
-                                  {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
-                                  <span style={{ flex: 1 }}>{label.Label_Name}</span>
-                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })}
+                        {labels.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
+                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })}
                       </DropdownPanel>
                     )}
                   </div>
@@ -801,31 +765,18 @@ export function RequestModal({
                 <FieldBlock label="Sprint">
                   <div ref={sprintDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) sprintDD.setOpen((o) => !o); }} style={{ ...triggerBase(sprintDD.open, '162,155,254'), flexWrap: 'nowrap' }}>
-                      {selectedSprint
-                        ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></>
-                        : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
+                      {selectedSprint ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></> : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
                       {!readOnly && <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {sprintDD.open && !readOnly && (
                       <DropdownPanel>
-                        {sprints.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
-                          : [...sprints]
-                              .sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime())
-                              .map((sp) => {
-                                const sel = selectedSprintId === sp.Sprint_ID;
-                                const now = new Date();
-                                const dotColor = now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date) ? '#00e5a0' : now > new Date(sp.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
-                                const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                                return (
-                                  <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}>
-                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                                    <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
-                                    <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>
-                                    {sel && <Checkmark />}
-                                  </DropdownItem>
-                                );
-                              })}
+                        {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
+                          : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
+                            const sel = selectedSprintId === sp.Sprint_ID;
+                            const now = new Date(); const dotColor = now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date) ? '#00e5a0' : now > new Date(sp.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
+                            const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
+                            return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}><div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
+                          })}
                       </DropdownPanel>
                     )}
                   </div>
@@ -839,41 +790,27 @@ export function RequestModal({
                 </FieldBlock>
               </div>
 
-              {/* Fechas */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <FieldBlock label="Fecha de apertura">
                   <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(request.fechaApertura)}</span>
                 </FieldBlock>
 
-                <FieldBlock label="Fecha límite">
+                <FieldBlock label="Horas estimadas">
                   {readOnly ? (
-                    <span style={{ fontSize: 13, color: request.deadline ? 'var(--warn)' : 'var(--txt-muted)' }}>
-                      {request.deadline ? fmtColombia(request.deadline) : 'Sin fecha límite'}
+                    <span style={{ fontSize: 13, color: request.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>
+                      {request.estimatedHours != null ? fmtHours(request.estimatedHours) : 'Sin estimado'}
                     </span>
                   ) : (
-                    <input
-                      type="date"
-                      defaultValue={request.deadline ? request.deadline.split('T')[0] : ''}
-                      onChange={(e) => {
-                        update({
-                          id: request.id,
-                          patch: { deadline: e.target.value ? e.target.value + 'T00:00:00' : null },
-                        });
-                      }}
-                      style={{ width: '100%', padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--warn)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: 'pointer', height: 34 }}
+                    <HorasInput
+                      value={request.estimatedHours}
+                      onChange={(val) => update({ id: requestId, patch: { estimatedHours: val } })}
                     />
                   )}
                 </FieldBlock>
               </div>
 
-              {/* Sección de cierre — siempre visible si existe */}
-              {request.cierreInfo && (
-                <FieldBlock label="Cierre del caso">
-                  <CierreBanner cierreInfo={request.cierreInfo} />
-                </FieldBlock>
-              )}
+              {request.cierreInfo && <FieldBlock label="Cierre del caso"><CierreBanner cierreInfo={request.cierreInfo} /></FieldBlock>}
 
-              {/* Timer */}
               {!readOnly && !isCerrada && (
                 <FieldBlock label="Contador de tiempo">
                   <div style={{ background: 'var(--bg-surface)', border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`, borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s' }}>
@@ -881,53 +818,22 @@ export function RequestModal({
                     <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>{timer.fmt(timer.seconds)}</span>
                     {timer.completed && <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Completado</span>}
                     <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                      {!timer.completed && (
-                        <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
-                          {timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}
-                        </button>
-                      )}
-                      {!timer.running && timer.seconds > 0 && !timer.completed && (
-                        <button onClick={timer.complete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
-                          Completar
-                        </button>
-                      )}
+                      {!timer.completed && <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>{timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}</button>}
+                      {!timer.running && timer.seconds > 0 && !timer.completed && <button onClick={timer.complete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>Completar</button>}
                     </div>
                   </div>
                 </FieldBlock>
               )}
 
-              {/* Mover a — bloqueado si está cerrada */}
               {!readOnly && (
                 <FieldBlock label="Mover a">
                   {isCerrada ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}>
-                      <Lock size={12} />
-                      Esta solicitud está cerrada y no puede moverse.
-                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}><Lock size={12} />Esta solicitud está cerrada y no puede moverse.</div>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                       {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
-                        const active    = columnaActual === col;
-                        const esCierre  = COLUMNAS_CIERRE.has(col);
-                        return (
-                          <button key={col} onClick={() => handleMover(col)}
-                            style={{
-                              padding: '6px 12px', borderRadius: 6, fontSize: 10,
-                              fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-                              border: `1px solid ${active ? COL_COLOR[col] + '60' : esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`,
-                              background: active ? `${COL_COLOR[col]}15` : 'transparent',
-                              color: active ? COL_COLOR[col] : esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)',
-                              cursor: active ? 'default' : 'pointer',
-                              transition: 'all 0.12s',
-                              display: 'flex', alignItems: 'center', gap: 5,
-                            }}
-                            onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; }}}
-                            onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; }}}
-                          >
-                            {esCierre && <CheckCircle size={9} />}
-                            {label}
-                          </button>
-                        );
+                        const active = columnaActual === col; const esCierre = COLUMNAS_CIERRE.has(col);
+                        return <button key={col} onClick={() => handleMover(col)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }} onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; }}} onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; }}}>{esCierre && <CheckCircle size={9} />}{label}</button>;
                       })}
                     </div>
                   )}
@@ -938,36 +844,17 @@ export function RequestModal({
             {/* Panel derecho */}
             <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-                {([
-                  { key: 'comments',    label: 'Comentarios', icon: null,                    count: comments.length    },
-                  { key: 'attachments', label: 'Adjuntos',    icon: <Paperclip size={11} />, count: attachments.length },
-                ] as { key: RightTab; label: string; icon: React.ReactNode; count: number }[]).map((tab) => {
+                {([{ key: 'comments', label: 'Comentarios', icon: null, count: comments.length }, { key: 'attachments', label: 'Adjuntos', icon: <Paperclip size={11} />, count: attachments.length }] as { key: RightTab; label: string; icon: React.ReactNode; count: number }[]).map((tab) => {
                   const active = rightTab === tab.key;
-                  return (
-                    <button key={tab.key} onClick={() => setRightTab(tab.key)}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >
-                      {tab.icon}{tab.label}
-                      {tab.count > 0 && (
-                        <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  );
+                  return <button key={tab.key} onClick={() => setRightTab(tab.key)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{tab.icon}{tab.label}{tab.count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>{tab.count}</span>}</button>;
                 })}
               </div>
 
               {rightTab === 'comments' && (
                 <>
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {comments.length === 0 ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--txt-muted)" strokeWidth="1.5" fill="none" strokeLinejoin="round" /></svg>
-                        <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin comentarios aún.</p>
-                      </div>
-                    ) : (
-                      comments.map((c) => {
+                    {comments.length === 0 ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--txt-muted)" strokeWidth="1.5" fill="none" strokeLinejoin="round" /></svg><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin comentarios aún.</p></div>
+                      : comments.map((c) => {
                         const isOwn = c.author?.User_ID === currentUser?.User_ID;
                         return (
                           <div key={c.Comment_ID} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -975,24 +862,17 @@ export function RequestModal({
                               <div style={{ width: 20, height: 20, borderRadius: '50%', background: isOwn ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(c.author?.User_Name ?? '?')}</div>
                               <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.author?.User_Name ?? 'Desconocido'}</span>
                               <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtRelative(c.Comment_Created_At)}</span>
-                              {isOwn && !readOnly && (
-                                <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId: requestIdNum })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
+                              {isOwn && !readOnly && <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
                             </div>
                             <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}>{c.Comment_Text}</div>
                           </div>
                         );
-                      })
-                    )}
+                      })}
                     <div ref={commentsEndRef} />
                   </div>
                   <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handleCommentKeyDown} placeholder="Escribe un comentario… (Ctrl+Enter)" rows={2} style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '8px 10px', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
-                    <button onClick={handleSendComment} disabled={!commentText.trim() || sendingComment || !currentUser} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}>
-                      <Send size={11} />{sendingComment ? 'Enviando…' : 'Enviar'}
-                    </button>
+                    <button onClick={handleSendComment} disabled={!commentText.trim() || sendingComment || !currentUser} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}><Send size={11} />{sendingComment ? 'Enviando…' : 'Enviar'}</button>
                   </div>
                 </>
               )}
@@ -1000,30 +880,21 @@ export function RequestModal({
               {rightTab === 'attachments' && (
                 <>
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {attachments.length === 0 && !dragOver ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}>
-                        <Paperclip size={26} style={{ color: 'var(--txt-muted)' }} />
-                        <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin adjuntos aún.</p>
-                      </div>
-                    ) : (
-                      attachments.map((a) => {
-                        const isOwn   = a.uploader?.User_ID === currentUser?.User_ID;
+                    {attachments.length === 0 && !dragOver ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><Paperclip size={26} style={{ color: 'var(--txt-muted)' }} /><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin adjuntos aún.</p></div>
+                      : attachments.map((a) => {
+                        const isOwn = a.uploader?.User_ID === currentUser?.User_ID;
                         const isImage = a.Attachment_Mime_Type.startsWith('image/');
                         return (
                           <div key={a.Attachment_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', transition: 'border-color 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
-                            {isImage ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
+                            {isImage && a.Attachment_Url ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a>
-                              <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}>
-                                <span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>
-                                {a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}
-                              </div>
+                              {a.Attachment_Url ? <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a> : <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.Attachment_Name}</span>}
+                              <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}><span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>{a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}</div>
                             </div>
-                            {isOwn && !readOnly && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId: requestIdNum })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
+                            {isOwn && !readOnly && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
                           </div>
                         );
-                      })
-                    )}
+                      })}
                   </div>
                   {!readOnly && (
                     <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1041,18 +912,93 @@ export function RequestModal({
         </div>
       </div>
 
-      {/* ClosureModal interno — disparado desde botones "Mover a" */}
       {pendingClosureCol && (
-        <ClosureModal
-          request={request}
-          targetColumna={pendingClosureCol}
-          targetColumnId={pendingClosureColId}
-          onConfirm={handleClosureFromModal}
-          onCancel={() => setPendingClosureCol(null)}
-          isPending={false}
-        />
+        <ClosureModal request={request} targetColumna={pendingClosureCol} targetColumnId={pendingClosureColId} onConfirm={handleClosureFromModal} onCancel={() => setPendingClosureCol(null)} isPending={false} />
       )}
     </>
+  );
+}
+
+/* ── Tooltip del botón Dividir ── */
+function DividirTooltip() {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div style={{ position: 'relative', display: 'inline-flex' }}>
+      <div
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        style={{
+          width: 16, height: 16, borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 9, fontWeight: 700, cursor: 'default',
+          border: `1px solid ${visible ? 'rgba(0,200,255,0.55)' : 'rgba(0,200,255,0.35)'}`,
+          color: visible ? 'var(--accent)' : 'rgba(0,200,255,0.7)',
+          background: visible ? 'rgba(0,200,255,0.15)' : 'rgba(0,200,255,0.07)',
+          userSelect: 'none', flexShrink: 0,
+          transition: 'all 0.15s',
+        }}
+      >?</div>
+      {visible && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 7px)', left: '50%',
+          transform: 'translateX(-50%)', zIndex: 400,
+          background: 'var(--bg-panel)',
+          border: '1px solid rgba(0,200,255,0.25)',
+          borderRadius: 8, padding: '10px 13px', width: 230,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+          pointerEvents: 'none',
+        }}>
+          {/* flecha */}
+          <div style={{
+            position: 'absolute', top: -5, left: '50%',
+            transform: 'translateX(-50%) rotate(45deg)',
+            width: 8, height: 8,
+            background: 'var(--bg-panel)',
+            borderLeft: '1px solid rgba(0,200,255,0.25)',
+            borderTop: '1px solid rgba(0,200,255,0.25)',
+          }} />
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
+            ¿Qué es dividir?
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
+            Divide esta solicitud en <strong style={{ color: 'var(--txt)' }}>sub-solicitudes</strong> más pequeñas, cada una con su propio estado y resolutor. El progreso se consolida aquí.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const initH = value != null ? Math.floor(value) : 0;
+  const initM = value != null ? Math.round((value % 1) * 60) : 0;
+
+  const [hrs, setHrs] = useState<string>(value != null ? String(initH) : '');
+  const [mins, setMins] = useState<string>(value != null ? String(initM) : '');
+
+  function commit(h: string, m: string) {
+    const hVal = parseInt(h) || 0;
+    const mVal = parseInt(m) || 0;
+    if (h === '' && m === '') { onChange(null); return; }
+    const total = hVal + mVal / 60;
+    onChange(parseFloat(total.toFixed(4)));
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: 52, padding: '6px 8px', borderRadius: 6,
+    border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)',
+    color: 'var(--txt)', fontSize: 14, fontWeight: 600,
+    fontFamily: 'var(--font-display)', outline: 'none',
+    textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
+      <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
+    </div>
   );
 }
 
@@ -1060,36 +1006,19 @@ export function RequestModal({
 function DropdownPanel({ children }: { children: React.ReactNode }) {
   return <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden', minWidth: 180 }}>{children}</div>;
 }
-
 function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
   return <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent', color: selected ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: selected ? 600 : 400, transition: 'background 0.1s' }}>{children}</div>;
 }
-
-function Checkmark() {
-  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-}
-
+function Checkmark() { return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function SprintDot({ sprint }: { sprint: { Sprint_Start_Date: string; Sprint_End_Date: string } }) {
   const now = new Date(); const start = new Date(sprint.Sprint_Start_Date); const end = new Date(sprint.Sprint_End_Date);
   const color = now >= start && now <= end ? '#00e5a0' : now > end ? '#b2bec3' : '#fdcb6e';
   return <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />;
 }
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>;
-}
-
-function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><FieldLabel>{label}</FieldLabel>{children}</div>;
-}
-
+function FieldLabel({ children }: { children: React.ReactNode }) { return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>; }
+function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) { return <div><FieldLabel>{label}</FieldLabel>{children}</div>; }
 function PersonChip({ name, color }: { name: string; color: string }) {
   const ini = name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${color}, ${color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div>
-      <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>{name}</span>
-    </div>
-  );
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${color}, ${color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div><span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>{name}</span></div>;
 }

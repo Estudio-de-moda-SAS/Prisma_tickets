@@ -266,7 +266,7 @@ C`}
                   },
                 ]}
                 onApprove={() => {
-                  console.log('Solicitud aprobada');
+                  //console.log('Solicitud aprobada');
                   setApprovalFlowStep('success');
                 }}
                 onReject={() => {
@@ -280,8 +280,8 @@ C`}
 
             {approvalFlowStep === 'reject-comment' && (
               <ApprovalRejectModal
-                onSubmit={(comment) => {
-                  console.log('Solicitud no aprobada:', comment);
+                onSubmit={() => {
+                  //console.log('Solicitud no aprobada:', comment);
                   setApprovalFlowStep('success');
                 }}
                 onClose={() => {

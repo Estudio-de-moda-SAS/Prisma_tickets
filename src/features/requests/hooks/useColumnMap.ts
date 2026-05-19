@@ -5,13 +5,15 @@ import type { KanbanColumna } from '../types';
 
 // Mapa estático para mock — los IDs coinciden con el SQL de inserción
 const MOCK_COLUMN_MAP: Record<KanbanColumna, number> = {
-  sin_categorizar: 1,
-  icebox:          2,
-  backlog:         3,
-  todo:            4,
-  en_progreso:     5,
-  ready_to_deploy: 6,
-  hecho:           7,
+  sin_categorizar:  1,
+  icebox:           2,
+  backlog:          3,
+  todo:             4,
+  en_progreso:      5,
+  en_revision_qas:  8,
+  ready_to_deploy:  7,
+  hecho:            6,
+  historial:        9,
 };
 
 type ColumnRow = {
@@ -20,13 +22,15 @@ type ColumnRow = {
 };
 
 const KANBAN_NAME_TO_COLUMNA: Record<string, KanbanColumna> = {
-  'Sin categorizar': 'sin_categorizar',
-  'Icebox':          'icebox',
-  'Backlog':         'backlog',
-  'To do':           'todo',
-  'En progreso':     'en_progreso',
-  'Ready to deploy': 'ready_to_deploy',
-  'Hecho':           'hecho',
+  'Sin categorizar':  'sin_categorizar',
+  'Icebox':           'icebox',
+  'Backlog':          'backlog',
+  'To do':            'todo',
+  'En progreso':      'en_progreso',
+  'En revisión QAS':  'en_revision_qas',
+  'Ready to deploy':  'ready_to_deploy',
+  'Hecho':            'hecho',
+  'Historial':        'historial',
 };
 
 export function useColumnMap(boardId: number): Record<KanbanColumna, number> | undefined {

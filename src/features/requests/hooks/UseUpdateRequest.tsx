@@ -1,3 +1,4 @@
+// src/features/requests/hooks/UseUpdateRequest.tsx
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
@@ -19,7 +20,7 @@ type UpdatePayload = {
     | 'assignees'
     | 'progreso'
     | 'sprintId'
-    | 'deadline'
+    | 'estimatedHours'
   >>;
 };
 
@@ -35,15 +36,15 @@ export function useUpdateRequest(equipo: Equipo) {
       if (config.USE_MOCK) return;
       await Requests.updateRequest({
         id,
-        titulo:      patch.titulo,
-        descripcion: patch.descripcion,
-        prioridad:   patch.prioridad,
-        progreso:    patch.progreso,
-        equipoIds:   patch.equipoIds,
-        subTeamIds:  patch.subTeamIds,
-        labelIds:    patch.labelIds,
-        sprintId:    patch.sprintId,
-        deadline:    patch.deadline,
+        titulo:         patch.titulo,
+        descripcion:    patch.descripcion,
+        prioridad:      patch.prioridad,
+        progreso:       patch.progreso,
+        equipoIds:      patch.equipoIds,
+        subTeamIds:     patch.subTeamIds,
+        labelIds:       patch.labelIds,
+        sprintId:       patch.sprintId,
+        estimatedHours: patch.estimatedHours,
       });
     },
 

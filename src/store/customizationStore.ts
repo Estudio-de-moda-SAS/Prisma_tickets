@@ -55,13 +55,15 @@ export const PRIORITY_DEFAULTS: PriorityColors = {
 };
 
 export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
-  sin_categorizar: { headerColor: '#5a6a8a', accent: 'rgba(90,106,138,0.3)',   emoji: '', hidden: false, width: 240 },
-  icebox:          { headerColor: '#60a5fa', accent: 'rgba(96,165,250,0.15)',  emoji: '', hidden: false, width: 280 },
-  backlog:         { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)', emoji: '', hidden: false, width: 280 },
-  todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',   emoji: '', hidden: false, width: 280 },
-  en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',   emoji: '', hidden: false, width: 280 },
-  ready_to_deploy: { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)', emoji: '', hidden: false, width: 280 },
-  hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',   emoji: '', hidden: false, width: 280 },
+  sin_categorizar: { headerColor: '#5a6a8a', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 240 },
+  icebox:          { headerColor: '#60a5fa', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 280 },
+  backlog:         { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 280 },
+  todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 280 },
+  en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 280 },
+  en_revision_qas: { headerColor: '#fb7121', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 280 },
+  ready_to_deploy: { headerColor: '#ec4899', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 280 },
+  hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 280 },
+  historial:       { headerColor: '#6b7280', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
 };
 
 export const CARD_DEFAULTS: CardCustomization = {
@@ -227,7 +229,7 @@ type CustomizationState = {
   global:        GlobalCustomization;
   byBoard:       Record<string, BoardLocalCustomization>;
   isPanelOpen:   boolean;
-activeSection: 'theme' | 'columns' | 'cards' | 'teams';
+  activeSection: 'theme' | 'columns' | 'cards' | 'teams';
 
   /* ── Selector unificado ── */
   getCustomization: (boardId: string) => BoardCustomizationView;
@@ -333,6 +335,6 @@ export const useCustomizationStore = create<CustomizationState>()(
           },
         })),
     }),
-    { name: 'prisma-board-customization-v2' },
+    { name: 'prisma-board-customization-v3' }, // ← bumped: nuevas columnas en COLUMN_DEFAULTS
   ),
 );

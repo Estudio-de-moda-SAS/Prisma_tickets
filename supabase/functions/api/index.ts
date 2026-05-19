@@ -25,7 +25,6 @@ async function verifyAzureToken(token: string): Promise<Record<string, unknown>>
   const parts = token.split('.');
   const raw = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
   const issuer = raw.iss?.includes('sts.windows.net') ? ENTRA_ISSUER_V1 : ENTRA_ISSUER_V2;
-
   const { payload } = await jwtVerify(token, ENTRA_JWKS, {
     issuer,
     audience: `api://${CLIENT_ID}`,
@@ -58,6 +57,31 @@ function errorResponse(message: string, status: number) {
   return corsResponse({ error: message }, status);
 }
 
+const SIGNED_URL_EXPIRES_IN = 3600;
+
+function extractStoragePath(storedValue: string): string {
+  if (!storedValue.startsWith('http')) return storedValue;
+  const marker = '/object/public/attachments/';
+  const idx = storedValue.indexOf(marker);
+  if (idx !== -1) return storedValue.slice(idx + marker.length);
+  return storedValue;
+}
+
+/* ── Helper: mapear fila DB → AcceptanceCriteria frontend ── */
+function mapCriteria(row: Record<string, unknown>) {
+  return {
+    criteriaId:    row['Criteria_ID'],
+    requestId:     row['Request_ID'],
+    title:         row['Title'],
+    status:        row['Status'],
+    reviewerNotes: row['Reviewer_Notes'] ?? null,
+    reviewedBy:    row['Reviewed_By']    ?? null,
+    reviewedAt:    row['Reviewed_At']    ?? null,
+    createdAt:     row['Created_At'],
+    updatedAt:     row['Updated_At'],
+  };
+}
+
 const BASE_SELECT = `
   Request_ID,
   Request_Board_Column_ID,
@@ -69,10 +93,10 @@ const BASE_SELECT = `
   Request_Progress,
   Request_Created_At,
   Request_Parent_ID,
-  Request_Deadline,
-  Request_Time_Consumed,
+  Request_Estimated_Hours,
   Request_Finished_At,
   Request_Requester_Team_ID,
+  Request_Is_Confidential,
   requester:TBL_Users!Request_Requested_By (
     User_Name, User_Email, User_Avatar_url
   ),
@@ -117,9 +141,46 @@ const BASE_SELECT = `
     Attachment_Name,
     Attachment_Mime,
     Closed_At,
-    closer:TBL_Users!Closed_By ( User_ID, User_Name )
+    closer:TBL_Users!Closed_By ( User_ID, User_Name ),
+    closure_attachments:TBL_Closure_Attachments (
+      Closure_Attachment_ID,
+      Storage_Path,
+      File_Name,
+      Mime_Type,
+      File_Size,
+      Created_At
+    )
   )
 `.trim();
+
+
+/* ── Helper: batch fetch criteria summaries ── */
+async function attachCriteriaSummary(
+  rows: Record<string, unknown>[],
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<Record<string, unknown>[]> {
+  if (rows.length === 0) return rows;
+  const ids = rows.map((r) => r['Request_ID'] as string);
+  const { data, error } = await supabase
+    .from('TBL_Acceptance_Criteria')
+    .select('Request_ID, Status')
+    .in('Request_ID', ids);
+  if (error || !data) return rows;
+
+  const map: Record<string, { total: number; accepted: number; rejected: number }> = {};
+  for (const c of data as { Request_ID: string; Status: string }[]) {
+    if (!map[c.Request_ID]) map[c.Request_ID] = { total: 0, accepted: 0, rejected: 0 };
+    map[c.Request_ID].total++;
+    if (c.Status === 'accepted') map[c.Request_ID].accepted++;
+    if (c.Status === 'rejected') map[c.Request_ID].rejected++;
+  }
+
+  return rows.map((r) => ({
+    ...r,
+    criteria_summary: map[r['Request_ID'] as string] ?? null,
+  }));
+}
+
 async function handleAction(
   action: string,
   payload: Record<string, unknown>,
@@ -134,7 +195,7 @@ async function handleAction(
         .eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchByTeamCode': {
@@ -147,14 +208,14 @@ async function handleAction(
         .from('TBL_Request_Team').select('Request_Team_Request_ID')
         .eq('Request_Team_ID', teamData.Board_Team_ID);
       if (linksErr) throw new Error(linksErr.message);
-      const ids = (links as { Request_Team_Request_ID: number }[]).map((l) => l.Request_Team_Request_ID);
+      const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
       if (ids.length === 0) return [];
       const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT)
         .in('Request_ID', ids).eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchByRequestedBy': {
@@ -164,7 +225,7 @@ async function handleAction(
         .eq('Request_Requested_By', userId).eq('Request_Board_ID', boardId)
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
-      return data;
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     case 'fetchUncategorized': {
@@ -182,7 +243,7 @@ async function handleAction(
     }
 
     case 'fetchById': {
-      const { id } = payload as { id: number };
+      const { id } = payload as { id: string };
       const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', id).single();
       if (error) throw new Error(error.message);
@@ -191,11 +252,10 @@ async function handleAction(
 
     case 'createRequest': {
       const p = payload as {
-        boardId:         number; columnId:  number; requestedBy: number;
-        templateId:      number; titulo:    string; descripcion: string;
-        score:           number; equipoIds: number[]; labelIds:  number[];
-        sprintId:        number | null; deadline: string | null;
-        parentId:        number | null; requesterTeamId: number | null;
+        boardId: number; columnId: number; requestedBy: number; templateId: number;
+        titulo: string; descripcion: string; score: number; equipoIds: number[];
+        labelIds: number[]; sprintId: number | null; estimatedHours: number | null;
+        parentId: string | null; requesterTeamId: number | null; isConfidential: boolean | null;
       };
       const { data: inserted, error: insErr } = await supabase
         .from('TBL_Requests')
@@ -209,13 +269,14 @@ async function handleAction(
           Request_Score:             p.score,
           Request_Progress:          0,
           Request_Created_At:        new Date().toISOString(),
-          Request_Deadline:          p.deadline,
+          Request_Estimated_Hours:   p.estimatedHours ?? null,
           Request_Parent_ID:         p.parentId ?? null,
           Request_Requester_Team_ID: p.requesterTeamId ?? null,
+          Request_Is_Confidential: p.isConfidential ?? false,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
-      const newId = (inserted as { Request_ID: number }).Request_ID;
+      const newId = (inserted as { Request_ID: string }).Request_ID;
       const ops = [];
       if (p.equipoIds.length > 0)
         ops.push(supabase.from('TBL_Request_Team').insert(
@@ -237,24 +298,25 @@ async function handleAction(
     }
 
     case 'moveToColumn': {
-      const { id, columnId } = payload as { id: number; columnId: number };
-      const { error } = await supabase.from('TBL_Requests').update({ Request_Board_Column_ID: columnId }).eq('Request_ID', id);
+      const { id, columnId } = payload as { id: string; columnId: number };
+      const { error } = await supabase
+        .from('TBL_Requests').update({ Request_Board_Column_ID: columnId }).eq('Request_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
 
     case 'updateRequest': {
       const { id, ...patch } = payload as {
-        id: number; titulo?: string; descripcion?: string; score?: number;
-        progreso?: number; deadline?: string | null;
+        id: string; titulo?: string; descripcion?: string; score?: number;
+        progreso?: number; estimatedHours?: number | null;
         equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
       };
       const scalarUpdate: Record<string, unknown> = {};
-      if (patch.titulo      !== undefined) scalarUpdate['Request_Title']       = patch.titulo;
-      if (patch.descripcion !== undefined) scalarUpdate['Request_Description'] = patch.descripcion;
-      if (patch.score       !== undefined) scalarUpdate['Request_Score']       = patch.score;
-      if (patch.progreso    !== undefined) scalarUpdate['Request_Progress']    = Math.min(100, Math.max(0, patch.progreso));
-      if (patch.deadline    !== undefined) scalarUpdate['Request_Deadline']    = patch.deadline;
+      if (patch.titulo          !== undefined) scalarUpdate['Request_Title']            = patch.titulo;
+      if (patch.descripcion     !== undefined) scalarUpdate['Request_Description']      = patch.descripcion;
+      if (patch.score           !== undefined) scalarUpdate['Request_Score']            = patch.score;
+      if (patch.progreso        !== undefined) scalarUpdate['Request_Progress']         = Math.min(100, Math.max(0, patch.progreso));
+      if (patch.estimatedHours  !== undefined) scalarUpdate['Request_Estimated_Hours']  = patch.estimatedHours;
       if (Object.keys(scalarUpdate).length > 0) {
         const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
         if (error) throw new Error(error.message);
@@ -262,33 +324,245 @@ async function handleAction(
       if (patch.equipoIds !== undefined) {
         await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id);
         if (patch.equipoIds.length > 0)
-          await supabase.from('TBL_Request_Team').insert(patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid })));
+          await supabase.from('TBL_Request_Team').insert(
+            patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid }))
+          );
       }
       if (patch.labelIds !== undefined) {
         await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id);
         if (patch.labelIds.length > 0)
-          await supabase.from('TBL_Request_Labels').insert(patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid })));
+          await supabase.from('TBL_Request_Labels').insert(
+            patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid }))
+          );
       }
       if (patch.sprintId !== undefined) {
         await supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id);
         if (patch.sprintId !== null)
-          await supabase.from('TBL_Request_Sprint').insert({ Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId });
+          await supabase.from('TBL_Request_Sprint').insert(
+            { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
+          );
+      }
+      return { ok: true };
+    }
+
+    case 'updateRequestSubTeams': {
+      const { id, subTeamIds } = payload as { id: string; subTeamIds: number[] };
+      await supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id);
+      if (subTeamIds.length > 0) {
+        const { error } = await supabase.from('TBL_Request_Sub_Team').insert(
+          subTeamIds.map((sid) => ({ Request_Sub_Team_Request_ID: id, Request_Sub_Team_ID: sid }))
+        );
+        if (error) throw new Error(error.message);
       }
       return { ok: true };
     }
 
     case 'deleteRequest': {
-      const { id } = payload as { id: number };
+      const { id } = payload as { id: string };
       await Promise.all([
         supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id),
         supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id),
         supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id),
         supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', id),
+        supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id),
+        supabase.from('TBL_Acceptance_Criteria').delete().eq('Request_ID', id),
       ]);
       const { error } = await supabase.from('TBL_Requests').delete().eq('Request_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
+
+    case 'fetchChildRequests': {
+      const { parentId } = payload as { parentId: string };
+      const { data, error } = await supabase
+        .from('TBL_Requests').select(BASE_SELECT)
+        .eq('Request_Parent_ID', parentId).order('Request_Created_At', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'closeRequest': {
+      const p = payload as {
+        requestId: string; closedBy: number; closureNote: string;
+        targetColumnId: number; attachmentUrl: string | null;
+        attachmentName: string | null; attachmentMime: string | null;
+      };
+      const { data: closure, error: closureErr } = await supabase
+        .from('TBL_Request_Closure')
+        .insert({
+          Request_ID:       p.requestId,
+          Closed_By:        p.closedBy,
+          Closure_Note:     p.closureNote,
+          Target_Column_ID: p.targetColumnId,
+          Attachment_URL:   p.attachmentUrl  ?? null,
+          Attachment_Name:  p.attachmentName ?? null,
+          Attachment_Mime:  p.attachmentMime ?? null,
+          Closed_At:        new Date().toISOString(),
+        })
+        .select(`
+          Closure_ID, Closure_Note,
+          Attachment_URL, Attachment_Name, Attachment_Mime, Closed_At,
+          closer:TBL_Users!Closed_By ( User_ID, User_Name )
+        `)
+        .single();
+      if (closureErr) throw new Error(closureErr.message);
+      const { error: updateErr } = await supabase
+        .from('TBL_Requests')
+        .update({
+          Request_Board_Column_ID: p.targetColumnId,
+          Request_Finished_At:     new Date().toISOString(),
+          Request_Progress:        100,
+        })
+        .eq('Request_ID', p.requestId);
+      if (updateErr) throw new Error(updateErr.message);
+      return closure;
+    }
+
+    case 'fetchClosureAttachments': {
+      const { closureId } = payload as { closureId: number };
+      const { data, error } = await supabase
+        .from('TBL_Closure_Attachments')
+        .select('Closure_Attachment_ID, Storage_Path, File_Name, Mime_Type, File_Size, Created_At')
+        .eq('Closure_ID', closureId);
+      if (error) throw new Error(error.message);
+      const results = await Promise.all(
+        (data as any[]).map(async (a) => {
+          const { data: signed, error: signErr } = await supabase.storage
+            .from('attachments')
+            .createSignedUrl(a.Storage_Path, SIGNED_URL_EXPIRES_IN);
+          return {
+            Closure_Attachment_ID: a.Closure_Attachment_ID,
+            Storage_Path:          a.Storage_Path,
+            File_Name:             a.File_Name,
+            Mime_Type:             a.Mime_Type,
+            File_Size:             a.File_Size,
+            Created_At:            a.Created_At,
+            Signed_Url:            signErr ? null : signed?.signedUrl ?? null,
+          };
+        })
+      );
+      return results;
+    }
+
+    case 'uploadClosureAttachment': {
+      const p = payload as {
+        closureId: number; requestId: string; userId: number;
+        fileName: string; mimeType: string; sizeBytes: number; base64: string;
+      };
+      const bucket   = 'attachments';
+      const filePath = `closures/${p.requestId}/${Date.now()}_${p.fileName}`;
+      const bytes    = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
+
+      const { error: uploadErr } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
+      if (uploadErr) throw new Error(uploadErr.message);
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from('TBL_Closure_Attachments')
+        .insert({
+          Closure_ID:   p.closureId,
+          Storage_Path: filePath,
+          File_Name:    p.fileName,
+          Mime_Type:    p.mimeType,
+          File_Size:    p.sizeBytes,
+          Created_At:   new Date().toISOString(),
+        })
+        .select('Closure_Attachment_ID, Storage_Path, File_Name, Mime_Type, File_Size, Created_At')
+        .single();
+      if (insertErr) throw new Error(insertErr.message);
+
+      const { data: signedData, error: signErr } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, SIGNED_URL_EXPIRES_IN);
+
+      return {
+        Closure_Attachment_ID: (inserted as any).Closure_Attachment_ID,
+        Storage_Path:          (inserted as any).Storage_Path,
+        File_Name:             (inserted as any).File_Name,
+        Mime_Type:             (inserted as any).Mime_Type,
+        File_Size:             (inserted as any).File_Size,
+        Created_At:            (inserted as any).Created_At,
+        Signed_Url:            signErr ? null : signedData?.signedUrl ?? null,
+      };
+    }
+
+    case 'deleteAttachment': {
+      const { attachmentId } = payload as { attachmentId: number };
+      const { data: existing, error: fetchErr } = await supabase
+        .from('TBL_Attachments').select('Attachment_File_url').eq('Attachment_ID', attachmentId).single();
+      if (fetchErr) throw new Error(fetchErr.message);
+      const storagePath = extractStoragePath((existing as any).Attachment_File_url as string);
+      await supabase.storage.from('attachments').remove([storagePath]);
+      const { error } = await supabase.from('TBL_Attachments').delete().eq('Attachment_ID', attachmentId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    // ── Criterios de aceptación ─────────────────────────────
+
+    case 'fetchAcceptanceCriteria': {
+      const { requestId } = payload as { requestId: string };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .eq('Request_ID', requestId)
+        .order('Created_At', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data as Record<string, unknown>[]).map(mapCriteria);
+    }
+
+    case 'createAcceptanceCriteria': {
+      const { requestId, title } = payload as { requestId: string; title: string };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .insert({
+          Request_ID: requestId,
+          Title:      title.trim(),
+          Status:     'pending',
+          Created_At: new Date().toISOString(),
+          Updated_At: new Date().toISOString(),
+        })
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .single();
+      if (error) throw new Error(error.message);
+      return mapCriteria(data as Record<string, unknown>);
+    }
+
+    case 'updateAcceptanceCriteriaStatus': {
+      const { criteriaId, status, reviewedBy, reviewerNotes } = payload as {
+        criteriaId:    number;
+        status:        'accepted' | 'rejected' | 'pending';
+        reviewedBy:    number;
+        reviewerNotes: string | null;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .update({
+          Status:         status,
+          Reviewed_By:    reviewedBy,
+          Reviewer_Notes: reviewerNotes ?? null,
+          Reviewed_At:    status !== 'pending' ? new Date().toISOString() : null,
+          Updated_At:     new Date().toISOString(),
+        })
+        .eq('Criteria_ID', criteriaId)
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .single();
+      if (error) throw new Error(error.message);
+      return mapCriteria(data as Record<string, unknown>);
+    }
+
+    case 'deleteAcceptanceCriteria': {
+      const { criteriaId } = payload as { criteriaId: number };
+      const { error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .delete()
+        .eq('Criteria_ID', criteriaId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    // ── Usuarios ────────────────────────────────────────────────
 
     case 'fetchUserByEntraId': {
       const { entraId } = payload as { entraId: string };
@@ -298,6 +572,73 @@ async function handleAction(
       if (error) throw new Error(error.message);
       return data;
     }
+
+    case 'fetchAllUsers': {
+      const { data, error } = await supabase
+        .from('TBL_Users').select('User_ID, User_Name, User_Email, User_Avatar_url, User_Role')
+        .order('User_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'upsertUserByEntraId': {
+      const p = payload as { entraId: string; name: string; email: string };
+      const { data: existing, error: findErr } = await supabase
+        .from('TBL_Users')
+        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
+                 team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
+        .eq('User_EntraID', p.entraId).maybeSingle();
+      if (findErr) throw new Error(findErr.message);
+      if (existing) return existing;
+      const { data, error: insertErr } = await supabase
+        .from('TBL_Users')
+        .insert({
+          User_EntraID:    p.entraId,
+          User_Name:       p.name.slice(0, 150),
+          User_Email:      p.email.slice(0, 150),
+          User_Avatar_url: '',
+          User_Role:       'member',
+          Is_New:          true,
+          User_Created_At: new Date().toISOString(),
+        })
+        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
+                 team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
+        .single();
+      if (insertErr) throw new Error(insertErr.message);
+      return data;
+    }
+
+    case 'completeOnboarding': {
+      const p = payload as { userId: number; departmentId: number; teamId: number };
+      const { data, error } = await supabase
+        .from('TBL_Users')
+        .update({ Department_ID: p.departmentId, Team_ID: p.teamId, Is_New: false })
+        .eq('User_ID', p.userId)
+        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
+                 team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'getDepartments': {
+      const { data, error } = await supabase
+        .from('TBL_Departments').select('Department_ID, Department_Name, Department_Code')
+        .order('Department_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'getTeamsByDepartment': {
+      const p = payload as { departmentId: number };
+      const { data, error } = await supabase
+        .from('TBL_Teams').select('Team_ID, Team_Name, Team_Code, Department_ID')
+        .eq('Department_ID', p.departmentId).order('Team_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    // ── Equipos de board ────────────────────────────────────────
 
     case 'fetchAllTeams': {
       const { data, error } = await supabase
@@ -315,6 +656,8 @@ async function handleAction(
       return data;
     }
 
+    // ── Columnas ────────────────────────────────────────────────
+
     case 'fetchBoardColumns': {
       const { boardId } = payload as { boardId: number };
       const { data, error } = await supabase
@@ -323,6 +666,8 @@ async function handleAction(
       if (error) throw new Error(error.message);
       return data;
     }
+
+    // ── Labels ──────────────────────────────────────────────────
 
     case 'fetchLabelsByBoardId': {
       const { boardId } = payload as { boardId: number };
@@ -343,7 +688,9 @@ async function handleAction(
     }
 
     case 'createLabel': {
-      const { boardId, teamId, name, color, icon } = payload as { boardId: number; teamId: number; name: string; color: string; icon: string };
+      const { boardId, teamId, name, color, icon } = payload as {
+        boardId: number; teamId: number; name: string; color: string; icon: string;
+      };
       const { data, error } = await supabase
         .from('TBL_Labels')
         .insert({ Label_Board_ID: boardId, Label_Team_ID: teamId, Label_Name: name, Label_Color: color, Label_Icon: icon })
@@ -354,7 +701,8 @@ async function handleAction(
 
     case 'updateLabel': {
       const { id, name, color, icon } = payload as { id: number; name: string; color: string; icon: string };
-      const { error } = await supabase.from('TBL_Labels').update({ Label_Name: name, Label_Color: color, Label_Icon: icon }).eq('Label_ID', id);
+      const { error } = await supabase
+        .from('TBL_Labels').update({ Label_Name: name, Label_Color: color, Label_Icon: icon }).eq('Label_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
@@ -366,6 +714,8 @@ async function handleAction(
       if (error) throw new Error(error.message);
       return { ok: true };
     }
+
+    // ── Templates ───────────────────────────────────────────────
 
     case 'fetchTemplatesByBoardId': {
       const { boardId } = payload as { boardId: number };
@@ -384,18 +734,22 @@ async function handleAction(
 
     case 'createTemplate': {
       const p = payload as {
-        boardId: number; name: string; description: string;
-        icon: string; color: string; badge: string;
-        formSchema: unknown[]; teamIds: number[]; isActive: boolean;
+        boardId: number; name: string; description: string; icon: string; color: string;
+        badge: string; formSchema: unknown[]; teamIds: number[]; isActive: boolean;
       };
       const { data, error } = await supabase
         .from('TBL_Requests_Templates')
         .insert({
-          Request_Template_Board_ID: p.boardId, Request_Template_Name: p.name,
-          Request_Template_Description: p.description, Request_Template_Icon: p.icon,
-          Request_Template_Color: p.color, Request_Template_Badge: p.badge,
-          Request_Template_Form_Schema: p.formSchema, Request_Template_Teams: p.teamIds,
-          Request_Template_Is_Active: p.isActive, Request_Template_Created_At: new Date().toISOString(),
+          Request_Template_Board_ID:    p.boardId,
+          Request_Template_Name:        p.name,
+          Request_Template_Description: p.description,
+          Request_Template_Icon:        p.icon,
+          Request_Template_Color:       p.color,
+          Request_Template_Badge:       p.badge,
+          Request_Template_Form_Schema: p.formSchema,
+          Request_Template_Teams:       p.teamIds,
+          Request_Template_Is_Active:   p.isActive,
+          Request_Template_Created_At:  new Date().toISOString(),
         })
         .select(`
           Request_Template_ID, Request_Template_Name, Request_Template_Description,
@@ -413,10 +767,14 @@ async function handleAction(
         badge: string; formSchema: unknown[]; teamIds: number[]; isActive: boolean;
       };
       const { error } = await supabase.from('TBL_Requests_Templates').update({
-        Request_Template_Name: p.name, Request_Template_Description: p.description,
-        Request_Template_Icon: p.icon, Request_Template_Color: p.color,
-        Request_Template_Badge: p.badge, Request_Template_Form_Schema: p.formSchema,
-        Request_Template_Teams: p.teamIds, Request_Template_Is_Active: p.isActive,
+        Request_Template_Name:        p.name,
+        Request_Template_Description: p.description,
+        Request_Template_Icon:        p.icon,
+        Request_Template_Color:       p.color,
+        Request_Template_Badge:       p.badge,
+        Request_Template_Form_Schema: p.formSchema,
+        Request_Template_Teams:       p.teamIds,
+        Request_Template_Is_Active:   p.isActive,
       }).eq('Request_Template_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
@@ -429,10 +787,13 @@ async function handleAction(
       return { ok: true };
     }
 
+    // ── Sub-equipos ─────────────────────────────────────────────
+
     case 'fetchSubTeamsByTeamId': {
       const { teamId } = payload as { teamId: number };
       const { data, error } = await supabase
-        .from('TBL_Sub_Teams').select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color').eq('Sub_Team_Team_ID', teamId);
+        .from('TBL_Sub_Teams').select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color')
+        .eq('Sub_Team_Team_ID', teamId);
       if (error) throw new Error(error.message);
       return data;
     }
@@ -440,7 +801,8 @@ async function handleAction(
     case 'createSubTeam': {
       const { teamId, name, color } = payload as { teamId: number; name: string; color: string };
       const { data, error } = await supabase
-        .from('TBL_Sub_Teams').insert({ Sub_Team_Team_ID: teamId, Sub_Team_Name: name, Sub_Team_Color: color })
+        .from('TBL_Sub_Teams')
+        .insert({ Sub_Team_Team_ID: teamId, Sub_Team_Name: name, Sub_Team_Color: color })
         .select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color').single();
       if (error) throw new Error(error.message);
       return data;
@@ -448,7 +810,8 @@ async function handleAction(
 
     case 'updateSubTeam': {
       const { id, name, color } = payload as { id: number; name: string; color: string };
-      const { error } = await supabase.from('TBL_Sub_Teams').update({ Sub_Team_Name: name, Sub_Team_Color: color }).eq('Sub_Team_ID', id);
+      const { error } = await supabase
+        .from('TBL_Sub_Teams').update({ Sub_Team_Name: name, Sub_Team_Color: color }).eq('Sub_Team_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
@@ -457,18 +820,6 @@ async function handleAction(
       const { id } = payload as { id: number };
       const { error } = await supabase.from('TBL_Sub_Teams').delete().eq('Sub_Team_ID', id);
       if (error) throw new Error(error.message);
-      return { ok: true };
-    }
-
-    case 'updateRequestSubTeams': {
-      const { id, subTeamIds } = payload as { id: number; subTeamIds: number[] };
-      await supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id);
-      if (subTeamIds.length > 0) {
-        const { error } = await supabase.from('TBL_Request_Sub_Team').insert(
-          subTeamIds.map((sid) => ({ Request_Sub_Team_Request_ID: id, Request_Sub_Team_ID: sid }))
-        );
-        if (error) throw new Error(error.message);
-      }
       return { ok: true };
     }
 
@@ -500,6 +851,8 @@ async function handleAction(
       return { ok: true };
     }
 
+    // ── Sprints ─────────────────────────────────────────────────
+
     case 'fetchSprints': {
       const { data, error } = await supabase
         .from('TBL_Sprint').select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date')
@@ -511,7 +864,8 @@ async function handleAction(
     case 'createSprint': {
       const { text, startDate, endDate } = payload as { text: string; startDate: string; endDate: string };
       const { data, error } = await supabase
-        .from('TBL_Sprint').insert({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate })
+        .from('TBL_Sprint')
+        .insert({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate })
         .select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date').single();
       if (error) throw new Error(error.message);
       return data;
@@ -519,7 +873,8 @@ async function handleAction(
 
     case 'updateSprint': {
       const { id, text, startDate, endDate } = payload as { id: number; text: string; startDate: string; endDate: string };
-      const { error } = await supabase.from('TBL_Sprint').update({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate }).eq('Sprint_ID', id);
+      const { error } = await supabase
+        .from('TBL_Sprint').update({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate }).eq('Sprint_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
@@ -531,45 +886,54 @@ async function handleAction(
       return { ok: true };
     }
 
-    case 'fetchAllUsers': {
-      const { data, error } = await supabase
-        .from('TBL_Users').select('User_ID, User_Name, User_Email, User_Avatar_url, User_Role')
-        .order('User_Name', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    }
+    // ── Assignments ─────────────────────────────────────────────
 
     case 'assignRequest': {
-      const { requestId, userId } = payload as { requestId: number; userId: number };
-      await supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
-      const { error } = await supabase.from('TBL_Requests_Assignments').insert({ Request_Assignment_ID: requestId, Request_Assignment_User_ID: userId, Request_Assignment_At: new Date().toISOString() });
+      const { requestId, userId } = payload as { requestId: string; userId: number };
+      await supabase.from('TBL_Requests_Assignments')
+        .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
+      const { error } = await supabase.from('TBL_Requests_Assignments').insert({
+        Request_Assignment_ID:      requestId,
+        Request_Assignment_User_ID: userId,
+        Request_Assignment_At:      new Date().toISOString(),
+      });
       if (error) throw new Error(error.message);
       return { ok: true };
     }
 
     case 'unassignRequest': {
-      const { requestId, userId } = payload as { requestId: number; userId: number };
-      const { error } = await supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
+      const { requestId, userId } = payload as { requestId: string; userId: number };
+      const { error } = await supabase.from('TBL_Requests_Assignments')
+        .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
 
+    // ── Comentarios ─────────────────────────────────────────────
+
     case 'fetchComments': {
-      const { requestId } = payload as { requestId: number };
+      const { requestId } = payload as { requestId: string };
       const { data, error } = await supabase
         .from('TBL_Comments')
-        .select(`Comment_ID, Comment_Text, Comment_Created_At, author:TBL_Users!Comment_User_ID ( User_ID, User_Name, User_Avatar_url )`)
+        .select(`Comment_ID, Comment_Text, Comment_Created_At,
+                 author:TBL_Users!Comment_User_ID ( User_ID, User_Name, User_Avatar_url )`)
         .eq('Comment_Request_ID', requestId).order('Comment_Created_At', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     }
 
     case 'createComment': {
-      const { requestId, userId, text } = payload as { requestId: number; userId: number; text: string };
+      const { requestId, userId, text } = payload as { requestId: string; userId: number; text: string };
       const { data, error } = await supabase
         .from('TBL_Comments')
-        .insert({ Comment_Request_ID: requestId, Comment_User_ID: userId, Comment_Text: text.trim(), Comment_Created_At: new Date().toISOString() })
-        .select(`Comment_ID, Comment_Text, Comment_Created_At, author:TBL_Users!Comment_User_ID ( User_ID, User_Name, User_Avatar_url )`)
+        .insert({
+          Comment_Request_ID: requestId,
+          Comment_User_ID:    userId,
+          Comment_Text:       text.trim(),
+          Comment_Created_At: new Date().toISOString(),
+        })
+        .select(`Comment_ID, Comment_Text, Comment_Created_At,
+                 author:TBL_Users!Comment_User_ID ( User_ID, User_Name, User_Avatar_url )`)
         .single();
       if (error) throw new Error(error.message);
       return data;
@@ -582,153 +946,78 @@ async function handleAction(
       return { ok: true };
     }
 
-    case 'fetchChildRequests': {
-      const { parentId } = payload as { parentId: number };
-      const { data, error } = await supabase
-        .from('TBL_Requests').select(BASE_SELECT)
-        .eq('Request_Parent_ID', parentId).order('Request_Created_At', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
-    case 'upsertUserByEntraId': {
-      const p = payload as { entraId: string; name: string; email: string };
-      const { data: existing, error: findErr } = await supabase
-        .from('TBL_Users')
-        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
-        .eq('User_EntraID', p.entraId).maybeSingle();
-      if (findErr) throw new Error(findErr.message);
-      if (existing) return existing;
-      const { data, error: insertErr } = await supabase
-        .from('TBL_Users')
-        .insert({ User_EntraID: p.entraId, User_Name: p.name.slice(0, 150), User_Email: p.email.slice(0, 150), User_Avatar_url: '', User_Role: 'member', Is_New: true, User_Created_At: new Date().toISOString() })
-        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
-        .single();
-      if (insertErr) throw new Error(insertErr.message);
-      return data;
-    }
-
-    case 'completeOnboarding': {
-      const p = payload as { userId: number; departmentId: number; teamId: number };
-      const { data, error } = await supabase
-        .from('TBL_Users')
-        .update({ Department_ID: p.departmentId, Team_ID: p.teamId, Is_New: false })
-        .eq('User_ID', p.userId)
-        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
-    case 'getDepartments': {
-      const { data, error } = await supabase
-        .from('TBL_Departments').select('Department_ID, Department_Name, Department_Code')
-        .order('Department_Name', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
-    case 'getTeamsByDepartment': {
-      const p = payload as { departmentId: number };
-      const { data, error } = await supabase
-        .from('TBL_Teams').select('Team_ID, Team_Name, Team_Code, Department_ID')
-        .eq('Department_ID', p.departmentId).order('Team_Name', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    }
+    // ── Attachments ─────────────────────────────────────────────
 
     case 'fetchAttachments': {
-      const { requestId } = payload as { requestId: number };
+      const { requestId } = payload as { requestId: string };
       const { data, error } = await supabase
         .from('TBL_Attachments')
-        .select(`Attachment_ID, Attachment_File_Name, Attachment_File_url, Attachment_File_Size, Attachment_Mime_Type, Attachment_Created_At, uploader:TBL_Users!Attachment_Uploaded_By ( User_ID, User_Name )`)
-        .eq('Attachment_Request_ID', requestId).order('Attachment_Created_At', { ascending: true });
+        .select(`Attachment_ID, Attachment_File_Name, Attachment_File_url,
+                 Attachment_File_Size, Attachment_Mime_Type, Attachment_Created_At,
+                 uploader:TBL_Users!Attachment_Uploaded_By ( User_ID, User_Name )`)
+        .eq('Attachment_Request_ID', requestId)
+        .order('Attachment_Created_At', { ascending: true });
       if (error) throw new Error(error.message);
-      return (data as any[]).map((a) => ({
-        Attachment_ID: a.Attachment_ID, Attachment_Name: a.Attachment_File_Name,
-        Attachment_Url: a.Attachment_File_url, Attachment_Size: a.Attachment_File_Size,
-        Attachment_Mime_Type: a.Attachment_Mime_Type, Attachment_Created_At: a.Attachment_Created_At,
-        uploader: a.uploader,
-      }));
+      const results = await Promise.all(
+        (data as any[]).map(async (a) => {
+          const storagePath = extractStoragePath(a.Attachment_File_url as string);
+          const { data: signedData, error: signErr } = await supabase.storage
+            .from('attachments')
+            .createSignedUrl(storagePath, SIGNED_URL_EXPIRES_IN);
+          return {
+            Attachment_ID:         a.Attachment_ID,
+            Attachment_Name:       a.Attachment_File_Name,
+            Attachment_Url:        signErr ? null : signedData?.signedUrl ?? null,
+            Attachment_Size:       a.Attachment_File_Size,
+            Attachment_Mime_Type:  a.Attachment_Mime_Type,
+            Attachment_Created_At: a.Attachment_Created_At,
+            uploader:              a.uploader,
+          };
+        })
+      );
+      return results;
     }
 
     case 'uploadAttachment': {
-      const p = payload as { requestId: number; userId: number; fileName: string; mimeType: string; sizeBytes: number; base64: string };
-      const bucket = 'attachments';
+      const p = payload as {
+        requestId: string; userId: number; fileName: string;
+        mimeType: string; sizeBytes: number; base64: string;
+      };
+      const bucket   = 'attachments';
       const filePath = `requests/${p.requestId}/${Date.now()}_${p.fileName}`;
-      const bytes = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
-      const { error: uploadErr } = await supabase.storage.from(bucket).upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
+      const bytes    = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
+      const { error: uploadErr } = await supabase.storage
+        .from(bucket).upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
       if (uploadErr) throw new Error(uploadErr.message);
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      const { data, error: insertErr } = await supabase.from('TBL_Attachments')
-        .insert({ Attachment_Request_ID: p.requestId, Attachment_Uploaded_By: p.userId, Attachment_File_Name: p.fileName, Attachment_File_url: urlData.publicUrl, Attachment_File_Size: p.sizeBytes, Attachment_Mime_Type: p.mimeType, Attachment_Created_At: new Date().toISOString() })
-        .select(`Attachment_ID, Attachment_File_Name, Attachment_File_url, Attachment_File_Size, Attachment_Mime_Type, Attachment_Created_At, uploader:TBL_Users!Attachment_Uploaded_By ( User_ID, User_Name )`)
+      const { data, error: insertErr } = await supabase
+        .from('TBL_Attachments')
+        .insert({
+          Attachment_Request_ID:  p.requestId,
+          Attachment_Uploaded_By: p.userId,
+          Attachment_File_Name:   p.fileName,
+          Attachment_File_url:    filePath,
+          Attachment_File_Size:   p.sizeBytes,
+          Attachment_Mime_Type:   p.mimeType,
+          Attachment_Created_At:  new Date().toISOString(),
+        })
+        .select(`Attachment_ID, Attachment_File_Name, Attachment_File_url,
+                 Attachment_File_Size, Attachment_Mime_Type, Attachment_Created_At,
+                 uploader:TBL_Users!Attachment_Uploaded_By ( User_ID, User_Name )`)
         .single();
       if (insertErr) throw new Error(insertErr.message);
-      return { Attachment_ID: (data as any).Attachment_ID, Attachment_Name: (data as any).Attachment_File_Name, Attachment_Url: (data as any).Attachment_File_url, Attachment_Size: (data as any).Attachment_File_Size, Attachment_Mime_Type: (data as any).Attachment_Mime_Type, Attachment_Created_At: (data as any).Attachment_Created_At, uploader: (data as any).uploader };
+      const { data: signedData, error: signErr } = await supabase.storage
+        .from(bucket).createSignedUrl(filePath, SIGNED_URL_EXPIRES_IN);
+      if (signErr) throw new Error(signErr.message);
+      return {
+        Attachment_ID:         (data as any).Attachment_ID,
+        Attachment_Name:       (data as any).Attachment_File_Name,
+        Attachment_Url:        signedData.signedUrl,
+        Attachment_Size:       (data as any).Attachment_File_Size,
+        Attachment_Mime_Type:  (data as any).Attachment_Mime_Type,
+        Attachment_Created_At: (data as any).Attachment_Created_At,
+        uploader:              (data as any).uploader,
+      };
     }
-
-    case 'deleteAttachment': {
-      const { attachmentId } = payload as { attachmentId: number };
-      const { data: existing, error: fetchErr } = await supabase.from('TBL_Attachments').select('Attachment_File_url').eq('Attachment_ID', attachmentId).single();
-      if (fetchErr) throw new Error(fetchErr.message);
-      const url = (existing as any).Attachment_File_url as string;
-      const marker = '/attachments/';
-      const pathIdx = url.indexOf(marker);
-      if (pathIdx !== -1) await supabase.storage.from('attachments').remove([url.slice(pathIdx + marker.length)]);
-      const { error } = await supabase.from('TBL_Attachments').delete().eq('Attachment_ID', attachmentId);
-      if (error) throw new Error(error.message);
-      return { ok: true };
-    }
-    case 'closeRequest': {
-  const p = payload as {
-    requestId:      number;
-    closedBy:       number;
-    closureNote:    string;
-    targetColumnId: number;
-    attachmentUrl:  string | null;
-    attachmentName: string | null;
-    attachmentMime: string | null;
-  };
-
-  // 1. Insertar en TBL_Request_Closure
-  const { data: closure, error: closureErr } = await supabase
-    .from('TBL_Request_Closure')
-    .insert({
-      Request_ID:       p.requestId,
-      Closed_By:        p.closedBy,
-      Closure_Note:     p.closureNote,
-      Target_Column_ID: p.targetColumnId,
-      Attachment_URL:   p.attachmentUrl  ?? null,
-      Attachment_Name:  p.attachmentName ?? null,
-      Attachment_Mime:  p.attachmentMime ?? null,
-      Closed_At:        new Date().toISOString(),
-    })
-    .select(`
-      Closure_ID,
-      Closure_Note,
-      Attachment_URL,
-      Attachment_Name,
-      Attachment_Mime,
-      Closed_At,
-      closer:TBL_Users!Closed_By ( User_ID, User_Name )
-    `)
-    .single();
-  if (closureErr) throw new Error(closureErr.message);
-
-  // 2. Mover columna + marcar fecha de cierre en TBL_Requests
-  const { error: updateErr } = await supabase
-    .from('TBL_Requests')
-    .update({
-      Request_Board_Column_ID: p.targetColumnId,
-      Request_Finished_At:     new Date().toISOString(),
-      Request_Progress:        100,
-    })
-    .eq('Request_ID', p.requestId);
-  if (updateErr) throw new Error(updateErr.message);
-
-  return closure;
-}
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);
@@ -737,16 +1026,21 @@ async function handleAction(
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
-  if (req.method !== 'POST') return errorResponse('Método no permitido', 405);
+  if (req.method !== 'POST')    return errorResponse('Método no permitido', 405);
+
   const authHeader = req.headers.get('Authorization') ?? '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return errorResponse('Token de autorización requerido', 401);
-try { await verifyAzureToken(token); } catch (err) {
-  console.error('[API] auth error:', (err as Error).message);
-  return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
-}  let body: { action: string; payload: Record<string, unknown> };
+
+  try { await verifyAzureToken(token); } catch (err) {
+    console.error('[API] auth error:', (err as Error).message);
+    return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
+  }
+
+  let body: { action: string; payload: Record<string, unknown> };
   try { body = await req.json(); } catch { return errorResponse('Body inválido', 400); }
   if (!body.action) return errorResponse('Campo "action" requerido', 400);
+
   const supabase = createServiceClient();
   try {
     const result = await handleAction(body.action, body.payload ?? {}, supabase);

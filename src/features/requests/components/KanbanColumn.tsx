@@ -20,8 +20,10 @@ const COL_CLASS: Record<KanbanColumna, string> = {
   backlog:         'kanban__col--backlog',
   todo:            'kanban__col--todo',
   en_progreso:     'kanban__col--en-progreso',
+  en_revision_qas: 'kanban__col--en-revision-qas',
   ready_to_deploy: 'kanban__col--ready-to-deploy',
   hecho:           'kanban__col--hecho',
+  historial:       'kanban__col--historial',
 };
 
 export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick }: Props) {
