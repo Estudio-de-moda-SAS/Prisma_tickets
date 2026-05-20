@@ -10,7 +10,7 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useDragScroll } from '../hooks/useDragScroll';
@@ -24,7 +24,9 @@ import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useCloseRequest } from '../hooks/useCloseRequest';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useNotifications } from '../hooks/useNotifications';
 import { config } from '@/config';
+import type { Notification } from '@/types/commons';
 
 const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
   sin_categorizar:  1,
@@ -84,12 +86,36 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
 
+  // ── Notificaciones ──────────────────────────────────────────
+  const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
+
+  // Índice: requestId → notificaciones no leídas. Se recalcula solo cuando cambian las notifs.
+  const unreadByRequestId = useMemo(() => {
+    const map = new Map<string, Notification[]>();
+    for (const n of notifications) {
+      if (n.isRead || !n.requestId) continue;
+      if (!map.has(n.requestId)) map.set(n.requestId, []);
+      map.get(n.requestId)!.push(n);
+    }
+    return map;
+  }, [notifications]);
+
+  // Cuando se abre un modal, marcar como leídas las notifs de ese ticket
+  function setModal(id: string | null) {
+    setModalId(id);
+    setParentModalId(null);
+    onModalId?.(id);
+    if (id) {
+      const ticketNotifs = unreadByRequestId.get(id) ?? [];
+      ticketNotifs.forEach((n) => markRead(n.notificationId));
+    }
+  }
+
+  // ── Sensores DnD ────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  // Buscar en board local primero (instantáneo), luego hidratar con fetchById
-  // fetchById genera las signed URLs de los adjuntos de cierre
   const modalCardFromBoard = modalId
     ? (Object.values(board).flat().find((r) => r.id === modalId) ?? extraRequest ?? null)
     : null;
@@ -101,7 +127,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     staleTime: 60_000,
   });
 
-  // Usar la versión hidratada si ya llegó, sino la del board (sin signed URLs)
   const modalCard = modalCardFetched ?? modalCardFromBoard;
 
   const parentInBoard = parentModalId
@@ -116,12 +141,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   });
 
   const parentCard = parentInBoard ?? parentFetched ?? null;
-
-  function setModal(id: string | null) {
-    setModalId(id);
-    setParentModalId(null);
-    onModalId?.(id);
-  }
 
   function openParentModal(parentId: string) { setParentModalId(parentId); }
   function closeParentModal()                { setParentModalId(null); }
@@ -231,6 +250,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
               isOver={overColumn === col}
               onCardClick={(card) => setModal(card.id)}
               onAddClick={() => navigate('/new')}
+              unreadByRequestId={unreadByRequestId}
             />
           ))}
         </div>

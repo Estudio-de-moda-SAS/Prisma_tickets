@@ -10,36 +10,102 @@ export type SubTeam = {
 
 export function useSubTeams(teamId: number | null) {
   return useQuery<SubTeam[]>({
-    queryKey: ['subTeams', teamId],
-    queryFn:  () => apiClient.call<SubTeam[]>('fetchSubTeamsByTeamId', { teamId }),
-    enabled:  teamId !== null,
+    queryKey:  ['subTeams', teamId],
+    queryFn:   () => apiClient.call<SubTeam[]>('fetchSubTeamsByTeamId', { teamId }),
+    enabled:   teamId !== null,
     staleTime: 0,
-    retry:    1,
+    retry:     1,
   });
 }
 
 export function useCreateSubTeam(teamId: number | null) {
   const qc = useQueryClient();
+  const qk = ['subTeams', teamId] as const;
+
   return useMutation({
     mutationFn: (d: { name: string; color: string }) =>
-      apiClient.call('createSubTeam', { teamId, name: d.name, color: d.color }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['subTeams', teamId] }),
+      apiClient.call<SubTeam>('createSubTeam', { teamId, name: d.name, color: d.color }),
+
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: qk });
+      const snapshot = qc.getQueryData<SubTeam[]>(qk);
+
+      const tempSubTeam: SubTeam = {
+        Sub_Team_ID:    -Date.now(),
+        Sub_Team_Name:  d.name,
+        Sub_Team_Color: d.color,
+      };
+      qc.setQueryData<SubTeam[]>(qk, (prev) => [...(prev ?? []), tempSubTeam]);
+
+      return { snapshot };
+    },
+
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) qc.setQueryData<SubTeam[]>(qk, ctx.snapshot);
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk });
+    },
   });
 }
 
 export function useUpdateSubTeam(teamId: number | null) {
   const qc = useQueryClient();
+  const qk = ['subTeams', teamId] as const;
+
   return useMutation({
     mutationFn: (d: { id: number; name: string; color: string }) =>
       apiClient.call('updateSubTeam', d),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['subTeams', teamId] }),
+
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: qk });
+      const snapshot = qc.getQueryData<SubTeam[]>(qk);
+
+      qc.setQueryData<SubTeam[]>(qk, (prev) =>
+        prev?.map((st) => st.Sub_Team_ID === d.id
+          ? { ...st, Sub_Team_Name: d.name, Sub_Team_Color: d.color }
+          : st
+        ) ?? []
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) qc.setQueryData<SubTeam[]>(qk, ctx.snapshot);
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk });
+    },
   });
 }
 
 export function useDeleteSubTeam(teamId: number | null) {
   const qc = useQueryClient();
+  const qk = ['subTeams', teamId] as const;
+
   return useMutation({
     mutationFn: (id: number) => apiClient.call('deleteSubTeam', { id }),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ['subTeams', teamId] }),
+
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk });
+      const snapshot = qc.getQueryData<SubTeam[]>(qk);
+
+      qc.setQueryData<SubTeam[]>(qk, (prev) =>
+        prev?.filter((st) => st.Sub_Team_ID !== id) ?? []
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) qc.setQueryData<SubTeam[]>(qk, ctx.snapshot);
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk });
+    },
   });
 }

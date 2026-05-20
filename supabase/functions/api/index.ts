@@ -181,6 +181,60 @@ async function attachCriteriaSummary(
   }));
 }
 
+/* ── Helper: insertar notificaciones a múltiples usuarios ── */
+async function insertNotifications(
+  supabase: ReturnType<typeof createServiceClient>,
+  notifications: {
+    userIds:   number[];
+    type:      string;
+    title:     string;
+    body:      string;
+    requestId: string | null;
+    actorId:   number | null;
+  },
+): Promise<void> {
+  if (notifications.userIds.length === 0) return;
+  const rows = notifications.userIds.map((uid) => ({
+    Notification_User_ID:    uid,
+    Notification_Type:       notifications.type,
+    Notification_Title:      notifications.title,
+    Notification_Body:       notifications.body,
+    Notification_Request_ID: notifications.requestId,
+    Notification_Actor_ID:   notifications.actorId,
+    Notification_Is_Read:    false,
+    Notification_Created_At: new Date().toISOString(),
+  }));
+  await supabase.from('TBL_Notifications').insert(rows);
+}
+
+/* ── Helper: obtener asignados + solicitante de un ticket ── */
+async function getRequestParticipants(
+  supabase: ReturnType<typeof createServiceClient>,
+  requestId: string,
+): Promise<{ assigneeIds: number[]; requestedBy: number | null }> {
+  const [assignmentsRes, requestRes] = await Promise.all([
+    supabase
+      .from('TBL_Requests_Assignments')
+      .select('Request_Assignment_User_ID')
+      .eq('Request_Assignment_ID', requestId),
+    supabase
+      .from('TBL_Requests')
+      .select('Request_Requested_By')
+      .eq('Request_ID', requestId)
+      .single(),
+  ]);
+
+  const assigneeIds = (
+    (assignmentsRes.data ?? []) as { Request_Assignment_User_ID: number }[]
+  ).map((a) => a.Request_Assignment_User_ID);
+
+  const requestedBy = requestRes.data
+    ? (requestRes.data as { Request_Requested_By: number }).Request_Requested_By
+    : null;
+
+  return { assigneeIds, requestedBy };
+}
+
 async function handleAction(
   action: string,
   payload: Record<string, unknown>,
@@ -272,7 +326,7 @@ async function handleAction(
           Request_Estimated_Hours:   p.estimatedHours ?? null,
           Request_Parent_ID:         p.parentId ?? null,
           Request_Requester_Team_ID: p.requesterTeamId ?? null,
-          Request_Is_Confidential: p.isConfidential ?? false,
+          Request_Is_Confidential:   p.isConfidential ?? false,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
@@ -298,10 +352,30 @@ async function handleAction(
     }
 
     case 'moveToColumn': {
-      const { id, columnId } = payload as { id: string; columnId: number };
+      const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
+      const { data: colData } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_Name')
+        .eq('Board_Column_ID', columnId)
+        .single();
       const { error } = await supabase
         .from('TBL_Requests').update({ Request_Board_Column_ID: columnId }).eq('Request_ID', id);
       if (error) throw new Error(error.message);
+
+      if (movedBy) {
+        const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, id);
+        const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+          .filter((uid) => uid !== movedBy);
+        const colName = (colData as { Board_Column_Name: string } | null)?.Board_Column_Name ?? 'otra columna';
+        await insertNotifications(supabase, {
+          userIds:   recipientIds,
+          type:      'column_move',
+          title:     `Ticket movido a "${colName}"`,
+          body:      `El ticket ${id} fue movido a la columna "${colName}".`,
+          requestId: id,
+          actorId:   movedBy,
+        });
+      }
       return { ok: true };
     }
 
@@ -415,6 +489,19 @@ async function handleAction(
         })
         .eq('Request_ID', p.requestId);
       if (updateErr) throw new Error(updateErr.message);
+
+      const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
+      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+        .filter((uid) => uid !== p.closedBy);
+      await insertNotifications(supabase, {
+        userIds:   recipientIds,
+        type:      'closure',
+        title:     `Ticket ${p.requestId} cerrado`,
+        body:      `El ticket fue cerrado. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
+        requestId: p.requestId,
+        actorId:   p.closedBy,
+      });
+
       return closure;
     }
 
@@ -530,11 +617,12 @@ async function handleAction(
     }
 
     case 'updateAcceptanceCriteriaStatus': {
-      const { criteriaId, status, reviewedBy, reviewerNotes } = payload as {
+      const { criteriaId, status, reviewedBy, reviewerNotes, requestId } = payload as {
         criteriaId:    number;
         status:        'accepted' | 'rejected' | 'pending';
         reviewedBy:    number;
         reviewerNotes: string | null;
+        requestId:     string;
       };
       const { data, error } = await supabase
         .from('TBL_Acceptance_Criteria')
@@ -549,6 +637,21 @@ async function handleAction(
         .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
         .single();
       if (error) throw new Error(error.message);
+
+      if (requestId && status !== 'pending') {
+        const { assigneeIds } = await getRequestParticipants(supabase, requestId);
+        const recipientIds = assigneeIds.filter((uid) => uid !== reviewedBy);
+        const statusLabel = status === 'accepted' ? 'aceptado ✓' : 'rechazado ✗';
+        await insertNotifications(supabase, {
+          userIds:   recipientIds,
+          type:      'criteria_reviewed',
+          title:     `Criterio ${statusLabel}`,
+          body:      `Un criterio de aceptación fue ${statusLabel} en el ticket ${requestId}.`,
+          requestId: requestId,
+          actorId:   reviewedBy,
+        });
+      }
+
       return mapCriteria(data as Record<string, unknown>);
     }
 
@@ -575,38 +678,59 @@ async function handleAction(
 
     case 'fetchAllUsers': {
       const { data, error } = await supabase
-        .from('TBL_Users').select('User_ID, User_Name, User_Email, User_Avatar_url, User_Role')
+        .from('TBL_Users')
+        .select(`
+          User_ID, User_Name, User_Email, User_Avatar_url, User_Role,
+          Department_ID, Team_ID, Is_New,
+          department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
+          team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
+        `)
         .order('User_Name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     }
 
-    case 'upsertUserByEntraId': {
-      const p = payload as { entraId: string; name: string; email: string };
-      const { data: existing, error: findErr } = await supabase
-        .from('TBL_Users')
-        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
-                 team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
-        .eq('User_EntraID', p.entraId).maybeSingle();
-      if (findErr) throw new Error(findErr.message);
-      if (existing) return existing;
-      const { data, error: insertErr } = await supabase
-        .from('TBL_Users')
-        .insert({
-          User_EntraID:    p.entraId,
-          User_Name:       p.name.slice(0, 150),
-          User_Email:      p.email.slice(0, 150),
-          User_Avatar_url: '',
-          User_Role:       'member',
-          Is_New:          true,
-          User_Created_At: new Date().toISOString(),
-        })
-        .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
-                 team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
-        .single();
-      if (insertErr) throw new Error(insertErr.message);
-      return data;
+case 'upsertUserByEntraId': {
+  const p = payload as { entraId: string; name: string; email: string };
+
+  // Buscar primero sin join para evitar errores por FK null
+  const { data: existing, error: findErr } = await supabase
+    .from('TBL_Users')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .eq('User_EntraID', p.entraId)
+    .maybeSingle();
+  if (findErr) throw new Error(findErr.message);
+
+  if (existing) {
+    // Fetch del team por separado si tiene Team_ID
+    const userId = (existing as any).User_ID;
+    const teamId = (existing as any).Team_ID;
+    let teamData = null;
+    if (teamId) {
+      const { data: t } = await supabase
+        .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
+      teamData = t;
     }
+    return { ...existing, team: teamData };
+  }
+
+  // No existe → crear
+  const { data, error: insertErr } = await supabase
+    .from('TBL_Users')
+    .insert({
+      User_EntraID:    p.entraId,
+      User_Name:       p.name.slice(0, 150),
+      User_Email:      p.email.slice(0, 150),
+      User_Avatar_url: '',
+      User_Role:       'member',
+      Is_New:          true,
+      User_Created_At: new Date().toISOString(),
+    })
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .single();
+  if (insertErr) throw new Error(insertErr.message);
+  return { ...(data as any), team: null };
+}
 
     case 'completeOnboarding': {
       const p = payload as { userId: number; departmentId: number; teamId: number };
@@ -616,6 +740,36 @@ async function handleAction(
         .eq('User_ID', p.userId)
         .select(`User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New,
                  team:TBL_Teams!Team_ID ( Team_Code, Team_Name )`)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    // ── Gestión de usuarios (desde Config Panel — solo admins) ──
+
+    case 'updateUser': {
+      const p = payload as {
+        userId:       number;
+        role:         'admin' | 'member';
+        departmentId: number | null;
+        teamId:       number | null;
+        isNew:        boolean;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Users')
+        .update({
+          User_Role:     p.role,
+          Department_ID: p.departmentId,
+          Team_ID:       p.teamId,
+          Is_New:        p.isNew,
+        })
+        .eq('User_ID', p.userId)
+        .select(`
+          User_ID, User_Name, User_Email, User_Role,
+          Department_ID, Team_ID, Is_New,
+          department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
+          team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
+        `)
         .single();
       if (error) throw new Error(error.message);
       return data;
@@ -889,7 +1043,9 @@ async function handleAction(
     // ── Assignments ─────────────────────────────────────────────
 
     case 'assignRequest': {
-      const { requestId, userId } = payload as { requestId: string; userId: number };
+      const { requestId, userId, assignedBy } = payload as {
+        requestId: string; userId: number; assignedBy?: number;
+      };
       await supabase.from('TBL_Requests_Assignments')
         .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
       const { error } = await supabase.from('TBL_Requests_Assignments').insert({
@@ -898,6 +1054,17 @@ async function handleAction(
         Request_Assignment_At:      new Date().toISOString(),
       });
       if (error) throw new Error(error.message);
+
+      if (assignedBy && userId !== assignedBy) {
+        await insertNotifications(supabase, {
+          userIds:   [userId],
+          type:      'assignment',
+          title:     `Te asignaron el ticket ${requestId}`,
+          body:      `Fuiste asignado al ticket ${requestId}.`,
+          requestId: requestId,
+          actorId:   assignedBy,
+        });
+      }
       return { ok: true };
     }
 
@@ -936,6 +1103,21 @@ async function handleAction(
                  author:TBL_Users!Comment_User_ID ( User_ID, User_Name, User_Avatar_url )`)
         .single();
       if (error) throw new Error(error.message);
+
+      const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, requestId);
+      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+        .filter((uid) => uid !== userId);
+      if (recipientIds.length > 0) {
+        const preview = text.trim().slice(0, 80) + (text.trim().length > 80 ? '…' : '');
+        await insertNotifications(supabase, {
+          userIds:   recipientIds,
+          type:      'comment',
+          title:     `Nuevo comentario en ${requestId}`,
+          body:      preview,
+          requestId: requestId,
+          actorId:   userId,
+        });
+      }
       return data;
     }
 
@@ -1017,6 +1199,55 @@ async function handleAction(
         Attachment_Created_At: (data as any).Attachment_Created_At,
         uploader:              (data as any).uploader,
       };
+    }
+
+    // ── Notificaciones ───────────────────────────────────────────
+
+    case 'getNotifications': {
+      const { userId, limit = 40 } = payload as { userId: number; limit?: number };
+      const { data, error } = await supabase
+        .from('TBL_Notifications')
+        .select(`
+          Notification_ID,
+          Notification_Type,
+          Notification_Title,
+          Notification_Body,
+          Notification_Request_ID,
+          Notification_Is_Read,
+          Notification_Created_At,
+          actor:TBL_Users!Notification_Actor_ID (
+            User_ID, User_Name, User_Avatar_url
+          )
+        `)
+        .eq('Notification_User_ID', userId)
+        .order('Notification_Created_At', { ascending: false })
+        .limit(limit as number);
+      if (error) throw new Error(error.message);
+
+      const unreadCount = (data as any[]).filter((n) => !n.Notification_Is_Read).length;
+      return { notifications: data, unreadCount };
+    }
+
+    case 'markNotificationRead': {
+      const { notificationId, userId } = payload as { notificationId: number; userId: number };
+      const { error } = await supabase
+        .from('TBL_Notifications')
+        .update({ Notification_Is_Read: true })
+        .eq('Notification_ID', notificationId)
+        .eq('Notification_User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'markAllNotificationsRead': {
+      const { userId } = payload as { userId: number };
+      const { error } = await supabase
+        .from('TBL_Notifications')
+        .update({ Notification_Is_Read: true })
+        .eq('Notification_User_ID', userId)
+        .eq('Notification_Is_Read', false);
+      if (error) throw new Error(error.message);
+      return { ok: true };
     }
 
     default:

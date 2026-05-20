@@ -1,83 +1,54 @@
+// src/auth/roles.ts
+//
+// Fuente de verdad: TBL_Users (User_Role + Department_ID)
+//
+// Reglas de acceso:
+//   admin  + TI  → acceso completo (board + config)
+//   member + TI  → acceso a board, sin config
+//   member + otro dpto → solo inicio y nueva solicitud
+
 import { useAuth } from '@/auth/AuthProvider';
-import { config } from '@/config';
-import type { Equipo } from '@/features/requests/types';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
-export type Role = 'admin' | 'member' | 'client';
+
+export type AppRole = 'admin' | 'ti_member' | 'client';
 
 export type ResolvedRole =
-  | { role: 'admin';  team: null }
-  | { role: 'member'; team: Equipo }
-  | { role: 'client'; team: null };
+  | { role: 'admin';     teamCode: string | null }  // TI admin — todo
+  | { role: 'ti_member'; teamCode: string | null }  // TI member — board, sin config
+  | { role: 'client';    teamCode: null };           // Otros — solo inicio
 
-// ─── Resolución de rol ────────────────────────────────────────────────────────
-// Un usuario puede pertenecer a varios grupos en Azure AD simultáneamente.
-// Se aplica el rol de mayor jerarquía: admin > member > client.
-//
-// El claim `groups` llega como array de GUIDs en idTokenClaims.
-// Requiere configurar en Azure AD → App registrations → Token configuration
-// → Add groups claim → Security groups.
-
-function resolveRoleFromGroups(groups: string[]): ResolvedRole {
-  const g = (config as any).GROUPS;   ///esto lo cambio la ia de vs, no se que pueda pasar...
-
-  // Admin tiene prioridad absoluta — si está en el grupo admin, es admin
-  if (g.admin && groups.includes(g.admin)) {
-    return { role: 'admin', team: null };
-  }
-
-  // Member — se revisan todos los equipos; si pertenece a más de uno
-  // se toma el primero encontrado (caso raro, pero manejado)
-  const teamEntries: [Equipo, string][] = [
-    ['desarrollo', g.desarrollo],
-    ['crm',        g.crm],
-    ['sistemas',   g.sistemas],
-    ['analisis',   g.analisis],
-  ];
-
-  for (const [team, guid] of teamEntries) {
-    if (guid && groups.includes(guid)) {
-      return { role: 'member', team };
-    }
-  }
-
-  // Sin grupo reconocido → cliente
-  return { role: 'client', team: null };
-}
+const TI_DEPARTMENT_ID = 7;
 
 // ─── Hook principal ───────────────────────────────────────────────────────────
+
 export function useRole(): ResolvedRole {
-  const { account } = useAuth();
+  const { dbUser } = useAuth();
+ //console.log('[ROLE] dbUser:', dbUser?.User_Role, 'dept:', dbUser?.Department_ID);
+  // Bypass de desarrollo
+  if (!dbUser) return { role: 'client', teamCode: null };
 
-  // Bypass de desarrollo — controlado desde config.ts
-  // BYPASS_ROLE debe ser null en producción
-  if (config.BYPASS_ROLE !== null) {
-    if (config.BYPASS_ROLE === 'admin')  return { role: 'admin',  team: null };
-    if (config.BYPASS_ROLE === 'client') return { role: 'client', team: null };
-    if (config.BYPASS_ROLE === 'member') return { role: 'member', team: config.BYPASS_TEAM };
-  }
+  const isTI    = dbUser.Department_ID === TI_DEPARTMENT_ID;
+  const isAdmin = dbUser.User_Role === 'admin';
+  const teamCode = dbUser.team?.Team_Code ?? null;
 
-  // Sin cuenta activa → client por defecto
-  if (!account) return { role: 'client', team: null };
-
-  // Extraer claim `groups` del idTokenClaims
-  const claims = account.idTokenClaims as Record<string, unknown> | undefined;
-  const groups = Array.isArray(claims?.groups) ? (claims.groups as string[]) : [];
-
-  return resolveRoleFromGroups(groups);
+  if (isAdmin && isTI)  return { role: 'admin',     teamCode };
+  if (isTI)             return { role: 'ti_member', teamCode };
+  return { role: 'client', teamCode: null };
 }
 
 // ─── Guards de conveniencia ───────────────────────────────────────────────────
+
 export function canSeeBoard(resolved: ResolvedRole): boolean {
-  return resolved.role === 'admin' || resolved.role === 'member';
+  return resolved.role === 'admin' || resolved.role === 'ti_member';
+}
+
+export function canSeeConfig(resolved: ResolvedRole): boolean {
+  return resolved.role === 'admin';
 }
 
 export function canSeeStats(resolved: ResolvedRole): boolean {
-  return resolved.role === 'admin' || resolved.role === 'member';
-}
-
-export function canSeeRequests(resolved: ResolvedRole): boolean {
-  return resolved.role === 'admin';
+  return resolved.role === 'admin' || resolved.role === 'ti_member';
 }
 
 export function canSeeAutomations(resolved: ResolvedRole): boolean {

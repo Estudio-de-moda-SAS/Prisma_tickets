@@ -375,7 +375,23 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   const requestId    = request.id;
   const boardTeamId  = request.boardTeamId ?? null;
   const isSubRequest = request.parentId !== null;
-  const isCerrada    = !!request.cierreInfo || !!request.fechaCierre;
+
+  // ── Query propia: siempre traer data fresca al abrir el modal ──
+  // Esto garantiza que aunque el prop `request` sea un snapshot viejo del board,
+  // los campos mutables (assignees, labels, sprint, etc.) siempre reflejen
+  // el estado real de la BD en el momento de apertura.
+  const { data: freshRequest } = useQuery<Request>({
+    queryKey: ['request', requestId],
+    queryFn:  () => Requests.fetchById(requestId),
+    enabled:  !config.USE_MOCK,
+    staleTime: 0,          // siempre refetch al montar, nunca usar cache viejo
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // effectiveRequest: usa la data fresca si ya llegó, sino el prop (mientras carga)
+  const effectiveRequest = freshRequest ?? request;
+  const isCerrada        = !!effectiveRequest.cierreInfo || !!effectiveRequest.fechaCierre;
 
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
@@ -401,7 +417,6 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   const assigneeDD = useDropdown();
 
   const [rightTab,         setRightTab]         = useState<RightTab>('comments');
-  // ── Auto-expandir si ya hay hijos ──
   const [showSubRequests,  setShowSubRequests]  = useState(children.length > 0);
   const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
   const [descripcion,      setDescripcion]      = useState(request.descripcion ?? '');
@@ -413,18 +428,23 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 
-  // Sync auto-expand cuando children carga (viene de useQuery, puede llegar vacío primero)
+  // Sync auto-expand cuando children carga
   useEffect(() => {
     if (children.length > 0) setShowSubRequests(true);
   }, [children.length]);
 
+  // ── Sincronizar estado local cuando llega freshRequest ──
+  // Se ejecuta tanto al montar (con el prop inicial) como cuando llega la
+  // respuesta fresca de la BD, garantizando que siempre refleje la realidad.
   useEffect(() => {
-    setDescripcion(request.descripcion ?? '');
-    setSelectedLabelIds(request.labelIds ?? []);
-    setSelectedSubIds(request.subTeamIds ?? []);
-    setSelectedSprintId(request.sprintId ?? null);
-    setAssigneeIds(request.assignees?.map((a) => a.userId) ?? []);
-  }, [request.id]);
+    const r = freshRequest ?? request;
+    setDescripcion(r.descripcion ?? '');
+    setSelectedLabelIds(r.labelIds ?? []);
+    setSelectedSubIds(r.subTeamIds ?? []);
+    setSelectedSprintId(r.sprintId ?? null);
+    setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
+    setColumnaActual(r.columna);
+  }, [request.id, freshRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
   useEffect(() => {
@@ -531,10 +551,10 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}><Icon size={13} /></button>
               ))}
             </div>
-            <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.7, userSelect: 'all' }}>{request.id}</span>
+            <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.7, userSelect: 'all' }}>{effectiveRequest.id}</span>
             {readOnly && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>Solo lectura</span>}
             {isCerrada && !readOnly && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}><Lock size={10} />Cerrada</span>}
-            {request.isConfidential && (
+            {effectiveRequest.isConfidential && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
                 <ShieldAlert size={10} />Confidencial
               </span>
@@ -546,10 +566,9 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
             )}
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>{KANBAN_COLUMNAS[columnaActual]}</span>
 
-            {/* ── Botón DIVIDIR mejorado ── */}
+            {/* ── Botón DIVIDIR ── */}
             {!isSubRequest && !readOnly && !isCerrada && (
               <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                {/* Botón principal */}
                 <button
                   onClick={() => setShowSubRequests((v) => !v)}
                   style={{
@@ -598,8 +617,6 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                     </span>
                   )}
                 </button>
-
-                {/* Botón ? con tooltip */}
                 <DividirTooltip />
               </div>
             )}
@@ -618,8 +635,8 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
               </div>
               <SubRequestsPanel
                 parentId={requestId}
-                parentTitle={request.titulo}
-                parentIsConfidential={request.isConfidential ?? false}
+                parentTitle={effectiveRequest.titulo}
+                parentIsConfidential={effectiveRequest.isConfidential ?? false}
                 onOpenChild={(childId) => onOpenRequest?.(childId)}
               />
             </div>
@@ -658,10 +675,10 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
 
               <div>
                 <FieldLabel>Nombre de la solicitud</FieldLabel>
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{request.titulo}</h2>
+                <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{effectiveRequest.titulo}</h2>
               </div>
 
-              {request.isConfidential && (
+              {effectiveRequest.isConfidential && (
                 <div style={{ display: 'flex', gap: 12, padding: '12px 16px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
                   <ShieldAlert size={15} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
                   <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>
@@ -680,7 +697,7 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
               </FieldBlock>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FieldBlock label="Solicitante"><PersonChip name={request.solicitante} color="var(--accent-2)" /></FieldBlock>
+                <FieldBlock label="Solicitante"><PersonChip name={effectiveRequest.solicitante} color="var(--accent-2)" /></FieldBlock>
 
                 <FieldBlock label="Resolutor">
                   <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
@@ -722,7 +739,7 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 </FieldBlock>
 
                 <FieldBlock label="Prioridad">
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[request.prioridad], background: `${PRI_COLOR[request.prioridad]}15`, border: `1px solid ${PRI_COLOR[request.prioridad]}35` }}>{PRIORIDADES[request.prioridad]}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[effectiveRequest.prioridad], background: `${PRI_COLOR[effectiveRequest.prioridad]}15`, border: `1px solid ${PRI_COLOR[effectiveRequest.prioridad]}35` }}>{PRIORIDADES[effectiveRequest.prioridad]}</span>
                 </FieldBlock>
 
                 <FieldBlock label="Equipo">
@@ -784,7 +801,7 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
 
                 <FieldBlock label="Puntaje">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[request.prioridad] }}>{PUNTAJE[request.prioridad]}</span>
+                    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[effectiveRequest.prioridad] }}>{PUNTAJE[effectiveRequest.prioridad]}</span>
                     <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
                   </div>
                 </FieldBlock>
@@ -792,24 +809,24 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <FieldBlock label="Fecha de apertura">
-                  <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(request.fechaApertura)}</span>
+                  <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(effectiveRequest.fechaApertura)}</span>
                 </FieldBlock>
 
                 <FieldBlock label="Horas estimadas">
                   {readOnly ? (
-                    <span style={{ fontSize: 13, color: request.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>
-                      {request.estimatedHours != null ? fmtHours(request.estimatedHours) : 'Sin estimado'}
+                    <span style={{ fontSize: 13, color: effectiveRequest.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>
+                      {effectiveRequest.estimatedHours != null ? fmtHours(effectiveRequest.estimatedHours) : 'Sin estimado'}
                     </span>
                   ) : (
                     <HorasInput
-                      value={request.estimatedHours}
+                      value={effectiveRequest.estimatedHours}
                       onChange={(val) => update({ id: requestId, patch: { estimatedHours: val } })}
                     />
                   )}
                 </FieldBlock>
               </div>
 
-              {request.cierreInfo && <FieldBlock label="Cierre del caso"><CierreBanner cierreInfo={request.cierreInfo} /></FieldBlock>}
+              {effectiveRequest.cierreInfo && <FieldBlock label="Cierre del caso"><CierreBanner cierreInfo={effectiveRequest.cierreInfo} /></FieldBlock>}
 
               {!readOnly && !isCerrada && (
                 <FieldBlock label="Contador de tiempo">
@@ -913,7 +930,7 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
       </div>
 
       {pendingClosureCol && (
-        <ClosureModal request={request} targetColumna={pendingClosureCol} targetColumnId={pendingClosureColId} onConfirm={handleClosureFromModal} onCancel={() => setPendingClosureCol(null)} isPending={false} />
+        <ClosureModal request={effectiveRequest} targetColumna={pendingClosureCol} targetColumnId={pendingClosureColId} onConfirm={handleClosureFromModal} onCancel={() => setPendingClosureCol(null)} isPending={false} />
       )}
     </>
   );
@@ -948,7 +965,6 @@ function DividirTooltip() {
           boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
           pointerEvents: 'none',
         }}>
-          {/* flecha */}
           <div style={{
             position: 'absolute', top: -5, left: '50%',
             transform: 'translateX(-50%) rotate(45deg)',

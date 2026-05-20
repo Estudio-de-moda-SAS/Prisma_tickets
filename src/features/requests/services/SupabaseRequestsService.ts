@@ -246,7 +246,6 @@ export class SupabaseRequestsService {
 
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
     const { acceptanceCriteria: _ignored, ...rest } = payload;
-    console.log('[DEBUG] service isConfidential:', rest.isConfidential);
     const row = await apiClient.call<RawRequestRow>('createRequest', {
       boardId:         rest.boardId,
       columnId:        rest.columnId,
