@@ -13,11 +13,13 @@ import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/ho
 import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { config } from '@/config';
 import type { Request } from '../types';
+import type { Notification } from '@/types/commons';
 
 type Props = {
-  request:     Request;
-  isDragging?: boolean;
-  onClick?:    () => void;
+  request:               Request;
+  isDragging?:           boolean;
+  onClick?:              () => void;
+  unreadNotifications?:  Notification[];   // ← las no leídas del board, filtradas por requestId en el padre
 };
 
 function initials(name: string): string {
@@ -34,6 +36,58 @@ const PRIORIDAD_COLOR: Record<Request['prioridad'], string> = {
   alta:    'var(--warn)',
   critica: 'var(--danger)',
 };
+
+/* Tipo → color del punto de actividad */
+const ACTIVITY_TYPE_COLOR: Record<string, string> = {
+  comment:             '#a78bfa',
+  assignment:          'var(--accent)',
+  column_move:         '#60a5fa',
+  closure:             '#34d399',
+  criteria_reviewed:   '#fbbf24',
+  sub_request_created: '#f472b6',
+  mention:             'var(--accent)',
+};
+
+const ACTIVITY_TYPE_LABEL: Record<string, string> = {
+  comment:             'Nuevo comentario',
+  assignment:          'Asignación',
+  column_move:         'Movido de columna',
+  closure:             'Cerrado',
+  criteria_reviewed:   'Criterio revisado',
+  sub_request_created: 'Sub-solicitud creada',
+  mention:             'Mención',
+};
+
+/* ── Dot de actividad ── */
+function ActivityDot({ notifications }: { notifications: Notification[] }) {
+  if (notifications.length === 0) return null;
+
+  // Priorizar: primero mention/comment, luego el resto por orden de llegada
+  const priority = ['mention', 'comment', 'assignment', 'criteria_reviewed', 'column_move', 'closure', 'sub_request_created'];
+  const sorted   = [...notifications].sort(
+    (a, b) => priority.indexOf(a.type) - priority.indexOf(b.type),
+  );
+  const top   = sorted[0];
+  const color = ACTIVITY_TYPE_COLOR[top.type] ?? 'var(--accent)';
+  const label = notifications.length === 1
+    ? ACTIVITY_TYPE_LABEL[top.type] ?? 'Actividad'
+    : `${notifications.length} novedades sin leer`;
+
+  return (
+    <div
+      className="request-card__activity-dot"
+      title={label}
+      style={{ '--dot-color': color } as React.CSSProperties}
+    >
+      <span className="request-card__activity-dot-inner" />
+      {notifications.length > 1 && (
+        <span className="request-card__activity-count">
+          {notifications.length > 9 ? '9+' : notifications.length}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -66,7 +120,6 @@ const IconZap    = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="n
 const IconSprint = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>;
 const IconCheck  = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 
-/* ── Ícono de candado confidencial (inline SVG sin dependencia extra) ── */
 const IconShield = () => (
   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -93,7 +146,6 @@ function Chips({ items, accent }: { items: string[]; accent?: string }) {
   );
 }
 
-/* ── Criteria badge mini ── */
 function CriteriaBadge({ requestId }: { requestId: string; accent: string }) {
   const { data: criteria = [] } = useAcceptanceCriteria(requestId);
   if (criteria.length === 0) return null;
@@ -119,7 +171,7 @@ function CriteriaBadge({ requestId }: { requestId: string; accent: string }) {
   );
 }
 
-export function RequestCard({ request, isDragging = false, onClick }: Props) {
+export function RequestCard({ request, isDragging = false, onClick, unreadNotifications = [] }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
   const { data: allTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
@@ -148,6 +200,9 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
   const isCerrada      = !!request.cierreInfo || !!request.fechaCierre;
   const isConfidential = request.isConfidential ?? false;
 
+  // Notificaciones no leídas de este ticket (filtradas por el padre, no aquí)
+  const hasActivity = unreadNotifications.length > 0;
+
   function handleClick(e: React.MouseEvent) {
     if (isSortableDragging) return;
     e.stopPropagation();
@@ -175,19 +230,27 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
             : isCerrada
               ? closureBorderStyle
               : {}),
+        // Anillo sutil cuando hay actividad no leída
+        ...(hasActivity && !isBeingDragged
+          ? { outline: '1px solid rgba(167,139,250,0.35)' }
+          : {}),
       }}
       className={[cardClasses, isBeingDragged ? 'request-card--dragging' : ''].filter(Boolean).join(' ')}
       {...attributes}
       {...listeners}
       onClick={handleClick}
     >
+      {/* Dot de actividad — esquina superior derecha, fuera del flujo */}
+      {hasActivity && (
+        <ActivityDot notifications={unreadNotifications} />
+      )}
+
       {/* Header: badge tipo + badges derecha (confidencial + criteria) */}
       <div className="request-card__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
-        {/* Izquierda — badge de tipo/estado */}
-              {/* ID */}
-      <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.55, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {request.id}
-      </div>
+        {/* ID */}
+        <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.55, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {request.id}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
           {isCerrada ? (
             <span style={{ background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)', color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa', border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -206,14 +269,11 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
             <span style={{ background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
               ⌥ {childCount} sub
             </span>
-            
           ) : null}
         </div>
 
         {/* Derecha — confidencial + criteria */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-          
-          {/* Ícono confidencial — solo visible si aplica */}
           {isConfidential && (
             <span
               title="Información confidencial"
@@ -224,9 +284,7 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
           )}
           <CriteriaBadge requestId={request.id} accent={accent} />
         </div>
-        
       </div>
-
 
       {/* Título */}
       <p className="request-card__title" style={{ marginBottom: 10, opacity: isCerrada ? 0.8 : 1 }}>{request.titulo}</p>
@@ -241,7 +299,6 @@ export function RequestCard({ request, isDragging = false, onClick }: Props) {
       <div style={{ height: 1, background: 'var(--border-subtle)', margin: '4px 0 10px' }} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-
         <MetaRow icon={<IconUser />} label="Solicitante">
           <AvatarChip name={request.solicitante} color="linear-gradient(135deg,#0055cc,#00c8ff)" />
         </MetaRow>

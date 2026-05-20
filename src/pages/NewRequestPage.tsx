@@ -15,6 +15,7 @@ import {
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
 import { apiClient } from '@/lib/apiClient';
+import { compressImage } from '@/lib/compressImage';
 import type { Prioridad } from '@/features/requests/types';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
@@ -38,6 +39,7 @@ function fmtBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Convierte un File a base64 puro (sin el prefijo data:…,) */
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -222,7 +224,6 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
 function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {/* Toggle row */}
       <button
         type="button"
         onClick={() => onChange(!value)}
@@ -236,7 +237,6 @@ function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v:
         onMouseEnter={(e) => { if (!value) { e.currentTarget.style.borderColor = 'rgba(253,203,110,0.3)'; e.currentTarget.style.background = 'rgba(253,203,110,0.04)'; }}}
         onMouseLeave={(e) => { if (!value) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
       >
-        {/* Icono */}
         <div style={{
           width: 34, height: 34, borderRadius: 8, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -249,8 +249,6 @@ function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v:
             : <ShieldAlert size={15} style={{ color: 'var(--txt-muted)', opacity: 0.5 }} />
           }
         </div>
-
-        {/* Texto */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: value ? '#fdcb6e' : 'var(--txt)', marginBottom: 2, transition: 'color 0.15s' }}>
             Esta solicitud contiene información confidencial
@@ -259,8 +257,6 @@ function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v:
             Activa esta opción si el contenido involucra datos sensibles o de acceso restringido.
           </div>
         </div>
-
-        {/* Switch visual */}
         <div style={{
           width: 38, height: 22, borderRadius: 11, flexShrink: 0,
           background: value ? '#fdcb6e' : 'var(--bg-surface)',
@@ -277,8 +273,6 @@ function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v:
           }} />
         </div>
       </button>
-
-      {/* Banner de advertencia — solo visible cuando está activo */}
       {value && (
         <div style={{
           display: 'flex', gap: 12, padding: '13px 16px',
@@ -299,7 +293,7 @@ function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v:
 
 function StepForm({
   allTemplates, templateId, currentUserName, userTeamName,
-  labels, prioridad, setPrioridad, selectedLabelIds, toggleLabel,
+  prioridad, setPrioridad,
   titulo, setTitulo, descripcion, setDescripcion,
   extraValues, setExtraValue,
   pendingFiles, setPendingFiles,
@@ -391,18 +385,10 @@ function StepForm({
               {(Object.keys(PRIORIDADES) as Prioridad[]).map((key) => { const active = prioridad === key; return <button key={key} type="button" onClick={() => setPrioridad(key)} style={{ padding: '6px 14px', borderRadius: 5, border: `1px solid ${active ? PRI_COLOR[key] + '50' : 'var(--border-subtle)'}`, fontSize: 11, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer', background: active ? `${PRI_COLOR[key]}15` : 'transparent', color: active ? PRI_COLOR[key] : 'var(--txt-muted)', transition: 'all 0.12s', fontFamily: 'var(--font-display)' }}>{PRIORIDADES[key]}</button>; })}
             </div>
           </div>
-          {labels.length > 0 && (
-            <div>
-              <FieldLabel>Etiquetas</FieldLabel>
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                {labels.map((label) => { const selected = selectedLabelIds.includes(label.Label_ID); return <button key={label.Label_ID} type="button" onClick={() => toggleLabel(label.Label_ID)} style={{ padding: '5px 12px', borderRadius: 5, border: `1px solid ${selected ? label.Label_Color + '55' : 'var(--border-subtle)'}`, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: selected ? `${label.Label_Color}12` : 'transparent', color: selected ? label.Label_Color : 'var(--txt-muted)', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}>{label.Label_Icon && <span style={{ fontSize: 11 }}>{label.Label_Icon}</span>}{label.Label_Name}</button>; })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ── Confidencialidad (antes de adjuntos) ── */}
+      {/* ── Confidencialidad ── */}
       <div style={cardStyle(accent)}>
         <SectionLabel>Privacidad</SectionLabel>
         <ConfidentialToggle value={isConfidential} onChange={setIsConfidential} />
@@ -506,7 +492,7 @@ export function NuevaSolicitudPage() {
       for (const field of def.extraFields) {
         if (field.required && !extraValues[field.key]?.trim()) throw new Error(`El campo "${field.label}" es obligatorio.`);
       }
-console.log('[DEBUG] isConfidential:', isConfidential);
+
       // 1. Crear ticket
       const newRequest = await Requests.createRequest({
         boardId,
@@ -525,22 +511,34 @@ console.log('[DEBUG] isConfidential:', isConfidential);
         requesterTeamId:    userTeamId,
         isConfidential,
         acceptanceCriteria: [],
-        
       });
 
-      // 2. Crear criterios
+      // 2. Crear criterios de aceptación
       await Promise.all(
         acceptanceCriteria.map((title) =>
           apiClient.call('createAcceptanceCriteria', { requestId: newRequest.id, title }),
         ),
       );
 
-      // 3. Subir adjuntos
+      // 3. Comprimir y subir adjuntos
       if (pendingFiles.length > 0) {
-        await Promise.all(pendingFiles.map(async (file) => {
-          const base64 = await fileToBase64(file);
-          await apiClient.call('uploadAttachment', { requestId: newRequest.id, userId: currentUser.User_ID, fileName: file.name, mimeType: file.type, sizeBytes: file.size, base64 });
-        }));
+        await Promise.all(
+          pendingFiles.map(async (file) => {
+            // compressImage valida el límite de 20 MB y lanza error si se supera.
+            // Para imágenes: redimensiona y aplica compresión de calidad.
+            // Para otros tipos (PDF, etc.): devuelve el archivo sin modificar.
+            const processedFile = await compressImage(file);
+            const base64 = await fileToBase64(processedFile);
+            await apiClient.call('uploadAttachment', {
+              requestId: newRequest.id,
+              userId:    currentUser.User_ID,
+              fileName:  processedFile.name,
+              mimeType:  processedFile.type,
+              sizeBytes: processedFile.size,
+              base64,
+            });
+          }),
+        );
       }
 
       return newRequest;

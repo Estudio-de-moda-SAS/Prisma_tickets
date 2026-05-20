@@ -2,57 +2,114 @@
 
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
-import { useDepartments } from '@/features/requests/hooks/useDepartments';
-import { useTeams } from '@/features/requests/hooks/useTeams';
-import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
-import type { UserProfile } from '@/types/commons';
+import { useAuth } from '@/auth/AuthProvider';
+
+// ─── Tipos locales ────────────────────────────────────────────────────────────
+
+type Department = {
+  Department_ID:   number;
+  Department_Name: string;
+  Department_Code: string;
+};
+
+type Team = {
+  Team_ID:       number;
+  Team_Name:     string;
+  Team_Code:     string;
+  Department_ID: number;
+};
+
+// Código del departamento TI — no se muestra como opción
+const TI_CODE = 'ti';
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const navigate    = useNavigate();
-  const queryClient = useQueryClient();
-  const { data: currentUser, isLoading } = useCurrentUser();
+  const navigate             = useNavigate();
+  const { dbUser, refreshDbUser } = useAuth();
 
-  const [departmentId, setDepartmentId] = React.useState<number | null>(null);
-  const [teamId,       setTeamId]       = React.useState<number | null>(null);
+  const [departments,   setDepartments]   = React.useState<Department[]>([]);
+  const [teams,         setTeams]         = React.useState<Team[]>([]);
+  const [departmentId,  setDepartmentId]  = React.useState<number | null>(null);
+  const [teamId,        setTeamId]        = React.useState<number | null>(null);
+  const [loadingDepts,  setLoadingDepts]  = React.useState(true);
+  const [loadingTeams,  setLoadingTeams]  = React.useState(false);
+  const [saving,        setSaving]        = React.useState(false);
+  const [error,         setError]         = React.useState(false);
 
-  const { data: departments = [], isLoading: loadingDepts } = useDepartments();
-  const { data: teams = [],       isLoading: loadingTeams } = useTeams(departmentId);
-
+  // Si ya completó el onboarding, redirigir
   React.useEffect(() => {
-    if (!isLoading && currentUser && !currentUser.Is_New) {
+    if (dbUser && !dbUser.Is_New) {
       navigate('/', { replace: true });
     }
-  }, [currentUser, isLoading, navigate]);
+  }, [dbUser, navigate]);
 
-  React.useEffect(() => { setTeamId(null); }, [departmentId]);
+  // Cargar departamentos al montar (excluyendo TI)
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const data = await apiClient.call<Department[]>('getDepartments', {});
+        // Filtrar TI — los registra el equipo de TI directamente en la DB
+        setDepartments(data.filter((d) => d.Department_Code !== TI_CODE));
+      } catch {
+        // Si falla, mostrar lista vacía; el usuario puede reintentar
+      } finally {
+        setLoadingDepts(false);
+      }
+    })();
+  }, []);
 
-  const mutation = useMutation({
-    mutationFn: (vars: { userId: number; departmentId: number; teamId: number }) =>
-      config.USE_MOCK
-        ? Promise.resolve({ ...currentUser!, Department_ID: vars.departmentId, Team_ID: vars.teamId, Is_New: false })
-        : apiClient.call<UserProfile>('completeOnboarding', vars),
-    onSuccess: (updatedUser) => {
-      queryClient.setQueryData<UserProfile>(['currentUser', currentUser?.User_ID], updatedUser);
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+  // Cargar equipos al cambiar departamento
+  React.useEffect(() => {
+    setTeamId(null);
+    setTeams([]);
+
+    if (departmentId === null) return;
+
+    setLoadingTeams(true);
+    apiClient
+      .call<Team[]>('getTeamsByDepartment', { departmentId })
+      .then(setTeams)
+      .catch(() => setTeams([]))
+      .finally(() => setLoadingTeams(false));
+  }, [departmentId]);
+
+  const canConfirm = departmentId !== null && teamId !== null && !saving;
+
+  async function handleConfirm() {
+    if (!canConfirm || !dbUser) return;
+
+    setSaving(true);
+    setError(false);
+
+    try {
+      if (!config.USE_MOCK) {
+        await apiClient.call('completeOnboarding', {
+          userId:       dbUser.User_ID,
+          departmentId: departmentId!,
+          teamId:       teamId!,
+        });
+      }
+
+      // Actualizar dbUser en el contexto de auth para que el guard lo vea
+      await refreshDbUser();
+
       navigate('/', { replace: true });
-    },
-  });
-
-  const canConfirm = departmentId !== null && teamId !== null && !mutation.isPending;
-
-  function handleConfirm() {
-    if (!canConfirm || !currentUser) return;
-    mutation.mutate({ userId: currentUser.User_ID, departmentId: departmentId!, teamId: teamId! });
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  if (isLoading) {
+  // Mientras no sabemos si el usuario ya completó onboarding
+  if (!dbUser) {
     return (
       <div className="ob-page">
         <div className="ob-card">
-          <p style={{ color: 'var(--txt-muted)', fontSize: 14 }}>Cargando...</p>
+          <p style={{ color: 'var(--txt-muted)', fontSize: 14 }}>Cargando…</p>
         </div>
       </div>
     );
@@ -74,7 +131,7 @@ export function OnboardingPage() {
         {/* ── Header ── */}
         <div className="ob-card__header">
           <h1 className="ob-card__title">
-            Bienvenido, {currentUser?.User_Name.split(' ')[0]} 👋
+            Bienvenido, {dbUser.User_Name.split(' ')[0]} 👋
           </h1>
           <p className="ob-card__subtitle">
             Antes de continuar necesitamos saber a qué área perteneces dentro de la empresa.
@@ -92,10 +149,10 @@ export function OnboardingPage() {
               id="select-dept"
               className="ob-field__select"
               value={departmentId ?? ''}
-              onChange={e => setDepartmentId(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">Selecciona tu departamento…</option>
-              {departments.map(d => (
+              {departments.map((d) => (
                 <option key={d.Department_ID} value={d.Department_ID}>
                   {d.Department_Name}
                 </option>
@@ -107,7 +164,7 @@ export function OnboardingPage() {
         {/* ── Equipo ── */}
         <div className={`ob-field ${departmentId === null ? 'ob-field--disabled' : ''}`}>
           <label className="ob-field__label" htmlFor="select-team">Equipo</label>
-          {loadingTeams && departmentId !== null ? (
+          {loadingTeams ? (
             <div className="ob-field__skeleton" />
           ) : (
             <select
@@ -115,12 +172,12 @@ export function OnboardingPage() {
               className="ob-field__select"
               value={teamId ?? ''}
               disabled={departmentId === null}
-              onChange={e => setTeamId(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">
                 {departmentId === null ? 'Primero selecciona un departamento' : 'Selecciona tu equipo…'}
               </option>
-              {teams.map(t => (
+              {teams.map((t) => (
                 <option key={t.Team_ID} value={t.Team_ID}>
                   {t.Team_Name}
                 </option>
@@ -132,14 +189,14 @@ export function OnboardingPage() {
         {/* ── Nota de contacto ── */}
         <p className="ob-card__note">
           ¿No encuentras tu equipo en la lista? Escríbenos a{' '}
-          <a href="mailto:CORREO_AQUI" className="ob-card__note-link">
-            CORREO_AQUI
+          <a href="mailto:soporte@estudiodemoda.com" className="ob-card__note-link">
+            soporte@estudiodemoda.com
           </a>{' '}
           y lo agregamos.
         </p>
 
         {/* ── Error ── */}
-        {mutation.isError && (
+        {error && (
           <p className="ob-card__error">
             Ocurrió un error al guardar. Intenta de nuevo.
           </p>
@@ -151,7 +208,7 @@ export function OnboardingPage() {
           onClick={handleConfirm}
           disabled={!canConfirm}
         >
-          {mutation.isPending ? 'Guardando…' : 'Confirmar y continuar →'}
+          {saving ? 'Guardando…' : 'Confirmar y continuar →'}
         </button>
 
       </div>

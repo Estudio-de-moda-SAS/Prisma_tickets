@@ -1,17 +1,20 @@
+// src/features/requests/components/KanbanColumn.tsx
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useColumnStyle } from '../hooks/useCustomizationStyles';
 import { useCustomizationStore } from '@/store/customizationStore';
 import { RequestCard } from './RequestCard';
 import type { KanbanColumna, Request } from '../types';
+import type { Notification } from '@/types/commons';
 
 type Props = {
-  id:          KanbanColumna;
-  titulo:      string;
-  requests:    Request[];
-  isOver:      boolean;
-  onCardClick: (card: Request) => void;
-  onAddClick:  (columna: KanbanColumna) => void;
+  id:                  KanbanColumna;
+  titulo:              string;
+  requests:            Request[];
+  isOver:              boolean;
+  onCardClick:         (card: Request) => void;
+  onAddClick:          (columna: KanbanColumna) => void;
+  unreadByRequestId?:  Map<string, Notification[]>;
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
@@ -26,7 +29,7 @@ const COL_CLASS: Record<KanbanColumna, string> = {
   historial:        'kanban__col--historial',
 };
 
-export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick }: Props) {
+export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
   const { setNodeRef } = useDroppable({ id });
   const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
   const { getCustomization } = useCustomizationStore();
@@ -110,6 +113,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
               key={r.id}
               request={r}
               onClick={() => onCardClick(r)}
+              unreadNotifications={unreadByRequestId?.get(r.id) ?? []}
             />
           ))}
         </SortableContext>
