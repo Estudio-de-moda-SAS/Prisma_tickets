@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useBoardStore } from '@/store/boardStore';
 import {
   useBoardTeams, useLabelsByTeamId,
+  useCreateLabel, useUpdateLabel, useDeleteLabel,
   useBoardTemplates, useCreateTemplate, useUpdateTemplate, useDeleteTemplate,
   type BoardTeam,
 } from '@/features/requests/hooks/useBoardMetadata';
@@ -19,6 +20,8 @@ import type { SubTeam } from '@/features/requests/hooks/useSubTeams';
 import type { BoardLabel, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, FieldType } from '@/features/requests/templates/types';
 import type { Equipo } from '@/features/requests/types';
+import type { Department, Team } from '@/types/commons';
+import { useAuth } from '@/auth/AuthProvider';
 
 /* ============================================================
    Constantes
@@ -36,7 +39,6 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'radio',    label: 'Selección'    },
   { value: 'checkbox', label: 'Casilla'      },
 ];
-// Colores canónicos por Board_Team_Code — fallback si la DB no trae color
 const TEAM_CODE_COLORS: Record<string, string> = {
   desarrollo: '#378ADD',
   crm:        '#1D9E75',
@@ -44,18 +46,33 @@ const TEAM_CODE_COLORS: Record<string, string> = {
   analisis:   '#7F77DD',
 };
 
-type Section = 'labels' | 'subteams' | 'sprints' | 'templates';
+type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users';
 
 const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'labels',    label: 'Etiquetas',   icon: '🏷️' },
   { key: 'subteams',  label: 'Sub-equipos', icon: '👥' },
   { key: 'sprints',   label: 'Sprints',     icon: '⚡' },
   { key: 'templates', label: 'Templates',   icon: '📋' },
+  { key: 'users',     label: 'Usuarios',    icon: '👤' },
 ];
 
 /* ============================================================
-   NavTeamSwitcher — selector de equipo usando datos de la DB
-   DEBE estar definido ANTES de ConfigPanelTrigger y ConfigPanel
+   Tipos para la sección Usuarios
+   ============================================================ */
+type ManagedUser = {
+  User_ID:       number;
+  User_Name:     string;
+  User_Email:    string;
+  User_Role:     string;
+  Department_ID: number | null;
+  Team_ID:       number | null;
+  Is_New:        boolean;
+  department: { Department_ID: number; Department_Name: string; Department_Code: string } | null;
+  team:       { Team_ID: number; Team_Name: string; Team_Code: string } | null;
+};
+
+/* ============================================================
+   NavTeamSwitcher
    ============================================================ */
 function NavTeamSwitcher({ teams, equipoActivo }: {
   teams:        BoardTeam[];
@@ -146,6 +163,11 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
   const { data: sprints  = [] } = useSprints();
   const { data: subTeams = [] } = useSubTeams(teamId);
 
+  // Labels — ahora con optimistic updates
+  const createLabel = useCreateLabel(boardId, teamId);
+  const updateLabel = useUpdateLabel(boardId, teamId);
+  const deleteLabel = useDeleteLabel(boardId, teamId);
+
   const createSprint   = useCreateSprint();
   const updateSprint   = useUpdateSprint();
   const deleteSprint   = useDeleteSprint();
@@ -155,7 +177,6 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
   const createTemplate = useCreateTemplate(boardId);
   const updateTemplate = useUpdateTemplate(boardId);
   const deleteTemplate = useDeleteTemplate(boardId);
-  const qc = useQueryClient();
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -167,21 +188,8 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
     if (e.target === e.currentTarget) onClose();
   }
 
-  async function handleCreateLabel(d: { name: string; color: string; icon: string }) {
-    if (!teamId) return;
-    await apiClient.call('createLabel', { boardId, teamId, name: d.name, color: d.color, icon: d.icon });
-    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
-  }
-  async function handleUpdateLabel(id: number, d: { name: string; color: string; icon: string }) {
-    await apiClient.call('updateLabel', { id, name: d.name, color: d.color, icon: d.icon });
-    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
-  }
-  async function handleDeleteLabel(id: number) {
-    await apiClient.call('deleteLabel', { id });
-    qc.invalidateQueries({ queryKey: ['boardLabels', boardId, teamId] });
-  }
-
   const activeNav = NAV_ITEMS.find((n) => n.key === section)!;
+  const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates';
 
   return createPortal(
     <div className="cpanel-backdrop" onClick={handleBackdrop}>
@@ -193,18 +201,19 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
           <aside className="cpanel__nav">
             <div className="cpanel__nav-header">
               <span className="cpanel__nav-title">Config</span>
-              {/* Selector de equipo desde DB */}
-              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', opacity: 0.6, paddingLeft: 2 }}>
-                  Equipo
-                </span>
-                <NavTeamSwitcher teams={teams} equipoActivo={equipoActivo} />
-              </div>
+              {showTeamSwitcher && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', opacity: 0.6, paddingLeft: 2 }}>
+                    Equipo
+                  </span>
+                  <NavTeamSwitcher teams={teams} equipoActivo={equipoActivo} />
+                </div>
+              )}
             </div>
 
             <div className="cpanel__nav-group">
               <span className="cpanel__nav-group-label">Board</span>
-              {NAV_ITEMS.filter((n) => n.key !== 'templates').map((item) => (
+              {NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users').map((item) => (
                 <button key={item.key} onClick={() => setSection(item.key)}
                   className={`cpanel__nav-item${section === item.key ? ' cpanel__nav-item--active' : ''}`}>
                   <span className="cpanel__nav-item-icon">{item.icon}</span>
@@ -224,6 +233,11 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                 <span>Templates</span>
                 <span className="cpanel__nav-badge">{templates.length}</span>
               </button>
+              <button onClick={() => setSection('users')}
+                className={`cpanel__nav-item${section === 'users' ? ' cpanel__nav-item--active' : ''}`}>
+                <span className="cpanel__nav-item-icon">👤</span>
+                <span>Usuarios</span>
+              </button>
             </div>
           </aside>
 
@@ -234,7 +248,10 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                 <span style={{ fontSize: 18 }}>{activeNav.icon}</span>
                 <div>
                   <h2 className="cpanel__content-title">{activeNav.label}</h2>
-                  {section !== 'templates' && !teamId && (
+                  {section === 'users' && (
+                    <p className="cpanel__content-subtitle">Gestión de roles y asignación de equipos</p>
+                  )}
+                  {section !== 'templates' && section !== 'users' && !teamId && (
                     <p className="cpanel__content-subtitle">Seleccioná un equipo en el panel izquierdo</p>
                   )}
                   {section === 'subteams' && teamId && (
@@ -257,7 +274,12 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
 
             <div className="cpanel__content-body">
               {section === 'labels' && teamId && (
-                <LabelList labels={labels} onAdd={handleCreateLabel} onUpdate={handleUpdateLabel} onDelete={handleDeleteLabel} />
+                <LabelList
+                  labels={labels}
+                  onAdd={(d) => createLabel.mutate(d)}
+                  onUpdate={(id, d) => updateLabel.mutate({ id, ...d })}
+                  onDelete={(id) => deleteLabel.mutate(id)}
+                />
               )}
               {section === 'labels' && !teamId && <EmptyTeam />}
 
@@ -290,6 +312,8 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                   onDelete={(id) => deleteTemplate.mutate(id)}
                 />
               )}
+
+              {section === 'users' && <UserList />}
             </div>
           </div>
         </div>
@@ -304,6 +328,331 @@ function EmptyTeam() {
     <div className="cpanel__empty">
       <span style={{ fontSize: 28, opacity: 0.4 }}>🎯</span>
       <p>Seleccioná un equipo en el panel izquierdo.</p>
+    </div>
+  );
+}
+
+/* ============================================================
+   UserList — sección de gestión de usuarios
+   ============================================================ */
+function UserList() {
+  const qc = useQueryClient();
+  const { dbUser, refreshDbUser } = useAuth();
+  const [users,   setUsers]   = useState<ManagedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editId,  setEditId]  = useState<number | null>(null);
+  const [search,  setSearch]  = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await apiClient.call<ManagedUser[]>('fetchAllUsers', {});
+        setUsers(data);
+      } catch {
+        // fallo silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function handleUpdate(updated: ManagedUser) {
+    setUsers((prev) => prev.map((u) => u.User_ID === updated.User_ID ? updated : u));
+    setEditId(null);
+    qc.invalidateQueries({ queryKey: ['allUsers'] });
+    if (dbUser && updated.User_ID === dbUser.User_ID) {
+      await refreshDbUser();
+    }
+  }
+
+  const filtered = users.filter((u) =>
+    u.User_Name.toLowerCase().includes(search.toLowerCase()) ||
+    u.User_Email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const groups = filtered.reduce<Record<string, ManagedUser[]>>((acc, user) => {
+    const key = user.department?.Department_Name ?? '__sin_equipo__';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(user);
+    return acc;
+  }, {});
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    if (a === '__sin_equipo__') return -1;
+    if (b === '__sin_equipo__') return  1;
+    return a.localeCompare(b);
+  });
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} style={{ height: 64, borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (editId !== null) {
+    const user = users.find((u) => u.User_ID === editId);
+    if (user) return <UserEditForm user={user} onSave={handleUpdate} onCancel={() => setEditId(null)} />;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Buscar por nombre o correo…"
+        className="cpop-input"
+      />
+
+      {filtered.length === 0 && (
+        <div className="cpanel__empty">
+          <span style={{ fontSize: 28, opacity: 0.4 }}>👤</span>
+          <p>{search ? 'Sin resultados.' : 'No hay usuarios registrados.'}</p>
+        </div>
+      )}
+
+      {sortedKeys.map((key) => (
+        <div key={key}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: key === '__sin_equipo__' ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0,
+            }}>
+              {key === '__sin_equipo__' ? 'Sin equipo' : key}
+            </span>
+            <span style={{
+              fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+              background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+              color: 'var(--txt-muted)', flexShrink: 0,
+            }}>
+              {groups[key].length}
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {groups[key].map((user) => (
+              <UserRow key={user.User_ID} user={user} onEdit={() => setEditId(user.User_ID)} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UserRow({ user, onEdit }: { user: ManagedUser; onEdit: () => void }) {
+  const [hov, setHov] = useState(false);
+  const isAdmin  = user.User_Role === 'admin';
+  const initials = user.User_Name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '10px 14px', borderRadius: 10,
+        border: `1px solid ${hov ? 'var(--border)' : 'var(--border-subtle)'}`,
+        background: hov ? 'var(--bg-hover)' : 'var(--bg-surface)',
+        transition: 'all 0.12s',
+      }}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+        background: isAdmin ? 'rgba(0,200,255,0.15)' : 'var(--bg-panel)',
+        border: `1px solid ${isAdmin ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700,
+        color: isAdmin ? 'var(--accent)' : 'var(--txt-muted)',
+      }}>
+        {initials}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.User_Name}
+          </span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+            padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+            background: isAdmin ? 'rgba(0,200,255,0.12)' : 'var(--bg-panel)',
+            border: `1px solid ${isAdmin ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`,
+            color: isAdmin ? 'var(--accent)' : 'var(--txt-muted)',
+          }}>
+            {isAdmin ? 'Admin' : 'Member'}
+          </span>
+          {user.Is_New && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+              padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+              background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.35)',
+              color: '#fdcb6e',
+            }}>
+              Onboarding
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {user.User_Email}
+        </div>
+        <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2, opacity: 0.7 }}>
+          {user.department?.Department_Name ?? '—'}
+          {user.team ? ` · ${user.team.Team_Name}` : ''}
+        </div>
+      </div>
+      <SmBtn color="#00c8ff" onClick={onEdit} title="Editar usuario">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/>
+        </svg>
+      </SmBtn>
+    </div>
+  );
+}
+
+function UserEditForm({ user, onSave, onCancel }: {
+  user:     ManagedUser;
+  onSave:   (updated: ManagedUser) => void;
+  onCancel: () => void;
+}) {
+  const [role,         setRole]         = useState<'admin' | 'member'>(user.User_Role === 'admin' ? 'admin' : 'member');
+  const [departmentId, setDepartmentId] = useState<number | null>(user.Department_ID);
+  const [teamId,       setTeamId]       = useState<number | null>(user.Team_ID);
+  const [isNew,        setIsNew]        = useState<boolean>(user.Is_New);
+  const [departments,  setDepartments]  = useState<Department[]>([]);
+  const [teams,        setTeams]        = useState<Team[]>([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState(false);
+
+  useEffect(() => {
+    apiClient.call<Department[]>('getDepartments', {})
+      .then(setDepartments)
+      .catch(() => {})
+      .finally(() => setLoadingDepts(false));
+  }, []);
+
+  useEffect(() => {
+    if (departmentId === null) { setTeams([]); return; }
+    setLoadingTeams(true);
+    apiClient.call<Team[]>('getTeamsByDepartment', { departmentId })
+      .then(setTeams)
+      .catch(() => setTeams([]))
+      .finally(() => setLoadingTeams(false));
+  }, [departmentId]);
+
+  function handleDepartmentChange(newDeptId: number | null) {
+    setDepartmentId(newDeptId);
+    setTeamId(null);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(false);
+    try {
+      const updated = await apiClient.call<ManagedUser>('updateUser', {
+        userId: user.User_ID, role, departmentId, teamId, isNew,
+      });
+      onSave(updated);
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>
+          ← Volver
+        </button>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{user.User_Name}</span>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{user.User_Email}</div>
+        </div>
+      </div>
+
+      <div>
+        <FieldLabel>Rol de acceso</FieldLabel>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['member', 'admin'] as const).map((r) => (
+            <button key={r} onClick={() => setRole(r)} style={{
+              flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+              border: `1px solid ${role === r ? (r === 'admin' ? 'rgba(0,200,255,0.4)' : 'rgba(162,155,254,0.4)') : 'var(--border-subtle)'}`,
+              background: role === r ? (r === 'admin' ? 'rgba(0,200,255,0.08)' : 'rgba(162,155,254,0.08)') : 'transparent',
+              transition: 'all 0.15s',
+            }}>
+              <div style={{ fontSize: 16, marginBottom: 4 }}>{r === 'admin' ? '🔑' : '👤'}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: role === r ? (r === 'admin' ? 'var(--accent)' : '#a29bfe') : 'var(--txt-muted)' }}>
+                {r === 'admin' ? 'Administrador' : 'Member'}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>
+                {r === 'admin' ? 'Acceso completo (TI)' : 'Solo puede enviar solicitudes'}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <FieldLabel>Departamento</FieldLabel>
+        {loadingDepts ? (
+          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
+        ) : (
+          <select className="cpop-input" value={departmentId ?? ''} onChange={(e) => handleDepartmentChange(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">Sin departamento</option>
+            {departments.map((d) => <option key={d.Department_ID} value={d.Department_ID}>{d.Department_Name}</option>)}
+          </select>
+        )}
+      </div>
+
+      <div>
+        <FieldLabel>Equipo</FieldLabel>
+        {loadingTeams ? (
+          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
+        ) : (
+          <select className="cpop-input" value={teamId ?? ''} disabled={departmentId === null} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">{departmentId === null ? 'Primero selecciona departamento' : 'Sin equipo'}</option>
+            {teams.map((t) => <option key={t.Team_ID} value={t.Team_ID}>{t.Team_Name}</option>)}
+          </select>
+        )}
+      </div>
+
+      <div>
+        <FieldLabel>Estado de registro</FieldLabel>
+        <label style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+          border: `1px solid ${isNew ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`,
+          background: isNew ? 'rgba(253,203,110,0.06)' : 'transparent', transition: 'all 0.15s',
+        }}>
+          <input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} style={{ accentColor: '#fdcb6e', width: 14, height: 14 }} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isNew ? '#fdcb6e' : 'var(--txt-muted)' }}>
+              {isNew ? 'Pendiente de onboarding' : 'Onboarding completado'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
+              Activar para que el usuario vea el selector de área al próximo login
+            </div>
+          </div>
+        </label>
+      </div>
+
+      {error && (
+        <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>
+          Error al guardar. Intenta de nuevo.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
+        <button onClick={handleSave} disabled={saving} className={`cpop-btn-save${saving ? ' cpop-btn-save--disabled' : ''}`}>
+          {saving ? 'Guardando…' : 'GUARDAR'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -556,15 +905,15 @@ function TemplateForm({ initial, teams, onSave, onCancel }: {
   teams: { Board_Team_ID: number; Board_Team_Name: string }[];
   onSave: (d: TemplateMutationPayload) => void; onCancel: () => void;
 }) {
-  const [name, setName]               = useState(initial?.name        ?? '');
+  const [name,        setName]        = useState(initial?.name        ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [icon, setIcon]               = useState(initial?.icon        ?? '📋');
-  const [color, setColor]             = useState(initial?.color       ?? '#00c8ff');
-  const [badge, setBadge]             = useState(initial?.badge       ?? '');
-  const [teamIds, setTeamIds]         = useState<number[]>(initial?.teamIds ?? []);
-  const [isActive, setIsActive]       = useState(initial?.isActive    ?? true);
-  const [fields, setFields]           = useState<TemplateExtraField[]>(initial?.formSchema ?? []);
-  const [tab, setTab]                 = useState<'info' | 'fields'>('info');
+  const [icon,        setIcon]        = useState(initial?.icon        ?? '📋');
+  const [color,       setColor]       = useState(initial?.color       ?? '#00c8ff');
+  const [badge,       setBadge]       = useState(initial?.badge       ?? '');
+  const [teamIds,     setTeamIds]     = useState<number[]>(initial?.teamIds ?? []);
+  const [isActive,    setIsActive]    = useState(initial?.isActive    ?? true);
+  const [fields,      setFields]      = useState<TemplateExtraField[]>(initial?.formSchema ?? []);
+  const [tab,         setTab]         = useState<'info' | 'fields'>('info');
   const canSave = name.trim().length > 0;
 
   function handleSave() {
@@ -650,7 +999,7 @@ function FieldEditor({ field, index, total, accentColor, onChange, onRemove, onM
   field: TemplateExtraField; index: number; total: number; accentColor: string;
   onChange: (patch: Partial<TemplateExtraField>) => void; onRemove: () => void; onMove: (dir: -1 | 1) => void;
 }) {
-  const [expanded, setExpanded]       = useState(true);
+  const [expanded,    setExpanded]    = useState(true);
   const [optionInput, setOptionInput] = useState('');
   const needsOptions = field.type === 'select' || field.type === 'radio';
   function addOption() { const v = optionInput.trim(); if (!v) return; onChange({ options: [...(field.options ?? []), v] }); setOptionInput(''); }
@@ -673,32 +1022,22 @@ function FieldEditor({ field, index, total, accentColor, onChange, onRemove, onM
       {expanded && (
         <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>Tipo de campo</FieldLabel>
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5 }}>
               {FIELD_TYPES.map((ft) => <button key={ft.value} onClick={() => {
-  const patch: Partial<TemplateExtraField> = { type: ft.value };
-  if (ft.value === 'checkbox') patch.placeholder = undefined;
-  onChange(patch);
-}}
-                style={{ padding: '6px 4px', borderRadius: 6, border: `1px solid ${field.type === ft.value ? accentColor : 'var(--border-subtle)'}`, background: field.type === ft.value ? `${accentColor}15` : 'transparent', color: field.type === ft.value ? accentColor : 'var(--txt-muted)', fontSize: 10, fontWeight: field.type === ft.value ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s', textAlign: 'center' }}>{ft.label}</button>)}
+                const patch: Partial<TemplateExtraField> = { type: ft.value };
+                if (ft.value === 'checkbox') patch.placeholder = undefined;
+                onChange(patch);
+              }} style={{ padding: '6px 4px', borderRadius: 6, border: `1px solid ${field.type === ft.value ? accentColor : 'var(--border-subtle)'}`, background: field.type === ft.value ? `${accentColor}15` : 'transparent', color: field.type === ft.value ? accentColor : 'var(--txt-muted)', fontSize: 10, fontWeight: field.type === ft.value ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s', textAlign: 'center' }}>{ft.label}</button>)}
             </div>
           </div>
-<div>
-  <FieldLabel>Etiqueta *</FieldLabel>
-  <input
-    value={field.label}
-    onChange={(e) => {
-      const label = e.target.value;
-      const key = label
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '')
-        .toLowerCase();
-      onChange({ label, key });
-    }}
-    placeholder="Ej: Repositorio"
-    className="cpop-input"
-  />
-</div>         
+          <div>
+            <FieldLabel>Etiqueta *</FieldLabel>
+            <input value={field.label} onChange={(e) => {
+              const label = e.target.value;
+              const key = label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').toLowerCase();
+              onChange({ label, key });
+            }} placeholder="Ej: Repositorio" className="cpop-input" />
+          </div>
           {(field.type === 'text' || field.type === 'textarea') && (
             <div>
               <FieldLabel>Texto de ayuda</FieldLabel>
@@ -741,6 +1080,7 @@ function FieldEditor({ field, index, total, accentColor, onChange, onRemove, onM
     </div>
   );
 }
+
 /* ============================================================
    LabelList
    ============================================================ */
@@ -750,7 +1090,7 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
   onUpdate: (id: number, d: { name: string; color: string; icon: string }) => void;
   onDelete: (id: number) => void;
 }) {
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -759,7 +1099,10 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
         ? <LabelForm key={label.Label_ID} initial={{ name: label.Label_Name, color: label.Label_Color, icon: label.Label_Icon }} onSave={(d) => { onUpdate(label.Label_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <ItemRow key={label.Label_ID} color={label.Label_Color} icon={label.Label_Icon} name={label.Label_Name} onEdit={() => { setShowNew(false); setEditId(label.Label_ID); }} onDelete={() => onDelete(label.Label_ID)} />
       )}
-      {showNew ? <LabelForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} /> : <AddBtn label="Nueva etiqueta" onClick={() => { setEditId(null); setShowNew(true); }} />}
+      {showNew
+        ? <LabelForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
+        : <AddBtn label="Nueva etiqueta" onClick={() => { setEditId(null); setShowNew(true); }} />
+      }
     </div>
   );
 }
@@ -773,7 +1116,7 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
   onUpdate: (id: number, s: { text: string; startDate: string; endDate: string }) => void;
   onRemove: (id: number) => void;
 }) {
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
   const sorted = [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime());
   return (
@@ -783,7 +1126,10 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
         ? <SprintForm key={sp.Sprint_ID} initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }} onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <SprintRow key={sp.Sprint_ID} sprint={sp} onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }} onRemove={() => onRemove(sp.Sprint_ID)} />
       )}
-      {showNew ? <SprintForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} /> : <AddBtn label="Nuevo sprint" onClick={() => { setEditId(null); setShowNew(true); }} />}
+      {showNew
+        ? <SprintForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
+        : <AddBtn label="Nuevo sprint" onClick={() => { setEditId(null); setShowNew(true); }} />
+      }
     </div>
   );
 }
@@ -816,15 +1162,13 @@ function LabelForm({ initial, onSave, onCancel }: {
     </div>
   );
 }
-/* ============================================================
-   SimpleColorForm — mejorado (sub-equipos)
-   ============================================================ */
+
 function SimpleColorForm({ initial, onSave, onCancel }: {
   initial?: { name: string; color: string };
   onSave: (d: { name: string; color: string }) => void;
   onCancel: () => void;
 }) {
-  const [name, setName]   = useState(initial?.name  ?? '');
+  const [name,  setName]  = useState(initial?.name  ?? '');
   const [color, setColor] = useState(initial?.color ?? '#00c8ff');
   const canSave = name.trim().length > 0;
   return (
@@ -845,10 +1189,13 @@ function SimpleColorForm({ initial, onSave, onCancel }: {
 
 function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () => void; onRemove: () => void }) {
   const [hov, setHov] = useState(false);
-  const now = new Date(); const start = new Date(sprint.Sprint_Start_Date); const end = new Date(sprint.Sprint_End_Date);
-  const isActive = now >= start && now <= end; const isPast = now > end;
+  const now   = new Date();
+  const start = new Date(sprint.Sprint_Start_Date);
+  const end   = new Date(sprint.Sprint_End_Date);
+  const isActive    = now >= start && now <= end;
+  const isPast      = now > end;
   const statusColor = isActive ? '#00e5a0' : isPast ? '#b2bec3' : '#fdcb6e';
-  const statusLabel = isActive ? 'activo' : isPast ? 'pasado' : 'futuro';
+  const statusLabel = isActive ? 'activo'  : isPast ? 'pasado'  : 'futuro';
   const fmt = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 12px', borderRadius: 8, border: `1px solid ${hov ? 'var(--border)' : 'var(--border-subtle)'}`, background: hov ? 'var(--bg-hover)' : 'var(--bg-surface)', transition: 'all 0.12s' }}>
@@ -866,17 +1213,14 @@ function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () =>
   );
 }
 
-/* ============================================================
-   SprintForm — mejorado
-   ============================================================ */
 function SprintForm({ initial, onSave, onCancel }: {
   initial?: { text: string; startDate: string; endDate: string };
   onSave: (d: { text: string; startDate: string; endDate: string }) => void;
   onCancel: () => void;
 }) {
-  const [text, setText]         = useState(initial?.text      ?? '');
-  const [startDate, setStart]   = useState(initial?.startDate ?? '');
-  const [endDate, setEnd]       = useState(initial?.endDate   ?? '');
+  const [text,      setText]  = useState(initial?.text      ?? '');
+  const [startDate, setStart] = useState(initial?.startDate ?? '');
+  const [endDate,   setEnd]   = useState(initial?.endDate   ?? '');
   const dateError = endDate && startDate && endDate < startDate;
   const canSave   = !!(text.trim() && startDate && endDate && !dateError);
 
@@ -890,36 +1234,16 @@ function SprintForm({ initial, onSave, onCancel }: {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <FieldLabel>Inicio</FieldLabel>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="date" value={startDate} onChange={(e) => setStart(e.target.value)}
-              className="cpop-input cpop-input--date"
-              style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }}
-            />
-          </div>
+          <input type="date" value={startDate} onChange={(e) => setStart(e.target.value)} className="cpop-input cpop-input--date" style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }} />
         </div>
         <div>
           <FieldLabel>Fin</FieldLabel>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="date" value={endDate} min={startDate}
-              onChange={(e) => setEnd(e.target.value)}
-              className="cpop-input cpop-input--date"
-              style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }}
-            />
-          </div>
+          <input type="date" value={endDate} min={startDate} onChange={(e) => setEnd(e.target.value)} className="cpop-input cpop-input--date" style={{ width: '100%', boxSizing: 'border-box', paddingRight: 8 }} />
         </div>
       </div>
       {dateError && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '6px 10px', borderRadius: 6,
-          background: '#ff475715', border: '1px solid #ff475740',
-        }}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5" stroke="#ff4757" strokeWidth="1.3"/>
-            <path d="M6 3.5v3M6 8.5v.5" stroke="#ff4757" strokeWidth="1.4" strokeLinecap="round"/>
-          </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 6, background: '#ff475715', border: '1px solid #ff475740' }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#ff4757" strokeWidth="1.3"/><path d="M6 3.5v3M6 8.5v.5" stroke="#ff4757" strokeWidth="1.4" strokeLinecap="round"/></svg>
           <span style={{ fontSize: 10, color: '#ff4757' }}>La fecha fin debe ser posterior al inicio.</span>
         </div>
       )}
@@ -927,6 +1251,7 @@ function SprintForm({ initial, onSave, onCancel }: {
     </div>
   );
 }
+
 /* ============================================================
    Primitivos compartidos
    ============================================================ */
@@ -945,34 +1270,12 @@ function ItemRow({ color, icon, name, onEdit, onDelete }: { color: string; icon?
   );
 }
 
-/* ============================================================
-   EmojiPicker — nuevo componente
-   ============================================================ */
 function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string) => void }) {
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(8, 1fr)',
-      gap: 3,
-      padding: '8px',
-      background: 'var(--bg-panel)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 8,
-      maxHeight: 96,
-      overflowY: 'auto',
-    }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, maxHeight: 96, overflowY: 'auto' }}>
       {EMOJIS.map((e) => (
-        <button
-          key={e} type="button"
-          onClick={() => onChange(value === e ? '' : e)}
-          style={{
-            width: '100%', aspectRatio: '1', borderRadius: 6, border: 'none',
-            fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', transition: 'all 0.12s',
-            background: value === e ? 'var(--accent)22' : 'transparent',
-            outline: value === e ? '2px solid var(--accent)' : '2px solid transparent',
-            transform: value === e ? 'scale(1.15)' : 'scale(1)',
-          }}
+        <button key={e} type="button" onClick={() => onChange(value === e ? '' : e)}
+          style={{ width: '100%', aspectRatio: '1', borderRadius: 6, border: 'none', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s', background: value === e ? 'var(--accent)22' : 'transparent', outline: value === e ? '2px solid var(--accent)' : '2px solid transparent', transform: value === e ? 'scale(1.15)' : 'scale(1)' }}
         >{e}</button>
       ))}
     </div>
@@ -981,36 +1284,16 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string)
 
 function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(8, 1fr)',
-      gap: 5,
-      padding: '8px',
-      background: 'var(--bg-panel)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 8,
-    }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 5, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
       {COLORS.map((c) => (
-        <button
-          key={c} type="button" onClick={() => onChange(c)}
-          title={c}
-          style={{
-            width: '100%',
-            aspectRatio: '1',
-            borderRadius: 5,
-            border: 'none',
-            background: c,
-            cursor: 'pointer',
-            transition: 'transform 0.14s ease, outline 0.1s',
-            outline: color === c ? `2px solid var(--txt)` : `2px solid transparent`,
-            outlineOffset: 1,
-            transform: color === c ? 'scale(1.12)' : 'scale(1)',
-          }}
+        <button key={c} type="button" onClick={() => onChange(c)} title={c}
+          style={{ width: '100%', aspectRatio: '1', borderRadius: 5, border: 'none', background: c, cursor: 'pointer', transition: 'transform 0.14s ease, outline 0.1s', outline: color === c ? `2px solid var(--txt)` : `2px solid transparent`, outlineOffset: 1, transform: color === c ? 'scale(1.12)' : 'scale(1)' }}
         />
       ))}
     </div>
   );
 }
+
 function FormActions({ canSave, onSave, onCancel }: { canSave: boolean; onSave: () => void; onCancel: () => void }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>

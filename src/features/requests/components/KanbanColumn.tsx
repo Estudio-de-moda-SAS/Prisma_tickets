@@ -1,39 +1,44 @@
+// src/features/requests/components/KanbanColumn.tsx
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useColumnStyle } from '../hooks/useCustomizationStyles';
 import { useCustomizationStore } from '@/store/customizationStore';
 import { RequestCard } from './RequestCard';
 import type { KanbanColumna, Request } from '../types';
+import type { Notification } from '@/types/commons';
 
 type Props = {
-  id:          KanbanColumna;
-  titulo:      string;
-  requests:    Request[];
-  isOver:      boolean;
-  onCardClick: (card: Request) => void;
-  onAddClick:  (columna: KanbanColumna) => void;
+  id:                  KanbanColumna;
+  titulo:              string;
+  requests:            Request[];
+  isOver:              boolean;
+  onCardClick:         (card: Request) => void;
+  onAddClick:          (columna: KanbanColumna) => void;
+  unreadByRequestId?:  Map<string, Notification[]>;
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
-  sin_categorizar:  'kanban__col--sin-categorizar',
-  icebox:           'kanban__col--icebox',
-  backlog:          'kanban__col--backlog',
-  todo:             'kanban__col--todo',
-  en_progreso:      'kanban__col--en-progreso',
-  en_revision_qas:  'kanban__col--en-revision-qas',
-  ready_to_deploy:  'kanban__col--ready-to-deploy',
-  hecho:            'kanban__col--hecho',
-  historial:        'kanban__col--historial',
+  sin_categorizar: 'kanban__col--sin-categorizar',
+  icebox:          'kanban__col--icebox',
+  backlog:         'kanban__col--backlog',
+  todo:            'kanban__col--todo',
+  en_progreso:     'kanban__col--en-progreso',
+  en_revision_qas: 'kanban__col--en-revision-qas',
+  ready_to_deploy: 'kanban__col--ready-to-deploy',
+  hecho:           'kanban__col--hecho',
+  historial:       'kanban__col--historial',
 };
 
-export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick }: Props) {
+export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
   const { setNodeRef } = useDroppable({ id });
   const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
   const { getCustomization } = useCustomizationStore();
 
   const colStyle: React.CSSProperties = {
     ...containerStyle,
-    ...(!getCustomization(id).showBoardBg ? { background: 'transparent', borderColor: 'transparent' } : {}),
+    ...(!getCustomization(id).showBoardBg
+      ? { background: 'transparent', borderColor: 'transparent' }
+      : {}),
   };
 
   return (
@@ -49,6 +54,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
+        maxHeight: '100%',
       }}
     >
       <div className="kanban__col-header">
@@ -110,6 +116,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
               key={r.id}
               request={r}
               onClick={() => onCardClick(r)}
+              unreadNotifications={unreadByRequestId?.get(r.id) ?? []}
             />
           ))}
         </SortableContext>

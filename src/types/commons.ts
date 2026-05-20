@@ -52,3 +52,28 @@ export type AcceptanceCriteria = {
   createdAt:     string;
   updatedAt:     string;
 };
+
+/* ── Notificaciones ── */
+export type NotificationType =
+  | 'assignment'
+  | 'comment'
+  | 'column_move'
+  | 'closure'
+  | 'criteria_reviewed'
+  | 'sub_request_created'
+  | 'mention';
+
+export type Notification = {
+  notificationId: number;
+  type:           NotificationType;
+  title:          string;
+  body:           string | null;
+  requestId:      string | null;
+  isRead:         boolean;
+  createdAt:      string;
+  actor: {
+    userId:    number;
+    userName:  string;
+    avatarUrl: string;
+  } | null;
+};

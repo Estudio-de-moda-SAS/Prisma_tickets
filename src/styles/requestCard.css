@@ -8,7 +8,7 @@
   padding: 14px;
   cursor: grab;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* visible para que el dot de actividad no se corte */
   transition: border-color 0.12s, transform 0.12s;
   user-select: none;
 }
@@ -155,4 +155,46 @@
 .request-card__avatar--resolver {
   background: linear-gradient(135deg, #7c3aed, #a78bfa);
   color: white;
+}
+
+/* ── Dot de actividad ────────────────────────────────────── */
+.request-card__activity-dot {
+  position:   absolute;
+  top:        -6px;
+  right:      -6px;
+  display:    flex;
+  align-items: center;
+  gap:        3px;
+  z-index:    10;
+  pointer-events: none;
+}
+
+.request-card__activity-dot-inner {
+  display:       block;
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  background:    var(--dot-color, var(--accent));
+  box-shadow:    0 0 0 2px var(--bg-base), 0 0 6px var(--dot-color, var(--accent));
+  animation:     activity-pulse 2s ease-in-out infinite;
+  flex-shrink:   0;
+}
+
+.request-card__activity-count {
+  font-size:    9px;
+  font-weight:  700;
+  line-height:  14px;
+  min-width:    14px;
+  height:       14px;
+  padding:      0 3px;
+  border-radius: 7px;
+  background:   var(--dot-color, var(--accent));
+  color:        #fff;
+  text-align:   center;
+  box-shadow:   0 0 0 2px var(--bg-base);
+}
+
+@keyframes activity-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
 }

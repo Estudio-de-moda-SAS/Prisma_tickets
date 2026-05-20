@@ -267,9 +267,9 @@ function RequestDetailModal({ request: r, onClose }: { request: Request; onClose
   const colColor  = COL_COLOR[r.columna];
   const colBg     = COL_BG[r.columna];
 
-  const equiposAccesibles: Equipo[] = r.equipo.filter((eq) =>
-    role.role === 'admin' || (role.role === 'member' && role.team === eq)
-  );
+const equiposAccesibles: Equipo[] = r.equipo.filter(() =>
+  role.role === 'admin' || role.role === 'ti_member'
+);
 
   function irAlBoard(eq: Equipo) { setEquipoActivo(eq); navigate('/'); onClose(); }
 
