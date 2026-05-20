@@ -15,15 +15,15 @@ type Props = {
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
-  sin_categorizar:  'kanban__col--sin-categorizar',
-  icebox:           'kanban__col--icebox',
-  backlog:          'kanban__col--backlog',
-  todo:             'kanban__col--todo',
-  en_progreso:      'kanban__col--en-progreso',
-  en_revision_qas:  'kanban__col--en-revision-qas',
-  ready_to_deploy:  'kanban__col--ready-to-deploy',
-  hecho:            'kanban__col--hecho',
-  historial:        'kanban__col--historial',
+  sin_categorizar: 'kanban__col--sin-categorizar',
+  icebox:          'kanban__col--icebox',
+  backlog:         'kanban__col--backlog',
+  todo:            'kanban__col--todo',
+  en_progreso:     'kanban__col--en-progreso',
+  en_revision_qas: 'kanban__col--en-revision-qas',
+  ready_to_deploy: 'kanban__col--ready-to-deploy',
+  hecho:           'kanban__col--hecho',
+  historial:       'kanban__col--historial',
 };
 
 export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick }: Props) {
@@ -33,7 +33,9 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
 
   const colStyle: React.CSSProperties = {
     ...containerStyle,
-    ...(!getCustomization(id).showBoardBg ? { background: 'transparent', borderColor: 'transparent' } : {}),
+    ...(!getCustomization(id).showBoardBg
+      ? { background: 'transparent', borderColor: 'transparent' }
+      : {}),
   };
 
   return (
@@ -49,6 +51,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
+        maxHeight: '100%',
       }}
     >
       <div className="kanban__col-header">
