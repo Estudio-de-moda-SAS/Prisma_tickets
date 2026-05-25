@@ -137,15 +137,41 @@
   text-transform: uppercase;
 }
 
-.kanban__col--sin-categorizar  .kanban__col-title { color: var(--txt-muted); }
-.kanban__col--icebox           .kanban__col-title { color: #60a5fa; }
-.kanban__col--backlog          .kanban__col-title { color: #a78bfa; }
-.kanban__col--todo             .kanban__col-title { color: var(--warn); }
-.kanban__col--en-progreso      .kanban__col-title { color: var(--accent); }
-.kanban__col--en-revision-qas  .kanban__col-title { color: #fb7121; }
-.kanban__col--ready-to-deploy  .kanban__col-title { color: #ec4899; }
-.kanban__col--hecho            .kanban__col-title { color: var(--success); }
-.kanban__col--historial        .kanban__col-title { color: var(--txt-muted); }
+.kanban__col--sin-categorizar .kanban__col-title {
+  color: var(--txt-muted);
+}
+
+.kanban__col--icebox .kanban__col-title {
+  color: #60a5fa;
+}
+
+.kanban__col--backlog .kanban__col-title {
+  color: #a78bfa;
+}
+
+.kanban__col--todo .kanban__col-title {
+  color: var(--warn);
+}
+
+.kanban__col--en-progreso .kanban__col-title {
+  color: var(--accent);
+}
+
+.kanban__col--en-revision-qas .kanban__col-title {
+  color: #fb7121;
+}
+
+.kanban__col--ready-to-deploy .kanban__col-title {
+  color: #ec4899;
+}
+
+.kanban__col--hecho .kanban__col-title {
+  color: var(--success);
+}
+
+.kanban__col--historial .kanban__col-title {
+  color: var(--txt-muted);
+}
 
 /* ── Count badge ───────────────────────────────────────────── */
 .kanban__col-count {
