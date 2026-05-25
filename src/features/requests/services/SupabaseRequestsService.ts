@@ -328,9 +328,9 @@ export class SupabaseRequestsService {
     return mapRowToRequest(row);
   }
 
-  async moveToColumn({ id, columnId }: MoverRequestPayload): Promise<void> {
-    await apiClient.call('moveToColumn', { id, columnId });
-  }
+async moveToColumn({ id, columnId, movedBy }: MoverRequestPayload): Promise<void> {
+  await apiClient.call('moveToColumn', { id, columnId, movedBy });
+}
 
   async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     await apiClient.call('updateRequest', {

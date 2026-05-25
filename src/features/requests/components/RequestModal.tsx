@@ -476,10 +476,10 @@ export function RequestModal({
       return;
     }
     setColumnaActual(columna);
-    mover(
-      { id: requestId, columna, columnId: columnMap?.[columna] },
-      { onSuccess: () => onMove(requestId, columna) },
-    );
+mover(
+  { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
+  { onSuccess: () => onMove(requestId, columna) },
+);
   }
 
   function handleClosureFromModal(note: string, files: File[]) {
@@ -521,16 +521,16 @@ export function RequestModal({
     sprintDD.setOpen(false);
   }
 
-  function handleToggleAssignee(userId: number) {
-    if (readOnly) return;
-    if (assigneeIds.includes(userId)) {
-      setAssigneeIds((p) => p.filter((id) => id !== userId));
-      unassign({ requestId, userId });
-    } else {
-      setAssigneeIds((p) => [...p, userId]);
-      assign({ requestId, userId });
-    }
+function handleToggleAssignee(userId: number) {
+  if (readOnly) return;
+  if (assigneeIds.includes(userId)) {
+    setAssigneeIds((p) => p.filter((id) => id !== userId));
+    unassign({ requestId, userId });
+  } else {
+    setAssigneeIds((p) => [...p, userId]);
+    assign({ requestId, userId, assignedBy: currentUser?.User_ID });  // ← agregar esto
   }
+}
 
   function handleSendComment() {
     const text = commentText.trim();
@@ -1180,9 +1180,9 @@ const entries = allFields.filter(({ key, ...rest }) => {
   if (entries.length === 0) return null;
 function renderValue(key: string): React.ReactNode {
   const val = formData[key];
-  if (val === undefined || val === null) return <span style={{ color: 'var(--txt-muted)' }}>No</span>;
-  if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
-  if (val === 'false') return <span style={{ color: '#dc2626' }}>No</span>;
+if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
+if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
+if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
   return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
 }
   return (

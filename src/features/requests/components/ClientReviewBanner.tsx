@@ -1,5 +1,5 @@
 // src/features/requests/components/ClientReviewBanner.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   CheckCircle, XCircle, FileText, Image, File,
   ThumbsUp, ThumbsDown, Clock, AlertCircle,

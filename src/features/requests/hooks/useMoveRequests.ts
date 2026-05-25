@@ -9,6 +9,7 @@ type MovePayload = {
   id:        string;
   columna:   KanbanColumna;
   columnId?: number;
+  movedBy?:  number;
 };
 
 type MutationContext = { snapshot: BoardData | undefined };
@@ -28,6 +29,7 @@ export function useMoveRequest(equipo: Equipo) {
         id:       payload.id,
         columna:  payload.columna,
         columnId: payload.columnId,
+        movedBy:  payload.movedBy,
       });
     },
 

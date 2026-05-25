@@ -100,30 +100,73 @@ function FieldValue({ children, muted }: { children: React.ReactNode; muted?: bo
 function TemplateFormDataPanel({
   formData, schema, accentColor,
 }: { formData: Record<string, unknown>; schema: unknown[]; accentColor: string }) {
-  function flattenSchema(fields: unknown[]): { key: string; label: string }[] {
-    const result: { key: string; label: string }[] = [];
+
+  const savedLabels: Record<string, string> = (() => {
+    try { return JSON.parse(formData['__labels'] as string ?? '{}'); }
+    catch { return {}; }
+  })();
+
+  function flattenSchema(fields: unknown[]): { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] {
+    const result: { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] = [];
     for (const f of fields) {
       const field = f as Record<string, unknown>;
       if (!field.key) continue;
       if (field.type === 'conditional') {
-        if (field.label) result.push({ key: field.key as string, label: field.label as string });
-        result.push(...flattenSchema((field.trueBranch  as unknown[]) ?? []));
-        result.push(...flattenSchema((field.falseBranch as unknown[]) ?? []));
+        if (field.label) result.push({ key: field.key as string, label: field.label as string, isConditionalParent: true });
+        for (const child of flattenSchema((field.trueBranch as unknown[]) ?? [])) {
+          result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'true' });
+        }
+        for (const child of flattenSchema((field.falseBranch as unknown[]) ?? [])) {
+          result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'false' });
+        }
       } else {
         if (field.label) result.push({ key: field.key as string, label: field.label as string });
       }
     }
     return result;
   }
-  const flatFields = flattenSchema(schema);
-  const entries    = flatFields.filter(({ key }) => { const val = formData[key]; return val !== undefined && val !== '' && val !== null; });
+
+  const schemaFields = flattenSchema(schema);
+  const schemaKeys   = new Set(schemaFields.map((f) => f.key));
+
+  const orphanFields = Object.keys(formData)
+    .filter((k) => !schemaKeys.has(k) && k !== '__labels')
+    .map((k) => ({
+      key:   k,
+      label: savedLabels[k] ?? k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    }));
+
+  const allFields = [...schemaFields, ...orphanFields];
+
+  const entries = allFields.filter(({ key, ...rest }) => {
+    if (key === '__labels') return false;
+    const val = formData[key];
+    const fieldMeta = rest as { isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string };
+    if (fieldMeta.isConditionalParent) {
+      if (fieldMeta.conditionalParentKey) {
+        const parentVal = formData[fieldMeta.conditionalParentKey];
+        if (parentVal !== fieldMeta.conditionalParentValue) return false;
+      }
+      return true;
+    }
+    if (val === undefined || val === '' || val === null) return false;
+    if (fieldMeta.conditionalParentKey) {
+      const parentVal = formData[fieldMeta.conditionalParentKey];
+      if (parentVal !== fieldMeta.conditionalParentValue) return false;
+    }
+    return true;
+  });
+
   if (entries.length === 0) return null;
+
   function renderValue(key: string): React.ReactNode {
     const val = formData[key];
+    if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
     if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
-    if (val === 'false') return <span style={{ color: 'var(--txt-muted)' }}>No</span>;
+    if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
     return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
   }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -142,7 +185,6 @@ function TemplateFormDataPanel({
     </div>
   );
 }
-
 /* ── CriteriaReadonly ── */
 function CriteriaReadonly({ requestId }: { requestId: string }) {
   const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
@@ -253,8 +295,7 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const selectedLabels   = labels.filter((l) => (request.labelIds ?? []).includes(l.Label_ID));
   const selectedSubTeams = subTeams.filter((s) => (request.subTeamIds ?? []).includes(s.Sub_Team_ID));
   const colColor         = COL_COLOR[request.columna] ?? 'var(--txt-muted)';
-  const hasFormData      = (request.templateFormSchema?.length ?? 0) > 0 && Object.keys(request.formData ?? {}).length > 0;
-
+const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
   return (
     <div
       ref={overlayRef}

@@ -22,8 +22,8 @@ export function useUsers() {
 export function useAssignRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, userId }: { requestId: string; userId: number }) =>
-      apiClient.call('assignRequest', { requestId, userId }),
+    mutationFn: ({ requestId, userId, assignedBy }: { requestId: string; userId: number; assignedBy?: number }) =>
+      apiClient.call('assignRequest', { requestId, userId, assignedBy }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['requests'] });
     },

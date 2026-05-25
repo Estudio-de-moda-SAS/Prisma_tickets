@@ -246,7 +246,7 @@ export function useBoardTemplates(boardId: number) {
   return useQuery<BoardTemplate[]>({
     queryKey:  templateKeys.all(boardId),
     queryFn:   () => apiClient.call<BoardTemplate[]>('fetchTemplatesByBoardId', { boardId }),
-    staleTime: 1000 * 60 * 5,
+    staleTime: Infinity,
     retry:     1,
   });
 }

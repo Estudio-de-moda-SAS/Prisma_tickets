@@ -96,17 +96,15 @@ export const useFilterStore = create<FilterState>()(
       getConditions:  (id) => (get().byBoard[id] ?? defaultBoardState()).conditions,
       getConjunction: (id) => (get().byBoard[id] ?? defaultBoardState()).conjunction,
       isOpen:         (id) => (get().byBoard[id] ?? defaultBoardState()).isOpen,
-      activeCount:    (id) =>
-        (get().byBoard[id] ?? defaultBoardState()).conditions.filter((c) => {
-          if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
-          if (c.field === 'template_field') {
-            if (!c.templateId || !c.templateFieldKey) return false;
-          }
-          return c.value.trim() !== '' ||
-            c.operator === 'esta_vacio' ||
-            c.operator === 'no_esta_vacio';
-        }).length,
-
+activeCount: (id) =>
+  (get().byBoard[id] ?? defaultBoardState()).conditions.filter((c) => {
+    if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
+    if (c.field === 'template_field') {
+      if (!c.templateId || !c.templateFieldKey) return false;
+    }
+    return c.value.trim() !== '';   // ← quitar las dos condiciones redundantes
+  }).length,
+  
       addCondition: (boardId) =>
         set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
           conditions: [...prev.conditions, newCondition(boardId)],

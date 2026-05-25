@@ -292,8 +292,8 @@ export type MoverRequestPayload = {
   id:       string;
   columna:  KanbanColumna;
   columnId: number;
+  movedBy?: number;   // ← agregar
 };
-
 export type ActualizarRequestPayload = {
   id:              string;
   titulo?:         string;
