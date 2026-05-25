@@ -46,7 +46,9 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
 
   const colStyle: React.CSSProperties = {
     ...containerStyle,
-    ...(!getCustomization(id).showBoardBg ? { background: 'transparent', borderColor: 'transparent' } : {}),
+    ...(!getCustomization(id).showBoardBg
+      ? { background: 'transparent', borderColor: 'transparent' }
+      : {}),
   };
 
   // Contador de horas estimadas — solo para la columna "To do"
@@ -68,6 +70,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
+        maxHeight: '100%',
       }}
     >
       <div className="kanban__col-header">
