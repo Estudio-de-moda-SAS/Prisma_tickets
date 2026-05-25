@@ -27,7 +27,8 @@ import { ClosureModal } from './ClosureModal';
 import { ClientReviewBanner } from './ClientReviewBanner';
 import { config } from '@/config';
 import type { AcceptanceCriteria } from '@/types/commons';
-
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {
@@ -415,9 +416,8 @@ export function RequestModal({
   const { data: subTeams    = [] } = useSubTeams(boardTeamId);
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints     = [] } = useSprints();
-  const { data: users       = [] } = useUsers();
-  const { data: comments    = [] } = useComments(requestId);
-  const { data: attachments = [] } = useAttachments(requestId);
+const { data: allUsers    = [] } = useUsers();
+const { data: comments    = [] } = useComments(requestId);  const { data: attachments = [] } = useAttachments(requestId);
   const { data: children    = [] } = useChildRequests(requestId);
 
   const { data: parentRequest } = useQuery<Request>({
@@ -443,7 +443,8 @@ export function RequestModal({
   const [userSearch,       setUserSearch]       = useState('');
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
-
+const groupedMembers = useSubTeamMembersGrouped(subTeams);
+const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
   useEffect(() => {
     if (children.length > 0) setShowSubRequests(true);
   }, [children.length]);
@@ -563,11 +564,6 @@ function handleToggleAssignee(userId: number) {
   });
 
   const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
-  const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers  = users.filter((u) =>
-    u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
-  );
   const childCount = children.length;
   const childDone  = children.filter((r) => r.columna === 'hecho').length;
 
@@ -776,48 +772,75 @@ function handleToggleAssignee(userId: number) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <FieldBlock label="Solicitante"><PersonChip name={effectiveRequest.solicitante} color="var(--accent-2)" /></FieldBlock>
 
-                <FieldBlock label="Resolutor">
-                  <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
-                    <button onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }} style={triggerBase(assigneeDD.open, '124,58,237')}>
-                      {assignedUsers.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
-                        : assignedUsers.map((u) => (
-                          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-                            {u.User_Name.split(' ')[0]}
-                            {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
-                          </span>
-                        ))
-                      }
-                      {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
-                    </button>
-                    {assigneeDD.open && !readOnly && (
-                      <DropdownPanel>
-                        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-                          <input autoFocus value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Buscar usuario..." style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                        <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                          {filteredUsers.length === 0
-                            ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin resultados.</div>
-                            : filteredUsers.map((u) => {
-                              const sel = assigneeIds.includes(u.User_ID);
-                              return (
-                                <DropdownItem key={u.User_ID} selected={sel} onClick={() => handleToggleAssignee(u.User_ID)}>
-                                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
-                                  </div>
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })
-                          }
-                        </div>
-                      </DropdownPanel>
-                    )}
-                  </div>
-                </FieldBlock>
+<FieldBlock label="Resolutor">
+  <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
+    <button
+      onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }}
+      style={triggerBase(assigneeDD.open, '124,58,237')}
+    >
+      {assignedUsers.length === 0
+        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
+        : assignedUsers.map((u) => (
+          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+            {u.User_Name.split(' ')[0]}
+            {!readOnly && (
+              <span
+                onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
+                style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
+              >×</span>
+            )}
+          </span>
+        ))
+      }
+      {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
+    </button>
+
+    {assigneeDD.open && !readOnly && (
+      <DropdownPanel>
+        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <input
+            autoFocus
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Buscar usuario..."
+            style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+          />
+        </div>
+        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+          {groupedMembers.length === 0 ? (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sub-equipos configurados.</div>
+          ) : (
+            groupedMembers.map(({ subTeam, members, isLoading }) => {
+              const filtered = members.filter((u) =>
+                u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
+              );
+              if (!isLoading && filtered.length === 0 && userSearch) return null;
+              return (
+                <SubTeamGroup
+                  key={subTeam.Sub_Team_ID}
+                  subTeam={subTeam}
+                  members={filtered}
+                  isLoading={isLoading}
+                  assigneeIds={assigneeIds}
+                  selectedSubIds={selectedSubIds}
+                  onToggleAssignee={(userId) => {
+                    handleToggleAssignee(userId);
+                    // Si no está el sub-equipo asignado, agregarlo automáticamente
+                    if (!selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+                      handleToggleSubTeam(subTeam.Sub_Team_ID);
+                    }
+                  }}
+                />
+              );
+            })
+          )}
+        </div>
+      </DropdownPanel>
+    )}
+  </div>
+</FieldBlock>
 
                 <FieldBlock label="Prioridad">
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[effectiveRequest.prioridad], background: `${PRI_COLOR[effectiveRequest.prioridad]}15`, border: `1px solid ${PRI_COLOR[effectiveRequest.prioridad]}35` }}>{PRIORIDADES[effectiveRequest.prioridad]}</span>
@@ -1102,6 +1125,70 @@ function handleToggleAssignee(userId: number) {
 }
 
 /* ─── Primitivos ────────────────────────────────────────────── */
+function SubTeamGroup({ subTeam, members, isLoading, assigneeIds, selectedSubIds, onToggleAssignee }: {
+  subTeam:        { Sub_Team_ID: number; Sub_Team_Name: string; Sub_Team_Color: string };
+  members:        SubTeamMember[];
+  isLoading:      boolean;
+  assigneeIds:    number[];
+  selectedSubIds: number[];
+  onToggleAssignee: (userId: number) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const hasAssigned = members.some((m) => assigneeIds.includes(m.User_ID));
+  const isSubAssigned = selectedSubIds.includes(subTeam.Sub_Team_ID);
+
+  return (
+    <div>
+      {/* Header del sub-equipo */}
+      <div
+        onClick={() => setCollapsed((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', cursor: 'pointer', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)', userSelect: 'none' }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.04)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-surface)'; }}
+      >
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: subTeam.Sub_Team_Color, flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: isSubAssigned ? subTeam.Sub_Team_Color : 'var(--txt)', letterSpacing: 0.3 }}>
+          {subTeam.Sub_Team_Name}
+        </span>
+        {hasAssigned && (
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${subTeam.Sub_Team_Color}20`, color: subTeam.Sub_Team_Color, border: `1px solid ${subTeam.Sub_Team_Color}40` }}>
+            asignado
+          </span>
+        )}
+        <svg width="9" height="9" viewBox="0 0 8 8" fill="none" style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+
+      {/* Miembros */}
+      {!collapsed && (
+        <div>
+          {isLoading && (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando…</div>
+          )}
+          {!isLoading && members.length === 0 && (
+            <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin integrantes.</div>
+          )}
+          {members.map((u) => {
+            const sel = assigneeIds.includes(u.User_ID);
+            return (
+              <DropdownItem key={u.User_ID} selected={sel} onClick={() => onToggleAssignee(u.User_ID)}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: sel ? `linear-gradient(135deg,${subTeam.Sub_Team_Color},${subTeam.Sub_Team_Color}99)` : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                  {initials(u.User_Name)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
+                </div>
+                {sel && <Checkmark />}
+              </DropdownItem>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 function CopyLinkButton({ ticketId }: { ticketId: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {

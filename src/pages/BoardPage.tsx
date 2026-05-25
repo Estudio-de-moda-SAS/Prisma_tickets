@@ -181,7 +181,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
         )}
       </div>
 
-      {isLoading && !data && <KanbanSkeleton columns={4} style={{ flex: 1 }} />}
+      {isLoading && !data && <KanbanSkeleton columns={10} style={{ flex: 1 }} />}
 
       {isError && !config.USE_MOCK && (
         <p style={{ color: 'var(--danger)', fontSize: 12 }}>
