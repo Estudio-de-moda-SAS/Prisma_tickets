@@ -59,6 +59,9 @@ function errorResponse(message: string, status: number) {
 
 const SIGNED_URL_EXPIRES_IN = 3600;
 
+/** Columnas que al llegar a ellas finalizan el ticket */
+const FINAL_COLUMN_IDS = new Set([6, 9]); // hecho=6, historial=9
+
 function extractStoragePath(storedValue: string): string {
   if (!storedValue.startsWith('http')) return storedValue;
   const marker = '/object/public/attachments/';
@@ -97,7 +100,12 @@ const BASE_SELECT = `
   Request_Finished_At,
   Request_Requester_Team_ID,
   Request_Is_Confidential,
-  requester:TBL_Users!Request_Requested_By (
+  Request_Form_Data,
+  Request_Template_Schema_Snapshot,
+  template_schema:TBL_Requests_Templates!Request_Template_ID (
+    Request_Template_Form_Schema
+  ),
+    requester:TBL_Users!Request_Requested_By (
     User_Name, User_Email, User_Avatar_url
   ),
   requester_team:TBL_Teams!Request_Requester_Team_ID (
@@ -152,7 +160,6 @@ const BASE_SELECT = `
     )
   )
 `.trim();
-
 
 /* ── Helper: batch fetch criteria summaries ── */
 async function attachCriteriaSummary(
@@ -309,24 +316,36 @@ async function handleAction(
         boardId: number; columnId: number; requestedBy: number; templateId: number;
         titulo: string; descripcion: string; score: number; equipoIds: number[];
         labelIds: number[]; sprintId: number | null; estimatedHours: number | null;
-        parentId: string | null; requesterTeamId: number | null; isConfidential: boolean | null;
+        parentId: string | null; requesterTeamId: number | null;
+        isConfidential: boolean | null;
+        formData?: Record<string, unknown>;
       };
+// Fetch snapshot del schema del template en el momento de creación
+      const { data: tplData } = await supabase
+        .from('TBL_Requests_Templates')
+        .select('Request_Template_Form_Schema')
+        .eq('Request_Template_ID', p.templateId)
+        .single();
+      const schemaSnapshot = tplData?.Request_Template_Form_Schema ?? [];
+
       const { data: inserted, error: insErr } = await supabase
         .from('TBL_Requests')
         .insert({
-          Request_Board_ID:          p.boardId,
-          Request_Board_Column_ID:   p.columnId,
-          Request_Requested_By:      p.requestedBy,
-          Request_Template_ID:       p.templateId,
-          Request_Title:             p.titulo,
-          Request_Description:       p.descripcion,
-          Request_Score:             p.score,
-          Request_Progress:          0,
-          Request_Created_At:        new Date().toISOString(),
-          Request_Estimated_Hours:   p.estimatedHours ?? null,
-          Request_Parent_ID:         p.parentId ?? null,
-          Request_Requester_Team_ID: p.requesterTeamId ?? null,
-          Request_Is_Confidential:   p.isConfidential ?? false,
+          Request_Board_ID:                    p.boardId,
+          Request_Board_Column_ID:             p.columnId,
+          Request_Requested_By:                p.requestedBy,
+          Request_Template_ID:                 p.templateId,
+          Request_Title:                       p.titulo,
+          Request_Description:                 p.descripcion,
+          Request_Score:                       p.score,
+          Request_Progress:                    0,
+          Request_Created_At:                  new Date().toISOString(),
+          Request_Estimated_Hours:             p.estimatedHours ?? null,
+          Request_Parent_ID:                   p.parentId ?? null,
+          Request_Requester_Team_ID:           p.requesterTeamId ?? null,
+          Request_Is_Confidential:             p.isConfidential ?? false,
+          Request_Form_Data:                   p.formData ?? {},
+          Request_Template_Schema_Snapshot:    schemaSnapshot,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
@@ -358,8 +377,17 @@ async function handleAction(
         .select('Board_Column_Name')
         .eq('Board_Column_ID', columnId)
         .single();
+
+      // Si es columna final, sellar fecha de cierre y progreso
+      const isFinal   = FINAL_COLUMN_IDS.has(columnId);
+      const updateData: Record<string, unknown> = { Request_Board_Column_ID: columnId };
+      if (isFinal) {
+        updateData['Request_Finished_At'] = new Date().toISOString();
+        updateData['Request_Progress']    = 100;
+      }
+
       const { error } = await supabase
-        .from('TBL_Requests').update({ Request_Board_Column_ID: columnId }).eq('Request_ID', id);
+        .from('TBL_Requests').update(updateData).eq('Request_ID', id);
       if (error) throw new Error(error.message);
 
       if (movedBy) {
@@ -440,6 +468,7 @@ async function handleAction(
         supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', id),
         supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id),
         supabase.from('TBL_Acceptance_Criteria').delete().eq('Request_ID', id),
+        supabase.from('TBL_Client_Feedback').delete().eq('Request_ID', id),
       ]);
       const { error } = await supabase.from('TBL_Requests').delete().eq('Request_ID', id);
       if (error) throw new Error(error.message);
@@ -461,6 +490,10 @@ async function handleAction(
         targetColumnId: number; attachmentUrl: string | null;
         attachmentName: string | null; attachmentMime: string | null;
       };
+
+      // Crear el registro de closure (evidencia)
+      // NOTA: ya NO sella Request_Finished_At aquí — eso ocurre en moveToColumn
+      // cuando la columna destino es hecho (6) o historial (9).
       const { data: closure, error: closureErr } = await supabase
         .from('TBL_Request_Closure')
         .insert({
@@ -480,13 +513,19 @@ async function handleAction(
         `)
         .single();
       if (closureErr) throw new Error(closureErr.message);
+
+      // Mover la columna (moveToColumn se encarga del Finished_At si aplica)
+      const isFinal = FINAL_COLUMN_IDS.has(p.targetColumnId);
+      const updateData: Record<string, unknown> = {
+        Request_Board_Column_ID: p.targetColumnId,
+      };
+      if (isFinal) {
+        updateData['Request_Finished_At'] = new Date().toISOString();
+        updateData['Request_Progress']    = 100;
+      }
       const { error: updateErr } = await supabase
         .from('TBL_Requests')
-        .update({
-          Request_Board_Column_ID: p.targetColumnId,
-          Request_Finished_At:     new Date().toISOString(),
-          Request_Progress:        100,
-        })
+        .update(updateData)
         .eq('Request_ID', p.requestId);
       if (updateErr) throw new Error(updateErr.message);
 
@@ -496,8 +535,8 @@ async function handleAction(
       await insertNotifications(supabase, {
         userIds:   recipientIds,
         type:      'closure',
-        title:     `Ticket ${p.requestId} cerrado`,
-        body:      `El ticket fue cerrado. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
+        title:     `Ticket ${p.requestId} enviado a revisión`,
+        body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
         requestId: p.requestId,
         actorId:   p.closedBy,
       });
@@ -572,6 +611,84 @@ async function handleAction(
         Created_At:            (inserted as any).Created_At,
         Signed_Url:            signErr ? null : signedData?.signedUrl ?? null,
       };
+    }
+
+    /* ── Feedback del cliente ───────────────────────────────── */
+
+    case 'fetchClientFeedback': {
+      const { requestId } = payload as { requestId: string };
+      const { data, error } = await supabase
+        .from('TBL_Client_Feedback')
+        .select(`
+          Feedback_ID, Request_ID, Submitted_By, Decision, Feedback_Note, Submitted_At,
+          submitter:TBL_Users!Submitted_By ( User_Name )
+        `)
+        .eq('Request_ID', requestId)
+        .order('Submitted_At', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ?? null;
+    }
+
+    case 'submitClientFeedback': {
+      const p = payload as {
+        requestId:      string;
+        submittedBy:    number;
+        decision:       'approved' | 'rejected';
+        feedbackNote:   string | null;
+        targetColumnId: number;
+      };
+
+      // Guardar el feedback
+      const { data: feedback, error: fbErr } = await supabase
+        .from('TBL_Client_Feedback')
+        .insert({
+          Request_ID:   p.requestId,
+          Submitted_By: p.submittedBy,
+          Decision:     p.decision,
+          Feedback_Note: p.feedbackNote ?? null,
+          Submitted_At:  new Date().toISOString(),
+        })
+        .select(`
+          Feedback_ID, Request_ID, Submitted_By, Decision, Feedback_Note, Submitted_At,
+          submitter:TBL_Users!Submitted_By ( User_Name )
+        `)
+        .single();
+      if (fbErr) throw new Error(fbErr.message);
+
+      // Mover la columna
+      // ready_to_deploy (7) no es final → no sella Finished_At
+      // Si el cliente rechaza vuelve a en_revision_qas (8) → tampoco es final
+      const { error: moveErr } = await supabase
+        .from('TBL_Requests')
+        .update({ Request_Board_Column_ID: p.targetColumnId })
+        .eq('Request_ID', p.requestId);
+      if (moveErr) throw new Error(moveErr.message);
+
+      // Notificar a asignados y solicitante
+      const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
+      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+        .filter((uid) => uid !== p.submittedBy);
+
+      const isApproved  = p.decision === 'approved';
+      const notifTitle  = isApproved
+        ? `Ticket ${p.requestId} aprobado por el cliente ✓`
+        : `Ticket ${p.requestId} rechazado por el cliente ✗`;
+      const notifBody   = isApproved
+        ? `El cliente aprobó la solicitud. Pasa a Ready to Deploy.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`
+        : `El cliente rechazó la solicitud y solicita correcciones.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`;
+
+      await insertNotifications(supabase, {
+        userIds:   recipientIds,
+        type:      isApproved ? 'client_approved' : 'client_rejected',
+        title:     notifTitle,
+        body:      notifBody,
+        requestId: p.requestId,
+        actorId:   p.submittedBy,
+      });
+
+      return feedback;
     }
 
     case 'deleteAttachment': {
@@ -690,47 +807,44 @@ async function handleAction(
       return data;
     }
 
-case 'upsertUserByEntraId': {
-  const p = payload as { entraId: string; name: string; email: string };
+    case 'upsertUserByEntraId': {
+      const p = payload as { entraId: string; name: string; email: string };
 
-  // Buscar primero sin join para evitar errores por FK null
-  const { data: existing, error: findErr } = await supabase
-    .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
-    .eq('User_EntraID', p.entraId)
-    .maybeSingle();
-  if (findErr) throw new Error(findErr.message);
+      const { data: existing, error: findErr } = await supabase
+        .from('TBL_Users')
+        .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+        .eq('User_EntraID', p.entraId)
+        .maybeSingle();
+      if (findErr) throw new Error(findErr.message);
 
-  if (existing) {
-    // Fetch del team por separado si tiene Team_ID
-    const userId = (existing as any).User_ID;
-    const teamId = (existing as any).Team_ID;
-    let teamData = null;
-    if (teamId) {
-      const { data: t } = await supabase
-        .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
-      teamData = t;
+      if (existing) {
+        const userId = (existing as any).User_ID;
+        const teamId = (existing as any).Team_ID;
+        let teamData = null;
+        if (teamId) {
+          const { data: t } = await supabase
+            .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
+          teamData = t;
+        }
+        return { ...existing, team: teamData };
+      }
+
+      const { data, error: insertErr } = await supabase
+        .from('TBL_Users')
+        .insert({
+          User_EntraID:    p.entraId,
+          User_Name:       p.name.slice(0, 150),
+          User_Email:      p.email.slice(0, 150),
+          User_Avatar_url: '',
+          User_Role:       'member',
+          Is_New:          true,
+          User_Created_At: new Date().toISOString(),
+        })
+        .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+        .single();
+      if (insertErr) throw new Error(insertErr.message);
+      return { ...(data as any), team: null };
     }
-    return { ...existing, team: teamData };
-  }
-
-  // No existe → crear
-  const { data, error: insertErr } = await supabase
-    .from('TBL_Users')
-    .insert({
-      User_EntraID:    p.entraId,
-      User_Name:       p.name.slice(0, 150),
-      User_Email:      p.email.slice(0, 150),
-      User_Avatar_url: '',
-      User_Role:       'member',
-      Is_New:          true,
-      User_Created_At: new Date().toISOString(),
-    })
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
-    .single();
-  if (insertErr) throw new Error(insertErr.message);
-  return { ...(data as any), team: null };
-}
 
     case 'completeOnboarding': {
       const p = payload as { userId: number; departmentId: number; teamId: number };
@@ -745,15 +859,10 @@ case 'upsertUserByEntraId': {
       return data;
     }
 
-    // ── Gestión de usuarios (desde Config Panel — solo admins) ──
-
     case 'updateUser': {
       const p = payload as {
-        userId:       number;
-        role:         'admin' | 'member';
-        departmentId: number | null;
-        teamId:       number | null;
-        isNew:        boolean;
+        userId: number; role: 'admin' | 'member';
+        departmentId: number | null; teamId: number | null; isNew: boolean;
       };
       const { data, error } = await supabase
         .from('TBL_Users')
@@ -1208,13 +1317,9 @@ case 'upsertUserByEntraId': {
       const { data, error } = await supabase
         .from('TBL_Notifications')
         .select(`
-          Notification_ID,
-          Notification_Type,
-          Notification_Title,
-          Notification_Body,
-          Notification_Request_ID,
-          Notification_Is_Read,
-          Notification_Created_At,
+          Notification_ID, Notification_Type, Notification_Title,
+          Notification_Body, Notification_Request_ID,
+          Notification_Is_Read, Notification_Created_At,
           actor:TBL_Users!Notification_Actor_ID (
             User_ID, User_Name, User_Avatar_url
           )
@@ -1223,7 +1328,6 @@ case 'upsertUserByEntraId': {
         .order('Notification_Created_At', { ascending: false })
         .limit(limit as number);
       if (error) throw new Error(error.message);
-
       const unreadCount = (data as any[]).filter((n) => !n.Notification_Is_Read).length;
       return { notifications: data, unreadCount };
     }
@@ -1248,6 +1352,23 @@ case 'upsertUserByEntraId': {
         .eq('Notification_Is_Read', false);
       if (error) throw new Error(error.message);
       return { ok: true };
+    }
+
+    case 'fetchByAssignedTo': {
+      const { userId, boardId } = payload as { userId: number; boardId: number };
+      const { data: links, error: linksErr } = await supabase
+        .from('TBL_Requests_Assignments')
+        .select('Request_Assignment_ID')
+        .eq('Request_Assignment_User_ID', userId);
+      if (linksErr) throw new Error(linksErr.message);
+      const ids = (links as { Request_Assignment_ID: string }[]).map((l) => l.Request_Assignment_ID);
+      if (ids.length === 0) return [];
+      const { data, error } = await supabase
+        .from('TBL_Requests').select(BASE_SELECT)
+        .in('Request_ID', ids).eq('Request_Board_ID', boardId)
+        .order('Request_Created_At', { ascending: false });
+      if (error) throw new Error(error.message);
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
     }
 
     default:

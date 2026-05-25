@@ -6,15 +6,81 @@ import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useUsers } from '@/features/requests/hooks/useUsers';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
+import { useSprints } from '@/features/requests/hooks/useSprints';
+import { useLabelsByTeamId } from '@/features/requests/hooks/useLabels';
+import { useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useQuery } from '@tanstack/react-query';
 import { KanbanBoard } from '@/features/requests/components/KanbanBoard';
-import { BoardFilters, type FilterDynamicOptions } from '@/features/requests/components/BoardFilters';
+import { BoardFilters, type FilterDynamicOptions, type TemplateFilterOption, type TemplateFieldOption } from '@/features/requests/components/BoardFilters';
 import { BoardCustomizationTrigger } from '@/features/requests/components/BoardCustomization';
 import { useFilteredBoard } from '@/features/requests/hooks/useFilteredBoard';
 import { config } from '@/config';
 import type { KanbanColumna, Request } from '@/features/requests/types';
+import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField } from '@/features/requests/templates/types';
 import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+
+/** Fallback estático — mismos IDs que la BD, por si columnMap no cargó aún */
+const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
+  sin_categorizar:  1,
+  icebox:           2,
+  backlog:          3,
+  todo:             4,
+  en_progreso:      5,
+  en_revision_qas:  8,
+  cliente_review:   10,
+  ready_to_deploy:  7,
+  hecho:            6,
+  historial:        9,
+};
+
+/**
+ * Aplana recursivamente los campos de un schema de template para un único template.
+ * Deduplica por key dentro de ese template.
+ * Asigna fieldType según el tipo de campo.
+ */
+function flattenTemplateFields(
+  fields: TemplateExtraField[],
+  seen:   Set<string>,
+  result: TemplateFieldOption[],
+): void {
+  for (const f of fields) {
+    if (isConditionalField(f)) {
+      const cf = f as ConditionalField;
+      // El disparador del condicional es un checkbox → boolean
+      if (cf.key && cf.label?.trim() && !seen.has(cf.key)) {
+        seen.add(cf.key);
+        result.push({ key: cf.key, label: cf.label, fieldType: 'boolean' });
+      }
+      flattenTemplateFields(cf.trueBranch,  seen, result);
+      flattenTemplateFields(cf.falseBranch, seen, result);
+} else {
+  if (!f.key || f.key === '__labels') continue;
+  if (seen.has(f.key)) continue;
+  // ← ignorar campos sin label — fueron "eliminados" de ramas condicionales
+  if (!f.label?.trim()) continue;
+  seen.add(f.key);
+
+  let fieldType: TemplateFieldOption['fieldType'];
+  if (f.type === 'select' || f.type === 'radio') {
+    fieldType = 'select_radio';
+  } else if (f.type === 'checkbox') {
+    fieldType = 'boolean';
+  } else {
+    fieldType = 'text';
+  }
+
+  result.push({
+    key:     f.key,
+    label:   f.label,
+    fieldType,
+    options: (f.type === 'select' || f.type === 'radio') ? (f.options ?? []) : undefined,
+  });
+}
+}
+}
 
 export function BoardPage() {
   const { equipoActivo }             = useBoardStore();
@@ -25,13 +91,17 @@ export function BoardPage() {
 
   const [externalModalId, setExternalModalId] = useState<string | null>(null);
 
-  const boardTeamId = useMemo(() => {
-    const first = Object.values(data ?? {}).flat()[0];
-    return first?.boardTeamId ?? null;
-  }, [data]);
+const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+const boardTeamId = useMemo(() => {
+  const team = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
+  return team?.Board_Team_ID ?? null;
+}, [boardTeams, equipoActivo]);
 
-  const { data: users    = [] } = useUsers();
-  const { data: subTeams = [] } = useSubTeams(boardTeamId);
+  const { data: users     = [] } = useUsers();
+  const { data: subTeams  = [] } = useSubTeams(boardTeamId);
+  const { data: sprints   = [] } = useSprints();
+  const { data: labels    = [] } = useLabelsByTeamId(config.DEFAULT_BOARD_ID, boardTeamId);
+  const { data: templates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
 
   const { data: externalRequest } = useQuery<Request>({
     queryKey: ['request', externalModalId],
@@ -44,37 +114,47 @@ export function BoardPage() {
     retry: 1,
   });
 
-  const dynamicOptions = useMemo((): FilterDynamicOptions => {
-    const allRequests = Object.values(data ?? {}).flat();
-
-    const categoriaSet = new Set<string>();
-    for (const r of allRequests) {
-      for (const cat of r.categoria ?? []) {
-        if (cat) categoriaSet.add(cat);
-      }
-    }
-
-    return {
-      assignee: users.map((u) => ({
-        value: u.User_Name,
-        label: u.User_Name,
-      })),
-      subequipo: subTeams.map((s) => ({
-        value: s.Sub_Team_Name,
-        label: s.Sub_Team_Name,
-      })),
-      categoria: Array.from(categoriaSet).sort().map((name) => ({
-        value: name,
-        label: name,
-      })),
-    };
-  }, [data, users, subTeams]);
+  // Construir lista de plantillas con sus campos tipados (una por template, sin deduplicar entre ellas)
+const templateOptions = useMemo((): TemplateFilterOption[] => {
+  return templates
+    .filter((t) => {
+      if (!t.Request_Template_Is_Active) return false;
+      // Sin restricción de equipos → disponible para todos
+      if (!t.Request_Template_Teams || t.Request_Template_Teams.length === 0) return true;
+      // Con restricción → solo si el equipo activo está en la lista
+      if (boardTeamId === null) return true;
+      return t.Request_Template_Teams.includes(boardTeamId);
+        })
+    .map((t) => {
+      const seen:   Set<string>          = new Set();
+      const fields: TemplateFieldOption[] = [];
+      flattenTemplateFields(
+        t.Request_Template_Form_Schema as TemplateExtraField[],
+        seen,
+        fields,
+      );
+      return {
+        id:     t.Request_Template_ID,
+        label:  t.Request_Template_Name,
+        icon:   t.Request_Template_Icon ?? '📋',
+        color:  t.Request_Template_Color ?? undefined,
+        fields,
+      };
+    })
+    .filter((t) => t.fields.length > 0);
+}, [templates, boardTeamId]); // ← agregar boardTeamId a las deps
+  const dynamicOptions = useMemo((): FilterDynamicOptions => ({
+    assignee:  users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
+    subequipo: subTeams.map((s) => ({ value: s.Sub_Team_Name, label: s.Sub_Team_Name })),
+    sprint:    sprints.map((s) => ({ value: s.Sprint_Text, label: s.Sprint_Text })),
+    etiqueta:  labels.map((l) => ({ value: l.Label_Name, label: l.Label_Name })),
+    templates: templateOptions,
+  }), [users, subTeams, sprints, labels, templateOptions]);
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
   function handleMove(id: string, columna: KanbanColumna) {
-    const columnId = columnMap?.[columna];
-    if (!columnId && !config.USE_MOCK) return;
+    const columnId = columnMap?.[columna] ?? COLUMN_ID_FALLBACK[columna];
     mover({ id, columna, columnId });
   }
 

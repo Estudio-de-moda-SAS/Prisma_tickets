@@ -48,6 +48,7 @@ export function useMoveRequest(equipo: Equipo) {
           todo:            [...(prev.todo            ?? [])],
           en_progreso:     [...(prev.en_progreso     ?? [])],
           en_revision_qas: [...(prev.en_revision_qas ?? [])],
+          cliente_review:  [...(prev.cliente_review  ?? [])],
           ready_to_deploy: [...(prev.ready_to_deploy ?? [])],
           hecho:           [...(prev.hecho           ?? [])],
           historial:       [...(prev.historial       ?? [])],
@@ -57,15 +58,14 @@ export function useMoveRequest(equipo: Equipo) {
           next[col] = next[col].filter((r) => r.id !== payload.id);
         }
 
-        next[payload.columna] = [
-          ...next[payload.columna],
-          {
-            ...card,
-            columna:  payload.columna,
-            columnId: payload.columnId ?? card.columnId,
-          },
-        ];
-
+next[payload.columna] = [
+  {
+    ...card,
+    columna:  payload.columna,
+    columnId: payload.columnId ?? card.columnId,
+  },
+  ...next[payload.columna],
+];
         return next;
       });
 
@@ -73,15 +73,18 @@ export function useMoveRequest(equipo: Equipo) {
     },
 
     onError: (_err, _payload, context) => {
+      // Rollback inmediato al snapshot
       if (context?.snapshot) {
         queryClient.setQueryData<BoardData>(queryKey, context.snapshot);
       }
+      // Refetch para asegurar estado limpio desde el server
+      queryClient.invalidateQueries({ queryKey });
     },
 
-    onSettled: () => {
-      if (!config.USE_MOCK) {
-        queryClient.invalidateQueries({ queryKey });
-      }
-    },
+onSettled: (_data, error) => {
+  if (config.USE_MOCK) return;
+  if (error) return;
+  queryClient.invalidateQueries({ queryKey });
+},
   });
 }

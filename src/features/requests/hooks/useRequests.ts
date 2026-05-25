@@ -26,6 +26,7 @@ function groupRequestsByColumn(requests: Request[]): BoardData {
     todo:            [],
     en_progreso:     [],
     en_revision_qas: [],
+    cliente_review:  [],
     ready_to_deploy: [],
     hecho:           [],
     historial:       [],
@@ -48,18 +49,32 @@ function getMockBoardForTeam(equipo: Equipo): BoardData {
     todo:            [],
     en_progreso:     [],
     en_revision_qas: [],
+    cliente_review:  [],
     ready_to_deploy: [],
     hecho:           [],
     historial:       [],
   };
   for (const col of Object.keys(board) as KanbanColumna[]) {
-    board[col] = MOCK_BOARD[col].filter((r) => r.equipo.includes(equipo));
+    board[col] = (MOCK_BOARD[col] ?? []).filter((r) => r.equipo.includes(equipo));
   }
   return board;
 }
 
 function getMockBoardFull(): BoardData {
-  return structuredClone(MOCK_BOARD);
+  const base = structuredClone(MOCK_BOARD) as Partial<BoardData>;
+  // Asegurar que cliente_review exista aunque no esté en el mock antiguo
+  return {
+    sin_categorizar: base.sin_categorizar ?? [],
+    icebox:          base.icebox          ?? [],
+    backlog:         base.backlog         ?? [],
+    todo:            base.todo            ?? [],
+    en_progreso:     base.en_progreso     ?? [],
+    en_revision_qas: base.en_revision_qas ?? [],
+    cliente_review:  base.cliente_review  ?? [],
+    ready_to_deploy: base.ready_to_deploy ?? [],
+    hecho:           base.hecho           ?? [],
+    historial:       base.historial       ?? [],
+  };
 }
 
 /* ============================================================

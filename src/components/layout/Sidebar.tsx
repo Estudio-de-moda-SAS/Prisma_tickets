@@ -14,7 +14,6 @@ import { ConfigPanelTrigger } from '@/components/ConfigPanel';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
 
 export function Sidebar() {
-    console.log('[SIDEBAR] versión nueva');
   const { account, signOut } = useAuth();
   const role = useRole();
 
@@ -42,7 +41,6 @@ export function Sidebar() {
       .map((n) => n[0])
       .join('')
       .toUpperCase() ?? 'U';
-console.log('[SIDEBAR] showConfig:', showConfig, 'role:', role.role);
   // Solo admins ven todos los equipos en sidebar
 const equiposVisibles = (isAdmin || isTIMember)
   ? (Object.entries(EQUIPOS) as [Equipo, string][])

@@ -22,6 +22,7 @@ export type KanbanColumna =
   | 'todo'
   | 'en_progreso'
   | 'en_revision_qas'
+  | 'cliente_review'
   | 'ready_to_deploy'
   | 'hecho'
   | 'historial';
@@ -33,6 +34,7 @@ export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
   todo:             'To do',
   en_progreso:      'En progreso',
   en_revision_qas:  'En revisión QAS',
+  cliente_review:   'Cliente Review',
   ready_to_deploy:  'Ready to Deploy',
   hecho:            'Hecho',
   historial:        'Historial',
@@ -44,14 +46,31 @@ export const COLUMNAS_BOARD: KanbanColumna[] = [
   'todo',
   'en_progreso',
   'en_revision_qas',
+  'cliente_review',
   'ready_to_deploy',
   'hecho',
   'historial',
 ];
 
-/** Columnas que requieren evidencia de cierre al mover una tarjeta a ellas */
+/**
+ * Columnas que requieren evidencia de cierre al mover una tarjeta a ellas.
+ * NOTA: solo en_revision_qas pide evidencia. Las columnas posteriores
+ * (cliente_review, ready_to_deploy, hecho, historial) ya tienen closure
+ * existente y no deben pedirla de nuevo.
+ */
 export const COLUMNAS_CIERRE = new Set<KanbanColumna>([
+  'en_revision_qas',
+  'cliente_review',
   'ready_to_deploy',
+  'hecho',
+  'historial',
+] as KanbanColumna[]);
+
+/**
+ * Columnas que se consideran "finalizadas" (ticket cerrado).
+ * isCerrada en el frontend se deriva de la columna, no de fechaCierre.
+ */
+export const COLUMNAS_FINALES = new Set<KanbanColumna>([
   'hecho',
   'historial',
 ]);
@@ -110,6 +129,21 @@ export type CierreInfo = {
   attachmentUrl:  string | null;
   attachmentName: string | null;
   attachmentMime: string | null;
+};
+
+/* ============================================================
+   Feedback del cliente (Cliente Review)
+   ============================================================ */
+export type ClientFeedbackDecision = 'approved' | 'rejected';
+
+export type ClientFeedback = {
+  feedbackId:   number;
+  requestId:    string;
+  submittedBy:  number;
+  submitterName: string;
+  decision:     ClientFeedbackDecision;
+  feedbackNote: string | null;
+  submittedAt:  string;
 };
 
 /* ============================================================
@@ -209,7 +243,9 @@ export type Request = {
   isConfidential: boolean;
 
   // ── Campos extra del template ──────────────────────────────
-  extraFields:  RequestExtraFields | null;
+  extraFields:        RequestExtraFields | null;
+  formData:           Record<string, unknown>;
+  templateFormSchema: unknown[];
 
   // ── Hijos ──────────────────────────────────────────────────
   childCount?:  number;
@@ -223,6 +259,9 @@ export type Request = {
 
   // ── Cierre ─────────────────────────────────────────────────
   cierreInfo?:  CierreInfo | null;
+
+  // ── Feedback del cliente ───────────────────────────────────
+  clientFeedback?: ClientFeedback | null;
 };
 
 /* ============================================================
@@ -244,6 +283,7 @@ export type CrearRequestPayload = {
   parentId:            string | null;
   requesterTeamId:     number | null;
   isConfidential:      boolean;
+  formData?:           Record<string, unknown>;
   /** Títulos de criterios de aceptación — mínimo 1 requerido */
   acceptanceCriteria:  string[];
 };
@@ -273,6 +313,14 @@ export type CerrarRequestPayload = {
   closureNote:    string;
   targetColumnId: number;
   attachments:    File[];
+};
+
+export type SubmitClientFeedbackPayload = {
+  requestId:        string;
+  submittedBy:      number;
+  decision:         ClientFeedbackDecision;
+  feedbackNote:     string | null;
+  targetColumnId:   number;
 };
 
 export type BoardData = Record<KanbanColumna, Request[]>;

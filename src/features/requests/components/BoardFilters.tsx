@@ -1,48 +1,126 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
+import { SlidersHorizontal, Plus, X, Trash2 } from 'lucide-react';
 import {
   useFilterStore,
   FIELD_LABELS,
+  FIELD_CATEGORY,
   OPERATOR_LABELS,
   FIELD_OPERATORS,
-  FIELD_SELECT_OPTIONS, 
+  FIELD_SELECT_OPTIONS,
   type FilterField,
   type FilterOperator,
   type FilterCondition,
 } from '@/store/filterStore';
 
 /* ============================================================
+   Tipo para un campo de template aplanado
+   ============================================================ */
+export type TemplateFieldOption = {
+  key:       string;
+  label:     string;
+  // Determina operadores disponibles y tipo de input de valor
+  fieldType: 'text' | 'select_radio' | 'boolean';
+  options?:  string[]; // solo para select_radio
+};
+
+/* ============================================================
+   Tipo para una plantilla en el filtro
+   ============================================================ */
+export type TemplateFilterOption = {
+  id:     number;
+  label:  string;
+  icon?:  string;
+  color?: string;
+  fields: TemplateFieldOption[];
+};
+
+/* ============================================================
    Opciones dinámicas que el padre debe proveer
    ============================================================ */
 export type FilterDynamicOptions = {
-  /** Sub-equipos del board actual (de useSubTeams) */
-  subequipo?: { value: string; label: string }[];
-  /** Labels disponibles (derivadas de los requests cargados o de useLabelsByTeamId) */
-  categoria?: { value: string; label: string }[];
-  /** Usuarios asignables (de useUsers) */
-  assignee?:  { value: string; label: string }[];
+  subequipo?:  { value: string; label: string }[];
+  etiqueta?:   { value: string; label: string }[];
+  assignee?:   { value: string; label: string }[];
+  sprint?:     { value: string; label: string }[];
+  categoria?:  { value: string; label: string }[];
+  /** Plantillas del board con sus campos ya tipados */
+  templates?:  TemplateFilterOption[];
 };
 
 /* ============================================================
-   Icono SVG inline
+   Operadores disponibles según fieldType del campo de template
    ============================================================ */
-function Icon({ path, size = 14 }: { path: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+const TEMPLATE_FIELD_OPERATORS: Record<TemplateFieldOption['fieldType'], FilterOperator[]> = {
+  text:        ['contiene', 'no_contiene', 'esta_vacio', 'no_esta_vacio'],
+  select_radio: ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
+  boolean:     ['es'],
+};
+
+const BOOLEAN_OPTIONS = [
+  { value: 'true',  label: 'Sí' },
+  { value: 'false', label: 'No' },
+];
+
+/* ============================================================
+   Colores semánticos por categoría de campo
+   ============================================================ */
+const CATEGORY_COLORS = {
+  text:    { bg: 'rgba(96,165,250,0.11)',  border: 'rgba(96,165,250,0.30)',  dot: '#60a5fa' },
+  enum:    { bg: 'rgba(167,139,250,0.11)', border: 'rgba(167,139,250,0.30)', dot: '#a78bfa' },
+  dynamic: { bg: 'rgba(0,200,255,0.09)',   border: 'rgba(0,200,255,0.28)',   dot: 'var(--accent)' },
+  numeric: { bg: 'rgba(251,146,60,0.11)',  border: 'rgba(251,146,60,0.30)',  dot: '#fb923c' },
+  boolean: { bg: 'rgba(52,211,153,0.11)',  border: 'rgba(52,211,153,0.30)',  dot: '#34d399' },
+} as const;
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function getTemplateById(id: number | undefined, templates: TemplateFilterOption[]): TemplateFilterOption | undefined {
+  if (!id) return undefined;
+  return templates.find((t) => t.id === id);
 }
-const ICONS = {
-  filter: 'M1 3h12M3 7h8M5 11h4',
-  plus:   'M7 1v12M1 7h12',
-  close:  'M2 2l10 10M12 2L2 12',
-  trash:  'M2 4h10M5 4V2h4v2M4 4l.5 8h5l.5-8',
-};
+
+function getTemplateFieldByKey(key: string | undefined, tpl: TemplateFilterOption | undefined): TemplateFieldOption | undefined {
+  if (!key || !tpl) return undefined;
+  return tpl.fields.find((f) => f.key === key);
+}
+
+function getOperatorsForTemplateField(tf: TemplateFieldOption | undefined): FilterOperator[] {
+  if (!tf) return FIELD_OPERATORS['template_field'];
+  return TEMPLATE_FIELD_OPERATORS[tf.fieldType];
+}
+
+function getOptionsForTemplateField(tf: TemplateFieldOption | undefined): { value: string; label: string }[] {
+  if (!tf) return [];
+  if (tf.fieldType === 'boolean') return BOOLEAN_OPTIONS;
+  if (tf.fieldType === 'select_radio') return (tf.options ?? []).map((o) => ({ value: o, label: o }));
+  return [];
+}
+
+function getOptions(
+  field: FilterField,
+  dynamic: FilterDynamicOptions,
+  tf?: TemplateFieldOption,
+): { value: string; label: string }[] {
+  if (field === 'template_field') return getOptionsForTemplateField(tf);
+  if (FIELD_SELECT_OPTIONS[field]) return FIELD_SELECT_OPTIONS[field]!;
+  if (field === 'etiqueta') return dynamic.etiqueta ?? dynamic.categoria ?? [];
+  return dynamic[field as keyof FilterDynamicOptions] as { value: string; label: string }[] ?? [];
+}
+
+function needsValue(operator: FilterOperator): boolean {
+  return operator !== 'esta_vacio' && operator !== 'no_esta_vacio';
+}
+
+function isNumericField(field: FilterField): boolean {
+  return field === 'progreso' || field === 'horas_estimadas';
+}
 
 /* ============================================================
-   Chip de filtro activo (barra superior)
+   Chip de filtro activo
    ============================================================ */
-function ActiveFilterChip({
+function ActiveChip({
   condition,
   dynamicOptions,
   onRemove,
@@ -51,88 +129,152 @@ function ActiveFilterChip({
   dynamicOptions: FilterDynamicOptions;
   onRemove:       () => void;
 }) {
-  const needsValue =
-    condition.operator !== 'esta_vacio' && condition.operator !== 'no_esta_vacio';
+  const colors     = CATEGORY_COLORS[FIELD_CATEGORY[condition.field]];
+  const showVal    = needsValue(condition.operator);
+  const isTemplate = condition.field === 'template_field';
 
-  const allOptions = getOptions(condition.field, dynamicOptions);
+  const tpl = isTemplate ? getTemplateById(condition.templateId, dynamicOptions.templates ?? []) : undefined;
+  const tf  = isTemplate ? getTemplateFieldByKey(condition.templateFieldKey, tpl) : undefined;
+  const options = getOptions(condition.field, dynamicOptions, tf);
 
-  const valueLabel = (() => {
-    if (!needsValue) return '';
-    if (allOptions.length) {
-      return allOptions.find((o) => o.value === condition.value)?.label ?? condition.value;
-    }
+  // Label del campo: para template_field mostramos "NombrePlantilla / NombreCampo"
+  const fieldDisplayLabel = isTemplate
+    ? [
+        tpl ? `${tpl.icon ?? '📋'} ${tpl.label}` : '⚠ Plantilla eliminada',
+        tf  ? tf.label : condition.templateFieldKey ? '⚠ Campo eliminado' : null,
+      ].filter(Boolean).join(' / ')
+    : FIELD_LABELS[condition.field];
+
+  const valLabel = (() => {
+    if (!showVal) return '';
+    if (condition.operator === 'entre') return `${condition.value} – ${condition.value2 ?? '?'}`;
+    if (options.length) return options.find((o) => o.value === condition.value)?.label ?? condition.value;
     return condition.value;
   })();
 
   return (
-    <div className="filter-chip">
-      <span className="filter-chip__field">{FIELD_LABELS[condition.field]}</span>
+    <div
+      className="filter-chip"
+      style={{ background: colors.bg, borderColor: colors.border }}
+    >
+      <span className="filter-chip__field" style={{ color: colors.dot }}>
+        {fieldDisplayLabel}
+      </span>
       <span className="filter-chip__sep" />
       <span className="filter-chip__op">{OPERATOR_LABELS[condition.operator]}</span>
-      {needsValue && valueLabel && (
+      {showVal && valLabel && (
         <>
           <span className="filter-chip__sep" />
-          <span className="filter-chip__val">{valueLabel}</span>
+          <span className="filter-chip__val">{valLabel}</span>
         </>
       )}
       <button className="filter-chip__remove" onClick={onRemove} title="Eliminar filtro">
-        <Icon path={ICONS.close} size={10} />
+        <X size={9} strokeWidth={2.5} />
       </button>
     </div>
   );
 }
 
 /* ============================================================
-   Utilidad: devuelve las opciones del campo
-   (estáticas para enums, dinámicas para el resto)
-   ============================================================ */
-function getOptions(
-  field: FilterField,
-  dynamic: FilterDynamicOptions,
-): { value: string; label: string }[] {
-  return (
-    FIELD_SELECT_OPTIONS[field] ??
-    dynamic[field as keyof FilterDynamicOptions] ??
-    []
-  );
-}
-
-/* ============================================================
-   Fila de condición dentro del panel
+   ConditionRow
    ============================================================ */
 function ConditionRow({
   boardId,
   condition,
   index,
   conjunction,
-  isLast,
   dynamicOptions,
 }: {
   boardId:        string;
   condition:      FilterCondition;
   index:          number;
   conjunction:    'AND' | 'OR';
-  isLast:         boolean;
   dynamicOptions: FilterDynamicOptions;
 }) {
   const { updateCondition, removeCondition, setConjunction } = useFilterStore();
 
-  const needsValue  = condition.operator !== 'esta_vacio' && condition.operator !== 'no_esta_vacio';
-  const availableOps = FIELD_OPERATORS[condition.field];
-  const options      = getOptions(condition.field, dynamicOptions);
-  const hasOptions   = options.length > 0;
+  const isTemplateField = condition.field === 'template_field';
+  const templates       = dynamicOptions.templates ?? [];
+
+  // Template seleccionado actualmente
+  const selectedTpl = isTemplateField
+    ? getTemplateById(condition.templateId, templates)
+    : undefined;
+
+  // Campo de template seleccionado actualmente
+  const selectedTf = isTemplateField
+    ? getTemplateFieldByKey(condition.templateFieldKey, selectedTpl)
+    : undefined;
+
+  // Estados huérfanos
+  const isOrphanTemplate = isTemplateField && !!condition.templateId && !selectedTpl;
+  const isOrphanField    = isTemplateField && !!condition.templateFieldKey && !!selectedTpl && !selectedTf;
+
+  // El valor guardado ya no existe en las opciones actuales del campo
+  const tfOptions    = getOptionsForTemplateField(selectedTf);
+  const isOrphanVal  = isTemplateField && selectedTf && needsValue(condition.operator) &&
+    tfOptions.length > 0 && condition.value !== '' &&
+    !tfOptions.find((o) => o.value === condition.value);
+
+  const showVal    = needsValue(condition.operator);
+  const isNumeric  = isNumericField(condition.field);
+  const isBetween  = condition.operator === 'entre';
+  const dotColor   = CATEGORY_COLORS[FIELD_CATEGORY[condition.field]].dot;
+
+  // Operadores disponibles: para template_field dependen del fieldType del campo elegido
+  const availOps = isTemplateField
+    ? getOperatorsForTemplateField(selectedTf)
+    : FIELD_OPERATORS[condition.field];
+
+  // Opciones de valor
+  const options    = getOptions(condition.field, dynamicOptions, selectedTf);
+  const hasOptions = options.length > 0;
+
+  // Paso 3 (operador) visible solo si template_field tiene templateId + templateFieldKey
+  const showOperator = !isTemplateField || (!!condition.templateId && !!condition.templateFieldKey);
+  // Paso 4 (valor) visible solo si además el operador requiere valor
+  const showValue    = showOperator && showVal;
 
   function handleFieldChange(field: FilterField) {
     updateCondition(boardId, condition.id, {
       field,
-      operator: FIELD_OPERATORS[field][0],
-      value:    '',
+      operator:         FIELD_OPERATORS[field][0],
+      value:            '',
+      value2:           undefined,
+      templateId:       undefined,
+      templateFieldKey: undefined,
+    });
+  }
+
+  function handleTemplateChange(idStr: string) {
+    const id = idStr ? Number(idStr) : undefined;
+    const tpl = id ? getTemplateById(id, templates) : undefined;
+    const defaultOp = tpl?.fields[0]
+      ? getOperatorsForTemplateField(tpl.fields[0])[0]
+      : 'contiene';
+    updateCondition(boardId, condition.id, {
+      templateId:       id,
+      templateFieldKey: undefined,
+      operator:         defaultOp,
+      value:            '',
+      value2:           undefined,
+    });
+  }
+
+  function handleTemplateFieldKeyChange(key: string) {
+    const tpl = getTemplateById(condition.templateId, templates);
+    const tf  = getTemplateFieldByKey(key, tpl);
+    const newOp = tf ? getOperatorsForTemplateField(tf)[0] : 'contiene';
+    updateCondition(boardId, condition.id, {
+      templateFieldKey: key || undefined,
+      operator:         newOp,
+      value:            '',
+      value2:           undefined,
     });
   }
 
   return (
-    <div className={`filter-row${!isLast ? ' filter-row--divided' : ''}`}>
-
+    <div className="filter-row">
       {/* Conjunción */}
       <div className="filter-row__conj">
         {index === 0 ? (
@@ -141,7 +283,7 @@ function ConditionRow({
           <button
             className="filter-row__conj-btn"
             onClick={() => setConjunction(boardId, conjunction === 'AND' ? 'OR' : 'AND')}
-            title="Alternar AND / OR"
+            title="Click para alternar AND / OR"
           >
             {conjunction}
           </button>
@@ -150,7 +292,10 @@ function ConditionRow({
         )}
       </div>
 
-      {/* Campo */}
+      {/* Dot de categoría */}
+      <div className="filter-row__cat-dot" style={{ background: dotColor }} />
+
+      {/* Campo principal */}
       <div className="filter-select-wrap">
         <select
           className="filter-select filter-select--field"
@@ -163,41 +308,139 @@ function ConditionRow({
         </select>
       </div>
 
-      {/* Operador */}
-      <div className="filter-select-wrap">
-        <select
-          className="filter-select filter-select--operator"
-          value={condition.operator}
-          onChange={(e) =>
-            updateCondition(boardId, condition.id, {
-              operator: e.target.value as FilterOperator,
-              value:    '',
-            })
-          }
-        >
-          {availableOps.map((op) => (
-            <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
-          ))}
-        </select>
-      </div>
+      {/* Paso 1 — selector de plantilla */}
+      {isTemplateField && (
+        <div className="filter-select-wrap">
+          {isOrphanTemplate ? (
+            <select
+              className="filter-select filter-select--subfield"
+              value={String(condition.templateId ?? '')}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+              style={{ color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' }}
+            >
+              <option value={String(condition.templateId ?? '')} disabled>
+                ⚠ Plantilla eliminada
+              </option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.icon ?? '📋'} {t.label}</option>
+              ))}
+            </select>
+          ) : (
+            <select
+              className="filter-select filter-select--subfield"
+              value={String(condition.templateId ?? '')}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+            >
+              <option value="">Seleccionar plantilla…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.icon ?? '📋'} {t.label}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
-      {/* Valor */}
-      {needsValue && (
+      {/* Paso 2 — selector de campo (solo si hay plantilla elegida) */}
+      {isTemplateField && condition.templateId && (
+        <div className="filter-select-wrap">
+          {isOrphanField ? (
+            <select
+              className="filter-select filter-select--subfield"
+              value={condition.templateFieldKey ?? ''}
+              onChange={(e) => handleTemplateFieldKeyChange(e.target.value)}
+              style={{ color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' }}
+            >
+              <option value={condition.templateFieldKey ?? ''} disabled>
+                ⚠ Campo eliminado
+              </option>
+              {(selectedTpl?.fields ?? []).map((tf) => (
+                <option key={tf.key} value={tf.key}>{tf.label}</option>
+              ))}
+            </select>
+          ) : (
+            <select
+              className="filter-select filter-select--subfield"
+              value={condition.templateFieldKey ?? ''}
+              onChange={(e) => handleTemplateFieldKeyChange(e.target.value)}
+            >
+              <option value="">Seleccionar campo…</option>
+              {(selectedTpl?.fields ?? []).map((tf) => (
+                <option key={tf.key} value={tf.key}>{tf.label}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      {/* Paso 3 — operador */}
+      {showOperator && (
+        <div className="filter-select-wrap">
+          <select
+            className="filter-select filter-select--operator"
+            value={condition.operator}
+            onChange={(e) =>
+              updateCondition(boardId, condition.id, {
+                operator: e.target.value as FilterOperator,
+                value:    '',
+                value2:   undefined,
+              })
+            }
+          >
+            {availOps.map((op) => (
+              <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Paso 4 — valor */}
+      {showValue && (
         <div className="filter-value-wrap">
-          {hasOptions ? (
-            /* Select con opciones (enum o dinámicas) */
+          {isBetween ? (
+            <div className="filter-between">
+              <input
+                className="filter-input filter-input--numeric"
+                type="number"
+                placeholder="Mín"
+                value={condition.value}
+                onChange={(e) => updateCondition(boardId, condition.id, { value: e.target.value })}
+              />
+              <span className="filter-between__sep">–</span>
+              <input
+                className="filter-input filter-input--numeric"
+                type="number"
+                placeholder="Máx"
+                value={condition.value2 ?? ''}
+                onChange={(e) => updateCondition(boardId, condition.id, { value2: e.target.value })}
+              />
+            </div>
+          ) : hasOptions ? (
             <select
               className="filter-select filter-select--value"
               value={condition.value}
               onChange={(e) => updateCondition(boardId, condition.id, { value: e.target.value })}
+              style={isOrphanVal ? { color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' } : undefined}
             >
+              {/* Valor huérfano: la opción ya no existe en el template actualizado */}
+              {isOrphanVal && (
+                <option value={condition.value} style={{ color: 'var(--warn)' }}>
+                  ⚠ {condition.value}
+                </option>
+              )}
               <option value="">Seleccionar…</option>
               {options.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
+          ) : isNumeric ? (
+            <input
+              className="filter-input filter-input--numeric"
+              type="number"
+              placeholder="Valor numérico…"
+              value={condition.value}
+              onChange={(e) => updateCondition(boardId, condition.id, { value: e.target.value })}
+            />
           ) : (
-            /* Input de texto libre */
             <input
               className="filter-input"
               type="text"
@@ -209,73 +452,66 @@ function ConditionRow({
         </div>
       )}
 
-      {/* Eliminar fila */}
+      {/* Eliminar */}
       <button
         className="filter-row__delete"
         onClick={() => removeCondition(boardId, condition.id)}
         title="Eliminar condición"
       >
-        <Icon path={ICONS.close} size={12} />
+        <X size={12} strokeWidth={2} />
       </button>
     </div>
   );
 }
 
 /* ============================================================
-   Panel desplegable
+   FilterPanelContent
    ============================================================ */
-function FilterPanel({
+function FilterPanelContent({
   boardId,
   dynamicOptions,
-  onClose,
+  panelRef,
 }: {
   boardId:        string;
   dynamicOptions: FilterDynamicOptions;
-  onClose:        () => void;
+  panelRef:       RefObject<HTMLDivElement | null>;
 }) {
   const { getConditions, getConjunction, addCondition, clearAll } = useFilterStore();
   const conditions  = getConditions(boardId);
   const conjunction = getConjunction(boardId);
-  const ref         = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        const trigger = document.querySelector('.filter-trigger');
-        if (trigger?.contains(e.target as Node)) return;
-        onClose();
-      }
-    }
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [onClose]);
 
   return (
-    <div className="filter-panel" ref={ref}>
-      {/* Header */}
+    <div className="filter-panel" ref={panelRef}>
       <div className="filter-panel__header">
         <div className="filter-panel__title-group">
-          <span className="filter-panel__dot" />
+          <div className="filter-panel__dot-pulse" />
           <span className="filter-panel__title">Filtros</span>
           {conditions.length > 0 && (
             <span className="filter-panel__count">{conditions.length}</span>
           )}
+          {conditions.length > 0 && (
+            <span className="filter-panel__conj-badge">
+              {conjunction === 'AND' ? 'Todas las condiciones' : 'Cualquier condición'}
+            </span>
+          )}
         </div>
         {conditions.length > 0 && (
           <button className="filter-panel__clear" onClick={() => clearAll(boardId)}>
-            <Icon path={ICONS.trash} size={12} />
-            Limpiar
+            <Trash2 size={11} />
+            Limpiar todo
           </button>
         )}
       </div>
 
       <div className="filter-panel__divider" />
 
-      {/* Condiciones */}
       {conditions.length === 0 ? (
         <div className="filter-panel__empty">
-          <span className="filter-panel__empty-icon">◈</span>
-          <p>Sin filtros activos — se muestran todos los tickets</p>
+          <div className="filter-panel__empty-icon">
+            <SlidersHorizontal size={22} strokeWidth={1.2} />
+          </div>
+          <p>Sin filtros activos</p>
+          <span>Se muestran todos los tickets del board</span>
         </div>
       ) : (
         <div className="filter-panel__conditions">
@@ -286,16 +522,14 @@ function FilterPanel({
               condition={cond}
               index={i}
               conjunction={conjunction}
-              isLast={i === conditions.length - 1}
               dynamicOptions={dynamicOptions}
             />
           ))}
         </div>
       )}
 
-      {/* Añadir */}
       <button className="filter-panel__add" onClick={() => addCondition(boardId)}>
-        <Icon path={ICONS.plus} size={11} />
+        <Plus size={11} strokeWidth={2.5} />
         Añadir condición
       </button>
     </div>
@@ -303,29 +537,117 @@ function FilterPanel({
 }
 
 /* ============================================================
-   Componente principal exportado
+   FilterPanelAbsolute
+   ============================================================ */
+function FilterPanelAbsolute({
+  boardId,
+  dynamicOptions,
+  triggerRef,
+  onClose,
+}: {
+  boardId:        string;
+  dynamicOptions: FilterDynamicOptions;
+  triggerRef:     RefObject<HTMLButtonElement | null>;
+  onClose:        () => void;
+}) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+
+  const handleOutside = useCallback((e: MouseEvent) => {
+    if (
+      panelRef.current?.contains(e.target as Node) ||
+      triggerRef.current?.contains(e.target as Node)
+    ) return;
+    onClose();
+  }, [onClose, triggerRef]);
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [handleOutside]);
+
+  return <FilterPanelContent boardId={boardId} dynamicOptions={dynamicOptions} panelRef={panelRef} />;
+}
+
+/* ============================================================
+   FilterPanelPortal
+   ============================================================ */
+function FilterPanelPortal({
+  boardId,
+  dynamicOptions,
+  triggerRef,
+  onClose,
+}: {
+  boardId:        string;
+  dynamicOptions: FilterDynamicOptions;
+  triggerRef:     RefObject<HTMLButtonElement | null>;
+  onClose:        () => void;
+}) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 620 });
+
+  useEffect(() => {
+    function calc() {
+      if (!triggerRef.current) return;
+      const r = triggerRef.current.getBoundingClientRect();
+      const panelWidth = Math.max(620, r.width);
+      const left = Math.min(r.left, window.innerWidth - panelWidth - 12);
+      setPos({ top: r.bottom + 8, left: Math.max(8, left), width: panelWidth });
+    }
+    calc();
+    window.addEventListener('resize', calc);
+    window.addEventListener('scroll', calc, true);
+    return () => {
+      window.removeEventListener('resize', calc);
+      window.removeEventListener('scroll', calc, true);
+    };
+  }, [triggerRef]);
+
+  useEffect(() => {
+    function out(e: MouseEvent) {
+      if (
+        panelRef.current?.contains(e.target as Node) ||
+        triggerRef.current?.contains(e.target as Node)
+      ) return;
+      onClose();
+    }
+    document.addEventListener('mousedown', out);
+    return () => document.removeEventListener('mousedown', out);
+  }, [onClose, triggerRef]);
+
+  return createPortal(
+    <div style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}>
+      <FilterPanelContent boardId={boardId} dynamicOptions={dynamicOptions} panelRef={panelRef} />
+    </div>,
+    document.getElementById('portal-root') ?? document.body,
+  );
+}
+
+/* ============================================================
+   BoardFilters — componente principal exportado
    ============================================================ */
 export function BoardFilters({
   boardId,
   dynamicOptions = {},
+  usePortal = false,
 }: {
   boardId:         string;
   dynamicOptions?: FilterDynamicOptions;
+  usePortal?:      boolean;
 }) {
   const { getConditions, isOpen, togglePanel, setOpen, removeCondition, activeCount } =
     useFilterStore();
 
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const conditions = getConditions(boardId);
   const panelOpen  = isOpen(boardId);
   const count      = activeCount(boardId);
 
   return (
     <div className="board-filters">
-      {/* Chips activos */}
       {conditions.length > 0 && (
         <div className="board-filters__chips">
           {conditions.map((c) => (
-            <ActiveFilterChip
+            <ActiveChip
               key={c.id}
               condition={c}
               dynamicOptions={dynamicOptions}
@@ -335,23 +657,32 @@ export function BoardFilters({
         </div>
       )}
 
-      {/* Trigger */}
       <button
+        ref={triggerRef}
         className={`filter-trigger${count > 0 ? ' filter-trigger--active' : ''}`}
         onClick={() => togglePanel(boardId)}
       >
-        <Icon path={ICONS.filter} size={13} />
-        Filtro
+        <SlidersHorizontal size={13} strokeWidth={2} />
+        Filtros
         {count > 0 && <span className="filter-trigger__badge">{count}</span>}
       </button>
 
-      {/* Panel */}
       {panelOpen && (
-        <FilterPanel
-          boardId={boardId}
-          dynamicOptions={dynamicOptions}
-          onClose={() => setOpen(boardId, false)}
-        />
+        usePortal ? (
+          <FilterPanelPortal
+            boardId={boardId}
+            dynamicOptions={dynamicOptions}
+            triggerRef={triggerRef}
+            onClose={() => setOpen(boardId, false)}
+          />
+        ) : (
+          <FilterPanelAbsolute
+            boardId={boardId}
+            dynamicOptions={dynamicOptions}
+            triggerRef={triggerRef}
+            onClose={() => setOpen(boardId, false)}
+          />
+        )
       )}
     </div>
   );

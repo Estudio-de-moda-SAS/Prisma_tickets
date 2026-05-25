@@ -14,6 +14,7 @@ import { AutomationsPage } from "@/pages/AutomationsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
+import { TicketPage } from "@/pages/TicketPage";
 import EmailsPage from "@/pages/EmailsPage";
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
@@ -62,7 +63,6 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** TI (admin o member) puede ver el board. El resto va a /home. */
 function RequireTI({ children }: { children: React.ReactNode }) {
   const { dbReady } = useAuth();
   const role = useRole();
@@ -71,7 +71,6 @@ function RequireTI({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** Solo admins. El resto va a /home. */
 function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { dbReady } = useAuth();
   const role = useRole();
@@ -117,6 +116,10 @@ export default function App() {
             </RequireTI>
           }
         />
+
+        {/* Deep link de ticket — accesible por todos los roles autenticados.
+            El resolver interno decide qué modal mostrar según permisos. */}
+        <Route path="ticket/:ticketId" element={<TicketPage />} />
 
         {/* Inicio — todos */}
         <Route

@@ -38,6 +38,8 @@
 .kanban__col--en-progreso     { background: rgba(0, 200, 255, 0.03);   border: 1px solid rgba(0, 200, 255, 0.10); }
 /* naranja — QAS: revisión cálida, distinta al ámbar de todo */
 .kanban__col--en-revision-qas { background: rgba(251, 113, 33, 0.03);  border: 1px solid rgba(251, 113, 33, 0.10); }
+/* verde esmeralda — cliente review */
+.kanban__col--cliente-review  { background: rgba(52, 211, 153, 0.03);  border: 1px solid rgba(52, 211, 153, 0.10); }
 /* rosa-magenta — ready to deploy */
 .kanban__col--ready-to-deploy { background: rgba(236, 72, 153, 0.03);  border: 1px solid rgba(236, 72, 153, 0.10); }
 /* verde — hecho */
@@ -74,6 +76,7 @@
 .kanban__col--todo             .kanban__col-title { color: var(--warn); }
 .kanban__col--en-progreso      .kanban__col-title { color: var(--accent); }
 .kanban__col--en-revision-qas  .kanban__col-title { color: #fb7121; }
+.kanban__col--cliente-review   .kanban__col-title { color: #34d399; }
 .kanban__col--ready-to-deploy  .kanban__col-title { color: #ec4899; }
 .kanban__col--hecho            .kanban__col-title { color: var(--success); }
 .kanban__col--historial        .kanban__col-title { color: var(--txt-muted); }

@@ -35,6 +35,7 @@ const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
   todo:             4,
   en_progreso:      5,
   en_revision_qas:  8,
+  cliente_review:   10,
   ready_to_deploy:  7,
   hecho:            6,
   historial:        9,
@@ -50,7 +51,7 @@ type Props = {
 
 const COLUMN_IDS = new Set<string>([
   'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso',
-  'en_revision_qas', 'ready_to_deploy', 'hecho', 'historial',
+  'en_revision_qas', 'cliente_review', 'ready_to_deploy', 'hecho', 'historial',
 ]);
 
 const COLUMN_LABELS: Record<KanbanColumna, string> = {
@@ -60,16 +61,19 @@ const COLUMN_LABELS: Record<KanbanColumna, string> = {
   todo:             'To do',
   en_progreso:      'En progreso',
   en_revision_qas:  'En revisión QAS',
+  cliente_review:   'Client Review',
   ready_to_deploy:  'Ready to Deploy',
   hecho:            'Hecho',
   historial:        'Historial',
 };
 
 type PendingClosure = {
-  card:            Request;
-  targetColumna:   KanbanColumna;
-  targetColumnId:  number;
+  card:           Request;
+  targetColumna:  KanbanColumna;
+  targetColumnId: number;
 };
+
+const BOARD_BASE_URL = '/';
 
 export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
   const [activeCard,     setActiveCard]     = useState<Request | null>(null);
@@ -78,7 +82,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   const [parentModalId,  setParentModalId]  = useState<string | null>(null);
   const [pendingClosure, setPendingClosure] = useState<PendingClosure | null>(null);
 
-  const navigate     = useNavigate();
+  const navigate = useNavigate();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
   const { Requests }    = useGraphServices();
@@ -86,10 +90,8 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
 
-  // ── Notificaciones ──────────────────────────────────────────
   const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
 
-  // Índice: requestId → notificaciones no leídas. Se recalcula solo cuando cambian las notifs.
   const unreadByRequestId = useMemo(() => {
     const map = new Map<string, Notification[]>();
     for (const n of notifications) {
@@ -100,18 +102,21 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     return map;
   }, [notifications]);
 
-  // Cuando se abre un modal, marcar como leídas las notifs de ese ticket
+  // ── Abrir/cerrar modal ──────────────────────────────────────
   function setModal(id: string | null) {
     setModalId(id);
     setParentModalId(null);
     onModalId?.(id);
+
     if (id) {
+      history.replaceState(null, '', `/ticket/${id}`);
       const ticketNotifs = unreadByRequestId.get(id) ?? [];
       ticketNotifs.forEach((n) => markRead(n.notificationId));
+    } else {
+      history.replaceState(null, '', BOARD_BASE_URL);
     }
   }
 
-  // ── Sensores DnD ────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -142,8 +147,19 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const parentCard = parentInBoard ?? parentFetched ?? null;
 
-  function openParentModal(parentId: string) { setParentModalId(parentId); }
-  function closeParentModal()                { setParentModalId(null); }
+  function openParentModal(parentId: string) {
+    setParentModalId(parentId);
+    history.replaceState(null, '', `/ticket/${parentId}`);
+  }
+
+  function closeParentModal() {
+    setParentModalId(null);
+    if (modalId) {
+      history.replaceState(null, '', `/ticket/${modalId}`);
+    } else {
+      history.replaceState(null, '', BOARD_BASE_URL);
+    }
+  }
 
   function findColumn(id: string): KanbanColumna | null {
     for (const [col, items] of Object.entries(board)) {
@@ -168,67 +184,76 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     setOverColumn(null);
     if (!over) return;
 
-    const activeId   = String(active.id);
-    const overId     = String(over.id);
-    const targetCol  = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
+    const activeId  = String(active.id);
+    const overId    = String(over.id);
+    const targetCol = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
 
-    if (COLUMNAS_CIERRE.has(targetCol)) {
-      const card = Object.values(board).flat().find((r) => r.id === activeId);
-      if (card) {
-        setPendingClosure({
-          card,
-          targetColumna:  targetCol,
-          targetColumnId: COLUMN_ID_MAP[targetCol],
-        });
-        return;
-      }
+    const card = Object.values(board).flat().find((r) => r.id === activeId);
+    if (!card) return;
+
+    // Solo pedir evidencia si:
+    // 1. La columna destino requiere evidencia (solo en_revision_qas)
+    // 2. La tarjeta NO tiene ya un closure existente
+    const yaHayClosure = !!card.cierreInfo;
+    const necesitaEvidencia = COLUMNAS_CIERRE.has(targetCol) && !yaHayClosure;
+
+    if (necesitaEvidencia) {
+      setPendingClosure({
+        card,
+        targetColumna:  targetCol,
+        targetColumnId: COLUMN_ID_MAP[targetCol],
+      });
+      return;
     }
 
+    // En todos los demás casos, mover directo
     onMove(activeId, targetCol);
   }
 
-  function handleClosureConfirm(note: string, attachments: File[]) {
-    if (!pendingClosure || !currentUser) return;
-    closeRequest(
-      {
-        requestId:      pendingClosure.card.id,
-        closedBy:       currentUser.User_ID,
-        closureNote:    note,
-        targetColumnId: pendingClosure.targetColumnId,
-        attachments,
+function handleClosureConfirm(note: string, attachments: File[]) {
+  if (!pendingClosure || !currentUser) return;
+  closeRequest(
+    {
+      requestId:      pendingClosure.card.id,
+      closedBy:       currentUser.User_ID,
+      closureNote:    note,
+      targetColumnId: pendingClosure.targetColumnId,
+      attachments,
+    },
+    {
+      onSuccess: () => {
+        setPendingClosure(null);
       },
-      {
-        onSuccess: () => { onMove(pendingClosure.card.id, pendingClosure.targetColumna); setPendingClosure(null); },
-        onError:   () => { setPendingClosure(null); },
+      onError: () => {
+        setPendingClosure(null);
       },
-    );
-  }
+    },
+  );
+}
 
-  function handleModalMoveWithClosure(
-    id: string,
-    columna: KanbanColumna,
-    note: string,
-    attachments: File[],
-  ) {
-    if (!currentUser) return;
-    closeRequest(
-      {
-        requestId:      id,
-        closedBy:       currentUser.User_ID,
-        closureNote:    note,
-        targetColumnId: COLUMN_ID_MAP[columna],
-        attachments,
+function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: string, attachments: File[]) {
+  if (!currentUser) return;
+  closeRequest(
+    {
+      requestId:      id,
+      closedBy:       currentUser.User_ID,
+      closureNote:    note,
+      targetColumnId: COLUMN_ID_MAP[columna],
+      attachments,
+    },
+    {
+      onSuccess: () => {
+        setPendingClosure(null);
       },
-      {
-        onSuccess: () => { onMove(id, columna); setPendingClosure(null); },
-        onError:   () => { setPendingClosure(null); },
+      onError: () => {
+        setPendingClosure(null);
       },
-    );
-  }
-
+    },
+  );
+}
   const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
 
   return (
@@ -298,8 +323,8 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           equipo={equipo}
           readOnly
           onClose={closeParentModal}
-          onMove={() => {/* no-op */}}
-          onMoveWithClosure={() => {/* no-op */}}
+          onMove={() => {}}
+          onMoveWithClosure={() => {}}
         />
       )}
     </>

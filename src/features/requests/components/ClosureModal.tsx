@@ -7,12 +7,16 @@ const MAX_FILES = 5;
 const MAX_IMAGE_SIZE_MB = 2;
 
 const COL_COLOR: Record<string, string> = {
+  en_revision_qas: '#f59e0b',
+  cliente_review:  '#34d399',
   ready_to_deploy: '#a78bfa',
   hecho:           'var(--success)',
   historial:       'var(--txt-muted)',
 };
 
 const COL_LABEL: Record<string, string> = {
+  en_revision_qas: 'En revisión QAS',
+  cliente_review:  'Cliente Review',
   ready_to_deploy: 'Ready to Deploy',
   hecho:           'Hecho',
   historial:       'Historial',
@@ -44,15 +48,14 @@ async function maybeCompressImage(file: File): Promise<File> {
       canvas.width  = Math.round(img.width  * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-canvas.toBlob((blob) => {
-  if (!blob) { resolve(file); return; }
-  // Castear blob como File — mismo contenido, mismo nombre
-  const compressed = Object.assign(blob, { 
-    name: file.name, 
-    lastModified: Date.now() 
-  }) as unknown as File;
-  resolve(compressed);
-}, 'image/jpeg', 0.82);
+      canvas.toBlob((blob) => {
+        if (!blob) { resolve(file); return; }
+        const compressed = Object.assign(blob, {
+          name: file.name,
+          lastModified: Date.now()
+        }) as unknown as File;
+        resolve(compressed);
+      }, 'image/jpeg', 0.82);
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
@@ -162,7 +165,7 @@ export function ClosureModal({
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>Cerrar solicitud</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>Mover solicitud</span>
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}35` }}>
                 → {colLabel}
               </span>
@@ -181,7 +184,7 @@ export function ClosureModal({
           {/* Nota */}
           <div>
             <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>
-              Nota de cierre <span style={{ color: 'var(--danger)' }}>*</span>
+              Nota de evidencia <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <textarea
               ref={textareaRef}
@@ -189,7 +192,7 @@ export function ClosureModal({
               onChange={(e) => { setNote(e.target.value); if (error) setError(''); }}
               onKeyDown={handleKeyDown}
               disabled={isPending}
-              placeholder="Describe qué se hizo, qué se entregó, o cualquier detalle relevante del cierre… (Ctrl+Enter para confirmar)"
+              placeholder="Describe qué se hizo, qué se entregó, o cualquier detalle relevante… (Ctrl+Enter para confirmar)"
               rows={4}
               style={{
                 width: '100%', minHeight: 110, padding: '10px 13px', borderRadius: 8,
@@ -307,7 +310,7 @@ export function ClosureModal({
               display: 'flex', alignItems: 'center', gap: 7, opacity: isPending ? 0.7 : 1,
             }}>
             <CheckCircle size={13} />
-            {isPending ? 'Cerrando…' : compressing ? 'Procesando…' : 'Confirmar cierre'}
+            {isPending ? 'Guardando…' : compressing ? 'Procesando…' : 'Confirmar'}
           </button>
         </div>
       </div>
