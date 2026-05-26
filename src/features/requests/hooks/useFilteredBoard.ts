@@ -7,8 +7,6 @@ import { isConditionalField } from '../templates/types';
 
 /* ============================================================
    Aplana recursivamente todas las keys de un schema de template.
-   Usado para detectar campos que ya no existen en el schema
-   actual comparando con las keys del formData del ticket.
    ============================================================ */
 function collectSchemaKeys(fields: unknown[], result: Set<string>): void {
   for (const f of fields as TemplateExtraField[]) {
@@ -51,6 +49,9 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
     case 'tiene_hijos':
       return [String((request.childCount ?? 0) > 0)];
 
+    case 'es_hijo':
+      return [String(request.parentId !== null)];
+      
     case 'progreso':
       return [String(request.progreso ?? 0)];
 
@@ -63,21 +64,23 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
       const key = cond.templateFieldKey;
       if (!key) return [];
       const val = request.formData?.[key];
-      if (val === undefined || val === null || val === '') return [];
+      // Valor ausente: para campos boolean (valor del filtro es 'true'/'false')
+      // lo tratamos como false. Para el resto, como vacío.
+      if (val === undefined || val === null) {
+        if (cond.value === 'true' || cond.value === 'false') return ['false'];
+        return [];
+      }
+      if (val === '') return [];
       return [norm(val)];
     }
 
     case 'desactualizado': {
       const formKeys = Object.keys(request.formData ?? {});
-      // Sin formData → no está desactualizado
       if (formKeys.length === 0) return ['false'];
-      // Sin schema → no podemos determinar → consideramos no desactualizado
       const schema = request.templateFormSchema;
       if (!schema || !Array.isArray(schema) || schema.length === 0) return ['false'];
-      // Aplanar todas las keys del schema
       const schemaKeys = new Set<string>();
       collectSchemaKeys(schema, schemaKeys);
-      // Está desactualizado si alguna key del formData ya no existe en el schema
       const hasOrphans = formKeys.some((k) => !schemaKeys.has(k));
       return [String(hasOrphans)];
     }
@@ -98,13 +101,28 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
 function isEmpty(values: string[]): boolean {
   return values.length === 0 || values.every((v) => v === '' || v === 'null' || v === 'undefined');
 }
-
+function needsValue(operator: FilterOperator): boolean {
+  return operator !== 'esta_vacio' && operator !== 'no_esta_vacio';
+}
 /* ============================================================
    Evalúa una condición contra un request
    ============================================================ */
 function evaluate(request: Request, cond: FilterCondition): boolean {
-  // template_field sin key seleccionada → no filtra (deja pasar todo)
-  if (cond.field === 'template_field' && !cond.templateFieldKey) return true;
+  if (cond.field === 'template_field') {
+    // Filtrar por templateId siempre
+    if (cond.templateId && request.templateId !== cond.templateId) return false;
+
+    // Sin campo seleccionado → solo filtra por template
+    if (!cond.templateFieldKey) return true;
+
+    // Con campo pero sin valor → mostrar los que tengan ese campo con algún valor
+    if (needsValue(cond.operator) && cond.value.trim() === '') {
+      const val = request.formData?.[cond.templateFieldKey];
+      return val !== undefined && val !== null && val !== '';
+    }
+  }
+
+  // ... resto igual
 
   const values  = extractValues(request, cond);
   const empty   = isEmpty(values);
@@ -151,7 +169,10 @@ function evaluate(request: Request, cond: FilterCondition): boolean {
    ============================================================ */
 function isActive(c: FilterCondition): boolean {
   if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
-  if (c.field === 'template_field' && (!c.templateId || !c.templateFieldKey)) return false;
+  if (c.field === 'template_field') {
+    if (!c.templateId) return false;
+    return true;
+  }
   if (c.operator === 'entre') return c.value.trim() !== '' && (c.value2 ?? '').trim() !== '';
   return c.value.trim() !== '';
 }

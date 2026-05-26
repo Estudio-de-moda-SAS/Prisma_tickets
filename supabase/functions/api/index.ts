@@ -97,6 +97,7 @@ const BASE_SELECT = `
   Request_Created_At,
   Request_Parent_ID,
   Request_Estimated_Hours,
+  Request_Logged_Hours,
   Request_Finished_At,
   Request_Requester_Team_ID,
   Request_Is_Confidential,
@@ -241,6 +242,79 @@ async function getRequestParticipants(
 
   return { assigneeIds, requestedBy };
 }
+/* ── Helper: renderizar template con variables ── */
+function renderTemplate(html: string, vars: Record<string, string>): string {
+  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
+}
+
+/* ── Helper: enviar email por evento ── */
+async function sendEventEmail(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: {
+    eventKey:  string;
+    requestId: string;
+    userIds:   number[];
+    vars:      Record<string, string>;
+  },
+): Promise<void> {
+  if (params.userIds.length === 0) return;
+
+  // 1. Buscar template activo para este evento
+  const { data: tpl } = await supabase
+    .from('TBL_Email_Templates')
+    .select('Email_Template_ID, Email_Template_Name, Email_Template_Subject, Email_Template_Body_html')
+    .eq('Email_Template_Event_Key', params.eventKey)
+    .eq('Email_Template_Is_Active', true)
+    .single();
+
+  if (!tpl) return; // no hay template activo, salir silenciosamente
+
+  // 2. Obtener emails de los destinatarios
+  const { data: users } = await supabase
+    .from('TBL_Users')
+    .select('User_ID, User_Email')
+    .in('User_ID', params.userIds);
+
+  if (!users || users.length === 0) return;
+
+  const subject  = renderTemplate((tpl as any).Email_Template_Subject, params.vars);
+  const htmlBody = renderTemplate((tpl as any).Email_Template_Body_html, params.vars);
+
+  // 3. Por cada destinatario: loguear + (cuando haya proveedor) enviar
+  for (const user of users as { User_ID: number; User_Email: string }[]) {
+    // ── ENVÍO REAL (descomentar cuando tengas Resend u otro proveedor) ──
+    // let status = 'sent';
+    // try {
+    //   await fetch('https://api.resend.com/emails', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       from: 'PRISMA <noreply@tudominio.com>',
+    //       to:   user.User_Email,
+    //       subject,
+    //       html: htmlBody,
+    //     }),
+    //   });
+    // } catch {
+    //   status = 'error';
+    // }
+
+    const status = 'pending'; // cambiar a variable cuando actives el envío
+
+    await supabase.from('TBL_Email_Logs').insert({
+      Email_Log_Request_ID:    params.requestId,
+      Email_Log_Sent_To:       user.User_ID,
+      Email_Log_Template_Name: (tpl as any).Email_Template_Name,
+      Email_Log_Subject_Sent:  subject,
+      Email_Log_Body_Sent:     htmlBody,
+      Email_Log_Status:        status,
+      Email_Log_Sent_At:       new Date().toISOString(),
+    });
+  }
+}
 
 async function handleAction(
   action: string,
@@ -320,7 +394,6 @@ async function handleAction(
         isConfidential: boolean | null;
         formData?: Record<string, unknown>;
       };
-// Fetch snapshot del schema del template en el momento de creación
       const { data: tplData } = await supabase
         .from('TBL_Requests_Templates')
         .select('Request_Template_Form_Schema')
@@ -364,12 +437,32 @@ async function handleAction(
           { Request_Sprint_Request_ID: newId, Request_Sprint_ID: p.sprintId }
         ));
       await Promise.all(ops);
-      const { data, error } = await supabase
+const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
       if (error) throw new Error(error.message);
+
+      // Email al solicitante
+      const { data: requesterData } = await supabase
+        .from('TBL_Users')
+        .select('User_Name')
+        .eq('User_ID', p.requestedBy)
+        .single();
+
+      await sendEventEmail(supabase, {
+        eventKey:  'ticket_recibido',
+        requestId: newId,
+        userIds:   [p.requestedBy],
+        vars: {
+          ticket_id:          newId,
+          ticket_title:       p.titulo,
+          ticket_url:         `${Deno.env.get('APP_URL') ?? ''}/ticket/${newId}`,
+          requester_name:     (requesterData as any)?.User_Name ?? '',
+          ticket_description: p.descripcion,
+        },
+      });
+
       return data;
     }
-
     case 'moveToColumn': {
       const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
       const { data: colData } = await supabase
@@ -404,48 +497,71 @@ async function handleAction(
           actorId:   movedBy,
         });
       }
+      // Email
+      if (movedBy) {
+        const { data: reqDataMove } = await supabase
+          .from('TBL_Requests')
+          .select('Request_Title')
+          .eq('Request_ID', id)
+          .single();
+        const { assigneeIds: aIds, requestedBy: rBy } = await getRequestParticipants(supabase, id);
+        const emailRecipMove = [...new Set([...aIds, ...(rBy ? [rBy] : [])])];
+        await sendEventEmail(supabase, {
+          eventKey:  'moveToColumn',
+          requestId: id,
+          userIds:   emailRecipMove,
+          vars: {
+            ticket_id:    id,
+            ticket_title: (reqDataMove as any)?.Request_Title ?? '',
+            ticket_url:   `${Deno.env.get('APP_URL') ?? ''}/ticket/${id}`,
+            column_name:  (colData as any)?.Board_Column_Name ?? '',
+            actor_name:   '',
+          },
+        });
+      }
       return { ok: true };
     }
 
-    case 'updateRequest': {
-      const { id, ...patch } = payload as {
-        id: string; titulo?: string; descripcion?: string; score?: number;
-        progreso?: number; estimatedHours?: number | null;
-        equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
-      };
-      const scalarUpdate: Record<string, unknown> = {};
-      if (patch.titulo          !== undefined) scalarUpdate['Request_Title']            = patch.titulo;
-      if (patch.descripcion     !== undefined) scalarUpdate['Request_Description']      = patch.descripcion;
-      if (patch.score           !== undefined) scalarUpdate['Request_Score']            = patch.score;
-      if (patch.progreso        !== undefined) scalarUpdate['Request_Progress']         = Math.min(100, Math.max(0, patch.progreso));
-      if (patch.estimatedHours  !== undefined) scalarUpdate['Request_Estimated_Hours']  = patch.estimatedHours;
-      if (Object.keys(scalarUpdate).length > 0) {
-        const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
-        if (error) throw new Error(error.message);
-      }
-      if (patch.equipoIds !== undefined) {
-        await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id);
-        if (patch.equipoIds.length > 0)
-          await supabase.from('TBL_Request_Team').insert(
-            patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid }))
-          );
-      }
-      if (patch.labelIds !== undefined) {
-        await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id);
-        if (patch.labelIds.length > 0)
-          await supabase.from('TBL_Request_Labels').insert(
-            patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid }))
-          );
-      }
-      if (patch.sprintId !== undefined) {
-        await supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id);
-        if (patch.sprintId !== null)
-          await supabase.from('TBL_Request_Sprint').insert(
-            { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
-          );
-      }
-      return { ok: true };
-    }
+case 'updateRequest': {
+  const { id, ...patch } = payload as {
+    id: string; titulo?: string; descripcion?: string; score?: number;
+    progreso?: number; estimatedHours?: number | null; loggedHours?: number | null;
+    equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
+  };
+  const scalarUpdate: Record<string, unknown> = {};
+  if (patch.titulo         !== undefined) scalarUpdate['Request_Title']           = patch.titulo;
+  if (patch.descripcion    !== undefined) scalarUpdate['Request_Description']     = patch.descripcion;
+  if (patch.score          !== undefined) scalarUpdate['Request_Score']           = patch.score;
+  if (patch.progreso       !== undefined) scalarUpdate['Request_Progress']        = Math.min(100, Math.max(0, patch.progreso));
+  if (patch.estimatedHours !== undefined) scalarUpdate['Request_Estimated_Hours'] = patch.estimatedHours;
+  if (patch.loggedHours    !== undefined) scalarUpdate['Request_Logged_Hours']    = patch.loggedHours;  // ← nuevo
+  if (Object.keys(scalarUpdate).length > 0) {
+    const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
+    if (error) throw new Error(error.message);
+  }
+  if (patch.equipoIds !== undefined) {
+    await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id);
+    if (patch.equipoIds.length > 0)
+      await supabase.from('TBL_Request_Team').insert(
+        patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid }))
+      );
+  }
+  if (patch.labelIds !== undefined) {
+    await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id);
+    if (patch.labelIds.length > 0)
+      await supabase.from('TBL_Request_Labels').insert(
+        patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid }))
+      );
+  }
+  if (patch.sprintId !== undefined) {
+    await supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id);
+    if (patch.sprintId !== null)
+      await supabase.from('TBL_Request_Sprint').insert(
+        { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
+      );
+  }
+  return { ok: true };
+}
 
     case 'updateRequestSubTeams': {
       const { id, subTeamIds } = payload as { id: string; subTeamIds: number[] };
@@ -539,6 +655,31 @@ async function handleAction(
         body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
         requestId: p.requestId,
         actorId:   p.closedBy,
+      });
+// Obtener datos del ticket para las variables del email
+      const { data: requestData } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title, Request_Requested_By')
+        .eq('Request_ID', p.requestId)
+        .single();
+
+      const ticketTitle = (requestData as any)?.Request_Title ?? '';
+      const ticketUrl   = `${Deno.env.get('APP_URL') ?? 'https://tusistema.com'}/ticket/${p.requestId}`;
+
+      // Resolver destinatarios del email (mismos que la notificación)
+      const emailRecipients = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+
+      await sendEventEmail(supabase, {
+        eventKey:  'closeRequest',
+        requestId: p.requestId,
+        userIds:   emailRecipients,
+        vars: {
+          ticket_id:     p.requestId,
+          ticket_title:  ticketTitle,
+          ticket_url:    ticketUrl,
+          actor_name:    '', // se resuelve por User_ID abajo si es necesario
+          closure_notes: p.closureNote,
+        },
       });
 
       return closure;
@@ -688,6 +829,30 @@ async function handleAction(
         actorId:   p.submittedBy,
       });
 
+// Email
+const { data: actorData } = await supabase
+  .from('TBL_Users')
+  .select('User_Name')
+  .eq('User_ID', p.submittedBy)
+  .single();
+      const { data: reqDataFb } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title')
+        .eq('Request_ID', p.requestId)
+        .single();
+      const emailRecipFb = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+      await sendEventEmail(supabase, {
+        eventKey:  'submitClientFeedback',
+        requestId: p.requestId,
+        userIds:   emailRecipFb,
+        vars: {
+          ticket_id:       p.requestId,
+          ticket_title:    (reqDataFb as any)?.Request_Title ?? '',
+          ticket_url:      `${Deno.env.get('APP_URL') ?? ''}/ticket/${p.requestId}`,
+          feedback_status: p.decision === 'approved' ? 'aprobado ✓' : 'rechazado ✗',
+          actor_name:      (actorData as any)?.User_Name ?? '',
+        },
+      });
       return feedback;
     }
 
@@ -769,11 +934,32 @@ async function handleAction(
         });
       }
 
+// Email
+      if (requestId && status !== 'pending') {
+        const { data: reqDataCrit } = await supabase
+          .from('TBL_Requests')
+          .select('Request_Title')
+          .eq('Request_ID', requestId)
+          .single();
+        const { assigneeIds: aIdsCrit } = await getRequestParticipants(supabase, requestId);
+        await sendEventEmail(supabase, {
+          eventKey:  'updateAcceptanceCriteriaStatus',
+          requestId: requestId,
+          userIds:   aIdsCrit,
+          vars: {
+            ticket_id:      requestId,
+            ticket_title:   (reqDataCrit as any)?.Request_Title ?? '',
+            ticket_url:     `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+            criteria_title: '',
+            new_status:     status,
+            actor_name:     '',
+          },
+        });
+      }
       return mapCriteria(data as Record<string, unknown>);
     }
 
-    case 'deleteAcceptanceCriteria': {
-      const { criteriaId } = payload as { criteriaId: number };
+    case 'deleteAcceptanceCriteria': {      const { criteriaId } = payload as { criteriaId: number };
       const { error } = await supabase
         .from('TBL_Acceptance_Criteria')
         .delete()
@@ -807,13 +993,27 @@ async function handleAction(
       return data;
     }
 
+case 'fetchAllUsers': {
+      const { data, error } = await supabase
+        .from('TBL_Users')
+        .select(`
+          User_ID, User_Name, User_Email, User_Avatar_url, User_Role,
+          Department_ID, Team_ID, Is_New, "Is_Active",
+          department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
+          team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
+        `)
+        .order('User_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
 case 'upsertUserByEntraId': {
   const p = payload as { entraId: string; name: string; email: string };
 
   // 1. Buscar por EntraID (flujo normal)
   const { data: existing, error: findErr } = await supabase
     .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
     .eq('User_EntraID', p.entraId)
     .maybeSingle();
   if (findErr) throw new Error(findErr.message);
@@ -834,8 +1034,8 @@ case 'upsertUserByEntraId': {
   const normalizedEmail = p.email.toLowerCase().trim();
   const { data: preReg, error: preRegErr } = await supabase
     .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
-    .eq('User_EntraID', '')           // pre-registros tienen EntraID vacío
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+    .eq('User_EntraID', '')
     .ilike('User_Email', normalizedEmail)
     .maybeSingle();
   if (preRegErr) throw new Error(preRegErr.message);
@@ -845,11 +1045,11 @@ case 'upsertUserByEntraId': {
     const { data: linked, error: linkErr } = await supabase
       .from('TBL_Users')
       .update({
-        User_EntraID:    p.entraId,
-        User_Name:       p.name.slice(0, 150),  // actualizar nombre del token
+        User_EntraID: p.entraId,
+        User_Name:    p.name.slice(0, 150),
       })
       .eq('User_ID', (preReg as any).User_ID)
-      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
       .single();
     if (linkErr) throw new Error(linkErr.message);
 
@@ -875,7 +1075,7 @@ case 'upsertUserByEntraId': {
       Is_New:          true,
       User_Created_At: new Date().toISOString(),
     })
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
     .single();
   if (insertErr) throw new Error(insertErr.message);
   return { ...(data as any), team: null };
@@ -1247,31 +1447,61 @@ case 'preRegisterUser': {
 
     // ── Assignments ─────────────────────────────────────────────
 
-    case 'assignRequest': {
-      const { requestId, userId, assignedBy } = payload as {
-        requestId: string; userId: number; assignedBy?: number;
-      };
-      await supabase.from('TBL_Requests_Assignments')
-        .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
-      const { error } = await supabase.from('TBL_Requests_Assignments').insert({
-        Request_Assignment_ID:      requestId,
-        Request_Assignment_User_ID: userId,
-        Request_Assignment_At:      new Date().toISOString(),
-      });
-      if (error) throw new Error(error.message);
+case 'assignRequest': {
+  const { requestId, userId, assignedBy } = payload as {
+    requestId: string; userId: number; assignedBy?: number;
+  };
+  await supabase.from('TBL_Requests_Assignments')
+    .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
+  const { error } = await supabase.from('TBL_Requests_Assignments').insert({
+    Request_Assignment_ID:      requestId,
+    Request_Assignment_User_ID: userId,
+    Request_Assignment_At:      new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
 
-      if (assignedBy && userId !== assignedBy) {
-        await insertNotifications(supabase, {
-          userIds:   [userId],
-          type:      'assignment',
-          title:     `Te asignaron el ticket ${requestId}`,
-          body:      `Fuiste asignado al ticket ${requestId}.`,
-          requestId: requestId,
-          actorId:   assignedBy,
-        });
-      }
-      return { ok: true };
+  if (assignedBy && userId !== assignedBy) {
+    // Verificar si ya existe una notificación de asignación no leída para este ticket+usuario
+    const { data: existing } = await supabase
+      .from('TBL_Notifications')
+      .select('Notification_ID')
+      .eq('Notification_User_ID', userId)
+      .eq('Notification_Type', 'assignment')
+      .eq('Notification_Request_ID', requestId)
+      .eq('Notification_Is_Read', false)
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      await insertNotifications(supabase, {
+        userIds:   [userId],
+        type:      'assignment',
+        title:     `Te asignaron el ticket ${requestId}`,
+        body:      `Fuiste asignado al ticket ${requestId}.`,
+        requestId: requestId,
+        actorId:   assignedBy,
+      });
     }
+  }
+// Email
+  const { data: reqDataAssign } = await supabase
+    .from('TBL_Requests')
+    .select('Request_Title')
+    .eq('Request_ID', requestId)
+    .single();
+  await sendEventEmail(supabase, {
+    eventKey:  'assignRequest',
+    requestId: requestId,
+    userIds:   [userId],
+    vars: {
+      ticket_id:     requestId,
+      ticket_title:  (reqDataAssign as any)?.Request_Title ?? '',
+      ticket_url:    `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+      assignee_name: '',
+      actor_name:    '',
+    },
+  });
+  return { ok: true };
+}
 
     case 'unassignRequest': {
       const { requestId, userId } = payload as { requestId: string; userId: number };
@@ -1323,6 +1553,24 @@ case 'preRegisterUser': {
           actorId:   userId,
         });
       }
+      // Email
+      const { data: reqDataComment } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title')
+        .eq('Request_ID', requestId)
+        .single();
+      await sendEventEmail(supabase, {
+        eventKey:  'createComment',
+        requestId: requestId,
+        userIds:   recipientIds,
+        vars: {
+          ticket_id:       requestId,
+          ticket_title:    (reqDataComment as any)?.Request_Title ?? '',
+          ticket_url:      `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+          actor_name:      '',
+          comment_preview: text.trim().slice(0, 120),
+        },
+      });
       return data;
     }
 
@@ -1465,6 +1713,151 @@ case 'preRegisterUser': {
         .order('Request_Created_At', { ascending: false });
       if (error) throw new Error(error.message);
       return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+    }
+
+    // ── Email Templates ─────────────────────────────────────────
+
+case 'fetchEmailTemplates': {
+  const { boardId } = payload as { boardId: number };
+  const { data, error } = await supabase
+    .from('TBL_Email_Templates')
+    .select(`
+      Email_Template_ID,
+      Email_Template_Name,
+      Email_Template_Subject,
+      Email_Template_Body_html,
+      Email_Template_Body_Text,
+      Email_Template_Event_Key,
+Email_Template_Is_Active,
+      Email_Template_Variables,
+      Email_Template_Updated_At
+    `)
+    .eq('Email_Template_Board_ID', boardId)
+    .order('Email_Template_ID', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+case 'updateEmailTemplate': {
+  const p = payload as {
+    id:      number;
+    subject: string;
+    html:    string;
+    text:    string;
+  };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({
+      Email_Template_Subject:     p.subject,
+      Email_Template_Body_html:   p.html,
+      Email_Template_Body_Text:   p.text,
+      Email_Template_Updated_At:  new Date().toISOString(),
+    })
+    .eq('Email_Template_ID', p.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'toggleEmailTemplate': {
+  const { id, isActive } = payload as { id: number; isActive: boolean };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({ Email_Template_Is_Active: isActive })
+    .eq('Email_Template_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'createEmailTemplate': {
+  const p = payload as {
+    boardId:   number;
+    name:      string;
+    eventKey:  string;
+    subject:   string;
+    variables: string[];
+  };
+
+  // Verificar que el event_key no exista ya
+  const { data: existing } = await supabase
+    .from('TBL_Email_Templates')
+    .select('Email_Template_ID')
+    .eq('Email_Template_Event_Key', p.eventKey)
+    .maybeSingle();
+  if (existing) throw new Error(`Ya existe un template con el event key "${p.eventKey}"`);
+
+  const { data, error } = await supabase
+    .from('TBL_Email_Templates')
+    .insert({
+      Email_Template_Board_ID:   p.boardId,
+      Email_Template_Name:       p.name,
+      Email_Template_Subject:    p.subject,
+      Email_Template_Body_html:  '',
+      Email_Template_Body_Text:  '',
+      Email_Template_Event_Key:  p.eventKey,
+      Email_Template_Is_Active:  true,
+      Email_Template_Variables:  p.variables,
+      Email_Template_Created_At: new Date().toISOString(),
+      Email_Template_Updated_At: new Date().toISOString(),
+    })
+    .select(`
+      Email_Template_ID, Email_Template_Name, Email_Template_Subject,
+      Email_Template_Body_html, Email_Template_Body_Text,
+      Email_Template_Event_Key, Email_Template_Is_Active,
+      Email_Template_Variables, Email_Template_Updated_At
+    `)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+case 'deleteEmailTemplate': {
+  const { id } = payload as { id: number };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .delete()
+    .eq('Email_Template_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'updateEmailTemplateMetadata': {
+  const p = payload as {
+    id:        number;
+    name:      string;
+    subject:   string;
+    variables: string[];
+  };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({
+      Email_Template_Name:      p.name,
+      Email_Template_Subject:   p.subject,
+      Email_Template_Variables: p.variables,
+      Email_Template_Updated_At: new Date().toISOString(),
+    })
+    .eq('Email_Template_ID', p.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+  case 'deactivateUser': {
+      const { userId } = payload as { userId: number };
+      const { error } = await supabase
+        .from('TBL_Users')
+        .update({ "Is_Active": false })
+        .eq('User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'reactivateUser': {
+      const { userId } = payload as { userId: number };
+      const { error } = await supabase
+        .from('TBL_Users')
+        .update({ "Is_Active": true })
+        .eq('User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
     }
 
     default:

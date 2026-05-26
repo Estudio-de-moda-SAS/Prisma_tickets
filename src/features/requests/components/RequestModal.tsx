@@ -145,6 +145,8 @@ type Props = {
   onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
   onOpenRequest?:    (requestId: string) => void;
   readOnly?:         boolean;
+  backLabel?:        string;  
+  onBack?:           () => void; 
 };
 
 type RightTab = 'comments' | 'attachments';
@@ -369,6 +371,7 @@ function AcceptanceCriteriaPanel({
    ══════════════════════════════════════════════════════════════ */
 export function RequestModal({
   request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false,
+  backLabel, onBack,
 }: Props) {
   const { Requests }     = useGraphServices();
   const { mutate: mover }    = useMoveRequest(equipo);
@@ -448,23 +451,32 @@ const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
   useEffect(() => {
     if (children.length > 0) setShowSubRequests(true);
   }, [children.length]);
-
-  useEffect(() => {
-    const r = freshRequest ?? request;
-    setDescripcion(r.descripcion ?? '');
-    setSelectedLabelIds(r.labelIds ?? []);
-    setSelectedSubIds(r.subTeamIds ?? []);
-    setSelectedSprintId(r.sprintId ?? null);
-    setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
-    setColumnaActual(r.columna);
-  }, [request.id, freshRequest]); // eslint-disable-line react-hooks/exhaustive-deps
+const [showTimerWarning, setShowTimerWarning] = useState(false);
+// Solo corre al montar (request.id cambia = nuevo modal)
+useEffect(() => {
+  const r = request; // usar prop inicial, no freshRequest
+  setDescripcion(r.descripcion ?? '');
+  setSelectedLabelIds(r.labelIds ?? []);
+  setSelectedSubIds(r.subTeamIds ?? []);
+  setSelectedSprintId(r.sprintId ?? null);
+  setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
+  setColumnaActual(r.columna);
+}, [request.id]); // ← sin freshRequest en deps
 
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', fn);
-    return () => window.removeEventListener('keydown', fn);
-  }, [onClose]);
+function handleClose() {
+  if (timer.running) {
+    setShowTimerWarning(true);
+    return;
+  }
+  onClose();
+}
+
+useEffect(() => {
+  const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+  window.addEventListener('keydown', fn);
+  return () => window.removeEventListener('keydown', fn);
+}, [timer.running]); 
 
   /* ── Lógica de movimiento ── */
   function handleMover(columna: KanbanColumna) {
@@ -506,15 +518,30 @@ mover(
     update({ id: requestId, patch: { labelIds: next } });
   }
 
-  function handleToggleSubTeam(subId: number) {
-    if (readOnly) return;
-    const next = selectedSubIds.includes(subId)
-      ? selectedSubIds.filter((s) => s !== subId)
-      : [...selectedSubIds, subId];
-    setSelectedSubIds(next);
-    update({ id: requestId, patch: { subTeamIds: next } });
+function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAssigneeIds?: number[]) {
+  if (readOnly) return;
+  const base = currentSubIds ?? selectedSubIds;
+  const next = base.includes(subId)
+    ? base.filter((s) => s !== subId)
+    : [...base, subId];
+  setSelectedSubIds(next);
+
+  // Si se remueve el sub-equipo, desasignar sus miembros
+  if (base.includes(subId)) {
+    const membersOfSub = groupedMembers
+      .find((g) => g.subTeam.Sub_Team_ID === subId)
+      ?.members ?? [];
+    const memberIds = membersOfSub.map((m) => m.User_ID);
+    const baseAssignees = currentAssigneeIds ?? assigneeIds;
+    const toRemove = baseAssignees.filter((id) => memberIds.includes(id));
+    toRemove.forEach((userId) => {
+      setAssigneeIds((prev) => prev.filter((id) => id !== userId));
+      unassign({ requestId, userId });
+    });
   }
 
+  update({ id: requestId, patch: { subTeamIds: next } });
+}
   function handleSprint(sprintId: number | null) {
     if (readOnly) return;
     setSelectedSprintId(sprintId);
@@ -581,7 +608,7 @@ function handleToggleAssignee(userId: number) {
     <>
       <div
         ref={overlayRef}
-        onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
       >
         <div style={{
@@ -606,7 +633,28 @@ function handleToggleAssignee(userId: number) {
 
           {/* ── Header ── */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: 'wrap' }}>
+            {onBack && (
+  <button 
+    onClick={onBack}
+    style={{
+      display: 'flex', alignItems: 'center', gap: 5,
+      padding: '3px 10px', borderRadius: 5,
+      fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+      border: '1px solid rgba(167,139,250,0.4)',
+      background: 'rgba(167,139,250,0.1)',
+      color: '#a78bfa', cursor: 'pointer',
+      transition: 'all 0.15s', fontFamily: 'var(--font-body)',
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.1)'; }}
+  >
+    <GitFork size={10} />
+    {backLabel ?? '← Volver'}
+  </button>
+)}
+
             <div style={{ display: 'flex', gap: 2 }}>
+              {/* Después de los botones ChevronUp/ChevronDown */}
               {[ChevronUp, ChevronDown].map((Icon, i) => (
                 <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}>
                   <Icon size={13} />
@@ -663,7 +711,7 @@ function handleToggleAssignee(userId: number) {
             )}
 
             <div style={{ marginLeft: 'auto' }}>
-              <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <button onClick={handleClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={15} />
               </button>
             </div>
@@ -770,7 +818,13 @@ function handleToggleAssignee(userId: number) {
               </FieldBlock>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FieldBlock label="Solicitante"><PersonChip name={effectiveRequest.solicitante} color="var(--accent-2)" /></FieldBlock>
+<FieldBlock label="Solicitante">
+  <PersonChip
+    name={effectiveRequest.solicitante}
+    teamName={effectiveRequest.requesterTeamName}
+    color="var(--accent-2)"
+  />
+</FieldBlock>
 
 <FieldBlock label="Resolutor">
   <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
@@ -825,13 +879,25 @@ function handleToggleAssignee(userId: number) {
                   isLoading={isLoading}
                   assigneeIds={assigneeIds}
                   selectedSubIds={selectedSubIds}
-                  onToggleAssignee={(userId) => {
-                    handleToggleAssignee(userId);
-                    // Si no está el sub-equipo asignado, agregarlo automáticamente
-                    if (!selectedSubIds.includes(subTeam.Sub_Team_ID)) {
-                      handleToggleSubTeam(subTeam.Sub_Team_ID);
-                    }
-                  }}
+onToggleAssignee={(userId) => {
+  const isRemoving = assigneeIds.includes(userId);
+  handleToggleAssignee(userId);
+
+  if (!isRemoving) {
+    // Asignando → agregar sub-equipo si no está, en un solo patch junto con el assign
+    if (!selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  } else {
+    // Desasignando → si era el único de este sub-equipo, removerlo
+    const othersInSub = members.filter(
+      (m) => m.User_ID !== userId && assigneeIds.includes(m.User_ID)
+    );
+    if (othersInSub.length === 0 && selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  }
+}}
                 />
               );
             })
@@ -979,19 +1045,15 @@ function handleToggleAssignee(userId: number) {
     )}
   </FieldBlock>
 )}
-              {!readOnly && !isCerrada && (
-                <FieldBlock label="Contador de tiempo">
-                  <div style={{ background: 'var(--bg-surface)', border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`, borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s' }}>
-                    <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>{timer.fmt(timer.seconds)}</span>
-                    {timer.completed && <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Completado</span>}
-                    <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                      {!timer.completed && <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>{timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}</button>}
-                      {!timer.running && timer.seconds > 0 && !timer.completed && <button onClick={timer.complete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>Completar</button>}
-                    </div>
-                  </div>
-                </FieldBlock>
-              )}
+{!readOnly && !isCerrada && (
+  <FieldBlock label="Tiempo Consumido">
+    <TimerOrInputBlock
+      requestId={requestId}
+      loggedHours={effectiveRequest.loggedHours}
+      onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
+    />
+  </FieldBlock>
+)}
 
               {!readOnly && (
                 <FieldBlock label="Mover a">
@@ -1109,7 +1171,78 @@ function handleToggleAssignee(userId: number) {
           </div>
         </div>
       </div>
+{showTimerWarning && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 200,
+  }}>
+    <div style={{
+      background: 'var(--bg-panel)', border: '1px solid rgba(255,71,87,0.3)',
+      borderRadius: 12, padding: '24px 28px', width: 360, display: 'flex',
+      flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Barra superior */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg, transparent, var(--danger), transparent)' }} />
 
+      {/* Icono + título */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+          background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Clock size={17} style={{ color: 'var(--danger)' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>
+            Cronómetro activo
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
+            El tiempo no guardado se perderá
+          </div>
+        </div>
+      </div>
+
+      {/* Cuerpo */}
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
+        El cronómetro sigue corriendo. Si cierras ahora, el tiempo acumulado desde el último guardado <strong style={{ color: 'var(--txt)' }}>no se registrará</strong> en la solicitud.
+      </p>
+
+      {/* Botones */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setShowTimerWarning(false)}
+          style={{
+            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+            border: '1px solid var(--border-subtle)', background: 'transparent',
+            color: 'var(--txt-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--txt)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+        >
+          Volver
+        </button>
+        <button
+          onClick={() => { setShowTimerWarning(false); onClose(); }}
+          style={{
+            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+            border: '1px solid rgba(255,71,87,0.4)', background: 'rgba(255,71,87,0.12)',
+            color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.22)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.12)'; }}
+        >
+          Cerrar de todas formas
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {pendingClosureCol && (
         <ClosureModal
           request={effectiveRequest}
@@ -1312,18 +1445,61 @@ function HorasInput({ value, onChange }: { value: number | null; onChange: (v: n
   const toMins = (v: number | null) => v != null ? String(Math.round((v % 1) * 60)) : '';
   const [hrs,  setHrs]  = useState<string>(toHrs(value));
   const [mins, setMins] = useState<string>(toMins(value));
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => { setHrs(toHrs(value)); setMins(toMins(value)); }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
-  function commit(h: string, m: string) {
-    const hVal = parseInt(h) || 0; const mVal = parseInt(m) || 0;
-    if (h === '' && m === '') { onChange(null); return; }
-    onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
+
+  function scheduleCommit(h: string, m: string) {
+    if (commitTimer.current) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => {
+      const hVal = parseInt(h) || 0;
+      const mVal = Math.min(59, parseInt(m) || 0);
+      if (h === '' && m === '') { onChange(null); return; }
+      onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
+    }, 150); // 150ms — suficiente para que el foco salte al otro input
   }
-  const inputStyle: React.CSSProperties = { width: 52, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)', outline: 'none', textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+
+  const inputStyle: React.CSSProperties = {
+    width: 52, padding: '6px 8px', borderRadius: 6,
+    border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)',
+    color: 'var(--txt)', fontSize: 14, fontWeight: 600,
+    fontFamily: 'var(--font-display)', outline: 'none',
+    textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <input
+        type="number" min={0} max={999} placeholder="0"
+        value={hrs}
+        onChange={(e) => setHrs(e.target.value)}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          scheduleCommit(hrs, mins);
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)';
+          if (commitTimer.current) clearTimeout(commitTimer.current); // cancelar si volvemos
+        }}
+        style={inputStyle}
+      />
       <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
-      <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <input
+        type="number" min={0} max={59} placeholder="00"
+        value={mins}
+        onChange={(e) => setMins(e.target.value)}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          const m2 = String(Math.min(59, parseInt(mins) || 0));
+          setMins(m2);
+          scheduleCommit(hrs, m2);
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)';
+          if (commitTimer.current) clearTimeout(commitTimer.current); // cancelar si volvemos
+        }}
+        style={inputStyle}
+      />
       <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
     </div>
   );
@@ -1356,12 +1532,116 @@ function FieldBlock({ label, children }: { label: string; children: React.ReactN
   return <div><FieldLabel>{label}</FieldLabel>{children}</div>;
 }
 
-function PersonChip({ name, color }: { name: string; color: string }) {
+function PersonChip({ name, teamName}: { name: string; teamName?: string | null; color: string }) {
   const ini = name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${color}, ${color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div>
-      <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>{name}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{name}</span>
+        {teamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>{teamName}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TimerOrInputBlock ─────────────────────────────────── */
+function TimerOrInputBlock({
+  requestId, loggedHours, onSave,
+}: {
+  requestId:   string;
+  loggedHours: number | null;
+  onSave:      (val: number | null) => void;
+}) {
+  const [mode, setMode] = useState<'timer' | 'input'>('timer');
+  const timer = useTimer(requestId);
+
+  // Al completar el timer, guardamos en DB automáticamente
+  function handleComplete() {
+    timer.complete();
+    const totalHours = parseFloat((timer.seconds / 3600).toFixed(4));
+    const combined   = (loggedHours ?? 0) + totalHours;
+    onSave(parseFloat(combined.toFixed(4)));
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Toggle modo */}
+      <div style={{ display: 'flex', gap: 0, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, overflow: 'hidden', alignSelf: 'flex-start' }}>
+        {(['timer', 'input'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              padding: '4px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
+              textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+              background: mode === m ? 'var(--accent-2)' : 'transparent',
+              color:      mode === m ? 'white' : 'var(--txt-muted)',
+              transition: 'all 0.15s', fontFamily: 'var(--font-display)',
+            }}
+          >
+            {m === 'timer' ? '⏱ Cronómetro' : '✏ Manual'}
+          </button>
+        ))}
+      </div>
+
+      {/* Horas ya guardadas */}
+      {loggedHours != null && loggedHours > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)' }}>
+          <CheckCircle size={12} style={{ color: 'var(--success)', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+            {fmtHours(loggedHours)} registradas
+          </span>
+          <button
+            onClick={() => onSave(null)}
+            title="Borrar horas registradas"
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', fontSize: 11, padding: '1px 4px', opacity: 0.6 }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.opacity = '0.6'; }}
+          >×</button>
+        </div>
+      )}
+
+      {/* Modo cronómetro */}
+      {mode === 'timer' && (
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`,
+          borderRadius: 8, padding: '14px 16px',
+          display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s',
+        }}>
+          <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>
+            {timer.fmt(timer.seconds)}
+          </span>
+          {timer.completed && (
+            <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Guardado</span>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            {!timer.completed && (
+              <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+                {timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}
+              </button>
+            )}
+            {!timer.running && timer.seconds > 0 && !timer.completed && (
+              <button onClick={handleComplete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+                Guardar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modo input manual */}
+      {mode === 'input' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <HorasInput
+            value={loggedHours}
+            onChange={(val) => onSave(val)}
+          />
+          <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>horas totales trabajadas</span>
+        </div>
+      )}
     </div>
   );
 }

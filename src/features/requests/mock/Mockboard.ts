@@ -34,6 +34,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: true,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-002',
@@ -66,6 +68,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   icebox: [
@@ -100,6 +104,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-009',
@@ -132,6 +138,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   backlog: [
@@ -166,6 +174,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-005',
@@ -198,6 +208,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-010',
@@ -230,6 +242,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   todo: [
@@ -264,6 +278,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-011',
@@ -296,6 +312,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   en_progreso: [
@@ -330,6 +348,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-012',
@@ -362,6 +382,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   en_revision_qas: [],
@@ -399,6 +421,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
     {
       id: 'mock-013',
@@ -431,6 +455,8 @@ export const MOCK_BOARD: BoardData = {
       formData: {},
       templateFormSchema: [],
       isConfidential: false,
+      requesterTeamName: null,
+      loggedHours: null,
     },
   ],
   historial: [],

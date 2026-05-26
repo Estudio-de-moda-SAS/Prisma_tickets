@@ -1,3 +1,4 @@
+// src/features/requests/hooks/useRequests.ts
 import { useQuery } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
@@ -62,7 +63,6 @@ function getMockBoardForTeam(equipo: Equipo): BoardData {
 
 function getMockBoardFull(): BoardData {
   const base = structuredClone(MOCK_BOARD) as Partial<BoardData>;
-  // Asegurar que cliente_review exista aunque no esté en el mock antiguo
   return {
     sin_categorizar: base.sin_categorizar ?? [],
     icebox:          base.icebox          ?? [],
@@ -89,10 +89,10 @@ export function useBoardEquipo(equipo: Equipo) {
       ? () => Promise.resolve(getMockBoardForTeam(equipo))
       : () => Requests.fetchByTeamCode(equipo).then(groupRequestsByColumn),
 
-    staleTime:            0,
+    staleTime:            config.USE_MOCK ? Infinity : 10_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    refetchInterval:      config.USE_MOCK ? false : 15_000,
     retry:                config.USE_MOCK ? false : 1,
   });
 }
@@ -109,10 +109,10 @@ export function useBoardCompleto() {
       ? () => Promise.resolve(getMockBoardFull())
       : () => Requests.fetchAllByBoard().then(groupRequestsByColumn),
 
-    staleTime:            0,
+    staleTime:            config.USE_MOCK ? Infinity : 10_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    refetchInterval:      config.USE_MOCK ? false : 15_000,
     retry:                config.USE_MOCK ? false : 1,
   });
 }
@@ -129,10 +129,10 @@ export function useSinCategorizar() {
       ? () => Promise.resolve(MOCK_BOARD.sin_categorizar)
       : () => Requests.fetchUncategorized(),
 
-    staleTime:            0,
+    staleTime:            config.USE_MOCK ? Infinity : 10_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    refetchInterval:      config.USE_MOCK ? false : 15_000,
     retry:                config.USE_MOCK ? false : 1,
   });
 }

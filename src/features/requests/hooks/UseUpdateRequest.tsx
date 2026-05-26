@@ -21,6 +21,7 @@ type UpdatePayload = {
     | 'progreso'
     | 'sprintId'
     | 'estimatedHours'
+    | 'loggedHours' 
   >>;
 };
 
@@ -45,6 +46,7 @@ export function useUpdateRequest(equipo: Equipo) {
         labelIds:       patch.labelIds,
         sprintId:       patch.sprintId,
         estimatedHours: patch.estimatedHours,
+        loggedHours:    patch.loggedHours,
       });
     },
 

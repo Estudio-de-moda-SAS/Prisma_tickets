@@ -213,6 +213,7 @@ export type Request = {
   solicitante:     string;
   solicitanteId:   number;
   requesterTeamId: number | null;
+  requesterTeamName: string | null;
   assignees:       RequestAssignee[];
 
   // ── Relaciones de board ────────────────────────────────────
@@ -238,6 +239,7 @@ export type Request = {
 
   // ── Tiempo estimado ────────────────────────────────────────
   estimatedHours: number | null;
+  loggedHours:    number | null;
 
   // ── Confidencialidad ───────────────────────────────────────
   isConfidential: boolean;
@@ -305,6 +307,7 @@ export type ActualizarRequestPayload = {
   labelIds?:       number[];
   sprintId?:       number | null;
   estimatedHours?: number | null;
+  loggedHours?:    number | null; 
 };
 
 export type CerrarRequestPayload = {

@@ -33,18 +33,19 @@ export function useCreateRequest() {
       return newRequest;
     },
 
-    onSuccess: (newRequest) => {
-      qc.invalidateQueries({ queryKey: requestKeys.all });
+onSuccess: (newRequest) => {
+  // refetchQueries fuerza el fetch inmediato, no solo marca stale
+  qc.refetchQueries({ queryKey: requestKeys.all });
 
-      if (newRequest.parentId !== null) {
-        qc.invalidateQueries({
-          queryKey: subRequestKeys.byParent(newRequest.parentId),
-        });
-      }
+  if (newRequest.parentId !== null) {
+    qc.invalidateQueries({
+      queryKey: subRequestKeys.byParent(newRequest.parentId),
+    });
+  }
 
-      qc.invalidateQueries({
-        queryKey: criteriaKeys.byRequest(newRequest.id),
-      });
-    },
+  qc.invalidateQueries({
+    queryKey: criteriaKeys.byRequest(newRequest.id),
+  });
+},
   });
 }

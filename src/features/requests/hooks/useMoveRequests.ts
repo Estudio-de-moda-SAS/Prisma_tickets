@@ -83,10 +83,8 @@ next[payload.columna] = [
       queryClient.invalidateQueries({ queryKey });
     },
 
-onSettled: (_data, error) => {
-  if (config.USE_MOCK) return;
-  if (error) return;
-  queryClient.invalidateQueries({ queryKey });
+// DESPUÉS
+onSettled: () => {
 },
   });
 }

@@ -13,6 +13,7 @@ export type FilterField =
   | 'sprint'
   | 'confidencial'
   | 'tiene_hijos'
+  | 'es_hijo'
   | 'progreso'
   | 'horas_estimadas'
   | 'template_field'
@@ -163,6 +164,7 @@ export const FIELD_LABELS: Record<FilterField, string> = {
   sprint:          'Sprint',
   confidencial:    'Confidencial',
   tiene_hijos:     'Tiene sub-tickets',
+  es_hijo:         'Es sub-ticket',
   progreso:        'Progreso',
   horas_estimadas: 'Horas estimadas',
   template_field:  'Plantilla',
@@ -181,6 +183,7 @@ export const FIELD_ICONS: Record<FilterField, string> = {
   sprint:          '⚡',
   confidencial:    '🛡',
   tiene_hijos:     '⊕',
+  es_hijo:         '⊙',
   progreso:        '%',
   horas_estimadas: '⏱',
   template_field:  '📋',
@@ -197,6 +200,7 @@ export const FIELD_CATEGORY: Record<FilterField, FieldCategory> = {
   equipo:          'enum',
   confidencial:    'boolean',
   tiene_hijos:     'boolean',
+  es_hijo:         'boolean',
   desactualizado:  'boolean',
   subequipo:       'dynamic',
   etiqueta:        'dynamic',
@@ -231,6 +235,7 @@ export const FIELD_OPERATORS: Record<FilterField, FilterOperator[]> = {
   sprint:          ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
   confidencial:    ['es'],
   tiene_hijos:     ['es'],
+  es_hijo:         ['es'],
   desactualizado:  ['es'],
   progreso:        ['mayor_que', 'menor_que', 'entre', 'es'],
   horas_estimadas: ['mayor_que', 'menor_que', 'entre', 'esta_vacio', 'no_esta_vacio'],
@@ -266,6 +271,10 @@ export const FIELD_SELECT_OPTIONS: Partial<Record<FilterField, { value: string; 
     { value: 'false', label: 'No' },
   ],
   tiene_hijos: [
+    { value: 'true',  label: 'Sí' },
+    { value: 'false', label: 'No' },
+  ],
+  es_hijo: [
     { value: 'true',  label: 'Sí' },
     { value: 'false', label: 'No' },
   ],

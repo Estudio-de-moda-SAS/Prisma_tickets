@@ -39,6 +39,7 @@ type RawRequestRow = {
   Request_Progress:                    number | null;
   Request_Created_At:                  string | null;
   Request_Estimated_Hours:             number | null;
+  Request_Logged_Hours: number | null; 
   Request_Finished_At:                 string | null;
   Request_Parent_ID:                   string | null;
   Request_Requester_Team_ID:           number | null;
@@ -144,6 +145,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
   const solicitante = row.requester?.User_Name ?? '';
+  const requesterTeamName = row.requester_team?.Team_Name ?? null; 
   const formData    = row.Request_Form_Data ?? {};
 
   // Snapshot tiene prioridad — es el schema que tenía el template cuando se creó el ticket.
@@ -196,6 +198,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
     solicitante,
     solicitanteId:   row.Request_Requested_By,
     requesterTeamId,
+    requesterTeamName,
     assignees,
     equipo:          equipoCodes,
     equipoIds,
@@ -209,6 +212,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
     fechaApertura:   row.Request_Created_At ?? new Date().toISOString(),
     fechaCierre:     row.Request_Finished_At ?? null,
     estimatedHours:  row.Request_Estimated_Hours ?? null,
+    loggedHours:     row.Request_Logged_Hours ?? null,
     extraFields,
     formData,
     templateFormSchema,
@@ -332,19 +336,20 @@ async moveToColumn({ id, columnId, movedBy }: MoverRequestPayload): Promise<void
   await apiClient.call('moveToColumn', { id, columnId, movedBy });
 }
 
-  async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
-    await apiClient.call('updateRequest', {
-      id,
-      titulo:         patch.titulo,
-      descripcion:    patch.descripcion,
-      score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
-      progreso:       patch.progreso,
-      equipoIds:      patch.equipoIds,
-      labelIds:       patch.labelIds,
-      sprintId:       patch.sprintId,
-      estimatedHours: patch.estimatedHours,
-    });
-    if (patch.subTeamIds !== undefined) {
+async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
+  await apiClient.call('updateRequest', {
+    id,
+    titulo:         patch.titulo,
+    descripcion:    patch.descripcion,
+    score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
+    progreso:       patch.progreso,
+    equipoIds:      patch.equipoIds,
+    labelIds:       patch.labelIds,
+    sprintId:       patch.sprintId,
+    estimatedHours: patch.estimatedHours,
+    loggedHours:    patch.loggedHours, 
+  });
+      if (patch.subTeamIds !== undefined) {
       await apiClient.call('updateRequestSubTeams', { id, subTeamIds: patch.subTeamIds });
     }
   }

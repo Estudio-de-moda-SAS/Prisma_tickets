@@ -28,10 +28,10 @@ type Step = 'equipo' | 'template' | 'form';
 const MAX_ATTACHMENTS = 5;
 
 const PRI_COLOR: Record<Prioridad, string> = {
-  baja:    'var(--txt-muted)',
-  media:   'var(--info)',
-  alta:    'var(--warn)',
-  critica: 'var(--danger)',
+  baja:    '#b2bec3',
+  media:   '#74b9ff',
+  alta:    '#fdcb6e',
+  critica: '#ff4757',
 };
 
 function fmtBytes(bytes: number) {

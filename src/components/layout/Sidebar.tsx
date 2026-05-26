@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart2, ChevronDown, Home, LogOut,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, ClipboardList, Mail,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, ClipboardList,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -91,8 +91,6 @@ const equiposVisibles = (isAdmin || isTIMember)
       </div>
 
       <nav className="sidebar__nav">
-        <NavLabel>Principal</NavLabel>
-
         {/* ── INICIO — todos ── */}
         <NavLink
           to="/home"
@@ -113,7 +111,7 @@ const equiposVisibles = (isAdmin || isTIMember)
             }
           >
             <BarChart2 size={16} />
-            {sidebarAbierto && <span>Estadísticas</span>}
+            {sidebarAbierto && <span>Dashboard</span>}
           </NavLink>
         )}
 
@@ -133,7 +131,7 @@ const equiposVisibles = (isAdmin || isTIMember)
         {/* ── AUTOMATIZACIONES — solo admin ── */}
         {showAuto && (
           <>
-            <NavLabel top>Automatizaciones</NavLabel>
+            <NavLabel> </NavLabel>
 
             {sidebarAbierto ? (
               <div className="sidebar__nav-group">
@@ -169,14 +167,6 @@ const equiposVisibles = (isAdmin || isTIMember)
                       <span>Historial</span>
                     </NavLink>
 
-                    <NavLink to="/emails"
-                      className={({ isActive }) =>
-                        ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                      }
-                    >
-                      <Mail size={12} />
-                      <span>Correos</span>
-                    </NavLink>
                   </div>
                 )}
               </div>
@@ -235,7 +225,7 @@ const equiposVisibles = (isAdmin || isTIMember)
                         onClick={() => handleHomeEquipo(key)}
                         className="sidebar__nav-item sidebar__nav-item--sub"
                       >
-                        <span className="sidebar__sub-dot" />
+                        <span />
                         <span>Mis solicitudes</span>
                       </button>
                     </div>

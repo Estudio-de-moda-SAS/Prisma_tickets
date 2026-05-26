@@ -140,7 +140,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       </div>
 
       {id === 'sin_categorizar' && (
-        <p className="kanban__drop-hint">↓ Asignar al equipo</p>
+        <p className="kanban__drop-hint">↓ Asignado al equipo</p>
       )}
 
       <div className="kanban__col-body">

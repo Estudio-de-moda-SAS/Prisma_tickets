@@ -38,10 +38,10 @@ function normalizeBranch(field: import('@/features/requests/templates/types').Te
 type Step = 'equipo' | 'template' | 'form';
 
 const PRI_COLOR: Record<Prioridad, string> = {
-  baja:    'var(--txt-muted)',
-  media:   'var(--info)',
-  alta:    'var(--warn)',
-  critica: 'var(--danger)',
+  baja:    '#b2bec3',
+  media:   '#74b9ff',
+  alta:    '#fdcb6e',
+  critica: '#ff4757',
 };
 
 /* ── Portal dropdown hook ── */
@@ -518,6 +518,27 @@ type Props = {
   parentTitle?:          string;
   parentIsConfidential?: boolean;
 };
+  function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+    const initH = value != null ? Math.floor(value) : 0;
+    const initM = value != null ? Math.round((value % 1) * 60) : 0;
+    const [hrs, setHrs] = useState<string>(value != null ? String(initH) : '');
+    const [mins, setMins] = useState<string>(value != null ? String(initM) : '');
+    function commit(h: string, m: string) {
+      const hVal = parseInt(h) || 0; const mVal = parseInt(m) || 0;
+      if (h === '' && m === '') { onChange(null); return; }
+      onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
+    }
+    const inputStyle: React.CSSProperties = { width: 52, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)', outline: 'none', textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
+        <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
+      </div>
+    );
+  }
+
 
 export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle, parentIsConfidential = false }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -636,7 +657,7 @@ const formData: Record<string, unknown> = {
         sprintId:         selectedSprintId,
         estimatedHours,
         parentId,
-        requesterTeamId:  null,
+        requesterTeamId: currentUser.Team_ID ?? null, 
         isConfidential:   parentIsConfidential,
         acceptanceCriteria,
         formData, 
@@ -651,29 +672,8 @@ const formData: Record<string, unknown> = {
 
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
     extraFieldsReady && acceptanceCriteria.length > 0;
-
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
 
-  function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
-    const initH = value != null ? Math.floor(value) : 0;
-    const initM = value != null ? Math.round((value % 1) * 60) : 0;
-    const [hrs, setHrs] = useState<string>(value != null ? String(initH) : '');
-    const [mins, setMins] = useState<string>(value != null ? String(initM) : '');
-    function commit(h: string, m: string) {
-      const hVal = parseInt(h) || 0; const mVal = parseInt(m) || 0;
-      if (h === '' && m === '') { onChange(null); return; }
-      onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
-    }
-    const inputStyle: React.CSSProperties = { width: 52, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)', outline: 'none', textAlign: 'center', boxSizing: 'border-box', transition: 'border-color 0.15s' };
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
-        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
-        <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
-        <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
-      </div>
-    );
-  }
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
@@ -784,7 +784,7 @@ const formData: Record<string, unknown> = {
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
                       const active = prioridad === p;
-                      return <button key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
+                      return <button type="button" key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
                     })}
                   </div>
                 </FieldBlock>

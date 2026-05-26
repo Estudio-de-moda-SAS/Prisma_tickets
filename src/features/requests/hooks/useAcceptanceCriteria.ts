@@ -3,12 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import type { AcceptanceCriteria } from '@/types/commons';
 
-/* ── Query keys ── */
 export const criteriaKeys = {
   byRequest: (requestId: string) => ['acceptance-criteria', requestId] as const,
 };
 
-/* ── Fetch ── */
 export function useAcceptanceCriteria(requestId: string | null | undefined) {
   return useQuery<AcceptanceCriteria[]>({
     queryKey: criteriaKeys.byRequest(requestId ?? ''),
@@ -18,7 +16,6 @@ export function useAcceptanceCriteria(requestId: string | null | undefined) {
   });
 }
 
-/* ── Crear ── */
 export function useCreateCriteria(requestId: string) {
   const qc = useQueryClient();
   return useMutation<AcceptanceCriteria, Error, { title: string }>({
@@ -30,14 +27,20 @@ export function useCreateCriteria(requestId: string) {
   });
 }
 
-/* ── Actualizar estado ── */
+type UpdateStatusPayload = {
+  criteriaId:    number;
+  status:        'accepted' | 'rejected' | 'pending';
+  reviewedBy:    number;
+  reviewerNotes?: string;
+};
+
+type UpdateStatusContext = { snapshot: AcceptanceCriteria[] | undefined };
+
 export function useUpdateCriteriaStatus(requestId: string) {
   const qc = useQueryClient();
-  return useMutation<
-    AcceptanceCriteria,
-    Error,
-    { criteriaId: number; status: 'accepted' | 'rejected' | 'pending'; reviewedBy: number; reviewerNotes?: string }
-  >({
+  const queryKey = criteriaKeys.byRequest(requestId);
+
+  return useMutation<AcceptanceCriteria, Error, UpdateStatusPayload, UpdateStatusContext>({
     mutationFn: ({ criteriaId, status, reviewedBy, reviewerNotes }) =>
       apiClient.call('updateAcceptanceCriteriaStatus', {
         criteriaId,
@@ -45,13 +48,34 @@ export function useUpdateCriteriaStatus(requestId: string) {
         reviewedBy,
         reviewerNotes: reviewerNotes ?? null,
       }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: criteriaKeys.byRequest(requestId) });
+
+    onMutate: async ({ criteriaId, status, reviewerNotes }): Promise<UpdateStatusContext> => {
+      await qc.cancelQueries({ queryKey });
+      const snapshot = qc.getQueryData<AcceptanceCriteria[]>(queryKey);
+
+      qc.setQueryData<AcceptanceCriteria[]>(queryKey, (prev) =>
+        prev?.map((c) =>
+          c.criteriaId === criteriaId
+            ? { ...c, status, reviewerNotes: reviewerNotes ?? c.reviewerNotes }
+            : c,
+        ),
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_err, _payload, context) => {
+      if (context?.snapshot) {
+        qc.setQueryData<AcceptanceCriteria[]>(queryKey, context.snapshot);
+      }
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey });
     },
   });
 }
 
-/* ── Eliminar ── */
 export function useDeleteCriteria(requestId: string) {
   const qc = useQueryClient();
   return useMutation<{ ok: boolean }, Error, { criteriaId: number }>({

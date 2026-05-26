@@ -147,19 +147,11 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const parentCard = parentInBoard ?? parentFetched ?? null;
 
-  function openParentModal(parentId: string) {
-    setParentModalId(parentId);
-    history.replaceState(null, '', `/ticket/${parentId}`);
-  }
-
-  function closeParentModal() {
-    setParentModalId(null);
-    if (modalId) {
-      history.replaceState(null, '', `/ticket/${modalId}`);
-    } else {
-      history.replaceState(null, '', BOARD_BASE_URL);
-    }
-  }
+function openParentModal(parentId: string) {
+  setParentModalId(modalId);   // guardar la sub actual como "origen"
+  setModalId(parentId);        // mostrar el padre como modal principal
+  history.replaceState(null, '', `/ticket/${parentId}`);
+}
 
   function findColumn(id: string): KanbanColumna | null {
     for (const [col, items] of Object.entries(board)) {
@@ -300,33 +292,54 @@ function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: st
         />
       )}
 
-      {modalCard && (
-        <RequestModal
-          request={modalCard}
-          equipo={equipo}
-          onClose={() => setModal(null)}
-          onMove={(id, columna) => onMove(id, columna)}
-          onMoveWithClosure={handleModalMoveWithClosure}
-          onOpenRequest={(id) => {
-            if (modalCard?.parentId !== null) {
-              openParentModal(id);
-            } else {
-              setModal(id);
-            }
-          }}
-        />
-      )}
+{modalCard && !parentCard && (
+  <RequestModal
+    request={modalCard}
+    equipo={equipo}
+    onClose={() => setModal(null)}
+    onMove={(id, columna) => onMove(id, columna)}
+    onMoveWithClosure={handleModalMoveWithClosure}
+    onOpenRequest={(id) => {
+      if (modalCard.parentId) {
+        openParentModal(id);
+      } else {
+        setParentModalId(modalCard.id);
+        setModalId(id);
+        history.replaceState(null, '', `/ticket/${id}`);
+      }
+    }}
+  />
+)}
 
-      {parentCard && (
-        <RequestModal
-          request={parentCard}
-          equipo={equipo}
-          readOnly
-          onClose={closeParentModal}
-          onMove={() => {}}
-          onMoveWithClosure={() => {}}
-        />
-      )}
+{parentCard && modalCard && (
+  <RequestModal
+    request={modalCard}           // ← padre (o hijo navegado)
+    equipo={equipo}
+    onClose={() => {
+      // Cerrar modal actual → volver al origen
+      setModalId(parentModalId);
+      setParentModalId(null);
+      if (parentModalId) {
+        history.replaceState(null, '', `/ticket/${parentModalId}`);
+      } else {
+        history.replaceState(null, '', BOARD_BASE_URL);
+      }
+    }}
+    onMove={(id, columna) => onMove(id, columna)}
+    onMoveWithClosure={handleModalMoveWithClosure}
+    onOpenRequest={(id) => openParentModal(id)}
+    backLabel="← Volver"
+    onBack={() => {
+      setModalId(parentModalId);
+      setParentModalId(null);
+      if (parentModalId) {
+        history.replaceState(null, '', `/ticket/${parentModalId}`);
+      } else {
+        history.replaceState(null, '', BOARD_BASE_URL);
+      }
+    }}
+  />
+)}
     </>
   );
 }

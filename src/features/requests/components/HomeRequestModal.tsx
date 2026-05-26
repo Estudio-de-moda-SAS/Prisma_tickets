@@ -390,10 +390,15 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
             </FieldBlock>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <FieldBlock label="Solicitante">
-                <FieldValue>{request.solicitante}</FieldValue>
-              </FieldBlock>
-
+<FieldBlock label="Solicitante">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(request.solicitante)}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{request.solicitante}</span>
+      {request.requesterTeamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>{request.requesterTeamName}</span>}
+    </div>
+  </div>
+</FieldBlock>
               <FieldBlock label="Resolutor(es)">
                 <FieldValue muted={request.assignees.length === 0}>
                   {request.assignees.length === 0 ? 'Sin asignar' : (
