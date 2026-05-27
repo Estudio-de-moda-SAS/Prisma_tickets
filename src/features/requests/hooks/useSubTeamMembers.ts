@@ -10,7 +10,7 @@ export function useSubTeamMembers(subTeamId: number | null) {
     queryKey: ['subTeamMembers', subTeamId],
     queryFn:  () => apiClient.call<SubTeamMember[]>('fetchSubTeamMembers', { subTeamId }),
     enabled:  subTeamId !== null,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
     retry: 1,
   });
 }
@@ -20,7 +20,7 @@ export function useSubTeamMembersGrouped(subTeams: { Sub_Team_ID: number; Sub_Te
     queries: subTeams.map((st) => ({
       queryKey:  ['subTeamMembers', st.Sub_Team_ID],
       queryFn:   () => apiClient.call<SubTeamMember[]>('fetchSubTeamMembers', { subTeamId: st.Sub_Team_ID }),
-      staleTime: 0,
+      staleTime: 2 * 60 * 1000,
       retry:     1,
     })),
   });

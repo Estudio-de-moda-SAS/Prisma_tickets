@@ -383,7 +383,6 @@ export function RequestModal({
   const { mutate: uploadAttachment, isPending: uploading } = useUploadAttachment();
   const { mutate: deleteAttachment } = useDeleteAttachment();
   const { data: currentUser } = useCurrentUser();
-  const timer        = useTimer(request.id);
   const overlayRef   = useRef<HTMLDivElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -447,6 +446,7 @@ const { data: comments    = [] } = useComments(requestId);  const { data: attach
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 const groupedMembers = useSubTeamMembersGrouped(subTeams);
+
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
   useEffect(() => {
     if (children.length > 0) setShowSubRequests(true);
@@ -462,10 +462,10 @@ useEffect(() => {
   setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
   setColumnaActual(r.columna);
 }, [request.id]); // ← sin freshRequest en deps
-
+const timerRunningRef = useRef(false);
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
 function handleClose() {
-  if (timer.running) {
+  if (timerRunningRef.current) {
     setShowTimerWarning(true);
     return;
   }
@@ -473,10 +473,18 @@ function handleClose() {
 }
 
 useEffect(() => {
-  const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+  const fn = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (timerRunningRef.current) {
+        setShowTimerWarning(true);
+      } else {
+        onClose();
+      }
+    }
+  };
   window.addEventListener('keydown', fn);
   return () => window.removeEventListener('keydown', fn);
-}, [timer.running]); 
+}, [onClose]);
 
   /* ── Lógica de movimiento ── */
   function handleMover(columna: KanbanColumna) {
@@ -1046,13 +1054,12 @@ onToggleAssignee={(userId) => {
   </FieldBlock>
 )}
 {!readOnly && !isCerrada && (
-  <FieldBlock label="Tiempo Consumido">
-    <TimerOrInputBlock
-      requestId={requestId}
-      loggedHours={effectiveRequest.loggedHours}
-      onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
-    />
-  </FieldBlock>
+<TimerOrInputBlock
+  requestId={requestId}
+  loggedHours={effectiveRequest.loggedHours}
+  onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
+  onRunningChange={(running) => { timerRunningRef.current = running; }}
+/>
 )}
 
               {!readOnly && (
@@ -1547,18 +1554,24 @@ function PersonChip({ name, teamName}: { name: string; teamName?: string | null;
 
 /* ─── TimerOrInputBlock ─────────────────────────────────── */
 function TimerOrInputBlock({
-  requestId, loggedHours, onSave,
+  requestId, loggedHours, onSave, onRunningChange,
 }: {
-  requestId:   string;
-  loggedHours: number | null;
-  onSave:      (val: number | null) => void;
+  requestId:        string;
+  loggedHours:      number | null;
+  onSave:           (val: number | null) => void;
+  onRunningChange?: (running: boolean) => void;
 }) {
   const [mode, setMode] = useState<'timer' | 'input'>('timer');
   const timer = useTimer(requestId);
 
-  // Al completar el timer, guardamos en DB automáticamente
+  // Notificar al padre cuando cambia running
+  useEffect(() => {
+    onRunningChange?.(timer.running);
+  }, [timer.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleComplete() {
     timer.complete();
+    onRunningChange?.(false);
     const totalHours = parseFloat((timer.seconds / 3600).toFixed(4));
     const combined   = (loggedHours ?? 0) + totalHours;
     onSave(parseFloat(combined.toFixed(4)));
@@ -1639,7 +1652,7 @@ function TimerOrInputBlock({
             value={loggedHours}
             onChange={(val) => onSave(val)}
           />
-          <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>horas totales trabajadas</span>
+          <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>horas totales consumidas</span>
         </div>
       )}
     </div>

@@ -16,6 +16,12 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const CLIENT_ID    = Deno.env.get('AZURE_CLIENT_ID')!;
 const ENTRA_ISSUER_V2 = `https://login.microsoftonline.com/${TENANT_ID}/v2.0`;
 const ENTRA_ISSUER_V1 = `https://sts.windows.net/${TENANT_ID}/`;
+/*
+ * RATE_LIMIT_DAYS: días mínimos entre calificaciones por usuario.
+ * 0 = sin límite (comportamiento actual).
+ * Cambia a 7 para limitar a 1 por semana, etc.
+ */
+const RATING_RATE_LIMIT_DAYS = 0;
 
 const ENTRA_JWKS = createRemoteJWKSet(
   new URL(`https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys`)
@@ -979,20 +985,6 @@ const { data: actorData } = await supabase
       return data;
     }
 
-    case 'fetchAllUsers': {
-      const { data, error } = await supabase
-        .from('TBL_Users')
-        .select(`
-          User_ID, User_Name, User_Email, User_Avatar_url, User_Role,
-          Department_ID, Team_ID, Is_New,
-          department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
-          team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
-        `)
-        .order('User_Name', { ascending: true });
-      if (error) throw new Error(error.message);
-      return data;
-    }
-
 case 'fetchAllUsers': {
       const { data, error } = await supabase
         .from('TBL_Users')
@@ -1859,6 +1851,70 @@ case 'updateEmailTemplateMetadata': {
       if (error) throw new Error(error.message);
       return { ok: true };
     }
+// ── Bug Reports ──────────────────────────────────────────────────
+
+case 'createBugReport': {
+  const p = payload as {
+    userId:     number;
+    title:      string;
+    description: string;
+    severity:   'bajo' | 'medio' | 'alto' | 'critico';
+    screenPath: string | null;
+  };
+  const { data, error } = await supabase
+    .from('TBL_Bug_Reports')
+    .insert({
+      User_ID:     p.userId,
+      Title:       p.title.trim(),
+      Description: p.description.trim(),
+      Severity:    p.severity,
+      Screen_Path: p.screenPath ?? null,
+      Status:      'pendiente',
+      Created_At:  new Date().toISOString(),
+      Updated_At:  new Date().toISOString(),
+    })
+    .select('"Report_ID", "Title", "Severity", "Status", "Created_At"')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ── Satisfaction Ratings ─────────────────────────────────────────
+
+
+case 'createSatisfactionRating': {
+  const p = payload as {
+    userId:  number;
+    score:   number;
+    comment: string | null;
+  };
+
+  if (RATING_RATE_LIMIT_DAYS > 0) {
+    const since = new Date();
+    since.setDate(since.getDate() - RATING_RATE_LIMIT_DAYS);
+    const { data: recent } = await supabase
+      .from('TBL_Satisfaction_Ratings')
+      .select('"Rating_ID"')
+      .eq('User_ID', p.userId)
+      .gte('Created_At', since.toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (recent) throw new Error(`Solo puedes calificar cada ${RATING_RATE_LIMIT_DAYS} días.`);
+  }
+
+  const { data, error } = await supabase
+    .from('TBL_Satisfaction_Ratings')
+    .insert({
+      User_ID:    p.userId,
+      Score:      p.score,
+      Comment:    p.comment?.trim() ?? null,
+      Created_At: new Date().toISOString(),
+    })
+    .select('"Rating_ID", "Score", "Created_At"')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);

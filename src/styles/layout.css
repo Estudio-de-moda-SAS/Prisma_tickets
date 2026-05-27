@@ -502,3 +502,12 @@
   border-color: var(--sidebar-border);
 }
 
+.sidebar__nav-sub--team .sidebar__nav-item--sub.sidebar__nav-item--active {
+  color: var(--team-color) !important;
+  background: var(--team-glow) !important;
+}
+ 
+.sidebar__nav-sub--team .sidebar__nav-item--sub.sidebar__nav-item--active .sidebar__sub-dot {
+  background: var(--team-color) !important;
+  opacity: 1 !important;
+}

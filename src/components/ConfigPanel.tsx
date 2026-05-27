@@ -1,5 +1,5 @@
 // src/components/layout/ConfigPanel.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { useBoardStore } from '@/store/boardStore';
 import {
@@ -10,8 +10,7 @@ import {
 } from '@/features/requests/hooks/useBoardMetadata';
 import { useSprints, useCreateSprint, useUpdateSprint, useDeleteSprint } from '@/features/requests/hooks/useSprints';
 import { useSubTeams, useCreateSubTeam, useUpdateSubTeam, useDeleteSubTeam } from '@/features/requests/hooks/useSubTeams';
-import { useSubTeamMembers, useAddSubTeamMember, useRemoveSubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
-import { useUsers } from '@/features/requests/hooks/useUsers';
+import { useSubTeamMembers, useSubTeamMembersGrouped, useAddSubTeamMember, useRemoveSubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';import { useUsers } from '@/features/requests/hooks/useUsers';
 import { apiClient } from '@/lib/apiClient';
 import { useQueryClient } from '@tanstack/react-query';
 import { config } from '@/config';
@@ -1114,6 +1113,8 @@ function SubTeamList({ subTeams, onAdd, onUpdate, onRemove }: {
   const [showNew,    setShowNew]    = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  useSubTeamMembersGrouped(subTeams);
+  useUsers();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {subTeams.length === 0 && !showNew && (
@@ -1141,9 +1142,9 @@ function SubTeamList({ subTeams, onAdd, onUpdate, onRemove }: {
               onDelete={() => onRemove(st.Sub_Team_ID)}
             />
           )}
-          {expandedId === st.Sub_Team_ID && editId !== st.Sub_Team_ID && (
-            <SubTeamMembersSection subTeamId={st.Sub_Team_ID} subTeamColor={st.Sub_Team_Color} />
-          )}
+{expandedId === st.Sub_Team_ID && editId !== st.Sub_Team_ID && (
+  <SubTeamMembersSectionWrapper subTeamId={st.Sub_Team_ID} subTeamColor={st.Sub_Team_Color} />
+)}
         </div>
       ))}
       {showNew ? (
@@ -1186,6 +1187,26 @@ function SubTeamRow({ st, expanded, onToggle, onEdit, onDelete }: {
   );
 }
 
+function SubTeamMembersSectionWrapper(props: { subTeamId: number; subTeamColor: string }) {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      startTransition(() => setShow(true));
+    }, 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!show) return (
+    <div style={{ padding: '12px 14px', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {[1,2,3].map((i) => (
+        <div key={i} style={{ height: 42, borderRadius: 7, background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)', backgroundSize: '200% 100%', animation: 'skeleton-sweep 1.4s ease infinite', border: '1px solid var(--border-subtle)' }} />
+      ))}
+    </div>
+  );
+  return <SubTeamMembersSection {...props} />;
+}
+
 function SubTeamMembersSection({ subTeamId, subTeamColor }: { subTeamId: number; subTeamColor: string }) {
   const { data: members  = [], isLoading: loadingM } = useSubTeamMembers(subTeamId);
   const { data: allUsers = [], isLoading: loadingU } = useUsers();
@@ -1224,7 +1245,19 @@ function SubTeamMembersSection({ subTeamId, subTeamColor }: { subTeamId: number;
     setDropOpen((o) => !o); setSearch('');
   }
 
-  if (loadingM || loadingU) return <div style={{ padding: '12px 14px', background: 'var(--bg-panel)' }}><p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0 }}>Cargando…</p></div>;
+if (loadingM || loadingU) return (
+  <div style={{ padding: '12px 14px', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+    {[1, 2, 3].map((i) => (
+      <div key={i} style={{
+        height: 42, borderRadius: 7,
+        background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'skeleton-sweep 1.4s ease infinite',
+        border: '1px solid var(--border-subtle)',
+      }} />
+    ))}
+  </div>
+);
 
   return (
     <div style={{ padding: '12px 14px 14px', background: 'var(--bg-panel)' }}>
