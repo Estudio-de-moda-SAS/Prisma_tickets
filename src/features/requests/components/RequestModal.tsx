@@ -1,10 +1,14 @@
 // src/features/requests/components/RequestModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown, Send, Trash2, Paperclip, Upload, FileText, Image, File, GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert } from 'lucide-react';
+import {
+  X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown,
+  Send, Trash2, Paperclip, Upload, FileText, Image, File,
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert,
+} from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useUpdateRequest } from '../hooks/UseUpdateRequest';
-import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE } from '../types';
+import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE, COLUMNAS_FINALES } from '../types';
 import type { Request, KanbanColumna, Prioridad, Equipo } from '../types';
 import { useLabelsByTeamId } from '@/features/requests/hooks/useBoardMetadata';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
@@ -16,24 +20,28 @@ import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useChildRequests } from '@/features/requests/hooks/useSubRequest';
 import { useAcceptanceCriteria, useUpdateCriteriaStatus } from '@/features/requests/hooks/useAcceptanceCriteria';
+import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { CreateRequestModal } from './CreateRequestModal';
 import { ClosureModal } from './ClosureModal';
+import { ClientReviewBanner } from './ClientReviewBanner';
 import { config } from '@/config';
 import type { AcceptanceCriteria } from '@/types/commons';
-
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
 const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
 
 const COL_COLOR: Record<KanbanColumna, string> = {
-  sin_categorizar:  'var(--txt-muted)',
-  icebox:           '#60a5fa',
-  backlog:          'var(--info)',
-  todo:             'var(--warn)',
-  en_progreso:      'var(--accent)',
-  en_revision_qas:  '#f59e0b',
-  ready_to_deploy:  '#a78bfa',
-  hecho:            'var(--success)',
-  historial:        'var(--txt-muted)',
+  sin_categorizar: 'var(--txt-muted)',
+  icebox:          '#60a5fa',
+  backlog:         'var(--info)',
+  todo:            'var(--warn)',
+  en_progreso:     'var(--accent)',
+  en_revision_qas: '#f59e0b',
+  cliente_review:  '#34d399',
+  ready_to_deploy: '#a78bfa',
+  hecho:           'var(--success)',
+  historial:       'var(--txt-muted)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
@@ -130,23 +138,25 @@ function useDropdown() {
 }
 
 type Props = {
-  request:             Request;
-  equipo:              Equipo;
-  onClose:             () => void;
-  onMove:              (id: string, columna: KanbanColumna) => void;
-  onMoveWithClosure:   (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
-  onOpenRequest?:      (requestId: string) => void;
-  readOnly?:           boolean;
+  request:           Request;
+  equipo:            Equipo;
+  onClose:           () => void;
+  onMove:            (id: string, columna: KanbanColumna) => void;
+  onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
+  onOpenRequest?:    (requestId: string) => void;
+  readOnly?:         boolean;
+  backLabel?:        string;  
+  onBack?:           () => void; 
 };
 
 type RightTab = 'comments' | 'attachments';
 
-/* ── Sub-requests panel ── */
-function SubRequestsPanel({ parentId, parentTitle, parentIsConfidential, onOpenChild }: {
-  parentId: string;
-  parentTitle: string;
-  parentIsConfidential: boolean;
-  onOpenChild: (id: string) => void;
+/* ─── SubRequestsPanel ─────────────────────────────────────── */
+function SubRequestsPanel({
+  parentId, parentTitle, parentIsConfidential, onOpenChild,
+}: {
+  parentId: string; parentTitle: string;
+  parentIsConfidential: boolean; onOpenChild: (id: string) => void;
 }) {
   const { data: children = [], isLoading, refetch } = useChildRequests(parentId);
   const [showCreate, setShowCreate] = useState(false);
@@ -155,8 +165,16 @@ function SubRequestsPanel({ parentId, parentTitle, parentIsConfidential, onOpenC
   const total     = children.length;
   const pct       = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-  const colColorMap: Record<string, string> = { sin_categorizar: 'var(--txt-muted)', icebox: '#60a5fa', backlog: 'var(--info)', todo: 'var(--warn)', en_progreso: 'var(--accent)', en_revision_qas: '#f59e0b', ready_to_deploy: '#a78bfa', hecho: 'var(--success)', historial: 'var(--txt-muted)' };
-  const colLabel: Record<string, string> = { sin_categorizar: 'Sin cat.', icebox: 'Icebox', backlog: 'Backlog', todo: 'To do', en_progreso: 'En progreso', en_revision_qas: 'QAS', ready_to_deploy: 'Ready', hecho: 'Hecho', historial: 'Historial' };
+  const colColorMap: Record<string, string> = {
+    sin_categorizar: 'var(--txt-muted)', icebox: '#60a5fa', backlog: 'var(--info)',
+    todo: 'var(--warn)', en_progreso: 'var(--accent)', en_revision_qas: '#f59e0b',
+    cliente_review: '#34d399', ready_to_deploy: '#a78bfa', hecho: 'var(--success)', historial: 'var(--txt-muted)',
+  };
+  const colLabel: Record<string, string> = {
+    sin_categorizar: 'Sin cat.', icebox: 'Icebox', backlog: 'Backlog', todo: 'To do',
+    en_progreso: 'En progreso', en_revision_qas: 'QAS', cliente_review: 'C Review',
+    ready_to_deploy: 'Ready', hecho: 'Hecho', historial: 'Historial',
+  };
 
   return (
     <>
@@ -189,10 +207,12 @@ function SubRequestsPanel({ parentId, parentTitle, parentIsConfidential, onOpenC
             );
           })}
         </div>
-        <button onClick={() => setShowCreate(true)}
+        <button
+          onClick={() => setShowCreate(true)}
           style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 7, border: '1px dashed var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)', width: '100%' }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--accent)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+        >
           <Plus size={12} />Nueva sub-solicitud
         </button>
       </div>
@@ -209,25 +229,29 @@ function SubRequestsPanel({ parentId, parentTitle, parentIsConfidential, onOpenC
   );
 }
 
-/* ── CierreBanner ── */
+/* ─── CierreBanner ─────────────────────────────────────────── */
 function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreInfo']> }) {
-  function fmtColombia(iso: string) { return new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' }); }
+  function fmtColombia(iso: string) {
+    return new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' });
+  }
   const allAttachments = [
     ...(cierreInfo.attachments ?? []).map((a) => ({ url: a.signedUrl, name: a.fileName, mime: a.mimeType })),
-    ...((cierreInfo.attachments ?? []).length === 0 && cierreInfo.attachmentUrl ? [{ url: cierreInfo.attachmentUrl, name: cierreInfo.attachmentName, mime: cierreInfo.attachmentMime }] : []),
+    ...((cierreInfo.attachments ?? []).length === 0 && cierreInfo.attachmentUrl
+      ? [{ url: cierreInfo.attachmentUrl, name: cierreInfo.attachmentName, mime: cierreInfo.attachmentMime }]
+      : []),
   ];
   return (
     <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(0,229,160,0.25)', background: 'rgba(0,229,160,0.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 14px', borderBottom: '1px solid rgba(0,229,160,0.15)', background: 'rgba(0,229,160,0.06)' }}>
         <CheckCircle size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Caso cerrado</span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Evidencia de avance</span>
         <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtColombia(cierreInfo.closedAt)}</span>
       </div>
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#00b894,#00e5a0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(cierreInfo.closedBy.userName || 'U')}</div>
           <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{cierreInfo.closedBy.userName || 'Usuario desconocido'}</span>
-          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>cerró este caso</span>
+          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>adjuntó evidencia</span>
         </div>
         <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.6, wordBreak: 'break-word' }}>{cierreInfo.closureNote}</div>
         {allAttachments.length > 0 && (
@@ -236,8 +260,14 @@ function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreI
               if (!att.url) return null;
               const isImage = att.mime?.startsWith('image/');
               return (
-                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', textDecoration: 'none', transition: 'border-color 0.15s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>{isImage ? <Image size={13} /> : <FileText size={13} />}</div>
+                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', textDecoration: 'none', transition: 'border-color 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
+                    {isImage ? <Image size={13} /> : <FileText size={13} />}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name ?? 'Evidencia adjunta'}</div>
                     <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
@@ -252,13 +282,16 @@ function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreI
   );
 }
 
-/* ── AcceptanceCriteriaPanel ── */
-function AcceptanceCriteriaPanel({ requestId, readOnly, currentUserId }: { requestId: string; readOnly: boolean; currentUserId: number | undefined }) {
+/* ─── AcceptanceCriteriaPanel ──────────────────────────────── */
+function AcceptanceCriteriaPanel({
+  requestId, readOnly, currentUserId,
+}: {
+  requestId: string; readOnly: boolean; currentUserId: number | undefined;
+}) {
   const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
   const { mutate: updateStatus, isPending } = useUpdateCriteriaStatus(requestId);
-
-  const [reviewNotes,   setReviewNotes]   = useState<Record<number, string>>({});
-  const [expandedNote,  setExpandedNote]  = useState<number | null>(null);
+  const [reviewNotes,  setReviewNotes]  = useState<Record<number, string>>({});
+  const [expandedNote, setExpandedNote] = useState<number | null>(null);
 
   const accepted = criteria.filter((c) => c.status === 'accepted').length;
   const rejected = criteria.filter((c) => c.status === 'rejected').length;
@@ -270,26 +303,10 @@ function AcceptanceCriteriaPanel({ requestId, readOnly, currentUserId }: { reque
     if (status !== 'pending') setExpandedNote(null);
   }
 
-  const STATUS_COLOR: Record<string, string> = {
-    pending:  'var(--txt-muted)',
-    accepted: 'var(--success)',
-    rejected: 'var(--danger)',
-  };
-  const STATUS_BG: Record<string, string> = {
-    pending:  'rgba(255,255,255,0.04)',
-    accepted: 'rgba(0,229,160,0.06)',
-    rejected: 'rgba(255,71,87,0.06)',
-  };
-  const STATUS_BORDER: Record<string, string> = {
-    pending:  'var(--border-subtle)',
-    accepted: 'rgba(0,229,160,0.25)',
-    rejected: 'rgba(255,71,87,0.25)',
-  };
-  const STATUS_LABEL: Record<string, string> = {
-    pending:  'Pendiente',
-    accepted: 'Aceptado',
-    rejected: 'Rechazado',
-  };
+  const STATUS_COLOR:  Record<string, string> = { pending: 'var(--txt-muted)', accepted: 'var(--success)', rejected: 'var(--danger)' };
+  const STATUS_BG:     Record<string, string> = { pending: 'rgba(255,255,255,0.04)', accepted: 'rgba(0,229,160,0.06)', rejected: 'rgba(255,71,87,0.06)' };
+  const STATUS_BORDER: Record<string, string> = { pending: 'var(--border-subtle)', accepted: 'rgba(0,229,160,0.25)', rejected: 'rgba(255,71,87,0.25)' };
+  const STATUS_LABEL:  Record<string, string> = { pending: 'Pendiente', accepted: 'Aceptado', rejected: 'Rechazado' };
 
   if (isLoading) return <div style={{ padding: '8px 0', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando criterios…</div>;
 
@@ -300,9 +317,7 @@ function AcceptanceCriteriaPanel({ requestId, readOnly, currentUserId }: { reque
           <div style={{ flex: 1, height: 4, borderRadius: 3, background: 'var(--bg-surface)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
             <div style={{ height: '100%', width: `${Math.round((accepted / total) * 100)}%`, borderRadius: 3, background: rejected > 0 ? 'var(--danger)' : 'var(--success)', transition: 'width 0.3s ease' }} />
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: rejected > 0 ? 'var(--danger)' : accepted === total ? 'var(--success)' : 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>
-            {accepted}/{total}
-          </span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: rejected > 0 ? 'var(--danger)' : accepted === total ? 'var(--success)' : 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>{accepted}/{total}</span>
         </div>
       )}
       {total === 0 && (
@@ -354,44 +369,48 @@ function AcceptanceCriteriaPanel({ requestId, readOnly, currentUserId }: { reque
 /* ══════════════════════════════════════════════════════════════
    Modal principal
    ══════════════════════════════════════════════════════════════ */
-export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false }: Props) {
+export function RequestModal({
+  request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false,
+  backLabel, onBack,
+}: Props) {
   const { Requests }     = useGraphServices();
   const { mutate: mover }    = useMoveRequest(equipo);
   const { mutate: update }   = useUpdateRequest(equipo);
   const { mutate: assign }   = useAssignRequest();
   const { mutate: unassign } = useUnassignRequest();
   const { mutate: createComment, isPending: sendingComment } = useCreateComment();
-  const { mutate: deleteComment }  = useDeleteComment();
+  const { mutate: deleteComment }   = useDeleteComment();
   const { mutate: uploadAttachment, isPending: uploading } = useUploadAttachment();
   const { mutate: deleteAttachment } = useDeleteAttachment();
-  const { data: currentUser }  = useCurrentUser();
-  const timer                  = useTimer(request.id);
-  const overlayRef             = useRef<HTMLDivElement>(null);
-  const commentsEndRef         = useRef<HTMLDivElement>(null);
-  const fileInputRef           = useRef<HTMLInputElement>(null);
-  const boardId                = config.DEFAULT_BOARD_ID;
-  const columnMap              = useColumnMap(boardId);
+  const { data: currentUser } = useCurrentUser();
+  const overlayRef   = useRef<HTMLDivElement>(null);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const boardId      = config.DEFAULT_BOARD_ID;
+  const columnMap    = useColumnMap(boardId);
 
   const requestId    = request.id;
   const boardTeamId  = request.boardTeamId ?? null;
   const isSubRequest = request.parentId !== null;
 
-  // ── Query propia: siempre traer data fresca al abrir el modal ──
-  // Esto garantiza que aunque el prop `request` sea un snapshot viejo del board,
-  // los campos mutables (assignees, labels, sprint, etc.) siempre reflejen
-  // el estado real de la BD en el momento de apertura.
+  /* Fetch fresco al montar */
   const { data: freshRequest } = useQuery<Request>({
     queryKey: ['request', requestId],
     queryFn:  () => Requests.fetchById(requestId),
     enabled:  !config.USE_MOCK,
-    staleTime: 0,          // siempre refetch al montar, nunca usar cache viejo
+    staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
-  // effectiveRequest: usa la data fresca si ya llegó, sino el prop (mientras carga)
   const effectiveRequest = freshRequest ?? request;
-  const isCerrada        = !!effectiveRequest.cierreInfo || !!effectiveRequest.fechaCierre;
+
+  /* isCerrada: basado en columna, NO en fechaCierre */
+  const isCerrada        = COLUMNAS_FINALES.has(effectiveRequest.columna);
+  const isClienteReview  = effectiveRequest.columna === 'cliente_review';
+
+  /* Feedback del cliente */
+  const { data: clientFeedback } = useClientFeedback(requestId);
 
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
@@ -399,9 +418,8 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   const { data: subTeams    = [] } = useSubTeams(boardTeamId);
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints     = [] } = useSprints();
-  const { data: users       = [] } = useUsers();
-  const { data: comments    = [] } = useComments(requestId);
-  const { data: attachments = [] } = useAttachments(requestId);
+const { data: allUsers    = [] } = useUsers();
+const { data: comments    = [] } = useComments(requestId);  const { data: attachments = [] } = useAttachments(requestId);
   const { data: children    = [] } = useChildRequests(requestId);
 
   const { data: parentRequest } = useQuery<Request>({
@@ -427,65 +445,111 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   const [userSearch,       setUserSearch]       = useState('');
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
+const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
-  // Sync auto-expand cuando children carga
+const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
   useEffect(() => {
     if (children.length > 0) setShowSubRequests(true);
   }, [children.length]);
-
-  // ── Sincronizar estado local cuando llega freshRequest ──
-  // Se ejecuta tanto al montar (con el prop inicial) como cuando llega la
-  // respuesta fresca de la BD, garantizando que siempre refleje la realidad.
-  useEffect(() => {
-    const r = freshRequest ?? request;
-    setDescripcion(r.descripcion ?? '');
-    setSelectedLabelIds(r.labelIds ?? []);
-    setSelectedSubIds(r.subTeamIds ?? []);
-    setSelectedSprintId(r.sprintId ?? null);
-    setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
-    setColumnaActual(r.columna);
-  }, [request.id, freshRequest]); // eslint-disable-line react-hooks/exhaustive-deps
-
+const [showTimerWarning, setShowTimerWarning] = useState(false);
+// Solo corre al montar (request.id cambia = nuevo modal)
+useEffect(() => {
+  const r = request; // usar prop inicial, no freshRequest
+  setDescripcion(r.descripcion ?? '');
+  setSelectedLabelIds(r.labelIds ?? []);
+  setSelectedSubIds(r.subTeamIds ?? []);
+  setSelectedSprintId(r.sprintId ?? null);
+  setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
+  setColumnaActual(r.columna);
+}, [request.id]); // ← sin freshRequest en deps
+const timerRunningRef = useRef(false);
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', fn);
-    return () => window.removeEventListener('keydown', fn);
-  }, [onClose]);
+function handleClose() {
+  if (timerRunningRef.current) {
+    setShowTimerWarning(true);
+    return;
+  }
+  onClose();
+}
 
+useEffect(() => {
+  const fn = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (timerRunningRef.current) {
+        setShowTimerWarning(true);
+      } else {
+        onClose();
+      }
+    }
+  };
+  window.addEventListener('keydown', fn);
+  return () => window.removeEventListener('keydown', fn);
+}, [onClose]);
+
+  /* ── Lógica de movimiento ── */
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
-    if (COLUMNAS_CIERRE.has(columna)) {
+    /* Si ya hay closure (evidencia subida al mover a QAS), no pedir de nuevo */
+    const yaHayClosure = !!effectiveRequest.cierreInfo;
+    if (COLUMNAS_CIERRE.has(columna) && !yaHayClosure) {
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
       return;
     }
     setColumnaActual(columna);
-    mover({ id: requestId, columna, columnId: columnMap?.[columna] }, { onSuccess: () => onMove(requestId, columna) });
+mover(
+  { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
+  { onSuccess: () => onMove(requestId, columna) },
+);
   }
 
-  function handleClosureFromModal(note: string, attachments: File[]) {
+  function handleClosureFromModal(note: string, files: File[]) {
     if (!pendingClosureCol) return;
     const targetCol = pendingClosureCol;
     setPendingClosureCol(null);
     setColumnaActual(targetCol);
-    onMoveWithClosure(requestId, targetCol, note, attachments);
+    onMoveWithClosure(requestId, targetCol, note, files);
   }
 
+  function handleClientFeedbackSubmitted(targetColumna: 'ready_to_deploy' | 'en_revision_qas') {
+    setColumnaActual(targetColumna);
+    onMove(requestId, targetColumna);
+  }
+
+  /* ── Edición ── */
   function handleToggleLabel(labelId: number) {
     if (readOnly) return;
-    const next = selectedLabelIds.includes(labelId) ? selectedLabelIds.filter((l) => l !== labelId) : [...selectedLabelIds, labelId];
+    const next = selectedLabelIds.includes(labelId)
+      ? selectedLabelIds.filter((l) => l !== labelId)
+      : [...selectedLabelIds, labelId];
     setSelectedLabelIds(next);
     update({ id: requestId, patch: { labelIds: next } });
   }
 
-  function handleToggleSubTeam(subId: number) {
-    if (readOnly) return;
-    const next = selectedSubIds.includes(subId) ? selectedSubIds.filter((s) => s !== subId) : [...selectedSubIds, subId];
-    setSelectedSubIds(next);
-    update({ id: requestId, patch: { subTeamIds: next } });
+function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAssigneeIds?: number[]) {
+  if (readOnly) return;
+  const base = currentSubIds ?? selectedSubIds;
+  const next = base.includes(subId)
+    ? base.filter((s) => s !== subId)
+    : [...base, subId];
+  setSelectedSubIds(next);
+
+  // Si se remueve el sub-equipo, desasignar sus miembros
+  if (base.includes(subId)) {
+    const membersOfSub = groupedMembers
+      .find((g) => g.subTeam.Sub_Team_ID === subId)
+      ?.members ?? [];
+    const memberIds = membersOfSub.map((m) => m.User_ID);
+    const baseAssignees = currentAssigneeIds ?? assigneeIds;
+    const toRemove = baseAssignees.filter((id) => memberIds.includes(id));
+    toRemove.forEach((userId) => {
+      setAssigneeIds((prev) => prev.filter((id) => id !== userId));
+      unassign({ requestId, userId });
+    });
   }
 
+  update({ id: requestId, patch: { subTeamIds: next } });
+}
   function handleSprint(sprintId: number | null) {
     if (readOnly) return;
     setSelectedSprintId(sprintId);
@@ -493,12 +557,16 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
     sprintDD.setOpen(false);
   }
 
-  function handleToggleAssignee(userId: number) {
-    if (readOnly) return;
-    const isAssigned = assigneeIds.includes(userId);
-    if (isAssigned) { setAssigneeIds((prev) => prev.filter((id) => id !== userId)); unassign({ requestId, userId }); }
-    else { setAssigneeIds((prev) => [...prev, userId]); assign({ requestId, userId }); }
+function handleToggleAssignee(userId: number) {
+  if (readOnly) return;
+  if (assigneeIds.includes(userId)) {
+    setAssigneeIds((p) => p.filter((id) => id !== userId));
+    unassign({ requestId, userId });
+  } else {
+    setAssigneeIds((p) => [...p, userId]);
+    assign({ requestId, userId, assignedBy: currentUser?.User_ID });  // ← agregar esto
   }
+}
 
   function handleSendComment() {
     const text = commentText.trim();
@@ -513,10 +581,13 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
 
   function handleUploadFiles(files: FileList | null) {
     if (readOnly || !files || !currentUser) return;
-    Array.from(files).forEach((file) => { uploadAttachment({ requestId, userId: currentUser.User_ID, file }); });
+    Array.from(files).forEach((file) => uploadAttachment({ requestId, userId: currentUser.User_ID, file }));
   }
 
-  function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragOver(false); if (!readOnly) handleUploadFiles(e.dataTransfer.files); }
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false);
+    if (!readOnly) handleUploadFiles(e.dataTransfer.files);
+  }
 
   const triggerBase = (open: boolean, accentRgb: string): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
@@ -528,30 +599,78 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
   });
 
   const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
-  const assignedUsers  = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers  = users.filter((u) => u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) || u.User_Email.toLowerCase().includes(userSearch.toLowerCase()));
-  const childCount     = children.length;
-  const childDone      = children.filter((r) => r.columna === 'hecho').length;
+  const childCount = children.length;
+  const childDone  = children.filter((r) => r.columna === 'hecho').length;
 
-  function fmtColombia(isoString: string) { return new Date(isoString).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' }); }
+  function fmtColombia(iso: string) {
+    return new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' });
+  }
 
   const zIndex = readOnly ? 110 : 100;
+  const readyToDeployColumnId = columnMap?.['ready_to_deploy'] ?? 7;
+  const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
+  const yaHayClosure = !!effectiveRequest.cierreInfo;
 
+  /* ─────────────────────────────────────────────────────────── */
   return (
     <>
-      <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}>
-        <div style={{ width: '100%', maxWidth: 900, maxHeight: '90vh', background: 'var(--bg-panel)', border: `1px solid ${isSubRequest ? 'rgba(167,139,250,0.35)' : isCerrada ? 'rgba(0,229,160,0.3)' : 'var(--border)'}`, borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: isCerrada ? 'linear-gradient(90deg, transparent, var(--success), transparent)' : isSubRequest ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
+      <div
+        ref={overlayRef}
+onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
+      >
+        <div style={{
+          width: '100%', maxWidth: 900, maxHeight: '90vh',
+          background: 'var(--bg-panel)',
+          border: `1px solid ${
+            isSubRequest      ? 'rgba(167,139,250,0.35)' :
+            isCerrada         ? 'rgba(0,229,160,0.3)'    :
+            isClienteReview   ? 'rgba(52,211,153,0.35)'  :
+            'var(--border)'
+          }`,
+          borderRadius: 12, display: 'flex', flexDirection: 'column',
+          overflow: 'hidden', position: 'relative',
+        }}>
+          {/* Barra de color superior */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background:
+            isCerrada       ? 'linear-gradient(90deg, transparent, var(--success), transparent)' :
+            isClienteReview ? 'linear-gradient(90deg, transparent, #34d399, transparent)'        :
+            isSubRequest    ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)'        :
+            'linear-gradient(90deg, transparent, var(--accent), transparent)'
+          }} />
 
-          {/* Header */}
+          {/* ── Header ── */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: 'wrap' }}>
+            {onBack && (
+  <button 
+    onClick={onBack}
+    style={{
+      display: 'flex', alignItems: 'center', gap: 5,
+      padding: '3px 10px', borderRadius: 5,
+      fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+      border: '1px solid rgba(167,139,250,0.4)',
+      background: 'rgba(167,139,250,0.1)',
+      color: '#a78bfa', cursor: 'pointer',
+      transition: 'all 0.15s', fontFamily: 'var(--font-body)',
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.1)'; }}
+  >
+    <GitFork size={10} />
+    {backLabel ?? '← Volver'}
+  </button>
+)}
+
             <div style={{ display: 'flex', gap: 2 }}>
+              {/* Después de los botones ChevronUp/ChevronDown */}
               {[ChevronUp, ChevronDown].map((Icon, i) => (
-                <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}><Icon size={13} /></button>
+                <button key={i} style={{ width: 26, height: 26, borderRadius: 5, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'not-allowed', opacity: 0.4 }}>
+                  <Icon size={13} />
+                </button>
               ))}
             </div>
             <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.7, userSelect: 'all' }}>{effectiveRequest.id}</span>
+            <CopyLinkButton ticketId={effectiveRequest.id} />
             {readOnly && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>Solo lectura</span>}
             {isCerrada && !readOnly && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}><Lock size={10} />Cerrada</span>}
             {effectiveRequest.isConfidential && (
@@ -560,59 +679,37 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
               </span>
             )}
             {isSubRequest && !readOnly && (
-              <span onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(request.parentId); }} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', cursor: onOpenRequest ? 'pointer' : 'default' }}>
+              <span
+                onClick={() => { if (onOpenRequest && request.parentId) onOpenRequest(request.parentId); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#a78bfa', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', cursor: onOpenRequest ? 'pointer' : 'default' }}
+              >
                 <GitFork size={10} />Sub-solicitud
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>{KANBAN_COLUMNAS[columnaActual]}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
+              {KANBAN_COLUMNAS[columnaActual]}
+            </span>
 
-            {/* ── Botón DIVIDIR ── */}
+            {/* Botón DIVIDIR */}
             {!isSubRequest && !readOnly && !isCerrada && (
               <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <button
                   onClick={() => setShowSubRequests((v) => !v)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '5px 13px 5px 10px', borderRadius: 6,
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '5px 13px 5px 10px', borderRadius: 6,
                     fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-                    border: showSubRequests
-                      ? '1px solid rgba(0,200,255,0.65)'
-                      : childCount > 0
-                        ? '1px solid rgba(0,200,255,0.5)'
-                        : '1px solid rgba(0,200,255,0.32)',
-                    background: showSubRequests
-                      ? 'rgba(0,200,255,0.16)'
-                      : childCount > 0
-                        ? 'rgba(0,200,255,0.1)'
-                        : 'rgba(0,200,255,0.05)',
+                    border: showSubRequests ? '1px solid rgba(0,200,255,0.65)' : childCount > 0 ? '1px solid rgba(0,200,255,0.5)' : '1px solid rgba(0,200,255,0.32)',
+                    background: showSubRequests ? 'rgba(0,200,255,0.16)' : childCount > 0 ? 'rgba(0,200,255,0.1)' : 'rgba(0,200,255,0.05)',
                     color: showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)',
-                    boxShadow: childCount > 0
-                      ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)'
-                      : 'none',
+                    boxShadow: childCount > 0 ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)' : 'none',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(0,200,255,0.75)';
-                    e.currentTarget.style.background  = 'rgba(0,200,255,0.2)';
-                    e.currentTarget.style.color       = 'var(--accent)';
-                    e.currentTarget.style.boxShadow   = '0 0 14px rgba(0,200,255,0.28)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = showSubRequests ? 'rgba(0,200,255,0.65)' : childCount > 0 ? 'rgba(0,200,255,0.5)' : 'rgba(0,200,255,0.32)';
-                    e.currentTarget.style.background  = showSubRequests ? 'rgba(0,200,255,0.16)' : childCount > 0 ? 'rgba(0,200,255,0.1)' : 'rgba(0,200,255,0.05)';
-                    e.currentTarget.style.color       = showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)';
-                    e.currentTarget.style.boxShadow   = childCount > 0 ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)' : 'none';
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.75)'; e.currentTarget.style.background = 'rgba(0,200,255,0.2)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,200,255,0.28)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = showSubRequests ? 'rgba(0,200,255,0.65)' : childCount > 0 ? 'rgba(0,200,255,0.5)' : 'rgba(0,200,255,0.32)'; e.currentTarget.style.background = showSubRequests ? 'rgba(0,200,255,0.16)' : childCount > 0 ? 'rgba(0,200,255,0.1)' : 'rgba(0,200,255,0.05)'; e.currentTarget.style.color = showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)'; e.currentTarget.style.boxShadow = childCount > 0 ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)' : 'none'; }}
                 >
-                  <GitFork size={11} />
-                  DIVIDIR
+                  <GitFork size={11} />DIVIDIR
                   {childCount > 0 && (
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10,
-                      background: showSubRequests ? 'rgba(0,200,255,0.25)' : 'rgba(0,200,255,0.15)',
-                      color: 'var(--accent)',
-                      border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'rgba(0,200,255,0.3)'}`,
-                    }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: showSubRequests ? 'rgba(0,200,255,0.25)' : 'rgba(0,200,255,0.15)', color: 'var(--accent)', border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'rgba(0,200,255,0.3)'}` }}>
                       {childDone}/{childCount}
                     </span>
                   )}
@@ -622,9 +719,27 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
             )}
 
             <div style={{ marginLeft: 'auto' }}>
-              <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={15} /></button>
+              <button onClick={handleClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <X size={15} />
+              </button>
             </div>
           </div>
+
+          {/* ── ClientReviewBanner (arriba del cuerpo) ── */}
+          {isClienteReview && (
+            <ClientReviewBanner
+              requestId={requestId}
+              requestTitle={effectiveRequest.titulo}
+              cierreInfo={effectiveRequest.cierreInfo}
+              existingFeedback={clientFeedback}
+              currentUserId={currentUser?.User_ID}
+              solicitanteId={effectiveRequest.solicitanteId}
+              equipo={equipo}
+              readyToDeployColumnId={readyToDeployColumnId}
+              enRevisionQasColumnId={enRevisionQasColumnId}
+              onFeedbackSubmitted={handleClientFeedbackSubmitted}
+            />
+          )}
 
           {/* Sub-requests panel */}
           {showSubRequests && !isSubRequest && !readOnly && (
@@ -642,12 +757,13 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
             </div>
           )}
 
-          {/* Cuerpo */}
+          {/* ── Cuerpo ── */}
           <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
             {/* Panel izquierdo */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
 
+              {/* Banner solicitud padre */}
               {isSubRequest && !readOnly && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 8, background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)' }}>
                   <GitFork size={13} style={{ color: '#a78bfa', flexShrink: 0 }} />
@@ -681,62 +797,124 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
               {effectiveRequest.isConfidential && (
                 <div style={{ display: 'flex', gap: 12, padding: '12px 16px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
                   <ShieldAlert size={15} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>
-                    Esta solicitud contiene información confidencial. Recuerda validar el manejo de estos datos con el área de jurídica antes de proceder.
-                  </p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>Esta solicitud contiene información confidencial. Recuerda validar el manejo de estos datos con el área de jurídica antes de proceder.</p>
                 </div>
               )}
 
               <FieldBlock label="Descripción">
-                <textarea value={descripcion} onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }} onBlur={() => { if (!readOnly) update({ id: requestId, patch: { descripcion } }); }} readOnly={readOnly} placeholder="Escribe una descripción..." rows={4}
-                  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }} />
+                <textarea
+                  value={descripcion}
+                  onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }}
+                  onBlur={() => { if (!readOnly) update({ id: requestId, patch: { descripcion } }); }}
+                  readOnly={readOnly}
+                  placeholder="Escribe una descripción..."
+                  rows={4}
+                  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }}
+                />
               </FieldBlock>
+
+              {(effectiveRequest.templateFormSchema?.length ?? 0) > 0 && (
+                <TemplateFormDataPanel
+                  formData={effectiveRequest.formData ?? {}}
+                  schema={effectiveRequest.templateFormSchema ?? []}
+                  accentColor="var(--accent)"
+                />
+              )}
 
               <FieldBlock label="Criterios de aceptación">
                 <AcceptanceCriteriaPanel requestId={requestId} readOnly={readOnly} currentUserId={currentUser?.User_ID} />
               </FieldBlock>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FieldBlock label="Solicitante"><PersonChip name={effectiveRequest.solicitante} color="var(--accent-2)" /></FieldBlock>
+<FieldBlock label="Solicitante">
+  <PersonChip
+    name={effectiveRequest.solicitante}
+    teamName={effectiveRequest.requesterTeamName}
+    color="var(--accent-2)"
+  />
+</FieldBlock>
 
-                <FieldBlock label="Resolutor">
-                  <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
-                    <button onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }} style={triggerBase(assigneeDD.open, '124,58,237')}>
-                      {assignedUsers.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
-                        : assignedUsers.map((u) => (
-                          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-                            {u.User_Name.split(' ')[0]}
-                            {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
-                          </span>
-                        ))}
-                      {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
-                    </button>
-                    {assigneeDD.open && !readOnly && (
-                      <DropdownPanel>
-                        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-                          <input autoFocus value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Buscar usuario..." style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                        <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                          {filteredUsers.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin resultados.</div>
-                            : filteredUsers.map((u) => {
-                              const sel = assigneeIds.includes(u.User_ID);
-                              return (
-                                <DropdownItem key={u.User_ID} selected={sel} onClick={() => handleToggleAssignee(u.User_ID)}>
-                                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
-                                  </div>
-                                  {sel && <Checkmark />}
-                                </DropdownItem>
-                              );
-                            })}
-                        </div>
-                      </DropdownPanel>
-                    )}
-                  </div>
-                </FieldBlock>
+<FieldBlock label="Resolutor">
+  <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
+    <button
+      onClick={() => { if (!readOnly) { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }}
+      style={triggerBase(assigneeDD.open, '124,58,237')}
+    >
+      {assignedUsers.length === 0
+        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
+        : assignedUsers.map((u) => (
+          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+            {u.User_Name.split(' ')[0]}
+            {!readOnly && (
+              <span
+                onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
+                style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
+              >×</span>
+            )}
+          </span>
+        ))
+      }
+      {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
+    </button>
+
+    {assigneeDD.open && !readOnly && (
+      <DropdownPanel>
+        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <input
+            autoFocus
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Buscar usuario..."
+            style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+          />
+        </div>
+        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+          {groupedMembers.length === 0 ? (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sub-equipos configurados.</div>
+          ) : (
+            groupedMembers.map(({ subTeam, members, isLoading }) => {
+              const filtered = members.filter((u) =>
+                u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
+              );
+              if (!isLoading && filtered.length === 0 && userSearch) return null;
+              return (
+                <SubTeamGroup
+                  key={subTeam.Sub_Team_ID}
+                  subTeam={subTeam}
+                  members={filtered}
+                  isLoading={isLoading}
+                  assigneeIds={assigneeIds}
+                  selectedSubIds={selectedSubIds}
+onToggleAssignee={(userId) => {
+  const isRemoving = assigneeIds.includes(userId);
+  handleToggleAssignee(userId);
+
+  if (!isRemoving) {
+    // Asignando → agregar sub-equipo si no está, en un solo patch junto con el assign
+    if (!selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  } else {
+    // Desasignando → si era el único de este sub-equipo, removerlo
+    const othersInSub = members.filter(
+      (m) => m.User_ID !== userId && assigneeIds.includes(m.User_ID)
+    );
+    if (othersInSub.length === 0 && selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  }
+}}
+                />
+              );
+            })
+          )}
+        </div>
+      </DropdownPanel>
+    )}
+  </div>
+</FieldBlock>
 
                 <FieldBlock label="Prioridad">
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[effectiveRequest.prioridad], background: `${PRI_COLOR[effectiveRequest.prioridad]}15`, border: `1px solid ${PRI_COLOR[effectiveRequest.prioridad]}35` }}>{PRIORIDADES[effectiveRequest.prioridad]}</span>
@@ -745,14 +923,18 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 <FieldBlock label="Equipo">
                   <div ref={subDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) subDD.setOpen((o) => !o); }} style={triggerBase(subDD.open, '0,200,255')}>
-                      {selectedSubIds.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo</span>
-                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}{!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleSubTeam(sid); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}</span>; })}
+                      {selectedSubIds.length === 0
+                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo</span>
+                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}{!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleSubTeam(sid); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}</span>; })
+                      }
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {subDD.open && !readOnly && (
                       <DropdownPanel>
-                        {subTeams.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay equipos configurados.</div>
-                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => handleToggleSubTeam(sub.Sub_Team_ID)}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })}
+                        {subTeams.length === 0
+                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay equipos configurados.</div>
+                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => handleToggleSubTeam(sub.Sub_Team_ID)}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })
+                        }
                       </DropdownPanel>
                     )}
                   </div>
@@ -761,19 +943,23 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 <FieldBlock label="Etiquetas">
                   <div ref={catDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) catDD.setOpen((o) => !o); }} style={triggerBase(catDD.open, '0,200,255')}>
-                      {selectedLabelIds.length === 0 ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
+                      {selectedLabelIds.length === 0
+                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
                           <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>
                             {label.Label_Icon && <span>{label.Label_Icon}</span>}{label.Label_Name}
                             {!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleLabel(label.Label_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}
                           </span>
-                        ))}
+                        ))
+                      }
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {catDD.open && !readOnly && (
                       <DropdownPanel>
-                        {labels.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
-                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })}
+                        {labels.length === 0
+                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
+                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })
+                        }
                       </DropdownPanel>
                     )}
                   </div>
@@ -782,18 +968,31 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 <FieldBlock label="Sprint">
                   <div ref={sprintDD.ref} style={{ position: 'relative' }}>
                     <button onClick={() => { if (!readOnly) sprintDD.setOpen((o) => !o); }} style={{ ...triggerBase(sprintDD.open, '162,155,254'), flexWrap: 'nowrap' }}>
-                      {selectedSprint ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></> : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
+                      {selectedSprint
+                        ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></>
+                        : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>
+                      }
                       {!readOnly && <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
                     {sprintDD.open && !readOnly && (
                       <DropdownPanel>
-                        {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
+                        {sprints.length === 0
+                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
                           : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
                             const sel = selectedSprintId === sp.Sprint_ID;
-                            const now = new Date(); const dotColor = now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date) ? '#00e5a0' : now > new Date(sp.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
+                            const now = new Date();
+                            const dotColor = now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date) ? '#00e5a0' : now > new Date(sp.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
                             const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                            return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}><div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
-                          })}
+                            return (
+                              <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}>
+                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                                <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
+                                <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>
+                                {sel && <Checkmark />}
+                              </DropdownItem>
+                            );
+                          })
+                        }
                       </DropdownPanel>
                     )}
                   </div>
@@ -811,46 +1010,79 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
                 <FieldBlock label="Fecha de apertura">
                   <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(effectiveRequest.fechaApertura)}</span>
                 </FieldBlock>
-
                 <FieldBlock label="Horas estimadas">
-                  {readOnly ? (
-                    <span style={{ fontSize: 13, color: effectiveRequest.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>
-                      {effectiveRequest.estimatedHours != null ? fmtHours(effectiveRequest.estimatedHours) : 'Sin estimado'}
-                    </span>
-                  ) : (
-                    <HorasInput
-                      value={effectiveRequest.estimatedHours}
-                      onChange={(val) => update({ id: requestId, patch: { estimatedHours: val } })}
-                    />
-                  )}
+                  {readOnly
+                    ? <span style={{ fontSize: 13, color: effectiveRequest.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>{effectiveRequest.estimatedHours != null ? fmtHours(effectiveRequest.estimatedHours) : 'Sin estimado'}</span>
+                    : <HorasInput value={effectiveRequest.estimatedHours} onChange={(val) => update({ id: requestId, patch: { estimatedHours: val } })} />
+                  }
                 </FieldBlock>
               </div>
 
-              {effectiveRequest.cierreInfo && <FieldBlock label="Cierre del caso"><CierreBanner cierreInfo={effectiveRequest.cierreInfo} /></FieldBlock>}
-
-              {!readOnly && !isCerrada && (
-                <FieldBlock label="Contador de tiempo">
-                  <div style={{ background: 'var(--bg-surface)', border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`, borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s' }}>
-                    <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>{timer.fmt(timer.seconds)}</span>
-                    {timer.completed && <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Completado</span>}
-                    <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                      {!timer.completed && <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>{timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}</button>}
-                      {!timer.running && timer.seconds > 0 && !timer.completed && <button onClick={timer.complete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>Completar</button>}
-                    </div>
-                  </div>
-                </FieldBlock>
-              )}
+{effectiveRequest.cierreInfo && (
+  <FieldBlock label="Evidencia de avance">
+    <CierreBanner cierreInfo={effectiveRequest.cierreInfo} />
+    {/* ← AGREGAR ESTO */}
+    {clientFeedback && (
+      <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: `1px solid ${clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.25)' : 'rgba(255,71,87,0.25)'}`, background: clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.04)' : 'rgba(255,71,87,0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: `1px solid ${clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.15)' : 'rgba(255,71,87,0.15)'}`, background: clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.07)' : 'rgba(255,71,87,0.07)' }}>
+          {clientFeedback.decision === 'approved'
+            ? <CheckCircle size={12} style={{ color: 'var(--success)', flexShrink: 0 }} />
+            : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          }
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: clientFeedback.decision === 'approved' ? 'var(--success)' : 'var(--danger)', flex: 1 }}>
+            {clientFeedback.decision === 'approved' ? 'Aprobado por el cliente' : 'Rechazado por el cliente'}
+          </span>
+          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
+            {new Date(clientFeedback.submittedAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' })}
+          </span>
+        </div>
+        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: clientFeedback.decision === 'approved' ? 'linear-gradient(135deg,#00b894,#00e5a0)' : 'linear-gradient(135deg,#ff4757,#ff6b81)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+              {clientFeedback.submitterName.split(' ').slice(0,2).map(n => n[0] ?? '').join('').toUpperCase()}
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{clientFeedback.submitterName}</span>
+          </div>
+          {clientFeedback.feedbackNote && (
+            <div style={{ padding: '7px 10px', borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, wordBreak: 'break-word', fontStyle: 'italic' }}>
+              "{clientFeedback.feedbackNote}"
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </FieldBlock>
+)}
+{!readOnly && !isCerrada && (
+<TimerOrInputBlock
+  requestId={requestId}
+  loggedHours={effectiveRequest.loggedHours}
+  onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
+  onRunningChange={(running) => { timerRunningRef.current = running; }}
+/>
+)}
 
               {!readOnly && (
                 <FieldBlock label="Mover a">
                   {isCerrada ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}><Lock size={12} />Esta solicitud está cerrada y no puede moverse.</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}>
+                      <Lock size={12} />Esta solicitud está cerrada y no puede moverse.
+                    </div>
                   ) : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                       {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
-                        const active = columnaActual === col; const esCierre = COLUMNAS_CIERRE.has(col);
-                        return <button key={col} onClick={() => handleMover(col)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }} onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; }}} onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = esCierre ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = esCierre ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; }}}>{esCierre && <CheckCircle size={9} />}{label}</button>;
+                        const active     = columnaActual === col;
+                        const esCierre   = COLUMNAS_CIERRE.has(col);
+                        const showBadge  = esCierre && !yaHayClosure;
+                        return (
+                          <button key={col} onClick={() => handleMover(col)}
+                            style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}
+                            onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; } }}
+                            onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; } }}
+                          >
+                            {showBadge && <CheckCircle size={9} />}{label}
+                          </button>
+                        );
                       })}
                     </div>
                   )}
@@ -861,35 +1093,51 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
             {/* Panel derecho */}
             <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-                {([{ key: 'comments', label: 'Comentarios', icon: null, count: comments.length }, { key: 'attachments', label: 'Adjuntos', icon: <Paperclip size={11} />, count: attachments.length }] as { key: RightTab; label: string; icon: React.ReactNode; count: number }[]).map((tab) => {
+                {([
+                  { key: 'comments',    label: 'Comentarios', icon: null,                   count: comments.length },
+                  { key: 'attachments', label: 'Adjuntos',    icon: <Paperclip size={11} />, count: attachments.length },
+                ] as { key: RightTab; label: string; icon: React.ReactNode; count: number }[]).map((tab) => {
                   const active = rightTab === tab.key;
-                  return <button key={tab.key} onClick={() => setRightTab(tab.key)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>{tab.icon}{tab.label}{tab.count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>{tab.count}</span>}</button>;
+                  return (
+                    <button key={tab.key} onClick={() => setRightTab(tab.key)}
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                      {tab.icon}{tab.label}
+                      {tab.count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>{tab.count}</span>}
+                    </button>
+                  );
                 })}
               </div>
 
               {rightTab === 'comments' && (
                 <>
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {comments.length === 0 ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--txt-muted)" strokeWidth="1.5" fill="none" strokeLinejoin="round" /></svg><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin comentarios aún.</p></div>
+                    {comments.length === 0
+                      ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}>
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--txt-muted)" strokeWidth="1.5" fill="none" strokeLinejoin="round" /></svg>
+                          <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin comentarios aún.</p>
+                        </div>
                       : comments.map((c) => {
-                        const isOwn = c.author?.User_ID === currentUser?.User_ID;
-                        return (
-                          <div key={c.Comment_ID} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ width: 20, height: 20, borderRadius: '50%', background: isOwn ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(c.author?.User_Name ?? '?')}</div>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.author?.User_Name ?? 'Desconocido'}</span>
-                              <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtRelative(c.Comment_Created_At)}</span>
-                              {isOwn && !readOnly && <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
+                          const isOwn = c.author?.User_ID === currentUser?.User_ID;
+                          return (
+                            <div key={c.Comment_ID} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: isOwn ? 'linear-gradient(135deg,#0055cc,#00c8ff)' : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(c.author?.User_Name ?? '?')}</div>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.author?.User_Name ?? 'Desconocido'}</span>
+                                <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtRelative(c.Comment_Created_At)}</span>
+                                {isOwn && !readOnly && <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
+                              </div>
+                              <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}>{c.Comment_Text}</div>
                             </div>
-                            <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}>{c.Comment_Text}</div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                    }
                     <div ref={commentsEndRef} />
                   </div>
                   <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handleCommentKeyDown} placeholder="Escribe un comentario… (Ctrl+Enter)" rows={2} style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '8px 10px', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
-                    <button onClick={handleSendComment} disabled={!commentText.trim() || sendingComment || !currentUser} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}><Send size={11} />{sendingComment ? 'Enviando…' : 'Enviar'}</button>
+                    <button onClick={handleSendComment} disabled={!commentText.trim() || sendingComment || !currentUser} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}>
+                      <Send size={11} />{sendingComment ? 'Enviando…' : 'Enviar'}
+                    </button>
                   </div>
                 </>
               )}
@@ -897,21 +1145,23 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
               {rightTab === 'attachments' && (
                 <>
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {attachments.length === 0 && !dragOver ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><Paperclip size={26} style={{ color: 'var(--txt-muted)' }} /><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin adjuntos aún.</p></div>
+                    {attachments.length === 0 && !dragOver
+                      ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><Paperclip size={26} style={{ color: 'var(--txt-muted)' }} /><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin adjuntos aún.</p></div>
                       : attachments.map((a) => {
-                        const isOwn = a.uploader?.User_ID === currentUser?.User_ID;
-                        const isImage = a.Attachment_Mime_Type.startsWith('image/');
-                        return (
-                          <div key={a.Attachment_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', transition: 'border-color 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
-                            {isImage && a.Attachment_Url ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              {a.Attachment_Url ? <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a> : <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.Attachment_Name}</span>}
-                              <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}><span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>{a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}</div>
+                          const isOwn   = a.uploader?.User_ID === currentUser?.User_ID;
+                          const isImage = a.Attachment_Mime_Type.startsWith('image/');
+                          return (
+                            <div key={a.Attachment_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', transition: 'border-color 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
+                              {isImage && a.Attachment_Url ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                {a.Attachment_Url ? <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a> : <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.Attachment_Name}</span>}
+                                <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}><span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>{a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}</div>
+                              </div>
+                              {isOwn && !readOnly && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
                             </div>
-                            {isOwn && !readOnly && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                    }
                   </div>
                   {!readOnly && (
                     <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -928,57 +1178,269 @@ export function RequestModal({ request, equipo, onClose, onMove, onMoveWithClosu
           </div>
         </div>
       </div>
+{showTimerWarning && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 200,
+  }}>
+    <div style={{
+      background: 'var(--bg-panel)', border: '1px solid rgba(255,71,87,0.3)',
+      borderRadius: 12, padding: '24px 28px', width: 360, display: 'flex',
+      flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Barra superior */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg, transparent, var(--danger), transparent)' }} />
 
+      {/* Icono + título */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+          background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Clock size={17} style={{ color: 'var(--danger)' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>
+            Cronómetro activo
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
+            El tiempo no guardado se perderá
+          </div>
+        </div>
+      </div>
+
+      {/* Cuerpo */}
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
+        El cronómetro sigue corriendo. Si cierras ahora, el tiempo acumulado desde el último guardado <strong style={{ color: 'var(--txt)' }}>no se registrará</strong> en la solicitud.
+      </p>
+
+      {/* Botones */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => setShowTimerWarning(false)}
+          style={{
+            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+            border: '1px solid var(--border-subtle)', background: 'transparent',
+            color: 'var(--txt-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--txt)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+        >
+          Volver
+        </button>
+        <button
+          onClick={() => { setShowTimerWarning(false); onClose(); }}
+          style={{
+            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+            border: '1px solid rgba(255,71,87,0.4)', background: 'rgba(255,71,87,0.12)',
+            color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.22)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.12)'; }}
+        >
+          Cerrar de todas formas
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {pendingClosureCol && (
-        <ClosureModal request={effectiveRequest} targetColumna={pendingClosureCol} targetColumnId={pendingClosureColId} onConfirm={handleClosureFromModal} onCancel={() => setPendingClosureCol(null)} isPending={false} />
+        <ClosureModal
+          request={effectiveRequest}
+          targetColumna={pendingClosureCol}
+          targetColumnId={pendingClosureColId}
+          onConfirm={handleClosureFromModal}
+          onCancel={() => setPendingClosureCol(null)}
+          isPending={false}
+        />
       )}
     </>
   );
 }
 
-/* ── Tooltip del botón Dividir ── */
+/* ─── Primitivos ────────────────────────────────────────────── */
+function SubTeamGroup({ subTeam, members, isLoading, assigneeIds, selectedSubIds, onToggleAssignee }: {
+  subTeam:        { Sub_Team_ID: number; Sub_Team_Name: string; Sub_Team_Color: string };
+  members:        SubTeamMember[];
+  isLoading:      boolean;
+  assigneeIds:    number[];
+  selectedSubIds: number[];
+  onToggleAssignee: (userId: number) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const hasAssigned = members.some((m) => assigneeIds.includes(m.User_ID));
+  const isSubAssigned = selectedSubIds.includes(subTeam.Sub_Team_ID);
+
+  return (
+    <div>
+      {/* Header del sub-equipo */}
+      <div
+        onClick={() => setCollapsed((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', cursor: 'pointer', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)', userSelect: 'none' }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.04)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-surface)'; }}
+      >
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: subTeam.Sub_Team_Color, flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: isSubAssigned ? subTeam.Sub_Team_Color : 'var(--txt)', letterSpacing: 0.3 }}>
+          {subTeam.Sub_Team_Name}
+        </span>
+        {hasAssigned && (
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${subTeam.Sub_Team_Color}20`, color: subTeam.Sub_Team_Color, border: `1px solid ${subTeam.Sub_Team_Color}40` }}>
+            asignado
+          </span>
+        )}
+        <svg width="9" height="9" viewBox="0 0 8 8" fill="none" style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+
+      {/* Miembros */}
+      {!collapsed && (
+        <div>
+          {isLoading && (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando…</div>
+          )}
+          {!isLoading && members.length === 0 && (
+            <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin integrantes.</div>
+          )}
+          {members.map((u) => {
+            const sel = assigneeIds.includes(u.User_ID);
+            return (
+              <DropdownItem key={u.User_ID} selected={sel} onClick={() => onToggleAssignee(u.User_ID)}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: sel ? `linear-gradient(135deg,${subTeam.Sub_Team_Color},${subTeam.Sub_Team_Color}99)` : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                  {initials(u.User_Name)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
+                </div>
+                {sel && <Checkmark />}
+              </DropdownItem>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+function CopyLinkButton({ ticketId }: { ticketId: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(`${window.location.origin}/ticket/${ticketId}`)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+  return (
+    <button onClick={handleCopy} title="Copiar link del ticket"
+      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 5, fontSize: 10, fontWeight: 700, letterSpacing: 0.5, border: `1px solid ${copied ? 'rgba(0,229,160,0.4)' : 'var(--border-subtle)'}`, background: copied ? 'rgba(0,229,160,0.1)' : 'transparent', color: copied ? 'var(--success)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)' }}>
+      {copied
+        ? <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      }
+      {copied ? 'Copiado' : 'Copiar link'}
+    </button>
+  );
+}
+
+function TemplateFormDataPanel({ formData, schema, accentColor }: { formData: Record<string, unknown>; schema: unknown[]; accentColor: string }) {
+  // Justo antes de flattenSchema, agregar:
+const savedLabels: Record<string, string> = (() => {
+  try { return JSON.parse(formData['__labels'] as string ?? '{}'); }
+  catch { return {}; }
+})();
+function flattenSchema(fields: unknown[]): { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] {
+  const result: { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] = [];
+  for (const f of fields) {
+    const field = f as Record<string, unknown>;
+    if (!field.key) continue;
+    if (field.type === 'conditional') {
+      if (field.label) result.push({ key: field.key as string, label: field.label as string, isConditionalParent: true });
+      for (const child of flattenSchema((field.trueBranch as unknown[]) ?? [])) {
+        result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'true' });
+      }
+      for (const child of flattenSchema((field.falseBranch as unknown[]) ?? [])) {
+        result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'false' });
+      }
+    } else {
+      if (field.label) result.push({ key: field.key as string, label: field.label as string });
+    }
+  }
+  return result;
+}
+    const schemaFields = flattenSchema(schema);
+  const schemaKeys   = new Set(schemaFields.map((f) => f.key));
+
+  // Campos huérfanos: están en formData pero ya no en el schema
+const orphanFields = Object.keys(formData)
+  .filter((k) => !schemaKeys.has(k) && k !== '__labels')
+  .map((k) => ({
+    key:   k,
+    label: savedLabels[k] ?? k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+  }));
+  const allFields = [...schemaFields, ...orphanFields];
+const entries = allFields.filter(({ key, ...rest }) => {
+  if (key === '__labels') return false;
+  const val = formData[key];
+  const fieldMeta = rest as { isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string };
+  // Campo padre condicional: siempre mostrarlo (tiene valor o no — si no tiene, significa "No")
+  if (fieldMeta.isConditionalParent) {
+    // Si pertenece a una rama (caso raro de nested), verificar padre
+    if (fieldMeta.conditionalParentKey) {
+      const parentVal = formData[fieldMeta.conditionalParentKey];
+      if (parentVal !== fieldMeta.conditionalParentValue) return false;
+    }
+    return true;
+  }
+  if (val === undefined || val === '' || val === null) return false;
+  if (fieldMeta.conditionalParentKey) {
+    const parentVal = formData[fieldMeta.conditionalParentKey];
+    if (parentVal !== fieldMeta.conditionalParentValue) return false;
+  }
+  return true;
+});
+  if (entries.length === 0) return null;  
+  if (entries.length === 0) return null;
+function renderValue(key: string): React.ReactNode {
+  const val = formData[key];
+if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
+if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
+if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
+  return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
+}
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: accentColor, background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.18)', padding: '3px 10px', borderRadius: 3, flexShrink: 0 }}>Datos adicionales</span>
+        <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {entries.map(({ key, label }) => (
+          <div key={key} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', flexShrink: 0, minWidth: 110, textTransform: 'uppercase' }}>{label}</span>
+            <span style={{ flex: 1, height: 1, borderBottom: '1px dashed var(--border-subtle)', alignSelf: 'center' }} />
+            <span style={{ fontSize: 12, fontWeight: 500, textAlign: 'right' }}>{renderValue(key)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DividirTooltip() {
   const [visible, setVisible] = useState(false);
   return (
     <div style={{ position: 'relative', display: 'inline-flex' }}>
-      <div
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
-        style={{
-          width: 16, height: 16, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontWeight: 700, cursor: 'default',
-          border: `1px solid ${visible ? 'rgba(0,200,255,0.55)' : 'rgba(0,200,255,0.35)'}`,
-          color: visible ? 'var(--accent)' : 'rgba(0,200,255,0.7)',
-          background: visible ? 'rgba(0,200,255,0.15)' : 'rgba(0,200,255,0.07)',
-          userSelect: 'none', flexShrink: 0,
-          transition: 'all 0.15s',
-        }}
-      >?</div>
+      <div onMouseEnter={() => setVisible(true)} onMouseLeave={() => setVisible(false)} style={{ width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, cursor: 'default', border: `1px solid ${visible ? 'rgba(0,200,255,0.55)' : 'rgba(0,200,255,0.35)'}`, color: visible ? 'var(--accent)' : 'rgba(0,200,255,0.7)', background: visible ? 'rgba(0,200,255,0.15)' : 'rgba(0,200,255,0.07)', userSelect: 'none', flexShrink: 0, transition: 'all 0.15s' }}>?</div>
       {visible && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 7px)', left: '50%',
-          transform: 'translateX(-50%)', zIndex: 400,
-          background: 'var(--bg-panel)',
-          border: '1px solid rgba(0,200,255,0.25)',
-          borderRadius: 8, padding: '10px 13px', width: 230,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
-          pointerEvents: 'none',
-        }}>
-          <div style={{
-            position: 'absolute', top: -5, left: '50%',
-            transform: 'translateX(-50%) rotate(45deg)',
-            width: 8, height: 8,
-            background: 'var(--bg-panel)',
-            borderLeft: '1px solid rgba(0,200,255,0.25)',
-            borderTop: '1px solid rgba(0,200,255,0.25)',
-          }} />
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
-            ¿Qué es dividir?
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
-            Divide esta solicitud en <strong style={{ color: 'var(--txt)' }}>sub-solicitudes</strong> más pequeñas, cada una con su propio estado y resolutor. El progreso se consolida aquí.
-          </div>
+        <div style={{ position: 'absolute', top: 'calc(100% + 7px)', left: '50%', transform: 'translateX(-50%)', zIndex: 400, background: 'var(--bg-panel)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: 8, padding: '10px 13px', width: 230, boxShadow: '0 10px 30px rgba(0,0,0,0.55)', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', top: -5, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 8, height: 8, background: 'var(--bg-panel)', borderLeft: '1px solid rgba(0,200,255,0.25)', borderTop: '1px solid rgba(0,200,255,0.25)' }} />
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>¿Qué es dividir?</div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.65 }}>Divide esta solicitud en <strong style={{ color: 'var(--txt)' }}>sub-solicitudes</strong> más pequeñas, cada una con su propio estado y resolutor. El progreso se consolida aquí.</div>
         </div>
       )}
     </div>
@@ -986,18 +1448,22 @@ function DividirTooltip() {
 }
 
 function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
-  const initH = value != null ? Math.floor(value) : 0;
-  const initM = value != null ? Math.round((value % 1) * 60) : 0;
+  const toHrs  = (v: number | null) => v != null ? String(Math.floor(v)) : '';
+  const toMins = (v: number | null) => v != null ? String(Math.round((v % 1) * 60)) : '';
+  const [hrs,  setHrs]  = useState<string>(toHrs(value));
+  const [mins, setMins] = useState<string>(toMins(value));
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [hrs, setHrs] = useState<string>(value != null ? String(initH) : '');
-  const [mins, setMins] = useState<string>(value != null ? String(initM) : '');
+  useEffect(() => { setHrs(toHrs(value)); setMins(toMins(value)); }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function commit(h: string, m: string) {
-    const hVal = parseInt(h) || 0;
-    const mVal = parseInt(m) || 0;
-    if (h === '' && m === '') { onChange(null); return; }
-    const total = hVal + mVal / 60;
-    onChange(parseFloat(total.toFixed(4)));
+  function scheduleCommit(h: string, m: string) {
+    if (commitTimer.current) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => {
+      const hVal = parseInt(h) || 0;
+      const mVal = Math.min(59, parseInt(m) || 0);
+      if (h === '' && m === '') { onChange(null); return; }
+      onChange(parseFloat((hVal + mVal / 60).toFixed(4)));
+    }, 150); // 150ms — suficiente para que el foco salte al otro input
   }
 
   const inputStyle: React.CSSProperties = {
@@ -1010,31 +1476,185 @@ function HorasInput({ value, onChange }: { value: number | null; onChange: (v: n
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <input type="number" min={0} max={999} placeholder="0" value={hrs} onChange={(e) => setHrs(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <input
+        type="number" min={0} max={999} placeholder="0"
+        value={hrs}
+        onChange={(e) => setHrs(e.target.value)}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          scheduleCommit(hrs, mins);
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)';
+          if (commitTimer.current) clearTimeout(commitTimer.current); // cancelar si volvemos
+        }}
+        style={inputStyle}
+      />
       <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>h</span>
-      <input type="number" min={0} max={59} placeholder="00" value={mins} onChange={(e) => setMins(e.target.value)} onBlur={() => { const m2 = String(Math.min(59, parseInt(mins) || 0)); setMins(m2); commit(hrs, m2); }} style={inputStyle} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlurCapture={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
+      <input
+        type="number" min={0} max={59} placeholder="00"
+        value={mins}
+        onChange={(e) => setMins(e.target.value)}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          const m2 = String(Math.min(59, parseInt(mins) || 0));
+          setMins(m2);
+          scheduleCommit(hrs, m2);
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)';
+          if (commitTimer.current) clearTimeout(commitTimer.current); // cancelar si volvemos
+        }}
+        style={inputStyle}
+      />
       <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>m</span>
     </div>
   );
 }
 
-/* ── Primitivos ── */
 function DropdownPanel({ children }: { children: React.ReactNode }) {
   return <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden', minWidth: 180 }}>{children}</div>;
 }
+
 function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
   return <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent', color: selected ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: selected ? 600 : 400, transition: 'background 0.1s' }}>{children}</div>;
 }
-function Checkmark() { return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+
+function Checkmark() {
+  return <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
 function SprintDot({ sprint }: { sprint: { Sprint_Start_Date: string; Sprint_End_Date: string } }) {
   const now = new Date(); const start = new Date(sprint.Sprint_Start_Date); const end = new Date(sprint.Sprint_End_Date);
   const color = now >= start && now <= end ? '#00e5a0' : now > end ? '#b2bec3' : '#fdcb6e';
   return <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />;
 }
-function FieldLabel({ children }: { children: React.ReactNode }) { return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>; }
-function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) { return <div><FieldLabel>{label}</FieldLabel>{children}</div>; }
-function PersonChip({ name, color }: { name: string; color: string }) {
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>;
+}
+
+function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><FieldLabel>{label}</FieldLabel>{children}</div>;
+}
+
+function PersonChip({ name, teamName}: { name: string; teamName?: string | null; color: string }) {
   const ini = name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${color}, ${color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div><span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>{name}</span></div>;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{name}</span>
+        {teamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>{teamName}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TimerOrInputBlock ─────────────────────────────────── */
+function TimerOrInputBlock({
+  requestId, loggedHours, onSave, onRunningChange,
+}: {
+  requestId:        string;
+  loggedHours:      number | null;
+  onSave:           (val: number | null) => void;
+  onRunningChange?: (running: boolean) => void;
+}) {
+  const [mode, setMode] = useState<'timer' | 'input'>('timer');
+  const timer = useTimer(requestId);
+
+  // Notificar al padre cuando cambia running
+  useEffect(() => {
+    onRunningChange?.(timer.running);
+  }, [timer.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleComplete() {
+    timer.complete();
+    onRunningChange?.(false);
+    const totalHours = parseFloat((timer.seconds / 3600).toFixed(4));
+    const combined   = (loggedHours ?? 0) + totalHours;
+    onSave(parseFloat(combined.toFixed(4)));
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Toggle modo */}
+      <div style={{ display: 'flex', gap: 0, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, overflow: 'hidden', alignSelf: 'flex-start' }}>
+        {(['timer', 'input'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              padding: '4px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
+              textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+              background: mode === m ? 'var(--accent-2)' : 'transparent',
+              color:      mode === m ? 'white' : 'var(--txt-muted)',
+              transition: 'all 0.15s', fontFamily: 'var(--font-display)',
+            }}
+          >
+            {m === 'timer' ? '⏱ Cronómetro' : '✏ Manual'}
+          </button>
+        ))}
+      </div>
+
+      {/* Horas ya guardadas */}
+      {loggedHours != null && loggedHours > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)' }}>
+          <CheckCircle size={12} style={{ color: 'var(--success)', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+            {fmtHours(loggedHours)} registradas
+          </span>
+          <button
+            onClick={() => onSave(null)}
+            title="Borrar horas registradas"
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', fontSize: 11, padding: '1px 4px', opacity: 0.6 }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.opacity = '0.6'; }}
+          >×</button>
+        </div>
+      )}
+
+      {/* Modo cronómetro */}
+      {mode === 'timer' && (
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`,
+          borderRadius: 8, padding: '14px 16px',
+          display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s',
+        }}>
+          <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>
+            {timer.fmt(timer.seconds)}
+          </span>
+          {timer.completed && (
+            <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Guardado</span>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            {!timer.completed && (
+              <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+                {timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}
+              </button>
+            )}
+            {!timer.running && timer.seconds > 0 && !timer.completed && (
+              <button onClick={handleComplete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+                Guardar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modo input manual */}
+      {mode === 'input' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <HorasInput
+            value={loggedHours}
+            onChange={(val) => onSave(val)}
+          />
+          <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>horas totales consumidas</span>
+        </div>
+      )}
+    </div>
+  );
 }

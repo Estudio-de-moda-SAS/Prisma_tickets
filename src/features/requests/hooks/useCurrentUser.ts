@@ -15,6 +15,7 @@ const MOCK_USER: UserProfile = {
   Team_ID:       1,
   Is_New:        false,
   team: { Team_Code: 'desarrollo', Team_Name: 'Desarrollo & UX' },
+  Is_Active:    true,
 };
 
 export function useCurrentUser() {

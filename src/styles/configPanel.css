@@ -672,3 +672,8 @@
   color: var(--accent);
   background: rgba(0, 200, 255, 0.05);
 }
+
+@keyframes skeleton-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

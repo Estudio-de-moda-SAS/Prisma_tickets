@@ -19,7 +19,7 @@ type Props = {
   request:               Request;
   isDragging?:           boolean;
   onClick?:              () => void;
-  unreadNotifications?:  Notification[];   // ← las no leídas del board, filtradas por requestId en el padre
+  unreadNotifications?:  Notification[];
 };
 
 function initials(name: string): string {
@@ -37,7 +37,6 @@ const PRIORIDAD_COLOR: Record<Request['prioridad'], string> = {
   critica: 'var(--danger)',
 };
 
-/* Tipo → color del punto de actividad */
 const ACTIVITY_TYPE_COLOR: Record<string, string> = {
   comment:             '#a78bfa',
   assignment:          'var(--accent)',
@@ -58,11 +57,9 @@ const ACTIVITY_TYPE_LABEL: Record<string, string> = {
   mention:             'Mención',
 };
 
-/* ── Dot de actividad ── */
 function ActivityDot({ notifications }: { notifications: Notification[] }) {
   if (notifications.length === 0) return null;
 
-  // Priorizar: primero mention/comment, luego el resto por orden de llegada
   const priority = ['mention', 'comment', 'assignment', 'criteria_reviewed', 'column_move', 'closure', 'sub_request_created'];
   const sorted   = [...notifications].sort(
     (a, b) => priority.indexOf(a.type) - priority.indexOf(b.type),
@@ -128,6 +125,16 @@ const IconShield = () => (
   </svg>
 );
 
+/** Icono de árbol / sub-nodos para el badge de hijos */
+const IconBranch = () => (
+  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="6" y1="3" x2="6" y2="15"/>
+    <circle cx="18" cy="6" r="3"/>
+    <circle cx="6" cy="18" r="3"/>
+    <path d="M18 9a9 9 0 0 1-9 9"/>
+  </svg>
+);
+
 function Chips({ items, accent }: { items: string[]; accent?: string }) {
   if (items.length === 0) return null;
   const color  = accent ?? 'var(--accent)';
@@ -171,6 +178,33 @@ function CriteriaBadge({ requestId }: { requestId: string; accent: string }) {
   );
 }
 
+/** Badge que indica cuántas sub-solicitudes tiene este ticket */
+function ChildCountBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span
+      title={`${count} sub-solicitud${count !== 1 ? 'es' : ''}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: 0.3,
+        padding: '2px 6px',
+        borderRadius: 3,
+        background: 'rgba(0,200,255,0.08)',
+        border: '1px solid rgba(0,200,255,0.22)',
+        color: 'var(--accent)',
+        flexShrink: 0,
+      }}
+    >
+      <IconBranch />
+      {count}
+    </span>
+  );
+}
+
 export function RequestCard({ request, isDragging = false, onClick, unreadNotifications = [] }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
@@ -200,7 +234,6 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
   const isCerrada      = !!request.cierreInfo || !!request.fechaCierre;
   const isConfidential = request.isConfidential ?? false;
 
-  // Notificaciones no leídas de este ticket (filtradas por el padre, no aquí)
   const hasActivity = unreadNotifications.length > 0;
 
   function handleClick(e: React.MouseEvent) {
@@ -230,7 +263,6 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
             : isCerrada
               ? closureBorderStyle
               : {}),
-        // Anillo sutil cuando hay actividad no leída
         ...(hasActivity && !isBeingDragged
           ? { outline: '1px solid rgba(167,139,250,0.35)' }
           : {}),
@@ -240,40 +272,40 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
       {...listeners}
       onClick={handleClick}
     >
-      {/* Dot de actividad — esquina superior derecha, fuera del flujo */}
+      {/* Dot de actividad */}
       {hasActivity && (
         <ActivityDot notifications={unreadNotifications} />
       )}
 
-      {/* Header: badge tipo + badges derecha (confidencial + criteria) */}
-      <div className="request-card__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
-        {/* ID */}
-        <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.55, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {request.id}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+      {/* Header: ID + badge tipo (izquierda) | badges pequeños (derecha) */}
+      <div className="request-card__header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
+
+        {/* Izquierda: ID + badge de tipo */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.5px', opacity: 0.55, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {request.id}
+          </div>
+
+          {/* Badge principal de tipo — solo uno a la vez */}
           {isCerrada ? (
-            <span style={{ background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)', color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa', border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ alignSelf: 'flex-start', background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)', color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa', border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               <IconCheck /> Cerrada
             </span>
           ) : isSubRequest ? (
-            <span style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ alignSelf: 'flex-start', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               ↳ Sub-solicitud
             </span>
           ) : isNonDefault ? (
-            <span style={{ background: `${accent}15`, color: accent, border: `1px solid ${accent}35`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ alignSelf: 'flex-start', background: `${accent}15`, color: accent, border: `1px solid ${accent}35`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               <span style={{ fontSize: 10 }}>{template.visual.icon}</span>
               {template.visual.badgeLabel}
-            </span>
-          ) : childCount > 0 ? (
-            <span style={{ background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-              ⌥ {childCount} sub
             </span>
           ) : null}
         </div>
 
-        {/* Derecha — confidencial + criteria */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+        {/* Derecha: childCount + confidencial + criteria — siempre visibles */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, paddingTop: 1 }}>
+          <ChildCountBadge count={childCount} />
           {isConfidential && (
             <span
               title="Información confidencial"

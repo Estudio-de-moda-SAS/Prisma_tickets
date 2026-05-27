@@ -93,6 +93,8 @@
   border: 1px solid rgba(251, 113, 33, 0.10);
 }
 
+/* verde esmeralda — cliente review */
+.kanban__col--cliente-review  { background: rgba(52, 211, 153, 0.03);  border: 1px solid rgba(52, 211, 153, 0.10); }
 /* rosa-magenta — ready to deploy */
 .kanban__col--ready-to-deploy {
   background: rgba(236, 72, 153, 0.03);

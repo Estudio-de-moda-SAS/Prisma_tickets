@@ -143,3 +143,17 @@
   background: rgba(0, 112, 187, 0.04);
   border-color: rgba(0, 112, 187, 0.16);
 }
+
+/* ── Sidebar light ───────────────────────────────────────── */
+[data-theme="light"] {
+  --sidebar-bg:
+    radial-gradient(circle at 18% 0%, rgba(126, 34, 206, 0.35), transparent 34%),
+    linear-gradient(180deg, #3d0d82 0%, #4a0f8f 45%, #2a0560 100%);
+
+  --sidebar-border:      rgba(255, 255, 255, 0.15);
+  --sidebar-text:        rgba(255, 255, 255, 0.80);
+  --sidebar-text-strong: #ffffff;
+  --sidebar-label:       rgba(216, 180, 254, 0.95);
+  --sidebar-hover:       rgba(255, 255, 255, 0.12);
+  --sidebar-active:      rgba(255, 255, 255, 0.18);
+}

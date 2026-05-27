@@ -38,7 +38,13 @@ export const COLUMNAS_BOARD: KanbanColumna[] = [
 ];
  
 // Columnas que requieren evidencia de cierre al mover a ellas
-export const COLUMNAS_CIERRE = new Set<KanbanColumna>(['ready_to_deploy', 'hecho']);
+export const COLUMNAS_CIERRE = new Set<KanbanColumna>([
+  'en_revision_qas',
+  'cliente_review',
+  'ready_to_deploy',
+  'hecho',
+  'historial',
+] as KanbanColumna[]);
  
 export type Prioridad = 'baja' | 'media' | 'alta' | 'critica';
  

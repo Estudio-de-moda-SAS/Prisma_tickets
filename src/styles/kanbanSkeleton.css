@@ -3,51 +3,41 @@
    ============================================================ */
 
 @keyframes sk-shimmer {
-  0%   { background-position: -700px 0; }
-  100% { background-position:  700px 0; }
-}
-
-@keyframes sk-pulse-border {
-  0%, 100% { border-color: rgba(0, 210, 200, 0.10); }
-  50%       { border-color: rgba(0, 210, 200, 0.22); }
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
 }
 
 .sk-shine {
   background-image: linear-gradient(
     90deg,
-    rgba(255,255,255,0.00)  0%,
-    rgba(0,210,200,0.07)   40%,
-    rgba(0,210,200,0.13)   50%,
-    rgba(0,210,200,0.07)   60%,
+    rgba(255,255,255,0.00) 0%,
+    rgba(0,210,200,0.06)  40%,
+    rgba(0,210,200,0.12)  50%,
+    rgba(0,210,200,0.06)  60%,
     rgba(255,255,255,0.00) 100%
   );
-  background-size: 700px 100%;
-  animation: sk-shimmer 2.2s infinite linear;
+  background-size: 600px 100%;
+  animation: sk-shimmer 1.9s infinite linear;
 }
 
-.sk-block { border-radius: 3px; }
+.sk-block   { border-radius: 3px; }
+.sk-bg-base { background: rgba(0,0,0,0.06); }
+.sk-bg-mid  { background: rgba(0,0,0,0.04); }
+.sk-bg-low  { background: rgba(0,0,0,0.07); }
 
-.sk-bg-base { background: rgba(0,0,0,0.05); }
-.sk-bg-mid  { background: rgba(0,0,0,0.03); }
-.sk-bg-low  { background: rgba(0,0,0,0.06); }
-
-.sk-accent-sin  { background: rgba(90,  106, 138, 0.25); }
-.sk-accent-ice  { background: rgba(96,  165, 250, 0.30); }
-.sk-accent-back { background: rgba(167, 139, 250, 0.30); }
-.sk-accent-todo { background: rgba(255, 165,   2, 0.30); }
-.sk-accent-prog { background: rgba(0,   200, 255, 0.30); }
-.sk-accent-done { background: rgba(0,   229, 160, 0.30); }/* ---- Board row: idéntico a .kanban ---- */
+/* ── Board — idéntico a .kanban ─────────────────────────── */
 .sk-board {
   display: flex;
-  gap: 14px;
-  flex: 1;
-  align-items: flex-start;
-  overflow-x: auto;
-  padding-bottom: 12px;
+  gap: 18px;
+  height: calc(100vh - 120px);
   min-height: 0;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 12px;
 }
 
-/* ---- Columna base ---- */
+/* ── Columna — idéntica a .kanban__col ───────────────────── */
 .sk-col {
   flex: 0 0 320px;
   border-radius: var(--radius-lg);
@@ -55,26 +45,32 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  align-self: stretch;
-  animation: sk-pulse-border 3s ease-in-out infinite;
+  height: 100%;
+  min-height: 0;
 }
 
 .sk-col--narrow { flex: 0 0 280px; }
 
-.sk-col--sin  { background: rgba(46,  58,  85,  0.15); border: 1px dashed rgba(90,106,138,0.3); }
-.sk-col--ice  { background: rgba(96,  165, 250, 0.03); border: 1px solid  rgba(96,165,250,0.08); }
-.sk-col--back { background: rgba(167, 139, 250, 0.03); border: 1px solid  rgba(167,139,250,0.08); }
-.sk-col--todo { background: rgba(255, 165,   2, 0.03); border: 1px solid  rgba(255,165,2,0.08); }
-.sk-col--prog { background: rgba(0,   200, 255, 0.03); border: 1px solid  rgba(0,200,255,0.10); }
-.sk-col--done { background: rgba(0,   229, 160, 0.03); border: 1px solid  rgba(0,229,160,0.08); }
+/* Colores 1:1 con .kanban__col--* */
+.sk-col:has(.sk-col-title--sin)    { background: rgba(46,58,85,0.15);     border: 1px dashed rgba(90,106,138,0.3); }
+.sk-col:has(.sk-col-title--ice)    { background: rgba(96,165,250,0.03);   border: 1px solid rgba(96,165,250,0.08); }
+.sk-col:has(.sk-col-title--back)   { background: rgba(167,139,250,0.03);  border: 1px solid rgba(167,139,250,0.08); }
+.sk-col:has(.sk-col-title--todo)   { background: rgba(255,165,2,0.03);    border: 1px solid rgba(255,165,2,0.08); }
+.sk-col:has(.sk-col-title--prog)   { background: rgba(0,200,255,0.03);    border: 1px solid rgba(0,200,255,0.10); }
+.sk-col:has(.sk-col-title--qas)    { background: rgba(251,113,33,0.03);   border: 1px solid rgba(251,113,33,0.10); }
+.sk-col:has(.sk-col-title--cli)    { background: rgba(52,211,153,0.03);   border: 1px solid rgba(52,211,153,0.10); }
+.sk-col:has(.sk-col-title--deploy) { background: rgba(236,72,153,0.03);   border: 1px solid rgba(236,72,153,0.10); }
+.sk-col:has(.sk-col-title--hecho)  { background: rgba(0,229,160,0.03);    border: 1px solid rgba(0,229,160,0.08); }
+.sk-col:has(.sk-col-title--hist)   { background: rgba(90,106,138,0.03);   border: 1px solid rgba(90,106,138,0.10); }
 
-/* ---- Header ---- */
+/* ── Col header — idéntico a .kanban__col-header ──────────── */
 .sk-col-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .sk-col-header-left {
@@ -83,21 +79,49 @@
   gap: 8px;
 }
 
-.sk-col-title { height: 11px; width: 90px; border-radius: 3px; }
-.sk-col-count { width: 28px; height: 18px; border-radius: 10px; }
-.sk-col-btn   { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; }
+.sk-col-title {
+  height: 11px;
+  width: 90px;
+  border-radius: 3px;
+}
 
-/* ---- Card ---- */
+/* Colores 1:1 con .kanban__col-title color */
+.sk-col-title--sin    { background: rgba(90,106,138,0.35); }
+.sk-col-title--ice    { background: rgba(96,165,250,0.35); }
+.sk-col-title--back   { background: rgba(167,139,250,0.35); }
+.sk-col-title--todo   { background: rgba(255,165,2,0.35); }
+.sk-col-title--prog   { background: rgba(0,200,255,0.35); }
+.sk-col-title--qas    { background: rgba(251,113,33,0.35); }
+.sk-col-title--cli    { background: rgba(52,211,153,0.35); }
+.sk-col-title--deploy { background: rgba(236,72,153,0.35); }
+.sk-col-title--hecho  { background: rgba(0,229,160,0.35); }
+.sk-col-title--hist   { background: rgba(90,106,138,0.25); }
+
+.sk-col-count {
+  width: 28px;
+  height: 18px;
+  border-radius: 10px;
+}
+
+.sk-col-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Card — idéntica a .request-card ─────────────────────── */
 .sk-card {
-  background: rgba(255,255,255,0.025);
+  background: var(--bg-panel, rgba(255,255,255,0.025));
   border: 1px solid rgba(0,200,255,0.06);
   border-radius: var(--radius-md, 8px);
   padding: 12px 13px 11px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .sk-card::after {
@@ -106,58 +130,100 @@
   inset: 0;
   background-image: linear-gradient(
     90deg,
-    rgba(255,255,255,0.00)  0%,
-    rgba(0,210,200,0.07)   40%,
-    rgba(0,210,200,0.13)   50%,
-    rgba(0,210,200,0.07)   60%,
+    rgba(255,255,255,0.00) 0%,
+    rgba(0,210,200,0.06)  40%,
+    rgba(0,210,200,0.11)  50%,
+    rgba(0,210,200,0.06)  60%,
     rgba(255,255,255,0.00) 100%
   );
-  background-size: 700px 100%;
-  animation: sk-shimmer 2.2s infinite linear;
+  background-size: 600px 100%;
+  animation: sk-shimmer 1.9s infinite linear;
   pointer-events: none;
 }
 
-.sk-card-top {
+/* Header: ID (izq) + badge (der) */
+.sk-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 4px;
 }
 
-.sk-tag  { height: 14px; width: 54px; border-radius: 10px; }
-.sk-prio { height: 14px; width: 38px; border-radius: 10px; }
-
-.sk-title-lg { height: 12px; width: 88%; }
-.sk-title-sm { height: 10px; width: 62%; }
-
-.sk-divider { height: 1px; background: var(--border-subtle); }
-
-.sk-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.sk-id {
+  height: 9px;
+  width: 90px;
+  border-radius: 2px;
+  opacity: 0.6;
 }
 
-.sk-avatar-row { display: flex; gap: 5px; }
+.sk-badge {
+  height: 16px;
+  width: 64px;
+  border-radius: 3px;
+}
 
-.sk-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--bg-deep, #0a0b10);
+.sk-title {
+  height: 13px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+}
+
+.sk-desc {
+  height: 10px;
+  border-radius: 3px;
+}
+
+.sk-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 2px 0 4px;
   flex-shrink: 0;
 }
 
-.sk-date { height: 10px; width: 50px; border-radius: 3px; }
+/* ── MetaRows — 1:1 con <MetaRow> de RequestCard ──────────── */
+.sk-meta-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
 
+.sk-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sk-meta-icon {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sk-meta-label {
+  height: 9px;
+  min-width: 40px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sk-meta-value {
+  height: 11px;
+  border-radius: 3px;
+  flex: 1;
+  max-width: 140px;
+}
+
+/* ── Progress bar ─────────────────────────────────────────── */
 .sk-progress {
   height: 3px;
   border-radius: 2px;
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-surface, rgba(255,255,255,0.04));
   overflow: hidden;
+  margin-top: 6px;
 }
 
 .sk-progress-inner {
   height: 100%;
   border-radius: 2px;
-  opacity: 0.85;
 }
