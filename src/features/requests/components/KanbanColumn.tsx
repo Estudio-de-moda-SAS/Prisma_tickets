@@ -18,16 +18,26 @@ type Props = {
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
-  sin_categorizar: 'kanban__col--sin-categorizar',
-  icebox:          'kanban__col--icebox',
-  backlog:         'kanban__col--backlog',
-  todo:            'kanban__col--todo',
-  en_progreso:     'kanban__col--en-progreso',
-  en_revision_qas: 'kanban__col--en-revision-qas',
-  ready_to_deploy: 'kanban__col--ready-to-deploy',
-  hecho:           'kanban__col--hecho',
-  historial:       'kanban__col--historial',
+  sin_categorizar:  'kanban__col--sin-categorizar',
+  icebox:           'kanban__col--icebox',
+  backlog:          'kanban__col--backlog',
+  todo:             'kanban__col--todo',
+  en_progreso:      'kanban__col--en-progreso',
+  en_revision_qas:  'kanban__col--en-revision-qas',
+  cliente_review:   'kanban__col--cliente-review',
+  ready_to_deploy:  'kanban__col--ready-to-deploy',
+  hecho:            'kanban__col--hecho',
+  historial:        'kanban__col--historial',
 };
+
+/** Formatea horas decimales → "4h 30m", "2h", "45m" */
+function formatHours(totalHours: number): string {
+  const h = Math.floor(totalHours);
+  const m = Math.round((totalHours - h) * 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0)          return `${h}h`;
+  return `${m}m`;
+}
 
 export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
   const { setNodeRef } = useDroppable({ id });
@@ -40,6 +50,12 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       ? { background: 'transparent', borderColor: 'transparent' }
       : {}),
   };
+
+  // Contador de horas estimadas — solo para la columna "To do"
+  const totalHours = id === 'todo'
+    ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
+    : 0;
+  const showHours = id === 'todo' && totalHours > 0;
 
   return (
     <div
@@ -58,7 +74,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       }}
     >
       <div className="kanban__col-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
           <span className="kanban__col-title" style={titleStyle}>
             {emoji && (
               <span style={{ marginRight: 5, fontSize: 12 }}>{emoji}</span>
@@ -66,6 +82,27 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
             {titulo}
           </span>
           <span className="kanban__col-count">{requests.length}</span>
+
+          {/* Contador de horas estimadas — solo en To do */}
+          {showHours && (
+            <span
+              title="Suma de horas estimadas (responde a filtros activos)"
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'var(--txt-muted)',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 4,
+                padding: '1px 6px',
+                letterSpacing: 0.2,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              ⏱ {formatHours(totalHours)}
+            </span>
+          )}
         </div>
 
         <button
@@ -103,7 +140,7 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
       </div>
 
       {id === 'sin_categorizar' && (
-        <p className="kanban__drop-hint">↓ Asignar al equipo</p>
+        <p className="kanban__drop-hint">↓ Asignado al equipo</p>
       )}
 
       <div className="kanban__col-body">

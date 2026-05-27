@@ -32,6 +32,7 @@ export type UserProfile = {
   Department_ID: number | null;
   Team_ID:       number | null;
   Is_New:        boolean;
+  Is_Active:     boolean;
   team: {
     Team_Code: string;
     Team_Name: string;

@@ -71,15 +71,16 @@ export type StatsData = {
 };
 
 const COL_META: Record<KanbanColumna, { label: string; color: string }> = {
-  sin_categorizar:  { label: 'Sin cat.',    color: 'rgba(90,106,138,0.7)'  },
-  icebox:           { label: 'Icebox',      color: 'rgba(120,130,160,0.7)' },
-  backlog:          { label: 'Backlog',     color: 'rgba(127,119,221,0.7)' },
-  todo:             { label: 'To do',       color: 'rgba(239,159,39,0.7)'  },
-  en_progreso:      { label: 'En prog.',    color: 'rgba(0,200,255,0.7)'   },
-  en_revision_qas:  { label: 'QAS',         color: 'rgba(245,158,11,0.7)'  },
-  ready_to_deploy:  { label: 'Ready',       color: 'rgba(167,139,250,0.7)' },
-  hecho:            { label: 'Hecho',       color: 'rgba(0,229,160,0.7)'   },
-  historial:        { label: 'Historial',   color: 'rgba(90,106,138,0.5)'  },
+  sin_categorizar:  { label: 'Sin cat.',      color: 'rgba(90,106,138,0.7)'  },
+  icebox:           { label: 'Icebox',        color: 'rgba(120,130,160,0.7)' },
+  backlog:          { label: 'Backlog',       color: 'rgba(127,119,221,0.7)' },
+  todo:             { label: 'To do',         color: 'rgba(239,159,39,0.7)'  },
+  en_progreso:      { label: 'En prog.',      color: 'rgba(0,200,255,0.7)'   },
+  en_revision_qas:  { label: 'QAS',           color: 'rgba(251,113,33,0.7)'  },
+  cliente_review:   { label: 'C. Review',     color: 'rgba(52,211,153,0.7)'  },
+  ready_to_deploy:  { label: 'Ready',         color: 'rgba(167,139,250,0.7)' },
+  hecho:            { label: 'Hecho',         color: 'rgba(0,229,160,0.7)'   },
+  historial:        { label: 'Historial',     color: 'rgba(90,106,138,0.5)'  },
 };
 
 const PRI_META = [

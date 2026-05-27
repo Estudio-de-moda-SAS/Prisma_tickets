@@ -1,6 +1,6 @@
 // src/features/requests/hooks/useUsers.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export type AppUser = {
   User_ID:         number;
@@ -20,23 +20,33 @@ export function useUsers() {
 }
 
 export function useAssignRequest() {
-  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, userId }: { requestId: string; userId: number }) =>
-      apiClient.call('assignRequest', { requestId, userId }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['requests'] });
-    },
+    mutationFn: ({ requestId, userId, assignedBy }: { requestId: string; userId: number; assignedBy?: number }) =>
+      apiClient.call('assignRequest', { requestId, userId, assignedBy }),
   });
 }
 
 export function useUnassignRequest() {
-  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ requestId, userId }: { requestId: string; userId: number }) =>
       apiClient.call('unassignRequest', { requestId, userId }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['requests'] });
-    },
+  });
+}
+
+export function useDeactivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) =>
+      apiClient.call('deactivateUser', { userId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['allUsers'] }),
+  });
+}
+
+export function useReactivateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) =>
+      apiClient.call('reactivateUser', { userId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['allUsers'] }),
   });
 }

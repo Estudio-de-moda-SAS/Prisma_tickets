@@ -19,7 +19,8 @@ import { compressImage } from '@/lib/compressImage';
 import type { Prioridad } from '@/features/requests/types';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
-import type { TemplateExtraField } from '@/features/requests/templates/types';
+import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
 import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock } from 'lucide-react';
 
 type Step = 'equipo' | 'template' | 'form';
@@ -27,10 +28,10 @@ type Step = 'equipo' | 'template' | 'form';
 const MAX_ATTACHMENTS = 5;
 
 const PRI_COLOR: Record<Prioridad, string> = {
-  baja:    'var(--txt-muted)',
-  media:   'var(--info)',
-  alta:    'var(--warn)',
-  critica: 'var(--danger)',
+  baja:    '#b2bec3',
+  media:   '#74b9ff',
+  alta:    '#fdcb6e',
+  critica: '#ff4757',
 };
 
 function fmtBytes(bytes: number) {
@@ -39,7 +40,6 @@ function fmtBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Convierte un File a base64 puro (sin el prefijo data:…,) */
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -76,23 +76,213 @@ function cardStyle(accent: string): React.CSSProperties {
   return { background: 'var(--bg-panel)', border: `1px solid ${accent}20`, borderRadius: 10, padding: '20px 22px', position: 'relative', overflow: 'hidden' };
 }
 
-function ExtraFieldRenderer({ field, value, onChange, accent, focused, onFocus, onBlur }: {
-  field: TemplateExtraField; value: string; onChange: (v: string) => void;
-  accent: string; focused: boolean; onFocus: () => void; onBlur: () => void;
+/* ============================================================
+   Normalización legacy: convierte ramas objeto → array
+   ============================================================ */
+function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
+  if (field.type !== 'conditional') return field;
+  const cf = field as ConditionalField;
+  const toArray = (v: unknown): TemplateExtraField[] => {
+    if (Array.isArray(v)) return (v as TemplateExtraField[]).map(normalizeBranch);
+    if (v && typeof v === 'object') return [normalizeBranch(v as TemplateExtraField)];
+    return [makeEmptySimpleField(0)];
+  };
+  return { ...cf, trueBranch: toArray(cf.trueBranch), falseBranch: toArray(cf.falseBranch) };
+}
+
+function normalizeSchema(schema: TemplateExtraField[]): TemplateExtraField[] {
+  return (schema ?? []).map(normalizeBranch);
+}
+
+/* ============================================================
+   Validación recursiva de campos extra
+   ============================================================ */
+function validateExtraFields(
+  fields: TemplateExtraField[],
+  values: Record<string, string>,
+): { valid: boolean; errorLabel: string | null } {
+  for (const field of fields) {
+    if (isConditionalField(field)) {
+      const cf = field as ConditionalField;
+      const triggerValue = values[cf.key] ?? '';
+      if (cf.required && triggerValue !== 'true' && triggerValue !== 'false') {
+        return { valid: false, errorLabel: cf.label };
+      }
+      if (triggerValue === 'true') {
+        const res = validateExtraFields(cf.trueBranch, values);
+        if (!res.valid) return res;
+      } else if (triggerValue === 'false') {
+        const res = validateExtraFields(cf.falseBranch, values);
+        if (!res.valid) return res;
+      }
+    } else {
+      if (field.required) {
+        if (field.type === 'checkbox') {
+          if (values[field.key] !== 'true') return { valid: false, errorLabel: field.label };
+        } else {
+          if (!values[field.key]?.trim()) return { valid: false, errorLabel: field.label };
+        }
+      }
+    }
+  }
+  return { valid: true, errorLabel: null };
+}
+
+/* ============================================================
+   ExtraFieldRenderer
+   ============================================================ */
+function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus, onBlur }: {
+  field:    TemplateExtraField;
+  values:   Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  accent:   string;
+  focused:  boolean;
+  onFocus:  (key: string) => void;
+  onBlur:   () => void;
 }) {
+  if (isConditionalField(field)) {
+    const cf           = field as ConditionalField;
+    const triggerValue = values[cf.key] ?? '';
+    const isTrue       = triggerValue === 'true';
+    const activeBranch: TemplateExtraField[] = isTrue ? cf.trueBranch : cf.falseBranch;
+
+    return (
+      <div style={{ marginBottom: 4 }}>
+        <button
+          type="button"
+          onClick={() => onChange(cf.key, isTrue ? 'false' : 'true')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
+            borderRadius: 8, width: '100%', textAlign: 'left', cursor: 'pointer',
+            border: `1px solid ${isTrue ? 'rgba(0,200,255,0.35)' : 'var(--border-subtle)'}`,
+            background: isTrue ? 'rgba(0,200,255,0.05)' : 'transparent',
+            transition: 'all 0.15s',
+          }}
+        >
+          <div style={{
+            width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+            border: `2px solid ${isTrue ? accent : 'var(--border)'}`,
+            background: isTrue ? accent : 'transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s',
+          }}>
+            {isTrue && (
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <span style={{
+            fontSize: 13, flex: 1,
+            color: isTrue ? 'var(--txt)' : 'var(--txt-muted)',
+            fontWeight: isTrue ? 600 : 400,
+            transition: 'color 0.15s',
+          }}>
+            {cf.label}
+            {cf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+          </span>
+        </button>
+
+        {activeBranch && activeBranch.some((f) => f.label.trim() !== '') && (
+          <div style={{
+            marginTop: 8, padding: '12px 14px', borderRadius: 8,
+            border: `1px solid ${isTrue ? '#00e5a025' : `${accent}25`}`,
+            background: isTrue ? '#00e5a006' : `${accent}06`,
+            position: 'relative',
+          }}>
+            <div style={{
+              position: 'absolute', left: 0, top: 8, bottom: 8, width: 3,
+              borderRadius: '0 3px 3px 0',
+              background: isTrue ? '#00e5a0' : accent,
+            }} />
+            <div style={{ paddingLeft: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {activeBranch.map((branchField) => (
+                  <ExtraFieldRenderer
+                    key={branchField.key}
+                    field={branchField}
+                    values={values}
+                    onChange={onChange}
+                    accent={isTrue ? '#00e5a0' : accent}
+                    focused={focused}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const value    = values[field.key] ?? '';
+  const isFocused = focused;
   const [collapsed, setCollapsed] = useState(field.collapsible ?? false);
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: collapsed ? 0 : 7 }}>
         <FieldLabel>{field.label}{field.required && ' *'}</FieldLabel>
-        {field.collapsible && <button type="button" onClick={() => setCollapsed((v) => !v)} style={{ marginLeft: 8, marginBottom: 7, fontSize: 9, color: accent, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.7, letterSpacing: 1, textTransform: 'uppercase' }}>{collapsed ? '▼ mostrar' : '▲ ocultar'}</button>}
+        {field.collapsible && (
+          <button type="button" onClick={() => setCollapsed((v) => !v)}
+            style={{ marginLeft: 8, marginBottom: 7, fontSize: 9, color: accent, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.7, letterSpacing: 1, textTransform: 'uppercase' }}>
+            {collapsed ? '▼ mostrar' : '▲ ocultar'}
+          </button>
+        )}
       </div>
       {!collapsed && (
         <>
-          {field.type === 'textarea' && <textarea style={{ ...inputStyle(focused), minHeight: 80, resize: 'vertical' }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur} placeholder={field.placeholder} rows={3} />}
-          {field.type === 'text' && <input style={inputStyle(focused)} value={value} onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur} placeholder={field.placeholder} />}
-          {field.type === 'select' && <select style={{ ...inputStyle(focused), color: value ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={onFocus} onBlur={onBlur}><option value="">Seleccioná una opción…</option>{(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}</select>}
-          {field.type === 'radio' && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>{(field.options ?? []).map((opt) => { const active = value === opt; return <button key={opt} type="button" onClick={() => onChange(opt)} style={{ padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', border: `1px solid ${active ? accent + '50' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', transition: 'all 0.12s' }}>{opt}</button>; })}</div>}
+          {field.type === 'textarea' && (
+            <textarea
+              style={{ ...inputStyle(isFocused), minHeight: 80, resize: 'vertical' }}
+              value={value} onChange={(e) => onChange(field.key, e.target.value)}
+              onFocus={() => onFocus(field.key)} onBlur={onBlur}
+              placeholder={field.placeholder} rows={3}
+            />
+          )}
+          {field.type === 'text' && (
+            <input
+              style={inputStyle(isFocused)}
+              value={value} onChange={(e) => onChange(field.key, e.target.value)}
+              onFocus={() => onFocus(field.key)} onBlur={onBlur}
+              placeholder={field.placeholder}
+            />
+          )}
+          {field.type === 'select' && (
+            <select
+              style={{ ...inputStyle(isFocused), color: value ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+              value={value} onChange={(e) => onChange(field.key, e.target.value)}
+              onFocus={() => onFocus(field.key)} onBlur={onBlur}>
+              <option value="">Seleccioná una opción…</option>
+              {(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          )}
+          {field.type === 'radio' && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {(field.options ?? []).map((opt) => {
+                const active = value === opt;
+                return (
+                  <button key={opt} type="button" onClick={() => onChange(field.key, opt)}
+                    style={{ padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', border: `1px solid ${active ? accent + '50' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', transition: 'all 0.12s' }}>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {field.type === 'checkbox' && (
+            <button type="button" onClick={() => onChange(field.key, value === 'true' ? 'false' : 'true')}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, width: '100%', border: `1px solid ${value === 'true' ? accent + '50' : 'var(--border-subtle)'}`, background: value === 'true' ? `${accent}0d` : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
+              <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: `2px solid ${value === 'true' ? accent : 'var(--border)'}`, background: value === 'true' ? accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
+                {value === 'true' && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <span style={{ fontSize: 13, color: value === 'true' ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: value === 'true' ? 600 : 400, transition: 'color 0.15s' }}>
+                {field.label}{field.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+              </span>
+            </button>
+          )}
         </>
       )}
     </div>
@@ -224,67 +414,22 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
 function ConfidentialToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <button
-        type="button"
-        onClick={() => onChange(!value)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          padding: '14px 16px', borderRadius: 8, width: '100%', textAlign: 'left',
-          border: `1px solid ${value ? 'rgba(253,203,110,0.45)' : 'var(--border-subtle)'}`,
-          background: value ? 'rgba(253,203,110,0.07)' : 'var(--bg-surface)',
-          cursor: 'pointer', transition: 'all 0.18s',
-        }}
-        onMouseEnter={(e) => { if (!value) { e.currentTarget.style.borderColor = 'rgba(253,203,110,0.3)'; e.currentTarget.style.background = 'rgba(253,203,110,0.04)'; }}}
-        onMouseLeave={(e) => { if (!value) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
-      >
-        <div style={{
-          width: 34, height: 34, borderRadius: 8, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: value ? 'rgba(253,203,110,0.15)' : 'var(--bg-panel)',
-          border: `1px solid ${value ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`,
-          transition: 'all 0.18s',
-        }}>
-          {value
-            ? <Lock size={15} style={{ color: '#fdcb6e' }} />
-            : <ShieldAlert size={15} style={{ color: 'var(--txt-muted)', opacity: 0.5 }} />
-          }
+      <button type="button" onClick={() => onChange(!value)} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 8, width: '100%', textAlign: 'left', border: `1px solid ${value ? 'rgba(253,203,110,0.45)' : 'var(--border-subtle)'}`, background: value ? 'rgba(253,203,110,0.07)' : 'var(--bg-surface)', cursor: 'pointer', transition: 'all 0.18s' }} onMouseEnter={(e) => { if (!value) { e.currentTarget.style.borderColor = 'rgba(253,203,110,0.3)'; e.currentTarget.style.background = 'rgba(253,203,110,0.04)'; }}} onMouseLeave={(e) => { if (!value) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}>
+        <div style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: value ? 'rgba(253,203,110,0.15)' : 'var(--bg-panel)', border: `1px solid ${value ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`, transition: 'all 0.18s' }}>
+          {value ? <Lock size={15} style={{ color: '#fdcb6e' }} /> : <ShieldAlert size={15} style={{ color: 'var(--txt-muted)', opacity: 0.5 }} />}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: value ? '#fdcb6e' : 'var(--txt)', marginBottom: 2, transition: 'color 0.15s' }}>
-            Esta solicitud contiene información confidencial
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.45 }}>
-            Activa esta opción si el contenido involucra datos sensibles o de acceso restringido.
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: value ? '#fdcb6e' : 'var(--txt)', marginBottom: 2, transition: 'color 0.15s' }}>Esta solicitud contiene información confidencial</div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.45 }}>Activa esta opción si el contenido involucra datos sensibles o de acceso restringido.</div>
         </div>
-        <div style={{
-          width: 38, height: 22, borderRadius: 11, flexShrink: 0,
-          background: value ? '#fdcb6e' : 'var(--bg-surface)',
-          border: `1.5px solid ${value ? '#fdcb6e' : 'var(--border)'}`,
-          position: 'relative', transition: 'all 0.2s',
-        }}>
-          <div style={{
-            position: 'absolute', top: 2,
-            left: value ? 18 : 2,
-            width: 14, height: 14, borderRadius: '50%',
-            background: value ? 'white' : 'var(--txt-muted)',
-            transition: 'left 0.2s',
-            boxShadow: value ? '0 1px 4px rgba(0,0,0,0.25)' : 'none',
-          }} />
+        <div style={{ width: 38, height: 22, borderRadius: 11, flexShrink: 0, background: value ? '#fdcb6e' : 'var(--bg-surface)', border: `1.5px solid ${value ? '#fdcb6e' : 'var(--border)'}`, position: 'relative', transition: 'all 0.2s' }}>
+          <div style={{ position: 'absolute', top: 2, left: value ? 18 : 2, width: 14, height: 14, borderRadius: '50%', background: value ? 'white' : 'var(--txt-muted)', transition: 'left 0.2s', boxShadow: value ? '0 1px 4px rgba(0,0,0,0.25)' : 'none' }} />
         </div>
       </button>
       {value && (
-        <div style={{
-          display: 'flex', gap: 12, padding: '13px 16px',
-          borderRadius: 8,
-          background: 'rgba(253,203,110,0.07)',
-          border: '1px solid rgba(253,203,110,0.35)',
-        }}>
+        <div style={{ display: 'flex', gap: 12, padding: '13px 16px', borderRadius: 8, background: 'rgba(253,203,110,0.07)', border: '1px solid rgba(253,203,110,0.35)' }}>
           <ShieldAlert size={16} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
-          <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>
-            Recuerda que para subir este ticket que contiene información confidencial, debes validar
-            primero el manejo de estos datos con el área de jurídica.
-          </p>
+          <p style={{ margin: 0, fontSize: 12, color: '#fdcb6e', lineHeight: 1.6 }}>Recuerda que para subir este ticket que contiene información confidencial, debes validar primero el manejo de estos datos con el área de jurídica.</p>
         </div>
       )}
     </div>
@@ -318,8 +463,10 @@ function StepForm({
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [dragOver, setDragOver]         = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const def    = getTemplateDefinition(templateId, allTemplates);
-  const accent = def.visual.accentColor;
+
+  const def          = getTemplateDefinition(templateId, allTemplates);
+  const accent       = def.visual.accentColor;
+  const extraFields  = normalizeSchema(def.extraFields);
 
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
@@ -367,11 +514,23 @@ function StepForm({
         <AcceptanceCriteriaEditor criteria={acceptanceCriteria} onChange={setAcceptanceCriteria} accent={accent} showError={showCriteriaError} />
       </div>
 
-      {def.extraFields.length > 0 && (
+      {/* Campos extra del template */}
+      {extraFields.length > 0 && (
         <div style={cardStyle(accent)}>
           <SectionLabel>{def.nombre} — Datos adicionales</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {def.extraFields.map((field) => <ExtraFieldRenderer key={field.key} field={field} value={extraValues[field.key] ?? ''} onChange={(v) => setExtraValue(field.key, v)} accent={accent} focused={focusedField === field.key} onFocus={() => setFocusedField(field.key)} onBlur={() => setFocusedField(null)} />)}
+            {extraFields.map((field) => (
+              <ExtraFieldRenderer
+                key={field.key}
+                field={field}
+                values={extraValues}
+                onChange={setExtraValue}
+                accent={accent}
+                focused={focusedField === field.key}
+                onFocus={(key) => setFocusedField(key)}
+                onBlur={() => setFocusedField(null)}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -388,7 +547,6 @@ function StepForm({
         </div>
       </div>
 
-      {/* ── Confidencialidad ── */}
       <div style={cardStyle(accent)}>
         <SectionLabel>Privacidad</SectionLabel>
         <ConfidentialToggle value={isConfidential} onChange={setIsConfidential} />
@@ -488,12 +646,14 @@ export function NuevaSolicitudPage() {
       if (!sinCategorizarColumnId) throw new Error('Columna sin_categorizar no encontrada');
       if (acceptanceCriteria.length === 0) throw new Error('Debes definir al menos un criterio de aceptación.');
 
-      const def = getTemplateDefinition(selectedTemplateId, templates);
-      for (const field of def.extraFields) {
-        if (field.required && !extraValues[field.key]?.trim()) throw new Error(`El campo "${field.label}" es obligatorio.`);
+      const def          = getTemplateDefinition(selectedTemplateId, templates);
+      const extraFields  = normalizeSchema(def.extraFields);
+
+      const validation = validateExtraFields(extraFields, extraValues);
+      if (!validation.valid) {
+        throw new Error(`El campo "${validation.errorLabel}" es obligatorio.`);
       }
 
-      // 1. Crear ticket
       const newRequest = await Requests.createRequest({
         boardId,
         columnId:           sinCategorizarColumnId,
@@ -510,23 +670,19 @@ export function NuevaSolicitudPage() {
         parentId:           null,
         requesterTeamId:    userTeamId,
         isConfidential,
+        formData:           extraValues,   // ← valores del formulario dinámico
         acceptanceCriteria: [],
       });
 
-      // 2. Crear criterios de aceptación
       await Promise.all(
         acceptanceCriteria.map((title) =>
           apiClient.call('createAcceptanceCriteria', { requestId: newRequest.id, title }),
         ),
       );
 
-      // 3. Comprimir y subir adjuntos
       if (pendingFiles.length > 0) {
         await Promise.all(
           pendingFiles.map(async (file) => {
-            // compressImage valida el límite de 20 MB y lanza error si se supera.
-            // Para imágenes: redimensiona y aplica compresión de calidad.
-            // Para otros tipos (PDF, etc.): devuelve el archivo sin modificar.
             const processedFile = await compressImage(file);
             const base64 = await fileToBase64(processedFile);
             await apiClient.call('uploadAttachment', {

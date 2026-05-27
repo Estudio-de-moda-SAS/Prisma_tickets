@@ -4,7 +4,7 @@ import type {
   Request, CrearRequestPayload, ActualizarRequestPayload,
   MoverRequestPayload, KanbanColumna, Prioridad,
   RequestAssignee, RequestExtraFields, CierreInfo, CerrarRequestPayload,
-  ClosureAttachment,
+  ClosureAttachment, ClientFeedback, SubmitClientFeedbackPayload,
 } from '../types';
 import { SCORE_TO_PRIORIDAD, PRIORIDAD_TO_SCORE } from '../types';
 
@@ -18,21 +18,37 @@ type RawClosureAttachment = {
   Signed_Url:            string | null;
 };
 
+type RawClientFeedback = {
+  Feedback_ID:    number;
+  Request_ID:     string;
+  Submitted_By:   number;
+  Decision:       'approved' | 'rejected';
+  Feedback_Note:  string | null;
+  Submitted_At:   string;
+  submitter: { User_Name: string } | null;
+};
+
 type RawRequestRow = {
-  Request_ID:                string;
-  Request_Board_Column_ID:   number;
-  Request_Requested_By:      number;
-  Request_Template_ID:       number;
-  Request_Title:             string | null;
-  Request_Description:       string | null;
-  Request_Score:             number | null;
-  Request_Progress:          number | null;
-  Request_Created_At:        string | null;
-  Request_Estimated_Hours:   number | null;
-  Request_Finished_At:       string | null;
-  Request_Parent_ID:         string | null;
-  Request_Requester_Team_ID: number | null;
-  Request_Is_Confidential: boolean | null;
+  Request_ID:                          string;
+  Request_Board_Column_ID:             number;
+  Request_Requested_By:                number;
+  Request_Template_ID:                 number;
+  Request_Title:                       string | null;
+  Request_Description:                 string | null;
+  Request_Score:                       number | null;
+  Request_Progress:                    number | null;
+  Request_Created_At:                  string | null;
+  Request_Estimated_Hours:             number | null;
+  Request_Logged_Hours: number | null; 
+  Request_Finished_At:                 string | null;
+  Request_Parent_ID:                   string | null;
+  Request_Requester_Team_ID:           number | null;
+  Request_Is_Confidential:             boolean | null;
+  Request_Form_Data:                   Record<string, unknown> | null;
+  // snapshot guardado al crear el ticket — fuente de verdad para filtros
+  Request_Template_Schema_Snapshot:    unknown[] | null;
+  // fallback live — usado si el snapshot es null (tickets pre-migración)
+  template_schema: { Request_Template_Form_Schema: unknown[] } | null;
 
   requester:      { User_Name: string; User_Email: string; User_Avatar_url: string } | null;
   requester_team: { Team_ID: number; Team_Name: string; Team_Code: string } | null;
@@ -76,6 +92,7 @@ const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
   'To do':           'todo',
   'En progreso':     'en_progreso',
   'En revisión QAS': 'en_revision_qas',
+  'Client Review':   'cliente_review',
   'Ready to Deploy': 'ready_to_deploy',
   'Hecho':           'hecho',
   'Historial':       'historial',
@@ -128,6 +145,16 @@ function mapRowToRequest(row: RawRequestRow): Request {
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
   const solicitante = row.requester?.User_Name ?? '';
+  const requesterTeamName = row.requester_team?.Team_Name ?? null; 
+  const formData    = row.Request_Form_Data ?? {};
+
+  // Snapshot tiene prioridad — es el schema que tenía el template cuando se creó el ticket.
+  // Si no existe (tickets pre-migración), fallback al schema live del template.
+  const templateFormSchema = (
+    row.Request_Template_Schema_Snapshot ??
+    row.template_schema?.Request_Template_Form_Schema ??
+    []
+  );
 
   let cierreInfo: CierreInfo | null = null;
   if (row.closure) {
@@ -171,6 +198,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
     solicitante,
     solicitanteId:   row.Request_Requested_By,
     requesterTeamId,
+    requesterTeamName,
     assignees,
     equipo:          equipoCodes,
     equipoIds,
@@ -184,11 +212,27 @@ function mapRowToRequest(row: RawRequestRow): Request {
     fechaApertura:   row.Request_Created_At ?? new Date().toISOString(),
     fechaCierre:     row.Request_Finished_At ?? null,
     estimatedHours:  row.Request_Estimated_Hours ?? null,
+    loggedHours:     row.Request_Logged_Hours ?? null,
     extraFields,
+    formData,
+    templateFormSchema,
     childCount,
     criteriaSummary,
     cierreInfo,
-    isConfidential: row.Request_Is_Confidential ?? false,
+    isConfidential:  row.Request_Is_Confidential ?? false,
+    clientFeedback:  undefined,
+  };
+}
+
+function mapRawFeedback(raw: RawClientFeedback): ClientFeedback {
+  return {
+    feedbackId:    raw.Feedback_ID,
+    requestId:     raw.Request_ID,
+    submittedBy:   raw.Submitted_By,
+    submitterName: raw.submitter?.User_Name ?? '',
+    decision:      raw.Decision,
+    feedbackNote:  raw.Feedback_Note,
+    submittedAt:   raw.Submitted_At,
   };
 }
 
@@ -226,6 +270,11 @@ export class SupabaseRequestsService {
     return rows.map(mapRowToRequest);
   }
 
+  async fetchByAssignedTo(userId: number): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchByAssignedTo', { userId, boardId: this.boardId });
+    return rows.map(mapRowToRequest);
+  }
+
   async fetchChildRequests(parentId: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchChildRequests', { parentId });
     return rows.map(mapRowToRequest);
@@ -244,6 +293,23 @@ export class SupabaseRequestsService {
     }));
   }
 
+  async fetchClientFeedback(requestId: string): Promise<ClientFeedback | null> {
+    const raw = await apiClient.call<RawClientFeedback | null>('fetchClientFeedback', { requestId });
+    if (!raw) return null;
+    return mapRawFeedback(raw);
+  }
+
+  async submitClientFeedback(payload: SubmitClientFeedbackPayload): Promise<ClientFeedback> {
+    const raw = await apiClient.call<RawClientFeedback>('submitClientFeedback', {
+      requestId:      payload.requestId,
+      submittedBy:    payload.submittedBy,
+      decision:       payload.decision,
+      feedbackNote:   payload.feedbackNote,
+      targetColumnId: payload.targetColumnId,
+    });
+    return mapRawFeedback(raw);
+  }
+
   async createRequest(payload: CrearRequestPayload): Promise<Request> {
     const { acceptanceCriteria: _ignored, ...rest } = payload;
     const row = await apiClient.call<RawRequestRow>('createRequest', {
@@ -260,28 +326,30 @@ export class SupabaseRequestsService {
       estimatedHours:  rest.estimatedHours,
       parentId:        rest.parentId,
       requesterTeamId: rest.requesterTeamId,
-      isConfidential: rest.isConfidential ?? false,
+      isConfidential:  rest.isConfidential ?? false,
+      formData:        rest.formData ?? {},
     });
     return mapRowToRequest(row);
   }
 
-  async moveToColumn({ id, columnId }: MoverRequestPayload): Promise<void> {
-    await apiClient.call('moveToColumn', { id, columnId });
-  }
+async moveToColumn({ id, columnId, movedBy }: MoverRequestPayload): Promise<void> {
+  await apiClient.call('moveToColumn', { id, columnId, movedBy });
+}
 
-  async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
-    await apiClient.call('updateRequest', {
-      id,
-      titulo:         patch.titulo,
-      descripcion:    patch.descripcion,
-      score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
-      progreso:       patch.progreso,
-      equipoIds:      patch.equipoIds,
-      labelIds:       patch.labelIds,
-      sprintId:       patch.sprintId,
-      estimatedHours: patch.estimatedHours,
-    });
-    if (patch.subTeamIds !== undefined) {
+async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
+  await apiClient.call('updateRequest', {
+    id,
+    titulo:         patch.titulo,
+    descripcion:    patch.descripcion,
+    score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
+    progreso:       patch.progreso,
+    equipoIds:      patch.equipoIds,
+    labelIds:       patch.labelIds,
+    sprintId:       patch.sprintId,
+    estimatedHours: patch.estimatedHours,
+    loggedHours:    patch.loggedHours, 
+  });
+      if (patch.subTeamIds !== undefined) {
       await apiClient.call('updateRequestSubTeams', { id, subTeamIds: patch.subTeamIds });
     }
   }

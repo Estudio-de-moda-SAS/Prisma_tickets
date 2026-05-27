@@ -16,6 +16,12 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const CLIENT_ID    = Deno.env.get('AZURE_CLIENT_ID')!;
 const ENTRA_ISSUER_V2 = `https://login.microsoftonline.com/${TENANT_ID}/v2.0`;
 const ENTRA_ISSUER_V1 = `https://sts.windows.net/${TENANT_ID}/`;
+/*
+ * RATE_LIMIT_DAYS: días mínimos entre calificaciones por usuario.
+ * 0 = sin límite (comportamiento actual).
+ * Cambia a 7 para limitar a 1 por semana, etc.
+ */
+const RATING_RATE_LIMIT_DAYS = 0;
 
 const ENTRA_JWKS = createRemoteJWKSet(
   new URL(`https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys`)
@@ -59,6 +65,9 @@ function errorResponse(message: string, status: number) {
 
 const SIGNED_URL_EXPIRES_IN = 3600;
 
+/** Columnas que al llegar a ellas finalizan el ticket */
+const FINAL_COLUMN_IDS = new Set([6, 9]); // hecho=6, historial=9
+
 function extractStoragePath(storedValue: string): string {
   if (!storedValue.startsWith('http')) return storedValue;
   const marker = '/object/public/attachments/';
@@ -94,10 +103,16 @@ const BASE_SELECT = `
   Request_Created_At,
   Request_Parent_ID,
   Request_Estimated_Hours,
+  Request_Logged_Hours,
   Request_Finished_At,
   Request_Requester_Team_ID,
   Request_Is_Confidential,
-  requester:TBL_Users!Request_Requested_By (
+  Request_Form_Data,
+  Request_Template_Schema_Snapshot,
+  template_schema:TBL_Requests_Templates!Request_Template_ID (
+    Request_Template_Form_Schema
+  ),
+    requester:TBL_Users!Request_Requested_By (
     User_Name, User_Email, User_Avatar_url
   ),
   requester_team:TBL_Teams!Request_Requester_Team_ID (
@@ -152,7 +167,6 @@ const BASE_SELECT = `
     )
   )
 `.trim();
-
 
 /* ── Helper: batch fetch criteria summaries ── */
 async function attachCriteriaSummary(
@@ -234,6 +248,79 @@ async function getRequestParticipants(
 
   return { assigneeIds, requestedBy };
 }
+/* ── Helper: renderizar template con variables ── */
+function renderTemplate(html: string, vars: Record<string, string>): string {
+  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
+}
+
+/* ── Helper: enviar email por evento ── */
+async function sendEventEmail(
+  supabase: ReturnType<typeof createServiceClient>,
+  params: {
+    eventKey:  string;
+    requestId: string;
+    userIds:   number[];
+    vars:      Record<string, string>;
+  },
+): Promise<void> {
+  if (params.userIds.length === 0) return;
+
+  // 1. Buscar template activo para este evento
+  const { data: tpl } = await supabase
+    .from('TBL_Email_Templates')
+    .select('Email_Template_ID, Email_Template_Name, Email_Template_Subject, Email_Template_Body_html')
+    .eq('Email_Template_Event_Key', params.eventKey)
+    .eq('Email_Template_Is_Active', true)
+    .single();
+
+  if (!tpl) return; // no hay template activo, salir silenciosamente
+
+  // 2. Obtener emails de los destinatarios
+  const { data: users } = await supabase
+    .from('TBL_Users')
+    .select('User_ID, User_Email')
+    .in('User_ID', params.userIds);
+
+  if (!users || users.length === 0) return;
+
+  const subject  = renderTemplate((tpl as any).Email_Template_Subject, params.vars);
+  const htmlBody = renderTemplate((tpl as any).Email_Template_Body_html, params.vars);
+
+  // 3. Por cada destinatario: loguear + (cuando haya proveedor) enviar
+  for (const user of users as { User_ID: number; User_Email: string }[]) {
+    // ── ENVÍO REAL (descomentar cuando tengas Resend u otro proveedor) ──
+    // let status = 'sent';
+    // try {
+    //   await fetch('https://api.resend.com/emails', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       from: 'PRISMA <noreply@tudominio.com>',
+    //       to:   user.User_Email,
+    //       subject,
+    //       html: htmlBody,
+    //     }),
+    //   });
+    // } catch {
+    //   status = 'error';
+    // }
+
+    const status = 'pending'; // cambiar a variable cuando actives el envío
+
+    await supabase.from('TBL_Email_Logs').insert({
+      Email_Log_Request_ID:    params.requestId,
+      Email_Log_Sent_To:       user.User_ID,
+      Email_Log_Template_Name: (tpl as any).Email_Template_Name,
+      Email_Log_Subject_Sent:  subject,
+      Email_Log_Body_Sent:     htmlBody,
+      Email_Log_Status:        status,
+      Email_Log_Sent_At:       new Date().toISOString(),
+    });
+  }
+}
 
 async function handleAction(
   action: string,
@@ -309,24 +396,35 @@ async function handleAction(
         boardId: number; columnId: number; requestedBy: number; templateId: number;
         titulo: string; descripcion: string; score: number; equipoIds: number[];
         labelIds: number[]; sprintId: number | null; estimatedHours: number | null;
-        parentId: string | null; requesterTeamId: number | null; isConfidential: boolean | null;
+        parentId: string | null; requesterTeamId: number | null;
+        isConfidential: boolean | null;
+        formData?: Record<string, unknown>;
       };
+      const { data: tplData } = await supabase
+        .from('TBL_Requests_Templates')
+        .select('Request_Template_Form_Schema')
+        .eq('Request_Template_ID', p.templateId)
+        .single();
+      const schemaSnapshot = tplData?.Request_Template_Form_Schema ?? [];
+
       const { data: inserted, error: insErr } = await supabase
         .from('TBL_Requests')
         .insert({
-          Request_Board_ID:          p.boardId,
-          Request_Board_Column_ID:   p.columnId,
-          Request_Requested_By:      p.requestedBy,
-          Request_Template_ID:       p.templateId,
-          Request_Title:             p.titulo,
-          Request_Description:       p.descripcion,
-          Request_Score:             p.score,
-          Request_Progress:          0,
-          Request_Created_At:        new Date().toISOString(),
-          Request_Estimated_Hours:   p.estimatedHours ?? null,
-          Request_Parent_ID:         p.parentId ?? null,
-          Request_Requester_Team_ID: p.requesterTeamId ?? null,
-          Request_Is_Confidential:   p.isConfidential ?? false,
+          Request_Board_ID:                    p.boardId,
+          Request_Board_Column_ID:             p.columnId,
+          Request_Requested_By:                p.requestedBy,
+          Request_Template_ID:                 p.templateId,
+          Request_Title:                       p.titulo,
+          Request_Description:                 p.descripcion,
+          Request_Score:                       p.score,
+          Request_Progress:                    0,
+          Request_Created_At:                  new Date().toISOString(),
+          Request_Estimated_Hours:             p.estimatedHours ?? null,
+          Request_Parent_ID:                   p.parentId ?? null,
+          Request_Requester_Team_ID:           p.requesterTeamId ?? null,
+          Request_Is_Confidential:             p.isConfidential ?? false,
+          Request_Form_Data:                   p.formData ?? {},
+          Request_Template_Schema_Snapshot:    schemaSnapshot,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
@@ -345,12 +443,32 @@ async function handleAction(
           { Request_Sprint_Request_ID: newId, Request_Sprint_ID: p.sprintId }
         ));
       await Promise.all(ops);
-      const { data, error } = await supabase
+const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
       if (error) throw new Error(error.message);
+
+      // Email al solicitante
+      const { data: requesterData } = await supabase
+        .from('TBL_Users')
+        .select('User_Name')
+        .eq('User_ID', p.requestedBy)
+        .single();
+
+      await sendEventEmail(supabase, {
+        eventKey:  'ticket_recibido',
+        requestId: newId,
+        userIds:   [p.requestedBy],
+        vars: {
+          ticket_id:          newId,
+          ticket_title:       p.titulo,
+          ticket_url:         `${Deno.env.get('APP_URL') ?? ''}/ticket/${newId}`,
+          requester_name:     (requesterData as any)?.User_Name ?? '',
+          ticket_description: p.descripcion,
+        },
+      });
+
       return data;
     }
-
     case 'moveToColumn': {
       const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
       const { data: colData } = await supabase
@@ -358,8 +476,17 @@ async function handleAction(
         .select('Board_Column_Name')
         .eq('Board_Column_ID', columnId)
         .single();
+
+      // Si es columna final, sellar fecha de cierre y progreso
+      const isFinal   = FINAL_COLUMN_IDS.has(columnId);
+      const updateData: Record<string, unknown> = { Request_Board_Column_ID: columnId };
+      if (isFinal) {
+        updateData['Request_Finished_At'] = new Date().toISOString();
+        updateData['Request_Progress']    = 100;
+      }
+
       const { error } = await supabase
-        .from('TBL_Requests').update({ Request_Board_Column_ID: columnId }).eq('Request_ID', id);
+        .from('TBL_Requests').update(updateData).eq('Request_ID', id);
       if (error) throw new Error(error.message);
 
       if (movedBy) {
@@ -376,48 +503,71 @@ async function handleAction(
           actorId:   movedBy,
         });
       }
+      // Email
+      if (movedBy) {
+        const { data: reqDataMove } = await supabase
+          .from('TBL_Requests')
+          .select('Request_Title')
+          .eq('Request_ID', id)
+          .single();
+        const { assigneeIds: aIds, requestedBy: rBy } = await getRequestParticipants(supabase, id);
+        const emailRecipMove = [...new Set([...aIds, ...(rBy ? [rBy] : [])])];
+        await sendEventEmail(supabase, {
+          eventKey:  'moveToColumn',
+          requestId: id,
+          userIds:   emailRecipMove,
+          vars: {
+            ticket_id:    id,
+            ticket_title: (reqDataMove as any)?.Request_Title ?? '',
+            ticket_url:   `${Deno.env.get('APP_URL') ?? ''}/ticket/${id}`,
+            column_name:  (colData as any)?.Board_Column_Name ?? '',
+            actor_name:   '',
+          },
+        });
+      }
       return { ok: true };
     }
 
-    case 'updateRequest': {
-      const { id, ...patch } = payload as {
-        id: string; titulo?: string; descripcion?: string; score?: number;
-        progreso?: number; estimatedHours?: number | null;
-        equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
-      };
-      const scalarUpdate: Record<string, unknown> = {};
-      if (patch.titulo          !== undefined) scalarUpdate['Request_Title']            = patch.titulo;
-      if (patch.descripcion     !== undefined) scalarUpdate['Request_Description']      = patch.descripcion;
-      if (patch.score           !== undefined) scalarUpdate['Request_Score']            = patch.score;
-      if (patch.progreso        !== undefined) scalarUpdate['Request_Progress']         = Math.min(100, Math.max(0, patch.progreso));
-      if (patch.estimatedHours  !== undefined) scalarUpdate['Request_Estimated_Hours']  = patch.estimatedHours;
-      if (Object.keys(scalarUpdate).length > 0) {
-        const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
-        if (error) throw new Error(error.message);
-      }
-      if (patch.equipoIds !== undefined) {
-        await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id);
-        if (patch.equipoIds.length > 0)
-          await supabase.from('TBL_Request_Team').insert(
-            patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid }))
-          );
-      }
-      if (patch.labelIds !== undefined) {
-        await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id);
-        if (patch.labelIds.length > 0)
-          await supabase.from('TBL_Request_Labels').insert(
-            patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid }))
-          );
-      }
-      if (patch.sprintId !== undefined) {
-        await supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id);
-        if (patch.sprintId !== null)
-          await supabase.from('TBL_Request_Sprint').insert(
-            { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
-          );
-      }
-      return { ok: true };
-    }
+case 'updateRequest': {
+  const { id, ...patch } = payload as {
+    id: string; titulo?: string; descripcion?: string; score?: number;
+    progreso?: number; estimatedHours?: number | null; loggedHours?: number | null;
+    equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
+  };
+  const scalarUpdate: Record<string, unknown> = {};
+  if (patch.titulo         !== undefined) scalarUpdate['Request_Title']           = patch.titulo;
+  if (patch.descripcion    !== undefined) scalarUpdate['Request_Description']     = patch.descripcion;
+  if (patch.score          !== undefined) scalarUpdate['Request_Score']           = patch.score;
+  if (patch.progreso       !== undefined) scalarUpdate['Request_Progress']        = Math.min(100, Math.max(0, patch.progreso));
+  if (patch.estimatedHours !== undefined) scalarUpdate['Request_Estimated_Hours'] = patch.estimatedHours;
+  if (patch.loggedHours    !== undefined) scalarUpdate['Request_Logged_Hours']    = patch.loggedHours;  // ← nuevo
+  if (Object.keys(scalarUpdate).length > 0) {
+    const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
+    if (error) throw new Error(error.message);
+  }
+  if (patch.equipoIds !== undefined) {
+    await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', id);
+    if (patch.equipoIds.length > 0)
+      await supabase.from('TBL_Request_Team').insert(
+        patch.equipoIds.map((tid) => ({ Request_Team_Request_ID: id, Request_Team_ID: tid }))
+      );
+  }
+  if (patch.labelIds !== undefined) {
+    await supabase.from('TBL_Request_Labels').delete().eq('Request_Labels_Request_ID', id);
+    if (patch.labelIds.length > 0)
+      await supabase.from('TBL_Request_Labels').insert(
+        patch.labelIds.map((lid) => ({ Request_Labels_Request_ID: id, Request_Labels_Label_ID: lid }))
+      );
+  }
+  if (patch.sprintId !== undefined) {
+    await supabase.from('TBL_Request_Sprint').delete().eq('Request_Sprint_Request_ID', id);
+    if (patch.sprintId !== null)
+      await supabase.from('TBL_Request_Sprint').insert(
+        { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
+      );
+  }
+  return { ok: true };
+}
 
     case 'updateRequestSubTeams': {
       const { id, subTeamIds } = payload as { id: string; subTeamIds: number[] };
@@ -440,6 +590,7 @@ async function handleAction(
         supabase.from('TBL_Requests_Assignments').delete().eq('Request_Assignment_ID', id),
         supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id),
         supabase.from('TBL_Acceptance_Criteria').delete().eq('Request_ID', id),
+        supabase.from('TBL_Client_Feedback').delete().eq('Request_ID', id),
       ]);
       const { error } = await supabase.from('TBL_Requests').delete().eq('Request_ID', id);
       if (error) throw new Error(error.message);
@@ -461,6 +612,10 @@ async function handleAction(
         targetColumnId: number; attachmentUrl: string | null;
         attachmentName: string | null; attachmentMime: string | null;
       };
+
+      // Crear el registro de closure (evidencia)
+      // NOTA: ya NO sella Request_Finished_At aquí — eso ocurre en moveToColumn
+      // cuando la columna destino es hecho (6) o historial (9).
       const { data: closure, error: closureErr } = await supabase
         .from('TBL_Request_Closure')
         .insert({
@@ -480,13 +635,19 @@ async function handleAction(
         `)
         .single();
       if (closureErr) throw new Error(closureErr.message);
+
+      // Mover la columna (moveToColumn se encarga del Finished_At si aplica)
+      const isFinal = FINAL_COLUMN_IDS.has(p.targetColumnId);
+      const updateData: Record<string, unknown> = {
+        Request_Board_Column_ID: p.targetColumnId,
+      };
+      if (isFinal) {
+        updateData['Request_Finished_At'] = new Date().toISOString();
+        updateData['Request_Progress']    = 100;
+      }
       const { error: updateErr } = await supabase
         .from('TBL_Requests')
-        .update({
-          Request_Board_Column_ID: p.targetColumnId,
-          Request_Finished_At:     new Date().toISOString(),
-          Request_Progress:        100,
-        })
+        .update(updateData)
         .eq('Request_ID', p.requestId);
       if (updateErr) throw new Error(updateErr.message);
 
@@ -496,10 +657,35 @@ async function handleAction(
       await insertNotifications(supabase, {
         userIds:   recipientIds,
         type:      'closure',
-        title:     `Ticket ${p.requestId} cerrado`,
-        body:      `El ticket fue cerrado. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
+        title:     `Ticket ${p.requestId} enviado a revisión`,
+        body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
         requestId: p.requestId,
         actorId:   p.closedBy,
+      });
+// Obtener datos del ticket para las variables del email
+      const { data: requestData } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title, Request_Requested_By')
+        .eq('Request_ID', p.requestId)
+        .single();
+
+      const ticketTitle = (requestData as any)?.Request_Title ?? '';
+      const ticketUrl   = `${Deno.env.get('APP_URL') ?? 'https://tusistema.com'}/ticket/${p.requestId}`;
+
+      // Resolver destinatarios del email (mismos que la notificación)
+      const emailRecipients = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+
+      await sendEventEmail(supabase, {
+        eventKey:  'closeRequest',
+        requestId: p.requestId,
+        userIds:   emailRecipients,
+        vars: {
+          ticket_id:     p.requestId,
+          ticket_title:  ticketTitle,
+          ticket_url:    ticketUrl,
+          actor_name:    '', // se resuelve por User_ID abajo si es necesario
+          closure_notes: p.closureNote,
+        },
       });
 
       return closure;
@@ -572,6 +758,108 @@ async function handleAction(
         Created_At:            (inserted as any).Created_At,
         Signed_Url:            signErr ? null : signedData?.signedUrl ?? null,
       };
+    }
+
+    /* ── Feedback del cliente ───────────────────────────────── */
+
+    case 'fetchClientFeedback': {
+      const { requestId } = payload as { requestId: string };
+      const { data, error } = await supabase
+        .from('TBL_Client_Feedback')
+        .select(`
+          Feedback_ID, Request_ID, Submitted_By, Decision, Feedback_Note, Submitted_At,
+          submitter:TBL_Users!Submitted_By ( User_Name )
+        `)
+        .eq('Request_ID', requestId)
+        .order('Submitted_At', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ?? null;
+    }
+
+    case 'submitClientFeedback': {
+      const p = payload as {
+        requestId:      string;
+        submittedBy:    number;
+        decision:       'approved' | 'rejected';
+        feedbackNote:   string | null;
+        targetColumnId: number;
+      };
+
+      // Guardar el feedback
+      const { data: feedback, error: fbErr } = await supabase
+        .from('TBL_Client_Feedback')
+        .insert({
+          Request_ID:   p.requestId,
+          Submitted_By: p.submittedBy,
+          Decision:     p.decision,
+          Feedback_Note: p.feedbackNote ?? null,
+          Submitted_At:  new Date().toISOString(),
+        })
+        .select(`
+          Feedback_ID, Request_ID, Submitted_By, Decision, Feedback_Note, Submitted_At,
+          submitter:TBL_Users!Submitted_By ( User_Name )
+        `)
+        .single();
+      if (fbErr) throw new Error(fbErr.message);
+
+      // Mover la columna
+      // ready_to_deploy (7) no es final → no sella Finished_At
+      // Si el cliente rechaza vuelve a en_revision_qas (8) → tampoco es final
+      const { error: moveErr } = await supabase
+        .from('TBL_Requests')
+        .update({ Request_Board_Column_ID: p.targetColumnId })
+        .eq('Request_ID', p.requestId);
+      if (moveErr) throw new Error(moveErr.message);
+
+      // Notificar a asignados y solicitante
+      const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
+      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+        .filter((uid) => uid !== p.submittedBy);
+
+      const isApproved  = p.decision === 'approved';
+      const notifTitle  = isApproved
+        ? `Ticket ${p.requestId} aprobado por el cliente ✓`
+        : `Ticket ${p.requestId} rechazado por el cliente ✗`;
+      const notifBody   = isApproved
+        ? `El cliente aprobó la solicitud. Pasa a Ready to Deploy.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`
+        : `El cliente rechazó la solicitud y solicita correcciones.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`;
+
+      await insertNotifications(supabase, {
+        userIds:   recipientIds,
+        type:      isApproved ? 'client_approved' : 'client_rejected',
+        title:     notifTitle,
+        body:      notifBody,
+        requestId: p.requestId,
+        actorId:   p.submittedBy,
+      });
+
+// Email
+const { data: actorData } = await supabase
+  .from('TBL_Users')
+  .select('User_Name')
+  .eq('User_ID', p.submittedBy)
+  .single();
+      const { data: reqDataFb } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title')
+        .eq('Request_ID', p.requestId)
+        .single();
+      const emailRecipFb = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+      await sendEventEmail(supabase, {
+        eventKey:  'submitClientFeedback',
+        requestId: p.requestId,
+        userIds:   emailRecipFb,
+        vars: {
+          ticket_id:       p.requestId,
+          ticket_title:    (reqDataFb as any)?.Request_Title ?? '',
+          ticket_url:      `${Deno.env.get('APP_URL') ?? ''}/ticket/${p.requestId}`,
+          feedback_status: p.decision === 'approved' ? 'aprobado ✓' : 'rechazado ✗',
+          actor_name:      (actorData as any)?.User_Name ?? '',
+        },
+      });
+      return feedback;
     }
 
     case 'deleteAttachment': {
@@ -652,11 +940,32 @@ async function handleAction(
         });
       }
 
+// Email
+      if (requestId && status !== 'pending') {
+        const { data: reqDataCrit } = await supabase
+          .from('TBL_Requests')
+          .select('Request_Title')
+          .eq('Request_ID', requestId)
+          .single();
+        const { assigneeIds: aIdsCrit } = await getRequestParticipants(supabase, requestId);
+        await sendEventEmail(supabase, {
+          eventKey:  'updateAcceptanceCriteriaStatus',
+          requestId: requestId,
+          userIds:   aIdsCrit,
+          vars: {
+            ticket_id:      requestId,
+            ticket_title:   (reqDataCrit as any)?.Request_Title ?? '',
+            ticket_url:     `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+            criteria_title: '',
+            new_status:     status,
+            actor_name:     '',
+          },
+        });
+      }
       return mapCriteria(data as Record<string, unknown>);
     }
 
-    case 'deleteAcceptanceCriteria': {
-      const { criteriaId } = payload as { criteriaId: number };
+    case 'deleteAcceptanceCriteria': {      const { criteriaId } = payload as { criteriaId: number };
       const { error } = await supabase
         .from('TBL_Acceptance_Criteria')
         .delete()
@@ -676,12 +985,12 @@ async function handleAction(
       return data;
     }
 
-    case 'fetchAllUsers': {
+case 'fetchAllUsers': {
       const { data, error } = await supabase
         .from('TBL_Users')
         .select(`
           User_ID, User_Name, User_Email, User_Avatar_url, User_Role,
-          Department_ID, Team_ID, Is_New,
+          Department_ID, Team_ID, Is_New, "Is_Active",
           department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
           team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
         `)
@@ -693,16 +1002,15 @@ async function handleAction(
 case 'upsertUserByEntraId': {
   const p = payload as { entraId: string; name: string; email: string };
 
-  // Buscar primero sin join para evitar errores por FK null
+  // 1. Buscar por EntraID (flujo normal)
   const { data: existing, error: findErr } = await supabase
     .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
     .eq('User_EntraID', p.entraId)
     .maybeSingle();
   if (findErr) throw new Error(findErr.message);
 
   if (existing) {
-    // Fetch del team por separado si tiene Team_ID
     const userId = (existing as any).User_ID;
     const teamId = (existing as any).Team_ID;
     let teamData = null;
@@ -714,22 +1022,116 @@ case 'upsertUserByEntraId': {
     return { ...existing, team: teamData };
   }
 
-  // No existe → crear
+  // 2. NO encontró por EntraID → buscar pre-registro por email
+  const normalizedEmail = p.email.toLowerCase().trim();
+  const { data: preReg, error: preRegErr } = await supabase
+    .from('TBL_Users')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+    .eq('User_EntraID', '')
+    .ilike('User_Email', normalizedEmail)
+    .maybeSingle();
+  if (preRegErr) throw new Error(preRegErr.message);
+
+  if (preReg) {
+    // Encontró pre-registro → vincular el EntraID real
+    const { data: linked, error: linkErr } = await supabase
+      .from('TBL_Users')
+      .update({
+        User_EntraID: p.entraId,
+        User_Name:    p.name.slice(0, 150),
+      })
+      .eq('User_ID', (preReg as any).User_ID)
+      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+      .single();
+    if (linkErr) throw new Error(linkErr.message);
+
+    const teamId = (linked as any).Team_ID;
+    let teamData = null;
+    if (teamId) {
+      const { data: t } = await supabase
+        .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
+      teamData = t;
+    }
+    return { ...(linked as any), team: teamData };
+  }
+
+  // 3. No hay pre-registro → crear nuevo (flujo original)
   const { data, error: insertErr } = await supabase
     .from('TBL_Users')
     .insert({
       User_EntraID:    p.entraId,
       User_Name:       p.name.slice(0, 150),
-      User_Email:      p.email.slice(0, 150),
+      User_Email:      normalizedEmail,
       User_Avatar_url: '',
       User_Role:       'member',
       Is_New:          true,
       User_Created_At: new Date().toISOString(),
     })
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
     .single();
   if (insertErr) throw new Error(insertErr.message);
   return { ...(data as any), team: null };
+}
+
+case 'fetchMembersBySubTeams': {
+  const { subTeamIds } = payload as { subTeamIds: number[] };
+  if (!subTeamIds?.length) return [];
+  
+  const { data, error } = await supabase
+    .from('TBL_Sub_Team_Members')
+    .select(`user:TBL_Users!Sub_Team_Member_User_ID ( User_ID, User_Name, User_Email, User_Avatar_url, User_Role )`)
+    .in('Sub_Team_Member_Sub_Team_ID', subTeamIds);
+  
+  if (error) throw new Error(error.message);
+  
+  const seen = new Set<number>();
+  return (data as { user: Record<string, unknown> }[])
+    .map((r) => r.user)
+    .filter((u) => u && !seen.has(u['User_ID'] as number) && seen.add(u['User_ID'] as number));
+}
+
+case 'preRegisterUser': {
+  const p = payload as {
+    email:        string;
+    role:         'admin' | 'member';
+    departmentId: number | null;
+    teamId:       number | null;
+    isNew:        boolean;
+  };
+
+  const normalizedEmail = p.email.toLowerCase().trim();
+
+  // Verificar que no exista ya (por email)
+  const { data: existing } = await supabase
+    .from('TBL_Users')
+    .select('User_ID, User_Email')
+    .ilike('User_Email', normalizedEmail)
+    .maybeSingle();
+
+  if (existing) throw new Error(`Ya existe un usuario con el correo ${normalizedEmail}`);
+
+  const { data, error } = await supabase
+    .from('TBL_Users')
+    .insert({
+      User_EntraID:    '',
+      User_Name:       '',
+      User_Email:      normalizedEmail,
+      User_Avatar_url: '',
+      User_Role:       p.role,
+      Department_ID:   p.departmentId,
+      Team_ID:         p.teamId,
+      Is_New:          p.isNew,
+      User_Created_At: new Date().toISOString(),
+    })
+    .select(`
+      User_ID, User_Name, User_Email, User_Role,
+      Department_ID, Team_ID, Is_New,
+      department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
+      team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
+    `)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
     case 'completeOnboarding': {
@@ -745,15 +1147,10 @@ case 'upsertUserByEntraId': {
       return data;
     }
 
-    // ── Gestión de usuarios (desde Config Panel — solo admins) ──
-
     case 'updateUser': {
       const p = payload as {
-        userId:       number;
-        role:         'admin' | 'member';
-        departmentId: number | null;
-        teamId:       number | null;
-        isNew:        boolean;
+        userId: number; role: 'admin' | 'member';
+        departmentId: number | null; teamId: number | null; isNew: boolean;
       };
       const { data, error } = await supabase
         .from('TBL_Users')
@@ -1042,31 +1439,61 @@ case 'upsertUserByEntraId': {
 
     // ── Assignments ─────────────────────────────────────────────
 
-    case 'assignRequest': {
-      const { requestId, userId, assignedBy } = payload as {
-        requestId: string; userId: number; assignedBy?: number;
-      };
-      await supabase.from('TBL_Requests_Assignments')
-        .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
-      const { error } = await supabase.from('TBL_Requests_Assignments').insert({
-        Request_Assignment_ID:      requestId,
-        Request_Assignment_User_ID: userId,
-        Request_Assignment_At:      new Date().toISOString(),
-      });
-      if (error) throw new Error(error.message);
+case 'assignRequest': {
+  const { requestId, userId, assignedBy } = payload as {
+    requestId: string; userId: number; assignedBy?: number;
+  };
+  await supabase.from('TBL_Requests_Assignments')
+    .delete().eq('Request_Assignment_ID', requestId).eq('Request_Assignment_User_ID', userId);
+  const { error } = await supabase.from('TBL_Requests_Assignments').insert({
+    Request_Assignment_ID:      requestId,
+    Request_Assignment_User_ID: userId,
+    Request_Assignment_At:      new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
 
-      if (assignedBy && userId !== assignedBy) {
-        await insertNotifications(supabase, {
-          userIds:   [userId],
-          type:      'assignment',
-          title:     `Te asignaron el ticket ${requestId}`,
-          body:      `Fuiste asignado al ticket ${requestId}.`,
-          requestId: requestId,
-          actorId:   assignedBy,
-        });
-      }
-      return { ok: true };
+  if (assignedBy && userId !== assignedBy) {
+    // Verificar si ya existe una notificación de asignación no leída para este ticket+usuario
+    const { data: existing } = await supabase
+      .from('TBL_Notifications')
+      .select('Notification_ID')
+      .eq('Notification_User_ID', userId)
+      .eq('Notification_Type', 'assignment')
+      .eq('Notification_Request_ID', requestId)
+      .eq('Notification_Is_Read', false)
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      await insertNotifications(supabase, {
+        userIds:   [userId],
+        type:      'assignment',
+        title:     `Te asignaron el ticket ${requestId}`,
+        body:      `Fuiste asignado al ticket ${requestId}.`,
+        requestId: requestId,
+        actorId:   assignedBy,
+      });
     }
+  }
+// Email
+  const { data: reqDataAssign } = await supabase
+    .from('TBL_Requests')
+    .select('Request_Title')
+    .eq('Request_ID', requestId)
+    .single();
+  await sendEventEmail(supabase, {
+    eventKey:  'assignRequest',
+    requestId: requestId,
+    userIds:   [userId],
+    vars: {
+      ticket_id:     requestId,
+      ticket_title:  (reqDataAssign as any)?.Request_Title ?? '',
+      ticket_url:    `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+      assignee_name: '',
+      actor_name:    '',
+    },
+  });
+  return { ok: true };
+}
 
     case 'unassignRequest': {
       const { requestId, userId } = payload as { requestId: string; userId: number };
@@ -1118,6 +1545,24 @@ case 'upsertUserByEntraId': {
           actorId:   userId,
         });
       }
+      // Email
+      const { data: reqDataComment } = await supabase
+        .from('TBL_Requests')
+        .select('Request_Title')
+        .eq('Request_ID', requestId)
+        .single();
+      await sendEventEmail(supabase, {
+        eventKey:  'createComment',
+        requestId: requestId,
+        userIds:   recipientIds,
+        vars: {
+          ticket_id:       requestId,
+          ticket_title:    (reqDataComment as any)?.Request_Title ?? '',
+          ticket_url:      `${Deno.env.get('APP_URL') ?? ''}/ticket/${requestId}`,
+          actor_name:      '',
+          comment_preview: text.trim().slice(0, 120),
+        },
+      });
       return data;
     }
 
@@ -1208,13 +1653,9 @@ case 'upsertUserByEntraId': {
       const { data, error } = await supabase
         .from('TBL_Notifications')
         .select(`
-          Notification_ID,
-          Notification_Type,
-          Notification_Title,
-          Notification_Body,
-          Notification_Request_ID,
-          Notification_Is_Read,
-          Notification_Created_At,
+          Notification_ID, Notification_Type, Notification_Title,
+          Notification_Body, Notification_Request_ID,
+          Notification_Is_Read, Notification_Created_At,
           actor:TBL_Users!Notification_Actor_ID (
             User_ID, User_Name, User_Avatar_url
           )
@@ -1223,7 +1664,6 @@ case 'upsertUserByEntraId': {
         .order('Notification_Created_At', { ascending: false })
         .limit(limit as number);
       if (error) throw new Error(error.message);
-
       const unreadCount = (data as any[]).filter((n) => !n.Notification_Is_Read).length;
       return { notifications: data, unreadCount };
     }
@@ -1249,6 +1689,232 @@ case 'upsertUserByEntraId': {
       if (error) throw new Error(error.message);
       return { ok: true };
     }
+
+    case 'fetchByAssignedTo': {
+      const { userId, boardId } = payload as { userId: number; boardId: number };
+      const { data: links, error: linksErr } = await supabase
+        .from('TBL_Requests_Assignments')
+        .select('Request_Assignment_ID')
+        .eq('Request_Assignment_User_ID', userId);
+      if (linksErr) throw new Error(linksErr.message);
+      const ids = (links as { Request_Assignment_ID: string }[]).map((l) => l.Request_Assignment_ID);
+      if (ids.length === 0) return [];
+      const { data, error } = await supabase
+        .from('TBL_Requests').select(BASE_SELECT)
+        .in('Request_ID', ids).eq('Request_Board_ID', boardId)
+        .order('Request_Created_At', { ascending: false });
+      if (error) throw new Error(error.message);
+      return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+    }
+
+    // ── Email Templates ─────────────────────────────────────────
+
+case 'fetchEmailTemplates': {
+  const { boardId } = payload as { boardId: number };
+  const { data, error } = await supabase
+    .from('TBL_Email_Templates')
+    .select(`
+      Email_Template_ID,
+      Email_Template_Name,
+      Email_Template_Subject,
+      Email_Template_Body_html,
+      Email_Template_Body_Text,
+      Email_Template_Event_Key,
+Email_Template_Is_Active,
+      Email_Template_Variables,
+      Email_Template_Updated_At
+    `)
+    .eq('Email_Template_Board_ID', boardId)
+    .order('Email_Template_ID', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+case 'updateEmailTemplate': {
+  const p = payload as {
+    id:      number;
+    subject: string;
+    html:    string;
+    text:    string;
+  };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({
+      Email_Template_Subject:     p.subject,
+      Email_Template_Body_html:   p.html,
+      Email_Template_Body_Text:   p.text,
+      Email_Template_Updated_At:  new Date().toISOString(),
+    })
+    .eq('Email_Template_ID', p.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'toggleEmailTemplate': {
+  const { id, isActive } = payload as { id: number; isActive: boolean };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({ Email_Template_Is_Active: isActive })
+    .eq('Email_Template_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'createEmailTemplate': {
+  const p = payload as {
+    boardId:   number;
+    name:      string;
+    eventKey:  string;
+    subject:   string;
+    variables: string[];
+  };
+
+  // Verificar que el event_key no exista ya
+  const { data: existing } = await supabase
+    .from('TBL_Email_Templates')
+    .select('Email_Template_ID')
+    .eq('Email_Template_Event_Key', p.eventKey)
+    .maybeSingle();
+  if (existing) throw new Error(`Ya existe un template con el event key "${p.eventKey}"`);
+
+  const { data, error } = await supabase
+    .from('TBL_Email_Templates')
+    .insert({
+      Email_Template_Board_ID:   p.boardId,
+      Email_Template_Name:       p.name,
+      Email_Template_Subject:    p.subject,
+      Email_Template_Body_html:  '',
+      Email_Template_Body_Text:  '',
+      Email_Template_Event_Key:  p.eventKey,
+      Email_Template_Is_Active:  true,
+      Email_Template_Variables:  p.variables,
+      Email_Template_Created_At: new Date().toISOString(),
+      Email_Template_Updated_At: new Date().toISOString(),
+    })
+    .select(`
+      Email_Template_ID, Email_Template_Name, Email_Template_Subject,
+      Email_Template_Body_html, Email_Template_Body_Text,
+      Email_Template_Event_Key, Email_Template_Is_Active,
+      Email_Template_Variables, Email_Template_Updated_At
+    `)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+case 'deleteEmailTemplate': {
+  const { id } = payload as { id: number };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .delete()
+    .eq('Email_Template_ID', id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+case 'updateEmailTemplateMetadata': {
+  const p = payload as {
+    id:        number;
+    name:      string;
+    subject:   string;
+    variables: string[];
+  };
+  const { error } = await supabase
+    .from('TBL_Email_Templates')
+    .update({
+      Email_Template_Name:      p.name,
+      Email_Template_Subject:   p.subject,
+      Email_Template_Variables: p.variables,
+      Email_Template_Updated_At: new Date().toISOString(),
+    })
+    .eq('Email_Template_ID', p.id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+  case 'deactivateUser': {
+      const { userId } = payload as { userId: number };
+      const { error } = await supabase
+        .from('TBL_Users')
+        .update({ "Is_Active": false })
+        .eq('User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'reactivateUser': {
+      const { userId } = payload as { userId: number };
+      const { error } = await supabase
+        .from('TBL_Users')
+        .update({ "Is_Active": true })
+        .eq('User_ID', userId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+// ── Bug Reports ──────────────────────────────────────────────────
+
+case 'createBugReport': {
+  const p = payload as {
+    userId:     number;
+    title:      string;
+    description: string;
+    severity:   'bajo' | 'medio' | 'alto' | 'critico';
+    screenPath: string | null;
+  };
+  const { data, error } = await supabase
+    .from('TBL_Bug_Reports')
+    .insert({
+      User_ID:     p.userId,
+      Title:       p.title.trim(),
+      Description: p.description.trim(),
+      Severity:    p.severity,
+      Screen_Path: p.screenPath ?? null,
+      Status:      'pendiente',
+      Created_At:  new Date().toISOString(),
+      Updated_At:  new Date().toISOString(),
+    })
+    .select('"Report_ID", "Title", "Severity", "Status", "Created_At"')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ── Satisfaction Ratings ─────────────────────────────────────────
+
+
+case 'createSatisfactionRating': {
+  const p = payload as {
+    userId:  number;
+    score:   number;
+    comment: string | null;
+  };
+
+  if (RATING_RATE_LIMIT_DAYS > 0) {
+    const since = new Date();
+    since.setDate(since.getDate() - RATING_RATE_LIMIT_DAYS);
+    const { data: recent } = await supabase
+      .from('TBL_Satisfaction_Ratings')
+      .select('"Rating_ID"')
+      .eq('User_ID', p.userId)
+      .gte('Created_At', since.toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (recent) throw new Error(`Solo puedes calificar cada ${RATING_RATE_LIMIT_DAYS} días.`);
+  }
+
+  const { data, error } = await supabase
+    .from('TBL_Satisfaction_Ratings')
+    .insert({
+      User_ID:    p.userId,
+      Score:      p.score,
+      Comment:    p.comment?.trim() ?? null,
+      Created_At: new Date().toISOString(),
+    })
+    .select('"Rating_ID", "Score", "Created_At"')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { config } from '@/config';
 import { requestKeys } from './useRequests';
+import { COLUMNAS_FINALES } from '../types';
 import type { BoardData, CierreInfo, CerrarRequestPayload, Equipo, KanbanColumna } from '../types';
 
 type CloseContext = { snapshot: BoardData | undefined };
@@ -38,6 +39,7 @@ export function useCloseRequest(equipo: Equipo) {
       const snapshot = queryClient.getQueryData<BoardData>(queryKey);
 
       const targetColumna = columnIdToKanban(payload.targetColumnId);
+      const esFinal       = COLUMNAS_FINALES.has(targetColumna);
 
       queryClient.setQueryData<BoardData>(queryKey, (prev) => {
         if (!prev) return prev;
@@ -52,6 +54,7 @@ export function useCloseRequest(equipo: Equipo) {
           todo:             [...(prev.todo             ?? [])],
           en_progreso:      [...(prev.en_progreso      ?? [])],
           en_revision_qas:  [...(prev.en_revision_qas  ?? [])],
+          cliente_review:   [...(prev.cliente_review   ?? [])],
           ready_to_deploy:  [...(prev.ready_to_deploy  ?? [])],
           hecho:            [...(prev.hecho            ?? [])],
           historial:        [...(prev.historial        ?? [])],
@@ -65,14 +68,14 @@ export function useCloseRequest(equipo: Equipo) {
           ...next[targetColumna],
           {
             ...card,
-            columna:     targetColumna,
-            columnId:    payload.targetColumnId,
-            fechaCierre: new Date().toISOString(),
-            progreso:    100,
+            columna:  targetColumna,
+            columnId: payload.targetColumnId,
+            // Solo sellar fechaCierre y progreso si es columna final (hecho/historial)
+            ...(esFinal ? { fechaCierre: new Date().toISOString(), progreso: 100 } : {}),
             cierreInfo: {
               closureId:      0,
               closureNote:    payload.closureNote,
-              attachments:    [],       // ← requerido por CierreInfo
+              attachments:    [],
               attachmentUrl:  null,
               attachmentName: null,
               attachmentMime: null,
@@ -93,13 +96,18 @@ export function useCloseRequest(equipo: Equipo) {
 
     onSuccess: (cierreInfo, payload) => {
       const targetColumna = columnIdToKanban(payload.targetColumnId);
+      const esFinal       = COLUMNAS_FINALES.has(targetColumna);
       queryClient.setQueryData<BoardData>(queryKey, (prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           [targetColumna]: prev[targetColumna].map((r) =>
             r.id === String(payload.requestId)
-              ? { ...r, cierreInfo, fechaCierre: cierreInfo.closedAt }
+              ? {
+                  ...r,
+                  cierreInfo,
+                  ...(esFinal ? { fechaCierre: cierreInfo.closedAt } : {}),
+                }
               : r,
           ),
         };
@@ -122,15 +130,16 @@ export function useCloseRequest(equipo: Equipo) {
 
 function columnIdToKanban(columnId: number): KanbanColumna {
   const map: Record<number, KanbanColumna> = {
-    1: 'sin_categorizar',
-    2: 'icebox',
-    3: 'backlog',
-    4: 'todo',
-    5: 'en_progreso',
-    8: 'en_revision_qas',
-    7: 'ready_to_deploy',
-    6: 'hecho',
-    9: 'historial',
+    1:  'sin_categorizar',
+    2:  'icebox',
+    3:  'backlog',
+    4:  'todo',
+    5:  'en_progreso',
+    8:  'en_revision_qas',
+    10: 'cliente_review',   // ← faltaba este
+    7:  'ready_to_deploy',
+    6:  'hecho',
+    9:  'historial',
   };
-  return map[columnId] ?? 'hecho';
+  return map[columnId] ?? 'sin_categorizar';
 }

@@ -1,3 +1,4 @@
+// src/features/requests/hooks/useColumnMap.ts
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
@@ -14,6 +15,7 @@ const MOCK_COLUMN_MAP: Record<KanbanColumna, number> = {
   ready_to_deploy:  7,
   hecho:            6,
   historial:        9,
+  cliente_review:   10,
 };
 
 type ColumnRow = {
@@ -28,9 +30,10 @@ const KANBAN_NAME_TO_COLUMNA: Record<string, KanbanColumna> = {
   'To do':            'todo',
   'En progreso':      'en_progreso',
   'En revisión QAS':  'en_revision_qas',
-  'Ready to deploy':  'ready_to_deploy',
+  'Ready to Deploy':  'ready_to_deploy',
   'Hecho':            'hecho',
   'Historial':        'historial',
+  'Client Review':    'cliente_review',  // ← R mayúscula, igual que en la BD
 };
 
 export function useColumnMap(boardId: number): Record<KanbanColumna, number> | undefined {
@@ -47,7 +50,7 @@ export function useColumnMap(boardId: number): Record<KanbanColumna, number> | u
           }
           return map;
         },
-    staleTime: Infinity, // las columnas no cambian en runtime
+    staleTime: Infinity,
     retry:     1,
   });
 

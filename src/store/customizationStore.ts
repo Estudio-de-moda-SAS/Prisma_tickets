@@ -61,6 +61,7 @@ export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
   todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 280 },
   en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 280 },
   en_revision_qas: { headerColor: '#fb7121', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 280 },
+  cliente_review:  { headerColor: '#34d399', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 280 },
   ready_to_deploy: { headerColor: '#ec4899', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 280 },
   hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 280 },
   historial:       { headerColor: '#6b7280', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
@@ -335,6 +336,6 @@ export const useCustomizationStore = create<CustomizationState>()(
           },
         })),
     }),
-    { name: 'prisma-board-customization-v3' }, // ← bumped: nuevas columnas en COLUMN_DEFAULTS
+    { name: 'prisma-board-customization-v4' }, // bumped: nueva columna cliente_review
   ),
 );

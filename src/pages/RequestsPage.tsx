@@ -15,15 +15,16 @@ import { config as appConfig } from '@/config';
 import { COLUMNAS_CIERRE } from '@/features/requests/types';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
-  sin_categorizar: 'var(--txt-muted)',
-  icebox:          '#60a5fa',
-  backlog:         'var(--info)',
-  todo:            'var(--warn)',
-  en_progreso:     'var(--accent)',
-  en_revision_qas: 'var(--info)',
-  ready_to_deploy: 'var(--purple)',
-  hecho:           'var(--success)',
-  historial:       'var(--txt-muted)',
+  sin_categorizar:  'var(--txt-muted)',
+  icebox:           '#60a5fa',
+  backlog:          'var(--info)',
+  todo:             'var(--warn)',
+  en_progreso:      'var(--accent)',
+  en_revision_qas:  '#fb7121',
+  cliente_review:   '#34d399',
+  ready_to_deploy:  '#a78bfa',
+  hecho:            'var(--success)',
+  historial:        'var(--txt-muted)',
 };
 
 const PRI_COLOR: Record<Prioridad, string> = {
