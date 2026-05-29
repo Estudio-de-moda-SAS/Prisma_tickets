@@ -150,12 +150,16 @@ function mapRowToRequest(row: RawRequestRow): Request {
 
   // Snapshot tiene prioridad — es el schema que tenía el template cuando se creó el ticket.
   // Si no existe (tickets pre-migración), fallback al schema live del template.
-  const templateFormSchema = (
+const templateFormSchema = (
+  row.template_schema?.Request_Template_Form_Schema ??
+  row.Request_Template_Schema_Snapshot ??
+  []
+);
+const templateSchemaSnapshot = (
     row.Request_Template_Schema_Snapshot ??
     row.template_schema?.Request_Template_Form_Schema ??
     []
   );
-
   let cierreInfo: CierreInfo | null = null;
   if (row.closure) {
     const rawAtts = row.closure.closure_attachments ?? [];
@@ -216,6 +220,7 @@ function mapRowToRequest(row: RawRequestRow): Request {
     extraFields,
     formData,
     templateFormSchema,
+    templateSchemaSnapshot,
     childCount,
     criteriaSummary,
     cierreInfo,

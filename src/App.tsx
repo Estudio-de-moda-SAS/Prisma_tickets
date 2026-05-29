@@ -15,7 +15,6 @@ import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
 import { TicketPage } from "@/pages/TicketPage";
-import EmailsPage from "@/pages/EmailsPage";
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
 
@@ -144,7 +143,6 @@ export default function App() {
         <Route path="requests"                    element={<RequireAdmin><RequestsPage /></RequireAdmin>} />
         <Route path="automations"                 element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
         <Route path="automations/logs"            element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
-        <Route path="emails"                      element={<RequireAdmin><EmailsPage /></RequireAdmin>} />
         <Route path="preview/create-ticket-modal" element={<RequireAdmin><TicketModalPreviewPage /></RequireAdmin>} />
       </Route>
 

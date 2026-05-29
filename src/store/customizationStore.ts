@@ -67,6 +67,20 @@ export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
   historial:       { headerColor: '#6b7280', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
 };
 
+export const COLUMN_DEFAULTSBLACK: Record<KanbanColumna, ColumnCustomization> = {
+  sin_categorizar: { headerColor: '#000000', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 240 },
+  icebox:          { headerColor: '#000000', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 280 },
+  backlog:         { headerColor: '#000000', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 280 },
+  todo:            { headerColor: '#000000', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 280 },
+  en_progreso:     { headerColor: '#000000', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 280 },
+  en_revision_qas: { headerColor: '#000000', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 280 },
+  cliente_review:  { headerColor: '#000000', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 280 },
+  ready_to_deploy: { headerColor: '#000000', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 280 },
+  hecho:           { headerColor: '#000000', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 280 },
+  historial:       { headerColor: '#000000', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
+};
+
+
 export const CARD_DEFAULTS: CardCustomization = {
   density:       'normal',
   style:         'default',
@@ -209,7 +223,7 @@ export function getColumnConfig(
   col: KanbanColumna,
   overrides: Partial<Record<KanbanColumna, ColumnCustomization>>,
 ): ColumnCustomization {
-  return { ...COLUMN_DEFAULTS[col], ...(overrides[col] ?? {}) };
+  return { ...COLUMN_DEFAULTSBLACK[col], ...(overrides[col] ?? {}) };
 }
 
 function patchBoard(

@@ -10,7 +10,6 @@ import {
   useBoardTemplates,
   getTemplateDefinition,
 } from '@/features/requests/hooks/useBoardMetadata';
-import { useSubTeams }    from '@/features/requests/hooks/useSubTeams';
 import { useSprints }     from '@/features/requests/hooks/useSprints';
 import { useUsers }       from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
@@ -556,7 +555,6 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(null);
   const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
-  const { data: subTeams = [] } = useSubTeams(selectedBoardTeamId);
   const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedBoardTeamId);
 
   const [titulo,             setTitulo]             = useState('');
@@ -572,7 +570,6 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>([]);
   const [createAttempted,    setCreateAttempted]    = useState(false);
 
-  const subDD      = usePortalDropdown();
   const catDD      = usePortalDropdown();
   const sprintDD   = usePortalDropdown();
   const assigneeDD = usePortalDropdown();
@@ -608,12 +605,27 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
     setAssigneeIds((prev) => prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]);
   }
 
-  function selectTeam(id: number) {
-    setSelectedBoardTeamId(id);
-    setSelectedTemplateId(null);
-    setExtraValues({});
-  }
+function selectTeam(id: number) {
+  setSelectedBoardTeamId(id);
+  setSelectedTemplateId(null);
+  setExtraValues({});
+}
 
+function goToTemplate() {
+  if (selectedBoardTeamId === null) return;
+  const filtered = allTemplates.filter(
+    (t) =>
+      t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 ||
+        t.Request_Template_Teams?.includes(selectedBoardTeamId)),
+  );
+  if (filtered.length === 1) {
+    setSelectedTemplateId(filtered[0].Request_Template_ID);
+    setStep('form');
+  } else {
+    setStep('template');
+  }
+}
   // Handler unificado para los campos extra (simples y ramas de condicionales)
   function handleExtraChange(key: string, value: string) {
     setExtraValues((prev) => ({ ...prev, [key]: value }));
@@ -712,8 +724,7 @@ const formData: Record<string, unknown> = {
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
           <StepIndicator step={step} />
 
-          {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
-
+{step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={goToTemplate} />}
           {step === 'template' && (
             <StepTemplate templates={allTemplates} selectedBoardTeamId={selectedBoardTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />
           )}
@@ -766,7 +777,6 @@ const formData: Record<string, unknown> = {
               {/* Campos extra del template — incluye condicionales */}
               {templateDef && normalizedExtraFields.length > 0 && (
                 <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${accent}20`, background: `${accent}05` }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 14 }}>{templateDef.nombre} — Datos adicionales</div>
                   {normalizedExtraFields.map((field) => (
                     <ExtraFieldRenderer
                       key={field.key}
@@ -828,22 +838,6 @@ const formData: Record<string, unknown> = {
                   </div>
                 </FieldBlock>
 
-                <FieldBlock label="Sub-equipo">
-                  <div style={{ position: 'relative' }}>
-                    <button ref={subDD.triggerRef} onClick={subDD.toggle} disabled={!selectedBoardTeamId} style={{ ...triggerStyle(subDD.open, '0,200,255'), opacity: selectedBoardTeamId ? 1 : 0.5 }}>
-                      {selectedSubIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin sub-equipo</span>
-                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>; })}
-                      <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                    </button>
-                    {subDD.open && selectedBoardTeamId && (
-                      <PortalPanel rect={subDD.rect}>
-                        {subTeams.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sub-equipos.</div>
-                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })}
-                      </PortalPanel>
-                    )}
-                  </div>
-                </FieldBlock>
 
                 <FieldBlock label="Etiquetas">
                   <div style={{ position: 'relative' }}>
@@ -887,8 +881,14 @@ const formData: Record<string, unknown> = {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: 4 }}>
-                <button type="button" onClick={() => setStep('template')} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
-              </div>
+<button type="button" onClick={() => {
+  if (selectedBoardTeamId === null) { setStep('equipo'); return; }
+  const filtered = allTemplates.filter(
+    (t) => t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(selectedBoardTeamId)),
+  );
+  setStep(filtered.length === 1 ? 'equipo' : 'template');
+}} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>              </div>
             </div>
           )}
         </div>

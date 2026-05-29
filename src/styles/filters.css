@@ -25,7 +25,6 @@
   font-weight:    600;
   font-family:    var(--font-display, 'Rajdhani', sans-serif);
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   cursor:         pointer;
   transition:     border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
   white-space:    nowrap;
@@ -540,8 +539,9 @@
 /* ── Modo light ─────────────────────────────────────────────── */
 [data-theme="light"] .filter-trigger {
   border-color: rgba(0, 0, 0, 0.12);
-  color:        var(--txt-muted);
+  color:        #000;
 }
+
 [data-theme="light"] .filter-trigger:hover {
   background:   rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.20);

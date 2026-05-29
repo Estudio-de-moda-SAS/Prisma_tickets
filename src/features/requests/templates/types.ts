@@ -16,6 +16,8 @@ export type SimpleField = {
   required:     boolean;
   collapsible?: boolean;
   options?:     string[]; // select | radio
+  showInModal?: boolean;  // default true (retrocompatible)
+  showInCard?:  boolean;  // default false
 } & (
   | { type: 'text'     }
   | { type: 'textarea' }
@@ -34,6 +36,8 @@ export type ConditionalField = {
   label:        string;          // label del checkbox disparador
   required:     boolean;
   collapsible?: boolean;
+  showInModal?: boolean;         // default true
+  showInCard?:  boolean;         // default false
   trueBranch:   TemplateExtraField[];   // campos si true
   falseBranch:  TemplateExtraField[];   // campos si false
 };
@@ -71,12 +75,14 @@ export function getConditionalDepth(field: TemplateExtraField): number {
 /** Crea un campo simple vacío con valores por defecto */
 export function makeEmptySimpleField(index: number): SimpleField {
   return {
-    key:         `campo_${index}_${Date.now()}`,
-    label:       '',
-    placeholder: '',
-    required:    false,
-    collapsible: false,
-    type:        'text',
+    key:          `campo_${index}_${Date.now()}`,
+    label:        '',
+    placeholder:  '',
+    required:     false,
+    collapsible:  false,
+    showInModal:  true,
+    showInCard:   false,
+    type:         'text',
   };
 }
 
@@ -88,6 +94,8 @@ export function makeEmptyConditionalField(index: number): ConditionalField {
     label:       '',
     required:    false,
     collapsible: false,
+    showInModal: true,
+    showInCard:  false,
     trueBranch:  [makeEmptySimpleField(0)],
     falseBranch: [makeEmptySimpleField(1)],
   };

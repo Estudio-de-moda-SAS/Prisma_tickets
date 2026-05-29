@@ -4,7 +4,6 @@ import { X, ShieldAlert, Send, Trash2 } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
 import { useLabelsByTeamId } from '@/features/requests/hooks/useBoardMetadata';
-import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useComments, useCreateComment, useDeleteComment } from '@/features/requests/hooks/useComments';
@@ -44,13 +43,6 @@ function fmtD(iso: string) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
-function fmtHours(h: number): string {
-  const hrs  = Math.floor(h);
-  const mins = Math.round((h % 1) * 60);
-  if (mins === 0) return `${hrs}h`;
-  return `${hrs}h ${mins}m`;
-}
-
 function fmtRelative(isoString: string) {
   const now  = new Date();
   const date = new Date(isoString);
@@ -73,7 +65,7 @@ function sprintDotColor(sp: { Sprint_Start_Date: string; Sprint_End_Date: string
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 7 }}>{children}</span>;
+  return <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--txt-muted)', marginBottom: 7 }}>{children}</span>;
 }
 
 function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) {
@@ -98,63 +90,91 @@ function FieldValue({ children, muted }: { children: React.ReactNode; muted?: bo
 
 /* ── TemplateFormDataPanel ── */
 function TemplateFormDataPanel({
-  formData, schema, accentColor,
-}: { formData: Record<string, unknown>; schema: unknown[]; accentColor: string }) {
+  formData, schema, snapshotSchema,
+}: {
+  formData:        Record<string, unknown>;
+  schema:          unknown[];
+  snapshotSchema?: unknown[];
+  accentColor:     string;
+}) {
 
-  const savedLabels: Record<string, string> = (() => {
-    try { return JSON.parse(formData['__labels'] as string ?? '{}'); }
-    catch { return {}; }
-  })();
+  type FlatField = { key: string; label: string; showInModal: boolean };
 
-  function flattenSchema(fields: unknown[]): { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] {
-    const result: { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] = [];
+  function collectAllKeys(fields: unknown[]): Set<string> {
+    const keys = new Set<string>();
     for (const f of fields) {
       const field = f as Record<string, unknown>;
       if (!field.key) continue;
+      keys.add(field.key as string);
       if (field.type === 'conditional') {
-        if (field.label) result.push({ key: field.key as string, label: field.label as string, isConditionalParent: true });
-        for (const child of flattenSchema((field.trueBranch as unknown[]) ?? [])) {
-          result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'true' });
+        for (const k of collectAllKeys((field.trueBranch as unknown[]) ?? [])) keys.add(k);
+        for (const k of collectAllKeys((field.falseBranch as unknown[]) ?? [])) keys.add(k);
+      }
+    }
+    return keys;
+  }
+
+  function collectAllWithMeta(fields: unknown[]): Map<string, { label: string; showInModal: boolean }> {
+    const map = new Map<string, { label: string; showInModal: boolean }>();
+    for (const f of fields) {
+      const field = f as Record<string, unknown>;
+      if (!field.key || !field.label) continue;
+      const showInModal = (field.showInModal as boolean | undefined) ?? true;
+      map.set(field.key as string, { label: field.label as string, showInModal });
+      if (field.type === 'conditional') {
+        for (const [k, v] of collectAllWithMeta((field.trueBranch  as unknown[]) ?? [])) map.set(k, v);
+        for (const [k, v] of collectAllWithMeta((field.falseBranch as unknown[]) ?? [])) map.set(k, v);
+      }
+    }
+    return map;
+  }
+
+  function collectVisibleLevel(fields: unknown[]): FlatField[] {
+    const result: FlatField[] = [];
+    for (const f of fields) {
+      const field = f as Record<string, unknown>;
+      if (!field.key) continue;
+      const showInModal = (field.showInModal as boolean | undefined) ?? true;
+      if (field.type === 'conditional') {
+        if (showInModal && field.label) {
+          result.push({ key: field.key as string, label: field.label as string, showInModal });
         }
-        for (const child of flattenSchema((field.falseBranch as unknown[]) ?? [])) {
-          result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'false' });
-        }
+        const val = formData[field.key as string];
+        const effective = (val === undefined || val === null || val === '') ? 'false' : String(val);
+        const activeBranch = effective === 'true'
+          ? (field.trueBranch as unknown[]) ?? []
+          : (field.falseBranch as unknown[]) ?? [];
+        result.push(...collectVisibleLevel(activeBranch));
       } else {
-        if (field.label) result.push({ key: field.key as string, label: field.label as string });
+        if (showInModal && field.label) {
+          result.push({ key: field.key as string, label: field.label as string, showInModal });
+        }
       }
     }
     return result;
   }
 
-  const schemaFields = flattenSchema(schema);
-  const schemaKeys   = new Set(schemaFields.map((f) => f.key));
+  const schemaFields  = collectVisibleLevel(schema);
+  const allLiveKeys   = collectAllKeys(schema);
+  const snapshotMeta  = collectAllWithMeta(snapshotSchema ?? []);
 
-  const orphanFields = Object.keys(formData)
-    .filter((k) => !schemaKeys.has(k) && k !== '__labels')
-    .map((k) => ({
-      key:   k,
-      label: savedLabels[k] ?? k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-    }));
+  const orphanFields: FlatField[] = Object.keys(formData)
+    .filter((k) => !allLiveKeys.has(k) && k !== '__labels')
+    .map((k) => {
+      // live wins: si existe en live con showInModal: false → ocultar
+      // (ya está excluido de schemaFields por collectVisibleLevel)
+      // si no existe en live → buscar en snapshot
+      const snap = snapshotMeta.get(k);
+      if (!snap || !snap.showInModal) return null;
+      return { key: k, label: snap.label, showInModal: true };
+    })
+    .filter((f): f is FlatField => f !== null);
 
-  const allFields = [...schemaFields, ...orphanFields];
-
-  const entries = allFields.filter(({ key, ...rest }) => {
+  const entries = [...schemaFields, ...orphanFields].filter(({ key }) => {
     if (key === '__labels') return false;
     const val = formData[key];
-    const fieldMeta = rest as { isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string };
-    if (fieldMeta.isConditionalParent) {
-      if (fieldMeta.conditionalParentKey) {
-        const parentVal = formData[fieldMeta.conditionalParentKey];
-        if (parentVal !== fieldMeta.conditionalParentValue) return false;
-      }
-      return true;
-    }
-    if (val === undefined || val === '' || val === null) return false;
-    if (fieldMeta.conditionalParentKey) {
-      const parentVal = formData[fieldMeta.conditionalParentKey];
-      if (parentVal !== fieldMeta.conditionalParentValue) return false;
-    }
-    return true;
+    if (val === 'true' || val === 'false') return true;
+    return val !== undefined && val !== '' && val !== null;
   });
 
   if (entries.length === 0) return null;
@@ -169,14 +189,10 @@ function TemplateFormDataPanel({
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: accentColor, background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.18)', padding: '3px 10px', borderRadius: 3, flexShrink: 0 }}>Datos adicionales</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
-      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {entries.map(({ key, label }) => (
           <div key={key} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', flexShrink: 0, minWidth: 110, textTransform: 'uppercase' }}>{label}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', flexShrink: 0, minWidth: 110 }}>{label}</span>
             <span style={{ flex: 1, height: 1, borderBottom: '1px dashed var(--border-subtle)', alignSelf: 'center' }} />
             <span style={{ fontSize: 12, fontWeight: 500, textAlign: 'right' }}>{renderValue(key)}</span>
           </div>
@@ -237,7 +253,6 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const boardTeamId = request.boardTeamId ?? null;
   const equipo      = request.equipo[0] ?? 'desarrollo';
 
-  const { data: subTeams = [] } = useSubTeams(boardTeamId);
   const { data: labels   = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints  = [] } = useSprints();
 
@@ -293,7 +308,6 @@ export function HomeRequestModal({ request, onClose }: Props) {
 
   const selectedSprint   = sprints.find((s) => s.Sprint_ID === request.sprintId) ?? null;
   const selectedLabels   = labels.filter((l) => (request.labelIds ?? []).includes(l.Label_ID));
-  const selectedSubTeams = subTeams.filter((s) => (request.subTeamIds ?? []).includes(s.Sub_Team_ID));
   const colColor         = COL_COLOR[request.columna] ?? 'var(--txt-muted)';
 const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
   return (
@@ -315,14 +329,14 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--txt-muted)', letterSpacing: 1, userSelect: 'all' }}>{request.id}</span>
           <CopyLinkButton ticketId={request.id} />
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--txt-muted)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--txt-muted)', border: '1px solid rgba(255,255,255,0.08)' }}>
             Solo lectura
           </span>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, color: colColor, background: `${colColor}18`, border: `1px solid ${colColor}35` }}>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 8px', borderRadius: 4, color: colColor, background: `${colColor}18`, border: `1px solid ${colColor}35` }}>
             {KANBAN_COLUMNAS[request.columna]}
           </span>
           {request.isConfidential && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 8px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
               <ShieldAlert size={9} />Confidencial
             </span>
           )}
@@ -395,7 +409,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
     <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(request.solicitante)}</div>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{request.solicitante}</span>
-      {request.requesterTeamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>{request.requesterTeamName}</span>}
+      {request.requesterTeamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 0.5, fontWeight: 600 }}>{request.requesterTeamName}</span>}
     </div>
   </div>
 </FieldBlock>
@@ -419,21 +433,6 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
                 <FieldValue><ReadChip color={PRI_COLOR[request.prioridad]} label={PRIORIDADES[request.prioridad]} /></FieldValue>
               </FieldBlock>
 
-              <FieldBlock label="Horas estimadas">
-                <FieldValue muted={request.estimatedHours == null}>
-                  {request.estimatedHours != null ? fmtHours(request.estimatedHours) : 'Sin estimado'}
-                </FieldValue>
-              </FieldBlock>
-
-              <FieldBlock label="Equipo">
-                <FieldValue muted={selectedSubTeams.length === 0}>
-                  {selectedSubTeams.length === 0 ? 'Sin equipo' : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                      {selectedSubTeams.map((sub) => <ReadChip key={sub.Sub_Team_ID} color={sub.Sub_Team_Color} label={sub.Sub_Team_Name} />)}
-                    </div>
-                  )}
-                </FieldValue>
-              </FieldBlock>
 
               <FieldBlock label="Etiquetas">
                 <FieldValue muted={selectedLabels.length === 0}>
@@ -466,7 +465,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
           {/* Panel derecho — comentarios */}
           <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-              <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent)', color: 'var(--accent)', cursor: 'default' }}>
+              <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent)', color: 'var(--accent)', cursor: 'default' }}>
                 Comentarios
                 {comments.length > 0 && (
                   <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: 'rgba(0,200,255,0.15)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.25)' }}>

@@ -1,5 +1,5 @@
 // src/pages/NewRequestPage.tsx
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
@@ -93,7 +93,26 @@ function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
 function normalizeSchema(schema: TemplateExtraField[]): TemplateExtraField[] {
   return (schema ?? []).map(normalizeBranch);
 }
-
+function fillConditionalDefaults(
+  fields: TemplateExtraField[],
+  values: Record<string, string>,
+): Record<string, string> {
+  // Primero construir todos los defaults del schema en orden
+  const defaults: Record<string, string> = {};
+  function collectDefaults(fs: TemplateExtraField[]) {
+    for (const field of fs) {
+      if (isConditionalField(field)) {
+        const cf = field as ConditionalField;
+        if (!(cf.key in values)) defaults[cf.key] = 'false';
+        collectDefaults(cf.trueBranch);
+        collectDefaults(cf.falseBranch);
+      }
+    }
+  }
+  collectDefaults(fields);
+  // Mergear: defaults primero (orden del schema), luego valores del usuario
+  return { ...defaults, ...values };
+}
 /* ============================================================
    Validación recursiva de campos extra
    ============================================================ */
@@ -148,40 +167,44 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
 
     return (
       <div style={{ marginBottom: 4 }}>
+<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+  <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+    {cf.label}
+    {cf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+  </span>
+  <div style={{ display: 'flex', gap: 8 }}>
+    {(['true', 'false'] as const).map((val) => {
+      const isSelected = triggerValue === val;
+      const label = val === 'true' ? 'Sí' : 'No';
+      const selectedColor = val === 'true' ? accent : 'var(--txt-muted)';
+      return (
         <button
+          key={val}
           type="button"
-          onClick={() => onChange(cf.key, isTrue ? 'false' : 'true')}
+          onClick={() => onChange(cf.key, val)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
-            borderRadius: 8, width: '100%', textAlign: 'left', cursor: 'pointer',
-            border: `1px solid ${isTrue ? 'rgba(0,200,255,0.35)' : 'var(--border-subtle)'}`,
-            background: isTrue ? 'rgba(0,200,255,0.05)' : 'transparent',
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '8px 20px', borderRadius: 7, cursor: 'pointer',
+            border: `1px solid ${isSelected ? (val === 'true' ? accent + '60' : 'rgba(178,190,195,0.5)') : 'var(--border-subtle)'}`,
+            background: isSelected ? (val === 'true' ? `${accent}12` : 'rgba(178,190,195,0.08)') : 'transparent',
+            color: isSelected ? selectedColor : 'var(--txt-muted)',
+            fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+            letterSpacing: 1, textTransform: 'uppercase' as const,
             transition: 'all 0.15s',
           }}
         >
           <div style={{
-            width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-            border: `2px solid ${isTrue ? accent : 'var(--border)'}`,
-            background: isTrue ? accent : 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+            border: `2px solid ${isSelected ? selectedColor : 'var(--border)'}`,
+            background: isSelected ? selectedColor : 'transparent',
             transition: 'all 0.15s',
-          }}>
-            {isTrue && (
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </div>
-          <span style={{
-            fontSize: 13, flex: 1,
-            color: isTrue ? 'var(--txt)' : 'var(--txt-muted)',
-            fontWeight: isTrue ? 600 : 400,
-            transition: 'color 0.15s',
-          }}>
-            {cf.label}
-            {cf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
-          </span>
+          }} />
+          {label}
         </button>
+      );
+    })}
+  </div>
+</div>
 
         {activeBranch && activeBranch.some((f) => f.label.trim() !== '') && (
           <div style={{
@@ -517,11 +540,10 @@ function StepForm({
       {/* Campos extra del template */}
       {extraFields.length > 0 && (
         <div style={cardStyle(accent)}>
-          <SectionLabel>{def.nombre} — Datos adicionales</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {extraFields.map((field) => (
-              <ExtraFieldRenderer
-                key={field.key}
+{extraFields.map((field) => (
+  <ExtraFieldRenderer
+                    key={field.key}
                 field={field}
                 values={extraValues}
                 onChange={setExtraValue}
@@ -635,10 +657,39 @@ export function NuevaSolicitudPage() {
   const userTeamName = currentUser?.team?.Team_Name ?? null;
   const userTeamId   = currentUser?.Team_ID ?? null;
 
-  function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(null); setExtraValues({}); }
-  function toggleLabel(id: number) { setSelectedLabelIds((prev) => prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]); }
-  function setExtraValue(key: string, value: string) { setExtraValues((prev) => ({ ...prev, [key]: value })); }
+function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(null); setExtraValues({}); }
 
+function goToTemplate() {
+  if (selectedTeamId === null) return;
+  const filtered = templates.filter(
+    (t) =>
+      t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 ||
+        t.Request_Template_Teams?.includes(selectedTeamId)),
+  );
+  if (filtered.length === 1) {
+    setSelectedTemplateId(filtered[0].Request_Template_ID);
+    setStep('form');
+  } else {
+    setStep('template');
+  }
+}  
+function toggleLabel(id: number) { setSelectedLabelIds((prev) => prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]); }
+function setExtraValue(key: string, value: string) { setExtraValues((prev) => ({ ...prev, [key]: value })); }
+// Auto-selección de template único
+useEffect(() => {
+  if (step !== 'template' || selectedTeamId === null) return;
+  const filtered = templates.filter(
+    (t) =>
+      t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 ||
+        t.Request_Template_Teams?.includes(selectedTeamId)),
+  );
+  if (filtered.length === 1) {
+    setSelectedTemplateId(filtered[0].Request_Template_ID);
+    setStep('form');
+  }
+}, [step, selectedTeamId, templates]);
   const { mutate: crear, isPending } = useMutation({
     mutationFn: async () => {
       if (!currentUser || !columnMap || !selectedTemplateId) throw new Error('Datos incompletos');
@@ -670,7 +721,7 @@ export function NuevaSolicitudPage() {
         parentId:           null,
         requesterTeamId:    userTeamId,
         isConfidential,
-        formData:           extraValues,   // ← valores del formulario dinámico
+        formData:           fillConditionalDefaults(extraFields, extraValues), 
         acceptanceCriteria: [],
       });
 
@@ -727,8 +778,7 @@ export function NuevaSolicitudPage() {
   return (
     <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 28px 32px', maxWidth: 900, width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
-      {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
-      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
+{step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (
         <StepForm
           allTemplates={templates} templateId={selectedTemplateId}
@@ -742,7 +792,14 @@ export function NuevaSolicitudPage() {
           acceptanceCriteria={acceptanceCriteria} setAcceptanceCriteria={setAcceptanceCriteria}
           showCriteriaError={submitAttempted && acceptanceCriteria.length === 0}
           isConfidential={isConfidential} setIsConfidential={setIsConfidential}
-          error={error} isPending={isPending} isReady={isReady} onBack={() => setStep('template')}
+error={error} isPending={isPending} isReady={isReady} onBack={() => {
+  if (selectedTeamId === null) { setStep('equipo'); return; }
+  const filtered = templates.filter(
+    (t) => t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(selectedTeamId)),
+  );
+  setStep(filtered.length === 1 ? 'equipo' : 'template');
+}}
         />
       )}
     </form>

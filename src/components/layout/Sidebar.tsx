@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart2, ChevronDown, Home, LogOut, Star,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, ClipboardList,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -11,7 +11,7 @@ import { useBoardStore } from '@/store/boardStore';
 import { EQUIPOS } from '@/features/requests/types';
 import type { Equipo } from '@/features/requests/types';
 import { ConfigPanelTrigger } from '@/components/ConfigPanel';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from './siderbarConstants';
+import { EQUIPO_COLORSSIDEBARLABELS, EQUIPO_ICONS } from './siderbarConstants';
 import { SatisfactionModal } from './SatisfactionModal';
 
 export function Sidebar() {
@@ -99,87 +99,9 @@ export function Sidebar() {
             }
           >
             <Home size={16} />
-            {sidebarAbierto && <span>Inicio</span>}
+            {sidebarAbierto && <span>Home</span>}
           </NavLink>
 
-          {/* ── ESTADÍSTICAS ── */}
-          {showStats && (
-            <NavLink
-              to="/stats"
-              className={({ isActive }) =>
-                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-              }
-            >
-              <BarChart2 size={16} />
-              {sidebarAbierto && <span>Dashboard</span>}
-            </NavLink>
-          )}
-
-          {/* ── PREVIEW FORMULARIOS — solo admin ── */}
-          {isAdmin && (
-            <NavLink
-              to="/preview/create-ticket-modal"
-              className={({ isActive }) =>
-                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-              }
-            >
-              <ClipboardList size={16} />
-              {sidebarAbierto && <span>Preview formularios</span>}
-            </NavLink>
-          )}
-
-          {/* ── AUTOMATIZACIONES ── */}
-          {showAuto && (
-            <>
-              <NavLabel> </NavLabel>
-
-              {sidebarAbierto ? (
-                <div className="sidebar__nav-group">
-                  <button
-                    className="sidebar__nav-item sidebar__nav-item--group-header"
-                    onClick={() => setAutomatizacionesOpen((v) => !v)}
-                  >
-                    <Zap size={16} />
-                    <span style={{ flex: 1 }}>Automatizaciones</span>
-                    <ChevronDown
-                      size={12}
-                      className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
-                    />
-                  </button>
-
-                  {automatizacionesOpen && (
-                    <div className="sidebar__nav-sub">
-                      <NavLink to="/automations" end
-                        className={({ isActive }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                        }
-                      >
-                        <span className="sidebar__sub-dot" />
-                        <span>Todas las reglas</span>
-                      </NavLink>
-
-                      <NavLink to="/automations/logs"
-                        className={({ isActive }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                        }
-                      >
-                        <span className="sidebar__sub-dot" />
-                        <span>Historial</span>
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <NavLink to="/automations" title="Automatizaciones"
-                  className={({ isActive }) =>
-                    ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                  }
-                >
-                  <Zap size={16} />
-                </NavLink>
-              )}
-            </>
-          )}
 
           {/* ── EQUIPOS ── */}
           {showBoard && equiposVisibles.length > 0 && (
@@ -187,7 +109,7 @@ export function Sidebar() {
               <NavLabel top>Equipos</NavLabel>
 
               {equiposVisibles.map(([key, label]) => {
-                const c  = EQUIPO_COLORS[key];
+                const c  = EQUIPO_COLORSSIDEBARLABELS[key];
                 const ia = equipoActivo === key;
                 const Icon = EQUIPO_ICONS[key];
 
@@ -234,7 +156,7 @@ export function Sidebar() {
                             ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
                           }
                         >
-                          <span className="sidebar__sub-dot" />
+                          <span  />
                           <span>Mis solicitudes</span>
                         </NavLink>
                       </div>
@@ -242,8 +164,76 @@ export function Sidebar() {
                   </div>
                 );
               })}
+                        <NavLabel> </NavLabel>
+                        <NavLabel>Usuario</NavLabel>
+
+          {/* ── ESTADÍSTICAS ── */}
+          {showStats && (
+            
+            <NavLink
+              to="/stats"
+              className={({ isActive }) =>
+                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <BarChart2 size={16} />
+              {sidebarAbierto && <span>Dashboard</span>}
+            </NavLink>
+          )}
+          {/* ── AUTOMATIZACIONES ── */}
+          {showAuto && (
+            <>
+
+              {sidebarAbierto ? (
+                <div className="sidebar__nav-group">
+                  <button
+                    className="sidebar__nav-item sidebar__nav-item--group-header"
+                    onClick={() => setAutomatizacionesOpen((v) => !v)}
+                  >
+                    <Zap size={16} />
+                    <span style={{ flex: 1 }}>Automatizaciones</span>
+                    <ChevronDown
+                      size={12}
+                      className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
+                    />
+                  </button>
+
+                  {automatizacionesOpen && (
+                    <div className="sidebar__nav-sub">
+                      <NavLink to="/automations" end
+                        className={({ isActive }) =>
+                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                        }
+                      >
+                        <span  />
+                        <span>Todas las reglas</span>
+                      </NavLink>
+
+                      <NavLink to="/automations/logs"
+                        className={({ isActive }) =>
+                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                        }
+                      >
+                        <span  />
+                        <span>Historial</span>
+                      </NavLink>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <NavLink to="/automations" title="Automatizaciones"
+                  className={({ isActive }) =>
+                    ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                  }
+                >
+                  <Zap size={16} />
+                </NavLink>
+              )}
             </>
           )}
+            </>
+          )}
+          
         </nav>
 
         {/* ── Footer ── */}
