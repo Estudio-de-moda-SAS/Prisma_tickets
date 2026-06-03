@@ -509,6 +509,8 @@ function StepForm({
   error: string | null; isPending: boolean; isReady: boolean; onBack: () => void;
 }) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
+const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
+const priorityBtnRef = useRef<HTMLButtonElement>(null);
   const [dragOver, setDragOver]         = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -585,12 +587,98 @@ function StepForm({
       <div style={cardStyle(accent)}>
         <SectionLabel>Clasificación</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div>
-            <FieldLabel>Prioridad</FieldLabel>
-            <div style={{ display: 'flex', gap: 7 }}>
-              {(Object.keys(PRIORIDADES) as Prioridad[]).map((key) => { const active = prioridad === key; return <button key={key} type="button" onClick={() => setPrioridad(key)} style={{ padding: '6px 14px', borderRadius: 5, border: `1px solid ${active ? PRI_COLOR[key] + '50' : 'var(--border-subtle)'}`, fontSize: 11, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer', background: active ? `${PRI_COLOR[key]}15` : 'transparent', color: active ? PRI_COLOR[key] : 'var(--txt-muted)', transition: 'all 0.12s', fontFamily: 'var(--font-display)' }}>{PRIORIDADES[key]}</button>; })}
-            </div>
+<div>
+  {/* Label + ícono de ayuda */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7, position: 'relative' }}>
+    <label style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
+      Prioridad
+    </label>
+
+<button
+  ref={priorityBtnRef}
+  type="button"
+  onMouseEnter={() => {
+    const r = priorityBtnRef.current?.getBoundingClientRect();
+    if (r) setPriorityInfoPos({ top: r.top, left: r.right + 8 });  }}
+  onMouseLeave={() => setPriorityInfoPos(null)}
+  style={{
+    width: 14, height: 14, borderRadius: '50%',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-surface)',
+    color: 'var(--txt-muted)',
+    fontSize: 8, fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, lineHeight: 1,
+  }}
+>?</button>
+
+    {/* Tooltip */}
+{priorityInfoPos && (
+  <div style={{
+    position: 'fixed',
+    top: priorityInfoPos.top,
+    left: priorityInfoPos.left,
+    zIndex: 9999,
+    width: 340,
+    borderRadius: 10,
+    background: 'var(--bg-panel)',
+    border: '1px solid var(--border-subtle)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+    padding: '14px 16px',
+    pointerEvents: 'none',
+  }}>
+    <div style={{
+      fontSize: 8, fontWeight: 700, letterSpacing: 2,
+      textTransform: 'uppercase', color: 'var(--accent)',
+      marginBottom: 12, fontFamily: 'var(--font-display)',
+    }}>
+      ¿Cómo elegir la prioridad?
+    </div>
+
+    {[
+      { emoji: '🔴', label: 'Crítica', color: '#ff4757', desc: 'Actividades críticas que permiten cumplir indicadores o procesos comerciales de la compañía (PAC de última hora, etc.).' },
+      { emoji: '🟠', label: 'Alta',    color: '#fdcb6e', desc: 'Requieren programación y flujo detallado, pero no bloquean la activación comercial (proyectos incubadora, fidelización, retos, etc.).' },
+      { emoji: '🟡', label: 'Media',   color: '#74b9ff', desc: 'Necesario para el funcionamiento regular sin impacto crítico. Puede programarse en tiempo estimado (bases de datos, reportes, documentaciones, etc.).' },
+      { emoji: '🟢', label: 'Baja',    color: '#b2bec3', desc: 'No afectan el trabajo diario pero ayudan a entender y crear estrategias (mejoras a reportes o aplicativos que ya funcionan, etc.).' },
+    ].map(({ emoji, label, color, desc }) => (
+      <div key={label} style={{
+        display: 'flex', gap: 10,
+        padding: '8px 10px', borderRadius: 7, marginBottom: 6,
+        background: `${color}08`, border: `1px solid ${color}20`,
+      }}>
+        <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{emoji}</span>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: 'var(--font-display)', letterSpacing: 0.5, marginBottom: 2 }}>
+            {label}
           </div>
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', lineHeight: 1.55 }}>
+            {desc}
+          </div>
+        </div>
+      </div>
+    ))}
+
+    <div style={{ marginTop: 4, fontSize: 9, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+      Por favor sé honesto en este campo.
+    </div>
+  </div>
+)}
+  </div>
+
+  {/* Botones de prioridad (sin cambios) */}
+  <div style={{ display: 'flex', gap: 7 }}>
+    {(Object.keys(PRIORIDADES) as Prioridad[]).map((key) => {
+      const active = prioridad === key;
+      return (
+        <button key={key} type="button" onClick={() => setPrioridad(key)}
+          style={{ padding: '6px 14px', borderRadius: 5, border: `1px solid ${active ? PRI_COLOR[key] + '50' : 'var(--border-subtle)'}`, fontSize: 11, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer', background: active ? `${PRI_COLOR[key]}15` : 'transparent', color: active ? PRI_COLOR[key] : 'var(--txt-muted)', transition: 'all 0.12s', fontFamily: 'var(--font-display)' }}>
+          {PRIORIDADES[key]}
+        </button>
+      );
+    })}
+  </div>
+</div>
         </div>
       </div>
 

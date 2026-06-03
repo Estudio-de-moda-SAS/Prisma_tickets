@@ -682,6 +682,8 @@ const formData: Record<string, unknown> = {
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
     extraFieldsReady && acceptanceCriteria.length > 0;
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
+const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
+const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
 
   return (
@@ -787,15 +789,38 @@ const formData: Record<string, unknown> = {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FieldBlock label="Prioridad">
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
-                      const active = prioridad === p;
-                      return <button type="button" key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
-                    })}
-                  </div>
-                </FieldBlock>
-
+<div>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
+      Prioridad
+    </span>
+    <button
+      ref={priorityBtnRef}
+      type="button"
+      onMouseEnter={() => {
+        const r = priorityBtnRef.current?.getBoundingClientRect();
+        if (r) setPriorityInfoPos({ top: r.top, left: r.right + 8 });
+      }}
+      onMouseLeave={() => setPriorityInfoPos(null)}
+      style={{
+        width: 14, height: 14, borderRadius: '50%',
+        border: '1px solid var(--border)',
+        background: 'var(--bg-surface)',
+        color: 'var(--txt-muted)',
+        fontSize: 8, fontWeight: 700,
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0, lineHeight: 1,
+      }}
+    >?</button>
+  </div>
+  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+    {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
+      const active = prioridad === p;
+      return <button type="button" key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
+    })}
+  </div>
+</div>
                 <FieldBlock label="Resolutor">
                   <div style={{ position: 'relative' }}>
                     <button ref={assigneeDD.triggerRef} onClick={() => { assigneeDD.toggle(); setUserSearch(''); }} style={triggerStyle(assigneeDD.open, '124,58,237')}>
@@ -890,6 +915,43 @@ const formData: Record<string, unknown> = {
           )}
         </div>
       </div>
+      {priorityInfoPos && createPortal(
+  <div style={{
+    position: 'fixed',
+    top: priorityInfoPos.top,
+    left: priorityInfoPos.left,
+    zIndex: 99999,
+    width: 340,
+    borderRadius: 10,
+    background: 'var(--bg-panel)',
+    border: '1px solid var(--border-subtle)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+    padding: '14px 16px',
+    pointerEvents: 'none',
+  }}>
+    <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12, fontFamily: 'var(--font-display)' }}>
+      ¿Cómo elegir la prioridad?
+    </div>
+    {[
+      { emoji: '🔴', label: 'Crítica', color: '#ff4757', desc: 'Actividades críticas que permiten cumplir indicadores o procesos comerciales de la compañía (PAC de última hora, etc.).' },
+      { emoji: '🟠', label: 'Alta',    color: '#fdcb6e', desc: 'Requieren programación y flujo detallado, pero no bloquean la activación comercial (proyectos incubadora, fidelización, retos, etc.).' },
+      { emoji: '🟡', label: 'Media',   color: '#74b9ff', desc: 'Necesario para el funcionamiento regular sin impacto crítico. Puede programarse en tiempo estimado (bases de datos, reportes, documentaciones, etc.).' },
+      { emoji: '🟢', label: 'Baja',    color: '#b2bec3', desc: 'No afectan el trabajo diario pero ayudan a entender y crear estrategias (mejoras a reportes o aplicativos que ya funcionan, etc.).' },
+    ].map(({ emoji, label, color, desc }) => (
+      <div key={label} style={{ display: 'flex', gap: 10, padding: '8px 10px', borderRadius: 7, marginBottom: 6, background: `${color}08`, border: `1px solid ${color}20` }}>
+        <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{emoji}</span>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: 'var(--font-display)', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', lineHeight: 1.55 }}>{desc}</div>
+        </div>
+      </div>
+    ))}
+    <div style={{ marginTop: 4, fontSize: 9, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+      Por favor sé honesto en este campo.
+    </div>
+  </div>,
+  document.body
+)}
     </div>
   );
 }

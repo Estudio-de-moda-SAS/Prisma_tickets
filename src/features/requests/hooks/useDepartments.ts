@@ -58,7 +58,24 @@ export function useCreateDepartment() {
   return useMutation({
     mutationFn: (data: { name: string; code: string; isHidden: boolean }) =>
       apiClient.call<DepartmentWithTeams>('createDepartment', data),
-    onSuccess: () => {
+
+    onMutate: async (data) => {
+      await qc.cancelQueries({ queryKey: ['departments-with-teams'] });
+      const prev = qc.getQueryData<DepartmentWithTeams[]>(['departments-with-teams']);
+      const tempDept: DepartmentWithTeams = {
+        Department_ID:             -Date.now(),
+        Department_Name:           data.name,
+        Department_Code:           data.code,
+        Is_Hidden_From_Onboarding: data.isHidden,
+        teams:                     [],
+      };
+      qc.setQueryData<DepartmentWithTeams[]>(['departments-with-teams'], (old = []) => [...old, tempDept]);
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(['departments-with-teams'], ctx.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['departments'] });
       qc.invalidateQueries({ queryKey: ['departments-with-teams'] });
     },
@@ -70,7 +87,23 @@ export function useUpdateDepartment() {
   return useMutation({
     mutationFn: (data: { id: number; name: string; code: string; isHidden: boolean }) =>
       apiClient.call('updateDepartment', data),
-    onSuccess: () => {
+
+    onMutate: async (data) => {
+      await qc.cancelQueries({ queryKey: ['departments-with-teams'] });
+      const prev = qc.getQueryData<DepartmentWithTeams[]>(['departments-with-teams']);
+      qc.setQueryData<DepartmentWithTeams[]>(['departments-with-teams'], (old = []) =>
+        old.map((d) =>
+          d.Department_ID === data.id
+            ? { ...d, Department_Name: data.name, Department_Code: data.code, Is_Hidden_From_Onboarding: data.isHidden }
+            : d
+        )
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(['departments-with-teams'], ctx.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['departments'] });
       qc.invalidateQueries({ queryKey: ['departments-with-teams'] });
     },
@@ -81,10 +114,21 @@ export function useDeleteDepartment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => apiClient.call('deleteDepartment', { id }),
-    onSuccess: () => {
+
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['departments-with-teams'] });
+      const prev = qc.getQueryData<DepartmentWithTeams[]>(['departments-with-teams']);
+      qc.setQueryData<DepartmentWithTeams[]>(['departments-with-teams'], (old = []) =>
+        old.filter((d) => d.Department_ID !== id)
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) qc.setQueryData(['departments-with-teams'], ctx.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['departments'] });
       qc.invalidateQueries({ queryKey: ['departments-with-teams'] });
-      // Usuarios afectados vuelven al onboarding — refrescar lista
       qc.invalidateQueries({ queryKey: ['allUsers'] });
     },
   });

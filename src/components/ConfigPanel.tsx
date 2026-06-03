@@ -1754,13 +1754,11 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
 
           {/* ── Opciones de comportamiento (Requerido, Colapsable, Mostrar en modal, Mostrar en card) ── */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '10px 12px', borderRadius: 7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
-{/* Requerido — no aplica a campos condicionales */}
-{!isConditional && (
-  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
-    <input type="checkbox" checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} style={{ accentColor: effectiveAccent, width: 13, height: 13 }} />
-    <span style={{ color: field.required ? effectiveAccent : 'var(--txt-muted)', fontWeight: field.required ? 600 : 400 }}>Requerido</span>
-  </label>
-)}
+            {/* Requerido */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
+              <input type="checkbox" checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} style={{ accentColor: effectiveAccent, width: 13, height: 13 }} />
+              <span style={{ color: field.required ? effectiveAccent : 'var(--txt-muted)', fontWeight: field.required ? 600 : 400 }}>Requerido</span>
+            </label>
 
             {/* Colapsable — solo para campos no-condicionales y no-checkbox */}
             {!isConditional && field.type !== 'checkbox' && (
@@ -1869,10 +1867,39 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
 }) {
   const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [search,  setSearch]  = useState('');
+
+  const filtered = labels
+    .filter((l) => l.Label_Name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.Label_Name.localeCompare(b.Label_Name, 'es'));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {labels.length > 0 && (
+        <div style={{ position: 'relative', marginBottom: 4 }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--txt-muted)"
+            strokeWidth="1.6" strokeLinecap="round"
+            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }}>
+            <circle cx="5" cy="5" r="3.5"/><path d="M8.5 8.5l2 2"/>
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar etiqueta…"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              paddingLeft: 26, paddingRight: 8, paddingTop: 6, paddingBottom: 6,
+              background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+              borderRadius: 6, fontSize: 11, color: 'var(--txt)', outline: 'none',
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+          />
+        </div>
+      )}
       {labels.length === 0 && !showNew && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>🏷️</span><p>No hay etiquetas para este equipo.</p></div>}
-      {labels.map((label) => editId === label.Label_ID
+      {filtered.length === 0 && search && <div className="cpanel__empty"><span style={{ fontSize: 22, opacity: 0.4 }}>🔍</span><p>Sin resultados para "{search}".</p></div>}
+      {filtered.map((label) => editId === label.Label_ID
         ? <LabelForm key={label.Label_ID} initial={{ name: label.Label_Name, color: label.Label_Color, icon: label.Label_Icon }} onSave={(d) => { onUpdate(label.Label_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <ItemRow key={label.Label_ID} color={label.Label_Color} icon={label.Label_Icon} name={label.Label_Name} onEdit={() => { setShowNew(false); setEditId(label.Label_ID); }} onDelete={() => onDelete(label.Label_ID)} />
       )}
@@ -1883,7 +1910,6 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
     </div>
   );
 }
-
 /* ============================================================
    SprintList
    ============================================================ */
@@ -1893,25 +1919,118 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
   onUpdate: (id: number, s: { text: string; startDate: string; endDate: string }) => void;
   onRemove: (id: number) => void;
 }) {
-  const [editId,  setEditId]  = useState<number | null>(null);
-  const [showNew, setShowNew] = useState(false);
+  const [editId,      setEditId]      = useState<number | null>(null);
+  const [showNew,     setShowNew]     = useState(false);
+  const [showOthers,  setShowOthers]  = useState(false);
+
+  const currentYear                    = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
   const now = new Date();
   const statusOrder = (sp: Sprint) => {
     const start = new Date(sp.Sprint_Start_Date); const end = new Date(sp.Sprint_End_Date);
     if (now >= start && now <= end) return 0; if (now < start) return 1; return 2;
   };
-  const sorted = [...sprints].sort((a, b) => { const diff = statusOrder(a) - statusOrder(b); if (diff !== 0) return diff; return new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime(); });
+
+  // ── Años disponibles (desc), siempre incluye el año actual ──
+  const allYears = [
+    ...new Set(sprints.map((sp) => new Date(sp.Sprint_Start_Date).getFullYear())),
+  ].sort((a, b) => b - a);
+  if (!allYears.includes(currentYear)) allYears.unshift(currentYear);
+
+  // ── Sprints del año seleccionado ──
+  const yearSprints = sprints.filter(
+    (sp) => new Date(sp.Sprint_Start_Date).getFullYear() === selectedYear,
+  );
+  const sorted = [...yearSprints].sort((a, b) => {
+    const diff = statusOrder(a) - statusOrder(b);
+    if (diff !== 0) return diff;
+    return new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime();
+  });
+
+  // ── Sprints de otros años ──
+  const otherSprints = sprints
+    .filter((sp) => new Date(sp.Sprint_Start_Date).getFullYear() !== selectedYear)
+    .sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime());
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {sorted.length === 0 && !showNew && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span><p>No hay sprints definidos.</p></div>}
+
+      {/* ── Filtro por año (solo si hay más de uno) ── */}
+      {allYears.length > 1 && (
+        <div style={{ display: 'flex', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
+          {allYears.map((year) => (
+            <button
+              key={year}
+              onClick={() => setSelectedYear(year)}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                fontWeight: selectedYear === year ? 700 : 400,
+                border: `1px solid ${selectedYear === year ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`,
+                background: selectedYear === year ? 'rgba(0,200,255,0.08)' : 'transparent',
+                color: selectedYear === year ? 'var(--accent)' : 'var(--txt-muted)',
+                transition: 'all 0.12s',
+              }}
+            >
+              {year}
+              {year === currentYear && (
+                <span style={{ marginLeft: 4, fontSize: 7, opacity: 0.55 }}>●</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Lista del año seleccionado ── */}
+      {sorted.length === 0 && !showNew && (
+        <div className="cpanel__empty">
+          <span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span>
+          <p>No hay sprints en {selectedYear}.</p>
+        </div>
+      )}
       {sorted.map((sp) => editId === sp.Sprint_ID
         ? <SprintForm key={sp.Sprint_ID} initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }} onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <SprintRow key={sp.Sprint_ID} sprint={sp} onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }} onRemove={() => onRemove(sp.Sprint_ID)} />
       )}
+
       {showNew
         ? <SprintForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
         : <AddBtn label="Nuevo sprint" onClick={() => { setEditId(null); setShowNew(true); }} />
       }
+
+      {/* ── Otros años (colapsable) ── */}
+      {otherSprints.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            onClick={() => setShowOthers((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+              padding: '5px 2px', background: 'transparent', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'var(--txt-muted)', opacity: 0.55, flexShrink: 0,
+            }}>
+              Otros años ({otherSprints.length})
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="var(--txt-muted)"
+              strokeWidth="1.6" strokeLinecap="round"
+              style={{ flexShrink: 0, opacity: 0.45, transform: showOthers ? 'rotate(180deg)' : undefined, transition: 'transform 0.18s' }}>
+              <path d="M1 3l3.5 3.5L8 3"/>
+            </svg>
+          </button>
+          {showOthers && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+              {otherSprints.map((sp) => editId === sp.Sprint_ID
+                ? <SprintForm key={sp.Sprint_ID} initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }} onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
+                : <SprintRow key={sp.Sprint_ID} sprint={sp} onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }} onRemove={() => onRemove(sp.Sprint_ID)} />
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

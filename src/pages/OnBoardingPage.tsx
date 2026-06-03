@@ -186,8 +186,8 @@ export function OnboardingPage() {
         {/* ── Nota de contacto ── */}
         <p className="ob-card__note">
           ¿No encuentras tu equipo en la lista? Escríbenos a{' '}
-          <a href="mailto:soporte@estudiodemoda.com" className="ob-card__note-link">
-            soporte@estudiodemoda.com
+          <a href="mailto:aprendizti2@estudiodemoda.com.co" className="ob-card__note-link">
+            aprendizti2@estudiodemoda.com.co
           </a>{' '}
           y lo agregamos.
         </p>
