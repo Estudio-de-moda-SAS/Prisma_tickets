@@ -5,79 +5,69 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
-  AlertCircle,
   CheckCircle2,
   Clock,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { useAutomationStore } from '@/store/automationStore';
 import {
-  TRIGGER_LABELS,
-  ACTION_LABELS,
-  STATUS_LABELS,
-  EQUIPOS_LABELS,
-} from '@/features/automations/types';
-import type { Automation, AutomationStatus } from '@/features/automations/types';
+  useAutomationRules,
+  useToggleAutomationRule,
+  useDeleteAutomationRule,
+} from '@/features/automations/hooks/useAutomationRules';
+import { CreateAutomationModal } from '@/features/automations/components/CreateAutomationModal';
+import { TRIGGER_LABELS, ACTION_LABELS } from '@/features/automations/types';
+import type { AutomationRule } from '@/features/automations/types';
 import '@/styles/automations.css';
 
-/* ─────────────────────────────────────────────────────────────
-   Badge de estado
-───────────────────────────────────────────────────────────── */
-function StatusBadge({ status }: { status: AutomationStatus }) {
-  const icons: Record<AutomationStatus, React.ReactNode> = {
-    activa:   <CheckCircle2 size={10} />,
-    inactiva: <Clock        size={10} />,
-    error:    <AlertCircle  size={10} />,
-  };
+/* ── Badge ──────────────────────────────────────────────────── */
+function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
-    <span className={`auto-badge auto-badge--${status}`}>
-      {icons[status]}
-      {STATUS_LABELS[status]}
+    <span className={`auto-badge ${isActive ? 'auto-badge--activa' : 'auto-badge--inactiva'}`}>
+      {isActive ? <CheckCircle2 size={10} /> : <Clock size={10} />}
+      {isActive ? 'Activa' : 'Inactiva'}
     </span>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Tarjeta de automatización
-───────────────────────────────────────────────────────────── */
-function AutomationCard({ automation }: { automation: Automation }) {
-  const { toggleStatus, deleteItem } = useAutomationStore();
-  const isActive = automation.status === 'activa';
+/* ── Tarjeta ────────────────────────────────────────────────── */
+function AutomationCard({ rule }: { rule: AutomationRule }) {
+  const toggle = useToggleAutomationRule();
+  const remove = useDeleteAutomationRule();
 
-  const lastRun = automation.ultimaEjec
+  const lastRun = rule.lastExecAt
     ? new Intl.DateTimeFormat('es-CO', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-      }).format(new Date(automation.ultimaEjec))
+      }).format(new Date(rule.lastExecAt))
     : 'Nunca';
 
   return (
-    <div className={`auto-card ${automation.status === 'error' ? 'auto-card--error' : ''}`}>
-      {/* Accent line arriba para error */}
-      {automation.status === 'error' && <div className="auto-card__error-line" />}
-
+    <div className="auto-card">
       <div className="auto-card__header">
         <div className="auto-card__icon-wrap">
           <Zap size={14} />
         </div>
 
         <div className="auto-card__meta">
-          <span className="auto-card__name">{automation.nombre}</span>
-          {automation.equipo && (
-            <span className="auto-card__equipo">
-              {EQUIPOS_LABELS[automation.equipo] ?? automation.equipo}
-            </span>
+          <span className="auto-card__name">{rule.ruleName}</span>
+          {rule.teamName && (
+            <span className="auto-card__equipo">{rule.teamName}</span>
           )}
         </div>
 
         <div className="auto-card__actions">
-          <StatusBadge status={automation.status} />
+          <StatusBadge isActive={rule.isActive} />
 
           <button
             className="auto-card__toggle"
-            title={isActive ? 'Desactivar' : 'Activar'}
-            onClick={() => toggleStatus(automation.id)}
+            title={rule.isActive ? 'Desactivar' : 'Activar'}
+            disabled={toggle.isPending}
+            onClick={() =>
+              toggle.mutate({ ruleId: rule.ruleId, isActive: !rule.isActive })
+            }
           >
-            {isActive
+            {rule.isActive
               ? <ToggleRight size={18} className="auto-card__toggle--on" />
               : <ToggleLeft  size={18} />
             }
@@ -86,25 +76,27 @@ function AutomationCard({ automation }: { automation: Automation }) {
           <button
             className="auto-card__delete"
             title="Eliminar"
-            onClick={() => deleteItem(automation.id)}
+            disabled={remove.isPending}
+            onClick={() => remove.mutate(rule.ruleId)}
           >
             <Trash2 size={13} />
           </button>
         </div>
       </div>
 
-      <p className="auto-card__desc">{automation.descripcion}</p>
+      {rule.ruleDescription && (
+        <p className="auto-card__desc">{rule.ruleDescription}</p>
+      )}
 
-      {/* Trigger → Action flow */}
       <div className="auto-card__flow">
         <div className="auto-card__flow-step auto-card__flow-step--trigger">
           <span className="auto-card__flow-label">CUANDO</span>
           <span className="auto-card__flow-value">
-            {TRIGGER_LABELS[automation.trigger.type]}
-            {automation.trigger.value && (
+            {TRIGGER_LABELS[rule.trigger]}
+            {rule.triggerValue && (
               <span className="auto-card__flow-param">
                 <ChevronRight size={10} />
-                {automation.trigger.value}
+                {rule.triggerValue}
               </span>
             )}
           </span>
@@ -115,22 +107,21 @@ function AutomationCard({ automation }: { automation: Automation }) {
         <div className="auto-card__flow-step auto-card__flow-step--action">
           <span className="auto-card__flow-label">ENTONCES</span>
           <span className="auto-card__flow-value">
-            {ACTION_LABELS[automation.action.type]}
-            {automation.action.value && (
+            {ACTION_LABELS[rule.action]}
+            {(rule.actionValueLabel ?? rule.actionValue) && (
               <span className="auto-card__flow-param">
                 <ChevronRight size={10} />
-                {automation.action.value}
+                {rule.actionValueLabel ?? rule.actionValue}
               </span>
             )}
           </span>
         </div>
       </div>
 
-      {/* Footer stats */}
       <div className="auto-card__footer">
         <span className="auto-card__stat">
           <Zap size={10} />
-          {automation.ejecutadas} ejecuciones
+          {rule.execCount} ejecuciones
         </span>
         <span className="auto-card__stat auto-card__stat--muted">
           Última: {lastRun}
@@ -140,14 +131,11 @@ function AutomationCard({ automation }: { automation: Automation }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Stats header
-───────────────────────────────────────────────────────────── */
-function AutomationStats({ automations }: { automations: Automation[] }) {
-  const activas   = automations.filter((a) => a.status === 'activa').length;
-  const inactivas = automations.filter((a) => a.status === 'inactiva').length;
-  const errores   = automations.filter((a) => a.status === 'error').length;
-  const total     = automations.reduce((sum, a) => sum + a.ejecutadas, 0);
+/* ── Stats ──────────────────────────────────────────────────── */
+function AutomationStats({ rules }: { rules: AutomationRule[] }) {
+  const activas   = rules.filter((r) => r.isActive).length;
+  const inactivas = rules.filter((r) => !r.isActive).length;
+  const total     = rules.reduce((sum, r) => sum + r.execCount, 0);
 
   return (
     <div className="auto-stats">
@@ -162,11 +150,6 @@ function AutomationStats({ automations }: { automations: Automation[] }) {
       </div>
       <div className="auto-stats__divider" />
       <div className="auto-stats__item">
-        <span className="auto-stats__value auto-stats__value--error">{errores}</span>
-        <span className="auto-stats__label">Con error</span>
-      </div>
-      <div className="auto-stats__divider" />
-      <div className="auto-stats__item">
         <span className="auto-stats__value auto-stats__value--accent">{total}</span>
         <span className="auto-stats__label">Ejecuciones</span>
       </div>
@@ -174,21 +157,22 @@ function AutomationStats({ automations }: { automations: Automation[] }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Página principal
-───────────────────────────────────────────────────────────── */
-export function AutomationsPage() {
-  const { automations } = useAutomationStore();
-  const [filter, setFilter] = useState<'todas' | AutomationStatus>('todas');
+/* ── Página principal ───────────────────────────────────────── */
+type FilterType = 'todas' | 'activa' | 'inactiva';
 
-  const filtered = filter === 'todas'
-    ? automations
-    : automations.filter((a) => a.status === filter);
+export function AutomationsPage() {
+  const { isModalOpen, openModal } = useAutomationStore();
+  const { data: rules = [], isLoading } = useAutomationRules();
+  const [filter, setFilter] = useState<FilterType>('todas');
+
+  const filtered =
+    filter === 'todas'
+      ? rules
+      : rules.filter((r) => (filter === 'activa' ? r.isActive : !r.isActive));
 
   return (
     <div className="auto-page">
 
-      {/* ── Header ─────────────────────────────────── */}
       <div className="auto-page__header">
         <div className="auto-page__header-left">
           <div className="auto-page__title-wrap">
@@ -200,46 +184,49 @@ export function AutomationsPage() {
           </p>
         </div>
 
-        <button className="auto-page__new-btn">
+        <button className="auto-page__new-btn" onClick={openModal}>
           <Plus size={14} />
           Nueva automatización
         </button>
       </div>
 
-      {/* ── Stats ──────────────────────────────────── */}
-      <AutomationStats automations={automations} />
+      {!isLoading && <AutomationStats rules={rules} />}
 
-      {/* ── Filtros ────────────────────────────────── */}
       <div className="auto-filters">
-        {(['todas', 'activa', 'inactiva', 'error'] as const).map((f) => (
+        {(['todas', 'activa', 'inactiva'] as FilterType[]).map((f) => (
           <button
             key={f}
             className={['auto-filter-btn', filter === f ? 'auto-filter-btn--active' : ''].join(' ')}
             onClick={() => setFilter(f)}
           >
-            {f === 'todas' ? 'Todas' : STATUS_LABELS[f as AutomationStatus]}
+            {f === 'todas' ? 'Todas' : f === 'activa' ? 'Activas' : 'Inactivas'}
             <span className="auto-filter-btn__count">
               {f === 'todas'
-                ? automations.length
-                : automations.filter((a) => a.status === f).length}
+                ? rules.length
+                : rules.filter((r) => (f === 'activa' ? r.isActive : !r.isActive)).length}
             </span>
           </button>
         ))}
       </div>
 
-      {/* ── Grid de tarjetas ───────────────────────── */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="auto-empty">
+          <Loader2 size={24} className="auto-empty__icon" style={{ animation: 'spin 1s linear infinite' }} />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="auto-empty">
           <Zap size={32} className="auto-empty__icon" />
-          <p className="auto-empty__text">No hay automatizaciones en este filtro.</p>
+          <p className="auto-empty__text">No hay reglas en este filtro.</p>
         </div>
       ) : (
         <div className="auto-grid">
-          {filtered.map((a) => (
-            <AutomationCard key={a.id} automation={a} />
+          {filtered.map((r) => (
+            <AutomationCard key={r.ruleId} rule={r} />
           ))}
         </div>
       )}
+
+      {isModalOpen && <CreateAutomationModal />}
     </div>
   );
 }

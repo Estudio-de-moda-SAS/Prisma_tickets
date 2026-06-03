@@ -52,11 +52,16 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
   };
 
   // Contador de horas estimadas — solo para la columna "To do"
-  const totalHours = id === 'todo'
-    ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
-    : 0;
-  const showHours = id === 'todo' && totalHours > 0;
-
+const totalHours    = (id === 'todo' || id === 'en_progreso')
+  ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
+  : 0;
+const consumedHours = id === 'en_progreso'
+  ? requests.reduce((acc, r) => acc + (r.loggedHours ?? 0), 0)
+  : 0;
+  if (id === 'en_progreso') {
+}
+const showHours     = (id === 'todo' || id === 'en_progreso') && totalHours > 0;
+const isEnProgreso  = id === 'en_progreso';
   return (
     <div
       ref={setNodeRef}
@@ -84,25 +89,49 @@ export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddC
           <span className="kanban__col-count">{requests.length}</span>
 
           {/* Contador de horas estimadas — solo en To do */}
-          {showHours && (
-            <span
-              title="Suma de horas estimadas (responde a filtros activos)"
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: 'var(--txt-muted)',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 4,
-                padding: '1px 6px',
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              ⏱ {formatHours(totalHours)}
-            </span>
-          )}
+{showHours && (
+  <>
+    {/* Horas estimadas totales */}
+    <span
+      title="Suma de horas estimadas (responde a filtros activos)"
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        color: 'var(--txt-muted)',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 4,
+        padding: '1px 6px',
+        letterSpacing: 0.2,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
+      ⏱ {formatHours(totalHours)}
+    </span>
+
+    {/* Horas consumidas — solo en En Progreso */}
+    {isEnProgreso && consumedHours > 0 && (
+      <span
+        title="Horas ya consumidas según el progreso reportado de cada card"
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          color: 'var(--danger)',
+          background: 'rgba(255,71,87,0.08)',
+          border: '1px solid rgba(255,71,87,0.30)',
+          borderRadius: 4,
+          padding: '1px 6px',
+          letterSpacing: 0.2,
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+        }}
+      >
+        🔥 {formatHours(consumedHours)}
+      </span>
+    )}
+  </>
+)}
         </div>
 
         <button

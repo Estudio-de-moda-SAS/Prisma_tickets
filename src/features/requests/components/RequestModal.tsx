@@ -436,22 +436,20 @@ const { data: comments    = [] } = useComments(requestId);  const { data: attach
   const moverDD    = useDropdown();
 
   const [rightTab,         setRightTab]         = useState<RightTab>('comments');
-  const [showSubRequests,  setShowSubRequests]  = useState(children.length > 0);
-  const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
+const [showSubRequests,  setShowSubRequests]  = useState(false);  const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
   const [descripcion,      setDescripcion]      = useState(request.descripcion ?? '');
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>(request.labelIds ?? []);
   const [selectedSubIds,   setSelectedSubIds]   = useState<number[]>(request.subTeamIds ?? []);
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(request.sprintId ?? null);
   const [assigneeIds,      setAssigneeIds]      = useState<number[]>(request.assignees?.map((a) => a.userId) ?? []);
   const [userSearch,       setUserSearch]       = useState('');
+  const [labelSearch,      setLabelSearch]      = useState('');
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
-  useEffect(() => {
-    if (children.length > 0) setShowSubRequests(true);
-  }, [children.length]);
+
 const [showTimerWarning, setShowTimerWarning] = useState(false);
 // Solo corre al montar (request.id cambia = nuevo modal)
 useEffect(() => {
@@ -742,24 +740,51 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             />
           )}
 
-          {/* Sub-requests panel */}
-          {showSubRequests && !isSubRequest && !readOnly && (
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(0,200,255,0.02)', flexShrink: 0, maxHeight: 360, overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <GitFork size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: 'var(--accent)' }}>Sub-Solicitudes</span>
-              </div>
-              <SubRequestsPanel
-                parentId={requestId}
-                parentTitle={effectiveRequest.titulo}
-                parentIsConfidential={effectiveRequest.isConfidential ?? false}
-                onOpenChild={(childId) => onOpenRequest?.(childId)}
-              />
-            </div>
-          )}
+{/* ── Cuerpo + overlay sub-solicitudes ── */}
+          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-          {/* ── Cuerpo ── */}
-          <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            {/* Sub-solicitudes: panel flotante, no desplaza el contenido */}
+            {showSubRequests && !isSubRequest && !readOnly && (
+              <>
+                {/* Scrim — opaca el contenido, click para cerrar */}
+                <div
+                  onClick={() => setShowSubRequests(false)}
+                  style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)', zIndex: 40, cursor: 'pointer' }}
+                />
+                {/* Panel flotante */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0,
+                  zIndex: 50,
+                  background: 'var(--bg-panel)',
+                  borderBottom: '1px solid rgba(0,200,255,0.25)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+                  maxHeight: '62%',
+                  overflowY: 'auto',
+                }}>
+                  <div style={{ padding: '14px 24px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <GitFork size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: 'var(--accent)', flex: 1 }}>Sub-Solicitudes</span>
+                      <button
+                        onClick={() => setShowSubRequests(false)}
+                        style={{ width: 22, height: 22, borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, lineHeight: 1, transition: 'all 0.15s' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,71,87,0.4)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+                      >×</button>
+                    </div>
+                    <SubRequestsPanel
+                      parentId={requestId}
+                      parentTitle={effectiveRequest.titulo}
+                      parentIsConfidential={effectiveRequest.isConfidential ?? false}
+                      onOpenChild={(childId) => onOpenRequest?.(childId)}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── Cuerpo ── */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
             {/* Panel izquierdo */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
@@ -921,7 +946,7 @@ onToggleAssignee={(userId) => {
 
                 <FieldBlock label="Etiquetas">
                   <div ref={catDD.ref} style={{ position: 'relative' }}>
-                    <button onClick={() => { if (!readOnly) catDD.setOpen((o) => !o); }} style={triggerBase(catDD.open, '0,200,255')}>
+                    <button onClick={() => { if (!readOnly) { catDD.setOpen((o) => !o); setLabelSearch(''); } }} style={triggerBase(catDD.open, '0,200,255')}>
                       {selectedLabelIds.length === 0
                         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
@@ -933,14 +958,41 @@ onToggleAssignee={(userId) => {
                       }
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
-                    {catDD.open && !readOnly && (
-                      <DropdownPanel>
-                        {labels.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
-                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })
-                        }
-                      </DropdownPanel>
-                    )}
+{catDD.open && !readOnly && (
+  <DropdownPanel>
+    <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <input
+        autoFocus
+        value={labelSearch}
+        onChange={(e) => setLabelSearch(e.target.value)}
+        placeholder="Buscar etiqueta..."
+        style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+      />
+    </div>
+    {labels.length === 0
+      ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
+      : (() => {
+          const filtered = labels.filter((l) =>
+            l.Label_Name.toLowerCase().includes(labelSearch.toLowerCase())
+          );
+          if (filtered.length === 0) return (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin resultados.</div>
+          );
+          return filtered.map((label) => {
+            const sel = selectedLabelIds.includes(label.Label_ID);
+            return (
+              <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>
+                {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
+                <span style={{ flex: 1 }}>{label.Label_Name}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
+                {sel && <Checkmark />}
+              </DropdownItem>
+            );
+          });
+        })()
+    }
+  </DropdownPanel>
+)}
                   </div>
                 </FieldBlock>
 
@@ -1157,7 +1209,6 @@ onToggleAssignee={(userId) => {
           }} />
         </button>
 
-        {/* Popover — abre hacia ARRIBA */}
         {moverDD.open && (
           <div style={{
             position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
@@ -1284,12 +1335,13 @@ onToggleAssignee={(userId) => {
                   )}
                 </>
               )}
-            </div>
+</div>
+          </div>
           </div>
         </div>
       </div>
 {showTimerWarning && (
-  <div style={{
+    <div style={{
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 200,
@@ -1442,7 +1494,7 @@ function SubTeamGroup({ subTeam, members, isLoading, assigneeIds, selectedSubIds
 function CopyLinkButton({ ticketId }: { ticketId: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {
-    navigator.clipboard.writeText(`${window.location.origin}/ticket/${ticketId}`)
+  navigator.clipboard.writeText(`${window.location.origin}/ticket/${ticketId}`)
       .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
   return (

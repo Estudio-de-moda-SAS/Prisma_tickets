@@ -3,13 +3,14 @@
 /* ============================================================
    Equipos disponibles
    ============================================================ */
-export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis';
+export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis' | 'solvi';
 
 export const EQUIPOS: Record<Equipo, string> = {
   desarrollo: 'Desarrollo & UX',
   crm:        'CRM',
   sistemas:   'Sistemas de Información',
   analisis:   'Ciencia de Datos',
+  solvi:      'SOLVI',
 };
 
 /* ============================================================
@@ -284,6 +285,7 @@ export type CrearRequestPayload = {
   estimatedHours:      number | null;
   parentId:            string | null;
   requesterTeamId:     number | null;
+  requesterDepartmentId: number | null;
   isConfidential:      boolean;
   formData?:           Record<string, unknown>;
   /** Títulos de criterios de aceptación — mínimo 1 requerido */

@@ -6,8 +6,10 @@ import type { KanbanColumna } from '@/features/requests/types';
    Tipos
    ============================================================ */
 export type CardDensity  = 'compact' | 'normal' | 'expanded';
-export type CardStyle    = 'default' | 'bordered' | 'flat' | 'glass';
+export type CardStyle    = 'default' | 'bordered' | 'flat' | 'glass'; // mantenido para compat con useCardClasses
 export type BoardTheme   = 'dark' | 'midnight' | 'slate' | 'forest' | 'aurora';
+export type GroupBy      = 'none' | 'prioridad' | 'asignado';
+export type SortBy       = 'manual' | 'prioridad' | 'fecha_creacion' | 'fecha_actualizacion';
 
 export type PriorityColors = {
   baja:    string;
@@ -21,17 +23,19 @@ export type ColumnCustomization = {
   accent:      string;
   emoji:       string;
   hidden:      boolean;
-  width:       number;
+  width:       number; // mantenido para useColumnStyle — no se expone en la UI
 };
 
 export type CardCustomization = {
   density:       CardDensity;
-  style:         CardStyle;
-  cardOpacity:   number;
+  style:         CardStyle;  // mantenido para useCardClasses — no se expone en la UI
+  cardOpacity:   number;     // mantenido para useCardStyle  — no se expone en la UI
   showDesc:      boolean;
   showProgress:  boolean;
   showAvatars:   boolean;
   showCategory:  boolean;
+  showPriority:  boolean;
+  showDate:      boolean;
   roundedCorner: boolean;
 };
 
@@ -41,7 +45,9 @@ export type BoardCustomization = {
   columns:        Partial<Record<KanbanColumna, ColumnCustomization>>;
   card:           CardCustomization;
   showBoardBg:    boolean;
-  priorityColors: PriorityColors;
+  priorityColors: PriorityColors; // mantenido para compat de tipo — usePriorityColor ya no lo lee
+  groupBy:        GroupBy;
+  sortBy:         SortBy;
 };
 
 /* ============================================================
@@ -80,7 +86,6 @@ export const COLUMN_DEFAULTSBLACK: Record<KanbanColumna, ColumnCustomization> = 
   historial:       { headerColor: '#000000', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
 };
 
-
 export const CARD_DEFAULTS: CardCustomization = {
   density:       'normal',
   style:         'default',
@@ -89,6 +94,8 @@ export const CARD_DEFAULTS: CardCustomization = {
   showProgress:  true,
   showAvatars:   true,
   showCategory:  true,
+  showPriority:  true,
+  showDate:      false,
   roundedCorner: true,
 };
 
@@ -100,6 +107,8 @@ const BOARD_LOCAL_DEFAULTS: BoardLocalCustomization = {
   card:           CARD_DEFAULTS,
   showBoardBg:    true,
   priorityColors: PRIORITY_DEFAULTS,
+  groupBy:        'none',
+  sortBy:         'manual',
 };
 
 type GlobalCustomization = { theme: BoardTheme };
@@ -238,13 +247,12 @@ function patchBoard(
 /* ============================================================
    Store
    ============================================================ */
-
 type CustomizationState = {
   /* ── Estado ── */
   global:        GlobalCustomization;
   byBoard:       Record<string, BoardLocalCustomization>;
   isPanelOpen:   boolean;
-  activeSection: 'theme' | 'columns' | 'cards' | 'teams';
+  activeSection: 'vista' | 'cards' | 'columns';
 
   /* ── Selector unificado ── */
   getCustomization: (boardId: string) => BoardCustomizationView;
@@ -258,14 +266,14 @@ type CustomizationState = {
   setTheme: (theme: BoardTheme) => void;
 
   /* ── Por board ── */
-  setColumnGap:        (boardId: string, gap: number) => void;
-  setShowBoardBg:      (boardId: string, v: boolean) => void;
-  updateColumn:        (boardId: string, col: KanbanColumna, patch: Partial<ColumnCustomization>) => void;
-  resetColumn:         (boardId: string, col: KanbanColumna) => void;
-  updateCard:          (boardId: string, patch: Partial<CardCustomization>) => void;
-  updatePriorityColor: (boardId: string, prioridad: keyof PriorityColors, color: string) => void;
-  resetPriorityColors: (boardId: string) => void;
-  resetAll:            (boardId: string) => void;
+  setColumnGap:   (boardId: string, gap: number) => void;
+  setShowBoardBg: (boardId: string, v: boolean) => void;
+  setGroupBy:     (boardId: string, v: GroupBy) => void;
+  setSortBy:      (boardId: string, v: SortBy) => void;
+  updateColumn:   (boardId: string, col: KanbanColumna, patch: Partial<ColumnCustomization>) => void;
+  resetColumn:    (boardId: string, col: KanbanColumna) => void;
+  updateCard:     (boardId: string, patch: Partial<CardCustomization>) => void;
+  resetAll:       (boardId: string) => void;
 };
 
 export const useCustomizationStore = create<CustomizationState>()(
@@ -274,7 +282,7 @@ export const useCustomizationStore = create<CustomizationState>()(
       global:        GLOBAL_DEFAULTS,
       byBoard:       {},
       isPanelOpen:   false,
-      activeSection: 'theme',
+      activeSection: 'vista',
 
       /* ── Selector unificado ── */
       getCustomization: (boardId) => {
@@ -297,6 +305,12 @@ export const useCustomizationStore = create<CustomizationState>()(
 
       setShowBoardBg: (boardId, showBoardBg) =>
         set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ showBoardBg })) })),
+
+      setGroupBy: (boardId, groupBy) =>
+        set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ groupBy })) })),
+
+      setSortBy: (boardId, sortBy) =>
+        set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ sortBy })) })),
 
       updateColumn: (boardId, col, patch) =>
         set((s) => ({
@@ -328,20 +342,6 @@ export const useCustomizationStore = create<CustomizationState>()(
           })),
         })),
 
-      updatePriorityColor: (boardId, prioridad, color) =>
-        set((s) => ({
-          byBoard: patchBoard(s.byBoard, boardId, (prev) => ({
-            priorityColors: { ...(prev.priorityColors ?? PRIORITY_DEFAULTS), [prioridad]: color },
-          })),
-        })),
-
-      resetPriorityColors: (boardId) =>
-        set((s) => ({
-          byBoard: patchBoard(s.byBoard, boardId, () => ({
-            priorityColors: PRIORITY_DEFAULTS,
-          })),
-        })),
-
       resetAll: (boardId) =>
         set((s) => ({
           byBoard: {
@@ -350,6 +350,6 @@ export const useCustomizationStore = create<CustomizationState>()(
           },
         })),
     }),
-    { name: 'prisma-board-customization-v4' }, // bumped: nueva columna cliente_review
+    { name: 'prisma-board-customization-v5' }, // v5: reform — groupBy, sortBy, showPriority, showDate
   ),
 );

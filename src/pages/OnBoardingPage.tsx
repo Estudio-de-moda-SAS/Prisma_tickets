@@ -9,9 +9,10 @@ import { useAuth } from '@/auth/AuthProvider';
 // ─── Tipos locales ────────────────────────────────────────────────────────────
 
 type Department = {
-  Department_ID:   number;
-  Department_Name: string;
-  Department_Code: string;
+  Department_ID:             number;
+  Department_Name:           string;
+  Department_Code:           string;
+  Is_Hidden_From_Onboarding: boolean;
 };
 
 type Team = {
@@ -21,23 +22,20 @@ type Team = {
   Department_ID: number;
 };
 
-// Código del departamento TI — no se muestra como opción
-const TI_CODE = 'ti';
-
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const navigate             = useNavigate();
+  const navigate              = useNavigate();
   const { dbUser, refreshDbUser } = useAuth();
 
-  const [departments,   setDepartments]   = React.useState<Department[]>([]);
-  const [teams,         setTeams]         = React.useState<Team[]>([]);
-  const [departmentId,  setDepartmentId]  = React.useState<number | null>(null);
-  const [teamId,        setTeamId]        = React.useState<number | null>(null);
-  const [loadingDepts,  setLoadingDepts]  = React.useState(true);
-  const [loadingTeams,  setLoadingTeams]  = React.useState(false);
-  const [saving,        setSaving]        = React.useState(false);
-  const [error,         setError]         = React.useState(false);
+  const [departments,  setDepartments]  = React.useState<Department[]>([]);
+  const [teams,        setTeams]        = React.useState<Team[]>([]);
+  const [departmentId, setDepartmentId] = React.useState<number | null>(null);
+  const [teamId,       setTeamId]       = React.useState<number | null>(null);
+  const [loadingDepts, setLoadingDepts] = React.useState(true);
+  const [loadingTeams, setLoadingTeams] = React.useState(false);
+  const [saving,       setSaving]       = React.useState(false);
+  const [error,        setError]        = React.useState(false);
 
   // Si ya completó el onboarding, redirigir
   React.useEffect(() => {
@@ -46,15 +44,14 @@ export function OnboardingPage() {
     }
   }, [dbUser, navigate]);
 
-  // Cargar departamentos al montar (excluyendo TI)
+  // Cargar departamentos al montar (excluyendo los marcados como ocultos en DB)
   React.useEffect(() => {
     (async () => {
       try {
         const data = await apiClient.call<Department[]>('getDepartments', {});
-        // Filtrar TI — los registra el equipo de TI directamente en la DB
-        setDepartments(data.filter((d) => d.Department_Code !== TI_CODE));
+        setDepartments(data.filter((d) => !d.Is_Hidden_From_Onboarding));
       } catch {
-        // Si falla, mostrar lista vacía; el usuario puede reintentar
+        // Si falla, mostrar lista vacía
       } finally {
         setLoadingDepts(false);
       }
@@ -76,7 +73,8 @@ export function OnboardingPage() {
       .finally(() => setLoadingTeams(false));
   }, [departmentId]);
 
-  const canConfirm = departmentId !== null && teamId !== null && !saving;
+  const noTeamsAvailable = departmentId !== null && !loadingTeams && teams.length === 0;
+  const canConfirm = departmentId !== null && (teamId !== null || noTeamsAvailable) && !saving;
 
   async function handleConfirm() {
     if (!canConfirm || !dbUser) return;
@@ -89,13 +87,11 @@ export function OnboardingPage() {
         await apiClient.call('completeOnboarding', {
           userId:       dbUser.User_ID,
           departmentId: departmentId!,
-          teamId:       teamId!,
+          teamId:       teamId,
         });
       }
 
-      // Actualizar dbUser en el contexto de auth para que el guard lo vea
       await refreshDbUser();
-
       navigate('/', { replace: true });
     } catch {
       setError(true);
@@ -104,7 +100,6 @@ export function OnboardingPage() {
     }
   }
 
-  // Mientras no sabemos si el usuario ya completó onboarding
   if (!dbUser) {
     return (
       <div className="ob-page">
@@ -162,6 +157,7 @@ export function OnboardingPage() {
         </div>
 
         {/* ── Equipo ── */}
+        {!noTeamsAvailable && (
         <div className={`ob-field ${departmentId === null ? 'ob-field--disabled' : ''}`}>
           <label className="ob-field__label" htmlFor="select-team">Equipo</label>
           {loadingTeams ? (
@@ -185,6 +181,7 @@ export function OnboardingPage() {
             </select>
           )}
         </div>
+)}
 
         {/* ── Nota de contacto ── */}
         <p className="ob-card__note">

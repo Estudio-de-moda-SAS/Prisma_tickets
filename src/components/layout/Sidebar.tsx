@@ -1,8 +1,9 @@
+// src/components/layout/Sidebar.tsx
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useMatch } from 'react-router-dom';
 import {
-  BarChart2, ChevronDown, Home, LogOut, Star,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen,
+  BarChart2, ChevronDown, Home, LogOut, Plus, Star,
+  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, Shield,
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -18,23 +19,26 @@ export function Sidebar() {
   const { account, signOut } = useAuth();
   const role = useRole();
 
-  const {
-    sidebarAbierto,
-    toggleSidebar,
-    equipoActivo,
-    setEquipoActivo,
-  } = useBoardStore();
+const {
+  sidebarAbierto,
+  toggleSidebar,
+  setEquipoActivo,
+} = useBoardStore();
+
+const boardMatch = useMatch('/board/:equipo');
 
   const navigate = useNavigate();
   const [automatizacionesOpen, setAutomatizacionesOpen] = useState(false);
   const [satisfactionOpen,     setSatisfactionOpen]     = useState(false);
+  const [teamSubOpen, setTeamSubOpen] = useState(true);
 
-  const isAdmin    = role.role === 'admin';
-  const isTIMember = role.role === 'ti_member';
-  const showBoard  = canSeeBoard(role);
-  const showConfig = canSeeConfig(role);
-  const showStats  = canSeeStats(role);
-  const showAuto   = canSeeAutomations(role);
+  const isAdmin       = role.role === 'admin';
+  const isTIMember    = role.role === 'ti_member';
+  const isRegularUser = !isAdmin && !isTIMember;
+  const showBoard     = canSeeBoard(role);
+  const showConfig    = canSeeConfig(role);
+  const showStats     = canSeeStats(role);
+  const showAuto      = canSeeAutomations(role);
 
   const initiales =
     account?.name
@@ -48,10 +52,15 @@ export function Sidebar() {
     ? (Object.entries(EQUIPOS) as [Equipo, string][])
     : [];
 
-  function handleEquipo(key: Equipo) {
+function handleEquipo(key: Equipo) {
+  if (boardMatch?.params?.equipo === key) {
+    setTeamSubOpen(v => !v);   // ya estamos en este board → solo colapsa/expande
+  } else {
     setEquipoActivo(key);
-    navigate('/');
+    navigate(`/board/${key}`);
+    setTeamSubOpen(true);
   }
+}
 
   const roleLabel = isAdmin
     ? 'Administrador'
@@ -80,7 +89,7 @@ export function Sidebar() {
         {/* ── Logo ── */}
         <div className="sidebar__logo">
           <div className="-icon">
-            <img src="/favicon.svg" width="38" height="35" alt="Prisma" />
+            <img src="/favicon.svg" width="40" height="35" alt="Prisma" />
           </div>
           {sidebarAbierto && (
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -102,6 +111,19 @@ export function Sidebar() {
             {sidebarAbierto && <span>Home</span>}
           </NavLink>
 
+          {/* ── NUEVA SOLICITUD (usuarios regulares) ── */}
+          {isRegularUser && (
+            <NavLink
+              to="/new"
+              title={sidebarAbierto ? undefined : 'Nueva Solicitud'}
+              className={({ isActive }) =>
+                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <Plus size={16} />
+              {sidebarAbierto && <span>Nueva Solicitud</span>}
+            </NavLink>
+          )}
 
           {/* ── EQUIPOS ── */}
           {showBoard && equiposVisibles.length > 0 && (
@@ -110,7 +132,7 @@ export function Sidebar() {
 
               {equiposVisibles.map(([key, label]) => {
                 const c  = EQUIPO_COLORSSIDEBARLABELS[key];
-                const ia = equipoActivo === key;
+const ia = boardMatch?.params?.equipo === key;
                 const Icon = EQUIPO_ICONS[key];
 
                 return (
@@ -130,7 +152,7 @@ export function Sidebar() {
                       )}
                     </button>
 
-                    {ia && sidebarAbierto && (
+                    {ia && sidebarAbierto && teamSubOpen && (
                       <div
                         className="sidebar__nav-sub sidebar__nav-sub--team"
                         style={{
@@ -140,7 +162,7 @@ export function Sidebar() {
                         } as React.CSSProperties}
                       >
                         <NavLink
-                          to="/"
+                          to={`/board/${key}`} // ← CAMBIO: era to="/" end
                           end
                           className={({ isActive: active }) =>
                             ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
@@ -164,83 +186,88 @@ export function Sidebar() {
                   </div>
                 );
               })}
-                        <NavLabel> </NavLabel>
-                        <NavLabel>Usuario</NavLabel>
+              <NavLabel> </NavLabel>
+              <NavLabel>Usuario</NavLabel>
 
-          {/* ── ESTADÍSTICAS ── */}
-          {showStats && (
-            
-            <NavLink
-              to="/stats"
-              className={({ isActive }) =>
-                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-              }
-            >
-              <BarChart2 size={16} />
-              {sidebarAbierto && <span>Dashboard</span>}
-            </NavLink>
-          )}
-          {/* ── AUTOMATIZACIONES ── */}
-          {showAuto && (
-            <>
-
-              {sidebarAbierto ? (
-                <div className="sidebar__nav-group">
-                  <button
-                    className="sidebar__nav-item sidebar__nav-item--group-header"
-                    onClick={() => setAutomatizacionesOpen((v) => !v)}
-                  >
-                    <Zap size={16} />
-                    <span style={{ flex: 1 }}>Automatizaciones</span>
-                    <ChevronDown
-                      size={12}
-                      className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
-                    />
-                  </button>
-
-                  {automatizacionesOpen && (
-                    <div className="sidebar__nav-sub">
-                      <NavLink to="/automations" end
-                        className={({ isActive }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                        }
-                      >
-                        <span  />
-                        <span>Todas las reglas</span>
-                      </NavLink>
-
-                      <NavLink to="/automations/logs"
-                        className={({ isActive }) =>
-                          ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                        }
-                      >
-                        <span  />
-                        <span>Historial</span>
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <NavLink to="/automations" title="Automatizaciones"
+              {/* ── ESTADÍSTICAS ── */}
+              {showStats && (
+                <NavLink
+                  to="/stats"
                   className={({ isActive }) =>
                     ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
                   }
                 >
-                  <Zap size={16} />
+                  <BarChart2 size={16} />
+                  {sidebarAbierto && <span>Dashboard</span>}
                 </NavLink>
+              )}
+
+              {/* ── AUTOMATIZACIONES ── */}
+              {showAuto && (
+                <>
+                  {sidebarAbierto ? (
+                    <div className="sidebar__nav-group">
+                      <button
+                        className="sidebar__nav-item sidebar__nav-item--group-header"
+                        onClick={() => setAutomatizacionesOpen((v) => !v)}
+                      >
+                        <Zap size={16} />
+                        <span style={{ flex: 1 }}>Automatizaciones</span>
+                        <ChevronDown
+                          size={12}
+                          className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
+                        />
+                      </button>
+
+                      {automatizacionesOpen && (
+                        <div className="sidebar__nav-sub">
+                          <NavLink to="/automations" end
+                            className={({ isActive }) =>
+                              ['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                            }
+                          >
+                            <span  />
+                            <span>Reglas</span>
+                          </NavLink>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <NavLink to="/automations" title="Automatizaciones"
+                      className={({ isActive }) =>
+                        ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                      }
+                    >
+                      <Zap size={16} />
+                    </NavLink>
+                  )}
+                </>
               )}
             </>
           )}
+
+          {/* ── PRISMA ADMIN (solo admin) ── */}
+          {isAdmin && (
+            <>
+              <NavLabel>PRISMA</NavLabel>
+              <NavLink
+                to="/prisma"
+                title={sidebarAbierto ? undefined : 'PRISMA Admin'}
+                className={({ isActive }) =>
+                  ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                }
+              >
+                <Shield size={16} />
+                {sidebarAbierto && <span>Bugs/Feedback</span>}
+              </NavLink>
             </>
           )}
-          
         </nav>
 
         {/* ── Footer ── */}
         <div className="sidebar__footer">
           {sidebarAbierto ? (
             <>
-              {/* Calificación */}
               <button
                 className="sidebar__satisfaction-btn"
                 onClick={() => setSatisfactionOpen(true)}
@@ -260,7 +287,6 @@ export function Sidebar() {
             </>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              {/* Calificación colapsado */}
               <button
                 className="sidebar__satisfaction-btn"
                 onClick={() => setSatisfactionOpen(true)}

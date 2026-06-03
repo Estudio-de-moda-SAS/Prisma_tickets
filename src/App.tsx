@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRole, canSeeBoard } from "@/auth/roles";
+import { useBoardStore } from "@/store/boardStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BoardPage } from "@/pages/BoardPage";
 import { HomePage } from "@/pages/HomePage";
@@ -15,6 +16,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
 import { TicketPage } from "@/pages/TicketPage";
+import { PrismaAdminPage } from '@/pages/PrismaAdminPage';
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
 
@@ -78,6 +80,12 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Redirige al último board activo en la sesión (default: desarrollo). */
+function DefaultBoardRedirect() {
+  const { equipoActivo } = useBoardStore();
+  return <Navigate to={`/board/${equipoActivo}`} replace />;
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -106,19 +114,29 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* Raíz: TI (admin + member) ve board */}
+        {/* Raíz: redirige al board activo en la sesión */}
         <Route
           index
+          element={
+            <RequireTI>
+              <DefaultBoardRedirect />
+            </RequireTI>
+          }
+        />
+
+        {/* Board por equipo — cada kanban tiene su propia ruta */}
+        <Route
+          path="board/:equipo"
           element={
             <RequireTI>
               <BoardPage />
             </RequireTI>
           }
         />
-
+<Route path="ticket/:ticketId" element={<TicketPage />} />
         {/* Deep link de ticket — accesible por todos los roles autenticados.
             El resolver interno decide qué modal mostrar según permisos. */}
-        <Route path="ticket/:ticketId" element={<TicketPage />} />
+<Route path="board/:equipo/ticket/:ticketId" element={<TicketPage />} />
 
         {/* Inicio — todos */}
         <Route
@@ -144,6 +162,7 @@ export default function App() {
         <Route path="automations"                 element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
         <Route path="automations/logs"            element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
         <Route path="preview/create-ticket-modal" element={<RequireAdmin><TicketModalPreviewPage /></RequireAdmin>} />
+        <Route path="prisma" element={<RequireAdmin><PrismaAdminPage /></RequireAdmin>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

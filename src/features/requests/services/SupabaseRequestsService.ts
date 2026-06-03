@@ -43,6 +43,7 @@ type RawRequestRow = {
   Request_Finished_At:                 string | null;
   Request_Parent_ID:                   string | null;
   Request_Requester_Team_ID:           number | null;
+  requester_department: { Department_Name: string } | null;
   Request_Is_Confidential:             boolean | null;
   Request_Form_Data:                   Record<string, unknown> | null;
   // snapshot guardado al crear el ticket — fuente de verdad para filtros
@@ -50,7 +51,7 @@ type RawRequestRow = {
   // fallback live — usado si el snapshot es null (tickets pre-migración)
   template_schema: { Request_Template_Form_Schema: unknown[] } | null;
 
-  requester:      { User_Name: string; User_Email: string; User_Avatar_url: string } | null;
+  requester: { User_Name: string; User_Email: string; User_Avatar_url: string; department?: { Department_Name: string } | null } | null;
   requester_team: { Team_ID: number; Team_Name: string; Team_Code: string } | null;
   column:         { Board_Column_Name: string } | null;
 
@@ -145,8 +146,12 @@ function mapRowToRequest(row: RawRequestRow): Request {
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
   const solicitante = row.requester?.User_Name ?? '';
-  const requesterTeamName = row.requester_team?.Team_Name ?? null; 
-  const formData    = row.Request_Form_Data ?? {};
+const requesterTeamName =
+  row.requester_team?.Team_Name ??
+  row.requester_department?.Department_Name ??
+  row.requester?.department?.Department_Name ??
+  null;
+    const formData    = row.Request_Form_Data ?? {};
 
   // Snapshot tiene prioridad — es el schema que tenía el template cuando se creó el ticket.
   // Si no existe (tickets pre-migración), fallback al schema live del template.
@@ -331,6 +336,7 @@ export class SupabaseRequestsService {
       estimatedHours:  rest.estimatedHours,
       parentId:        rest.parentId,
       requesterTeamId: rest.requesterTeamId,
+      requesterDepartmentId: rest.requesterDepartmentId ?? null,
       isConfidential:  rest.isConfidential ?? false,
       formData:        rest.formData ?? {},
     });

@@ -127,13 +127,9 @@ function validateExtraFields(
       if (cf.required && triggerValue !== 'true' && triggerValue !== 'false') {
         return { valid: false, errorLabel: cf.label };
       }
-      if (triggerValue === 'true') {
-        const res = validateExtraFields(cf.trueBranch, values);
-        if (!res.valid) return res;
-      } else if (triggerValue === 'false') {
-        const res = validateExtraFields(cf.falseBranch, values);
-        if (!res.valid) return res;
-      }
+const activeBranch = triggerValue === 'true' ? cf.trueBranch : cf.falseBranch;
+const res = validateExtraFields(activeBranch, values);
+if (!res.valid) return res;
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -381,16 +377,45 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1 }}>
-        {teams.map((team) => {
-          const code = team.Board_Team_Code as keyof typeof EQUIPO_COLORS; const colors = EQUIPO_COLORS[code]; const Icon = EQUIPO_ICONS[code];
-          const selected = selectedTeamId === team.Board_Team_ID; const dot = colors?.dot ?? team.Board_Team_Color; const glow = colors?.glow ?? `${team.Board_Team_Color}12`; const border = colors?.border ?? `${team.Board_Team_Color}30`;
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
+        {teams.map((team, idx) => {
+          const isAlone   = teams.length % 2 !== 0 && idx === teams.length - 1;
+          const code      = team.Board_Team_Code as keyof typeof EQUIPO_COLORS;
+          const colors    = EQUIPO_COLORS[code];
+          const Icon      = EQUIPO_ICONS[code];
+          const selected  = selectedTeamId === team.Board_Team_ID;
+          const dot       = colors?.dot    ?? team.Board_Team_Color;
+          const glow      = colors?.glow   ?? `${team.Board_Team_Color}12`;
+          const border    = colors?.border ?? `${team.Board_Team_Color}30`;
+
           return (
-            <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)} style={{ padding: '22px 20px', borderRadius: 10, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-panel)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 10 }} onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}} onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}>
+            <button
+              key={team.Board_Team_ID}
+              type="button"
+              onClick={() => onSelect(team.Board_Team_ID)}
+              style={{
+                padding: '22px 20px', borderRadius: 10,
+                border: `1.5px solid ${selected ? border : 'var(--border)'}`,
+                background: selected ? glow : 'var(--bg-panel)',
+                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                position: 'relative', overflow: 'hidden',
+                display: 'flex', flexDirection: 'column', gap: 10,
+                ...(isAlone ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
+              }}
+              onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
+              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
+            >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
               {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: selected ? `${dot}20` : 'var(--bg-surface)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icon ? <Icon size={16} style={{ color: selected ? dot : 'var(--txt-muted)', opacity: selected ? 1 : 0.6 }} /> : <span style={{ fontSize: 16 }}>🏢</span>}</div>
-              <div><div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div><div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: dot, opacity: selected ? 1 : 0.45 }}>{team.Board_Team_Code}</div></div>
+<div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icon ? <Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} /> : <span style={{ fontSize: 16 }}>🏢</span>}</div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
+<div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+  <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
+  <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65 }}>
+    {team.Board_Team_Description ?? team.Board_Team_Code}
+  </div>
+</div>              </div>
             </button>
           );
         })}
@@ -654,9 +679,21 @@ export function NuevaSolicitudPage() {
   const [error,              setError]              = useState<string | null>(null);
   const [submitted,          setSubmitted]          = useState(false);
 
-  const userTeamName = currentUser?.team?.Team_Name ?? null;
-  const userTeamId   = currentUser?.Team_ID ?? null;
+const [userTeamName, setUserTeamName] = useState<string | null>(null);
+const [userTeamId,   setUserTeamId]   = useState<number | null>(null);
+const userSnapshotted = useRef(false);
 
+useEffect(() => {
+  if (!userSnapshotted.current && currentUser) {
+    userSnapshotted.current = true;
+    setUserTeamName(
+      currentUser.team?.Team_Name ??
+      (currentUser as any)?.department?.Department_Name ??
+      null
+    );
+    setUserTeamId(currentUser.Team_ID ?? null);
+  }
+}, [currentUser]);
 function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(null); setExtraValues({}); }
 
 function goToTemplate() {
@@ -720,6 +757,7 @@ useEffect(() => {
         estimatedHours:     null,
         parentId:           null,
         requesterTeamId:    userTeamId,
+        requesterDepartmentId: currentUser.Department_ID ?? null,
         isConfidential,
         formData:           fillConditionalDefaults(extraFields, extraValues), 
         acceptanceCriteria: [],

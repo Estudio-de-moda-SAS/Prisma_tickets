@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, ShieldAlert, Send, Trash2 } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
-import { useLabelsByTeamId } from '@/features/requests/hooks/useBoardMetadata';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useComments, useCreateComment, useDeleteComment } from '@/features/requests/hooks/useComments';
@@ -250,10 +249,8 @@ type Props = {
 
 export function HomeRequestModal({ request, onClose }: Props) {
   const boardId     = config.DEFAULT_BOARD_ID;
-  const boardTeamId = request.boardTeamId ?? null;
   const equipo      = request.equipo[0] ?? 'desarrollo';
 
-  const { data: labels   = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints  = [] } = useSprints();
 
   const { data: comments = [] }                                    = useComments(request.id);
@@ -307,7 +304,6 @@ export function HomeRequestModal({ request, onClose }: Props) {
   }
 
   const selectedSprint   = sprints.find((s) => s.Sprint_ID === request.sprintId) ?? null;
-  const selectedLabels   = labels.filter((l) => (request.labelIds ?? []).includes(l.Label_ID));
   const colColor         = COL_COLOR[request.columna] ?? 'var(--txt-muted)';
 const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
   return (
@@ -432,17 +428,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
               <FieldBlock label="Prioridad">
                 <FieldValue><ReadChip color={PRI_COLOR[request.prioridad]} label={PRIORIDADES[request.prioridad]} /></FieldValue>
               </FieldBlock>
-
-
-              <FieldBlock label="Etiquetas">
-                <FieldValue muted={selectedLabels.length === 0}>
-                  {selectedLabels.length === 0 ? 'Sin etiquetas' : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                      {selectedLabels.map((lbl) => <ReadChip key={lbl.Label_ID} color={lbl.Label_Color} icon={lbl.Label_Icon} label={lbl.Label_Name} />)}
-                    </div>
-                  )}
-                </FieldValue>
-              </FieldBlock>
+              
 
               <FieldBlock label="Sprint">
                 <FieldValue muted={!selectedSprint}>

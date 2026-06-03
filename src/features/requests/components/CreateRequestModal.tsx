@@ -277,12 +277,11 @@ function ExtraFieldRenderer({ field, values, onChange, accent }: {
     const conditionalField = field as ConditionalField;
     const triggerValue = values[conditionalField.key] ?? '';
     const isTrue       = triggerValue === 'true';
-    const isFalse      = triggerValue === 'false';
 
     // Rama activa según el valor del disparador (es un array de campos)
-    const activeBranch: TemplateExtraField[] | null = isTrue
-      ? conditionalField.trueBranch
-      : isFalse ? conditionalField.falseBranch : null;
+const activeBranch: TemplateExtraField[] = isTrue
+  ? conditionalField.trueBranch
+  : conditionalField.falseBranch;
 
     return (
       <div style={{ marginBottom: 14 }}>
@@ -489,11 +488,8 @@ function validateExtraFields(
       // Si es requerido, el disparador debe tener un valor
       if (field.required && triggerValue !== 'true' && triggerValue !== 'false') return false;
       // Validar la rama activa recursivamente (ramas ya son arrays)
-      if (triggerValue === 'true') {
-        if (!validateExtraFields(field.trueBranch, values)) return false;
-      } else if (triggerValue === 'false') {
-        if (!validateExtraFields(field.falseBranch, values)) return false;
-      }
+const activeBranch = triggerValue === 'true' ? field.trueBranch : field.falseBranch;
+if (!validateExtraFields(activeBranch, values)) return false;
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -671,6 +667,7 @@ const formData: Record<string, unknown> = {
         parentId,
         requesterTeamId: currentUser.Team_ID ?? null, 
         isConfidential:   parentIsConfidential,
+        requesterDepartmentId: currentUser.Department_ID ?? null,
         acceptanceCriteria,
         formData, 
       },

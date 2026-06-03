@@ -74,8 +74,6 @@ type PendingClosure = {
   targetColumnId: number;
 };
 
-const BOARD_BASE_URL = '/';
-
 export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
   const [activeCard,     setActiveCard]     = useState<Request | null>(null);
   const [overColumn,     setOverColumn]     = useState<KanbanColumna | null>(null);
@@ -91,7 +89,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   const { data: currentUser } = useCurrentUser();
 
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
-
   const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
 
   const unreadByRequestId = useMemo(() => {
@@ -104,6 +101,10 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     return map;
   }, [notifications]);
 
+  // URLs base derivadas del equipo — consistentes con la estructura /board/:equipo/ticket/:id
+  const boardUrl  = `/board/${equipo}`;
+  const ticketUrl = (id: string) => `/board/${equipo}/ticket/${id}`;
+
   // ── Abrir/cerrar modal ──────────────────────────────────────
   function setModal(id: string | null) {
     setModalId(id);
@@ -111,11 +112,11 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     onModalId?.(id);
 
     if (id) {
-      history.replaceState(null, '', `/ticket/${id}`);
+      history.replaceState(null, '', ticketUrl(id));
       const ticketNotifs = unreadByRequestId.get(id) ?? [];
       ticketNotifs.forEach((n) => markRead(n.notificationId));
     } else {
-      history.replaceState(null, '', BOARD_BASE_URL);
+      history.replaceState(null, '', boardUrl);
     }
   }
 
@@ -152,7 +153,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   function openParentModal(parentId: string) {
     setParentModalId(modalId);
     setModalId(parentId);
-    history.replaceState(null, '', `/ticket/${parentId}`);
+    history.replaceState(null, '', ticketUrl(parentId));
   }
 
   function findColumn(id: string): KanbanColumna | null {
@@ -178,9 +179,9 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     setOverColumn(null);
     if (!over) return;
 
-    const activeId  = String(active.id);
-    const overId    = String(over.id);
-    const targetCol = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
+    const activeId   = String(active.id);
+    const overId     = String(over.id);
+    const targetCol  = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
@@ -188,8 +189,8 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     const card = Object.values(board).flat().find((r) => r.id === activeId);
     if (!card) return;
 
-    const yaHayClosure       = !!card.cierreInfo;
-    const necesitaEvidencia  = COLUMNAS_CIERRE.has(targetCol) && !yaHayClosure;
+    const yaHayClosure      = !!card.cierreInfo;
+    const necesitaEvidencia = COLUMNAS_CIERRE.has(targetCol) && !yaHayClosure;
 
     if (necesitaEvidencia) {
       setPendingClosure({
@@ -254,9 +255,6 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           style={{
             ...kanbanStyle,
             zoom:   kanbanZoom,
-            // Compensa el escalado del height para que el board siempre llene
-            // visualmente (100vh - 120px), sin importar el nivel de zoom.
-            // height_lógico = (100vh - 120px) / zoom → visual = lógico × zoom = 100vh - 120px
             height: `calc((100vh - 120px) / ${kanbanZoom})`,
           }}
           {...scrollHandlers}
@@ -308,7 +306,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
             } else {
               setParentModalId(modalCard.id);
               setModalId(id);
-              history.replaceState(null, '', `/ticket/${id}`);
+              history.replaceState(null, '', ticketUrl(id));
             }
           }}
         />
@@ -322,9 +320,9 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
             setModalId(parentModalId);
             setParentModalId(null);
             if (parentModalId) {
-              history.replaceState(null, '', `/ticket/${parentModalId}`);
+              history.replaceState(null, '', ticketUrl(parentModalId));
             } else {
-              history.replaceState(null, '', BOARD_BASE_URL);
+              history.replaceState(null, '', boardUrl);
             }
           }}
           onMove={(id, columna) => onMove(id, columna)}
@@ -335,9 +333,9 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
             setModalId(parentModalId);
             setParentModalId(null);
             if (parentModalId) {
-              history.replaceState(null, '', `/ticket/${parentModalId}`);
+              history.replaceState(null, '', ticketUrl(parentModalId));
             } else {
-              history.replaceState(null, '', BOARD_BASE_URL);
+              history.replaceState(null, '', boardUrl);
             }
           }}
         />

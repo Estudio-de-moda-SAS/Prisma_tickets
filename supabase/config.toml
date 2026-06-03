@@ -1,2 +1,2 @@
-[functions.api]
-verify_jwt = false
+[functions.api]     # No se verifica el jwt porque Supabase intenta verificar el JWT en el gateway usando su propio secret (HS256),
+verify_jwt = false  # pero el token que manda el cliente es un JWT de Azure AD (RS256 / asimétrico).

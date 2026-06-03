@@ -1,6 +1,6 @@
 import { useAuth } from '@/auth/AuthProvider';
 import { Navigate } from 'react-router-dom';
-import './LoginPage.css';
+import '@/styles/LoginPage.css';
 
 export function LoginPage() {
   const { account, signIn, ready } = useAuth();

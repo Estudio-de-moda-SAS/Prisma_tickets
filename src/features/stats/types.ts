@@ -207,6 +207,7 @@ export type CrearRequestPayload = {
   deadline:        string | null;
   parentId:        number | null;
   requesterTeamId: number | null;
+  requesterDepartmentId: number | null;
 };
  
 export type MoverRequestPayload = {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Zap, Search, X } from 'lucide-react';
+import { Plus, CalendarDays, Zap, Search, X, Clock } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
@@ -46,6 +46,7 @@ const EQUIPO_DESCRIPTIONS: Record<Equipo, string> = {
   crm:        'Gestión de relaciones con clientes y automatizaciones comerciales.',
   sistemas:   'Infraestructura, integraciones, APIs y bases de datos corporativos.',
   analisis:   'Analítica avanzada, modelos predictivos y dashboards de inteligencia.',
+  solvi:      'Soporte brindado por el equipo de LISTO EDM.',
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -77,6 +78,16 @@ function sprintProgress(s: Sprint) {
 function sprintDaysLeft(s: Sprint) {
   return Math.max(0, Math.ceil((new Date(s.Sprint_End_Date).getTime() + 86_400_000 - Date.now()) / 86_400_000));
 }
+function getNextSprint(sprints: Sprint[]): Sprint | null {
+  const now = Date.now();
+  const upcoming = sprints
+    .filter((s) => new Date(s.Sprint_Start_Date).getTime() > now)
+    .sort((a, b) => new Date(a.Sprint_Start_Date).getTime() - new Date(b.Sprint_Start_Date).getTime());
+  return upcoming[0] ?? null;
+}
+function sprintDaysUntilStart(s: Sprint): number {
+  return Math.max(1, Math.ceil((new Date(s.Sprint_Start_Date).getTime() - Date.now()) / 86_400_000));
+}
 function boardToFlat(board: BoardData): Request[] {
   return Object.values(board).flat();
 }
@@ -106,11 +117,52 @@ function CriteriaBadge({ summary }: { summary: Request['criteriaSummary'] }) {
 function SprintBanner() {
   const { data: sprints = [], isLoading } = useSprints();
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
-  if (isLoading || !activeSprint) return null;
-  const pct      = sprintProgress(activeSprint);
-  const daysLeft = sprintDaysLeft(activeSprint);
-  const startFmt = new Date(activeSprint.Sprint_Start_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-  const endFmt   = new Date(activeSprint.Sprint_End_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  const nextSprint   = useMemo(() => (activeSprint ? null : getNextSprint(sprints)), [sprints, activeSprint]);
+
+  if (isLoading || (!activeSprint && !nextSprint)) return null;
+
+  /* ── Próximo sprint (sin activo) ── */
+  if (!activeSprint && nextSprint) {
+    const daysUntil = sprintDaysUntilStart(nextSprint);
+    const startFmt  = new Date(nextSprint.Sprint_Start_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+    const endFmt    = new Date(nextSprint.Sprint_End_Date).toLocaleDateString('es-CO',   { day: 'numeric', month: 'short' });
+    const upColor   = '#a78bfa';
+    const startsLabel = daysUntil === 1 ? 'Inicia mañana' : `Inicia en ${daysUntil}d`;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(167,139,250,0.18)', boxShadow: '0 0 20px rgba(167,139,250,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #a78bfa, #a78bfa00)' }} />
+        <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Clock size={15} style={{ color: upColor }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Próximo sprint</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(167,139,250,0.12)', color: upColor, border: '1px solid rgba(167,139,250,0.28)' }}>Próximo</span>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{nextSprint.Sprint_Text}</span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
+              <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{startFmt} — {endFmt}</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: upColor }}>{startsLabel}</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: '0%', borderRadius: 3, background: `linear-gradient(90deg, ${upColor}, ${upColor}88)` }} />
+          </div>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 700, color: upColor, fontFamily: 'var(--font-display)', flexShrink: 0, minWidth: 36, textAlign: 'right' }}>{daysUntil}d</span>
+      </div>
+    );
+  }
+
+  /* ── Sprint activo ── */
+  const pct      = sprintProgress(activeSprint!);
+  const daysLeft = sprintDaysLeft(activeSprint!);
+  const startFmt = new Date(activeSprint!.Sprint_Start_Date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  const endFmt   = new Date(activeSprint!.Sprint_End_Date).toLocaleDateString('es-CO',   { day: 'numeric', month: 'short' });
   const uc = daysLeft <= 2 ? '#E05C5C' : daysLeft <= 4 ? '#EF9F27' : 'var(--accent)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(0,200,255,0.18)', boxShadow: '0 0 20px rgba(0,200,255,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
@@ -123,7 +175,7 @@ function SprintBanner() {
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Sprint activo</span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)' }}>En curso</span>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{activeSprint.Sprint_Text}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{activeSprint!.Sprint_Text}</span>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -141,7 +193,6 @@ function SprintBanner() {
     </div>
   );
 }
-
 /* ══════════════════════════════════════════════════════════════
    EquipoTab
    ══════════════════════════════════════════════════════════════ */

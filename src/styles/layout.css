@@ -412,6 +412,7 @@
 }
 
 .topbar__avatar {
+  color: #fff;
   width: 28px;
   height: 28px;
   border-radius: 50%;

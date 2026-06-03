@@ -112,11 +112,17 @@ const BASE_SELECT = `
   template_schema:TBL_Requests_Templates!Request_Template_ID (
     Request_Template_Form_Schema
   ),
-    requester:TBL_Users!Request_Requested_By (
-    User_Name, User_Email, User_Avatar_url
+  requester:TBL_Users!Request_Requested_By (
+    User_Name, User_Email, User_Avatar_url,
+    department:TBL_Departments!Department_ID (
+      Department_Name
+    )
   ),
-  requester_team:TBL_Teams!Request_Requester_Team_ID (
+    requester_team:TBL_Teams!Request_Requester_Team_ID (
     Team_ID, Team_Name, Team_Code
+  ),
+    requester_department:TBL_Departments!Request_Requester_Department_ID (
+    Department_Name
   ),
   column:TBL_Board_Columns!Request_Board_Column_ID (
     Board_Column_Name
@@ -394,7 +400,7 @@ async function handleAction(
     case 'createRequest': {
       const p = payload as {
         boardId: number; columnId: number; requestedBy: number; templateId: number;
-        titulo: string; descripcion: string; score: number; equipoIds: number[];
+        titulo: string; descripcion: string; score: number; equipoIds: number[];  requesterDepartmentId: number | null;
         labelIds: number[]; sprintId: number | null; estimatedHours: number | null;
         parentId: string | null; requesterTeamId: number | null;
         isConfidential: boolean | null;
@@ -425,6 +431,7 @@ async function handleAction(
           Request_Is_Confidential:             p.isConfidential ?? false,
           Request_Form_Data:                   p.formData ?? {},
           Request_Template_Schema_Snapshot:    schemaSnapshot,
+          Request_Requester_Department_ID: p.requesterDepartmentId ?? null,
         })
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
@@ -443,7 +450,74 @@ async function handleAction(
           { Request_Sprint_Request_ID: newId, Request_Sprint_ID: p.sprintId }
         ));
       await Promise.all(ops);
-const { data, error } = await supabase
+// ── Ejecutar reglas solicitud_creada ──────────────────
+      try {
+        const { data: autoRules } = await supabase
+          .from('TBL_Automation_Rules')
+          .select('Rule_ID, Rule_Name, Rule_Team_ID, Rule_Action, Rule_Action_Value, Rule_Exec_Count')
+          .eq('Rule_Is_Active', true)
+          .eq('Rule_Trigger', 'solicitud_creada');
+
+        for (const rule of (autoRules ?? []) as any[]) {
+          const teamMatches = !rule.Rule_Team_ID || p.equipoIds.includes(rule.Rule_Team_ID);
+          if (!teamMatches) continue;
+          try {
+            if (rule.Rule_Action === 'asignar_resolutor') {
+              const userId = parseInt(rule.Rule_Action_Value, 10);
+              if (!isNaN(userId)) {
+                await supabase.from('TBL_Requests_Assignments').upsert(
+                  {
+                    Request_Assignment_ID:      newId,
+                    Request_Assignment_User_ID: userId,
+                    Request_Assignment_At:      new Date().toISOString(),
+                  },
+                  { onConflict: 'Request_Assignment_ID,Request_Assignment_User_ID' },
+                );
+                await insertNotifications(supabase, {
+                  userIds:   [userId],
+                  type:      'assignment',
+                  title:     `Te asignaron el ticket ${newId}`,
+                  body:      `Fuiste asignado automáticamente al ticket "${p.titulo}".`,
+                  requestId: newId,
+                  actorId:   null,
+                });
+              }
+            } else if (rule.Rule_Action === 'notificar_usuario') {
+              let userIds: number[] = [];
+              const val = rule.Rule_Action_Value as string;
+              if (val === 'solicitante') {
+                userIds = [p.requestedBy];
+              } else if (val === 'todos') {
+                const { data: freshAssign } = await supabase
+                  .from('TBL_Requests_Assignments')
+                  .select('Request_Assignment_User_ID')
+                  .eq('Request_Assignment_ID', newId);
+                const aIds = ((freshAssign ?? []) as any[]).map((a: any) => a.Request_Assignment_User_ID);
+                userIds = [...new Set([...aIds, p.requestedBy])];
+              } else {
+                const uid = parseInt(val, 10);
+                if (!isNaN(uid)) userIds = [uid];
+              }
+              if (userIds.length > 0) {
+                await insertNotifications(supabase, {
+                  userIds,
+                  type:      'assignment',
+                  title:     `Automatización: ${rule.Rule_Name}`,
+                  body:      `Se creó la solicitud "${p.titulo}" y tienes una notificación activa para este evento.`,
+                  requestId: newId,
+                  actorId:   null,
+                });
+              }
+            }
+            await supabase.from('TBL_Automation_Rules').update({
+              Rule_Exec_Count:   rule.Rule_Exec_Count + 1,
+              Rule_Last_Exec_At: new Date().toISOString(),
+            }).eq('Rule_ID', rule.Rule_ID);
+          } catch (_ruleErr) { /* no bloquear la creación */ }
+        }
+      } catch (_autoErr) { /* no bloquear la creación */ }
+
+      const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
       if (error) throw new Error(error.message);
 
@@ -525,7 +599,92 @@ const { data, error } = await supabase
           },
         });
       }
-      return { ok: true };
+// ── Ejecutar reglas columna_cambiada ──────────────────
+      const movedColName = (colData as any)?.Board_Column_Name ?? '';
+      if (movedColName) {
+        try {
+          const { data: colRules } = await supabase
+            .from('TBL_Automation_Rules')
+            .select('Rule_ID, Rule_Name, Rule_Team_ID, Rule_Action, Rule_Action_Value, Rule_Exec_Count')
+            .eq('Rule_Is_Active', true)
+            .eq('Rule_Trigger', 'columna_cambiada')
+            .eq('Rule_Trigger_Value', movedColName);
+
+          if (colRules && (colRules as any[]).length > 0) {
+            const { data: reqTeams } = await supabase
+              .from('TBL_Request_Team')
+              .select('Request_Team_ID')
+              .eq('Request_Team_Request_ID', id);
+            const reqTeamIds = ((reqTeams ?? []) as any[]).map((t: any) => t.Request_Team_ID);
+
+            for (const rule of colRules as any[]) {
+              const teamMatches = !rule.Rule_Team_ID || reqTeamIds.includes(rule.Rule_Team_ID);
+              if (!teamMatches) continue;
+              try {
+                if (rule.Rule_Action === 'asignar_resolutor') {
+                  const userId = parseInt(rule.Rule_Action_Value, 10);
+                  if (!isNaN(userId)) {
+                    await supabase.from('TBL_Requests_Assignments').upsert(
+                      {
+                        Request_Assignment_ID:      id,
+                        Request_Assignment_User_ID: userId,
+                        Request_Assignment_At:      new Date().toISOString(),
+                      },
+                      { onConflict: 'Request_Assignment_ID,Request_Assignment_User_ID' },
+                    );
+                    await insertNotifications(supabase, {
+                      userIds:   [userId],
+                      type:      'assignment',
+                      title:     `Te asignaron el ticket ${id}`,
+                      body:      `Fuiste asignado al ticket ${id} al mover a "${movedColName}".`,
+                      requestId: id,
+                      actorId:   null,
+                    });
+// DESPUÉS
+} else if (rule.Rule_Action === 'asignar_prioridad') {
+  const scoreMap: Record<string, number> = {
+    baja: 1, media: 3, alta: 5, critica: 8,
+  };
+  const score = scoreMap[rule.Rule_Action_Value];
+  if (score !== undefined) {
+    await supabase.from('TBL_Requests')
+      .update({ Request_Score: score })
+      .eq('Request_ID', id);
+  }
+}
+                } else if (rule.Rule_Action === 'notificar_usuario') {
+                  let userIds: number[] = [];
+                  const val = rule.Rule_Action_Value as string;
+                  if (val === 'asignados' || val === 'solicitante' || val === 'todos') {
+                    const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, id);
+                    if (val === 'asignados')      userIds = assigneeIds;
+                    else if (val === 'solicitante') userIds = requestedBy ? [requestedBy] : [];
+                    else userIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+                  } else {
+                    const uid = parseInt(val, 10);
+                    if (!isNaN(uid)) userIds = [uid];
+                  }
+                  if (userIds.length > 0) {
+                    await insertNotifications(supabase, {
+                      userIds,
+                      type:      'column_move',
+                      title:     `Automatización: ${rule.Rule_Name}`,
+                      body:      `El ticket ${id} fue movido a "${movedColName}".`,
+                      requestId: id,
+                      actorId:   null,
+                    });
+                  }
+                }
+                await supabase.from('TBL_Automation_Rules').update({
+                  Rule_Exec_Count:   rule.Rule_Exec_Count + 1,
+                  Rule_Last_Exec_At: new Date().toISOString(),
+                }).eq('Rule_ID', rule.Rule_ID);
+              } catch (_ruleErr) { /* no bloquear el move */ }
+            }
+          }
+        } catch (_autoErr) { /* no bloquear el move */ }
+      }
+        return { ok: true };
     }
 
 case 'updateRequest': {
@@ -1005,7 +1164,8 @@ case 'upsertUserByEntraId': {
   // 1. Buscar por EntraID (flujo normal)
   const { data: existing, error: findErr } = await supabase
     .from('TBL_Users')
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )'
+)
     .eq('User_EntraID', p.entraId)
     .maybeSingle();
   if (findErr) throw new Error(findErr.message);
@@ -1041,7 +1201,7 @@ case 'upsertUserByEntraId': {
         User_Name:    p.name.slice(0, 150),
       })
       .eq('User_ID', (preReg as any).User_ID)
-      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )')
       .single();
     if (linkErr) throw new Error(linkErr.message);
 
@@ -1067,7 +1227,7 @@ case 'upsertUserByEntraId': {
       Is_New:          true,
       User_Created_At: new Date().toISOString(),
     })
-    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
+    .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )')
     .single();
   if (insertErr) throw new Error(insertErr.message);
   return { ...(data as any), team: null };
@@ -1135,7 +1295,7 @@ case 'preRegisterUser': {
 }
 
     case 'completeOnboarding': {
-      const p = payload as { userId: number; departmentId: number; teamId: number };
+      const p = payload as { userId: number; departmentId: number; teamId: number | null };
       const { data, error } = await supabase
         .from('TBL_Users')
         .update({ Department_ID: p.departmentId, Team_ID: p.teamId, Is_New: false })
@@ -1174,7 +1334,8 @@ case 'preRegisterUser': {
 
     case 'getDepartments': {
       const { data, error } = await supabase
-        .from('TBL_Departments').select('Department_ID, Department_Name, Department_Code')
+        .from('TBL_Departments')
+        .select('Department_ID, Department_Name, Department_Code, Is_Hidden_From_Onboarding')
         .order('Department_Name', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
@@ -1191,21 +1352,23 @@ case 'preRegisterUser': {
 
     // ── Equipos de board ────────────────────────────────────────
 
-    case 'fetchAllTeams': {
-      const { data, error } = await supabase
-        .from('TBL_Board_Teams').select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color');
-      if (error) throw new Error(error.message);
-      return data;
-    }
+case 'fetchAllTeams': {
+  const { data, error } = await supabase
+    .from('TBL_Board_Teams')
+    .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description');
+  if (error) throw new Error(error.message);
+  return data;
+}
 
-    case 'fetchTeamsByBoardId': {
-      const { boardId } = payload as { boardId: number };
-      const { data, error } = await supabase
-        .from('TBL_Board_Teams').select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color')
-        .eq('Board_Team_ID', boardId);
-      if (error) throw new Error(error.message);
-      return data;
-    }
+case 'fetchTeamsByBoardId': {
+  const { boardId } = payload as { boardId: number };
+  const { data, error } = await supabase
+    .from('TBL_Board_Teams')
+    .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description')
+    .eq('Board_Team_ID', boardId);
+  if (error) throw new Error(error.message);
+  return data;
+}
 
     // ── Columnas ────────────────────────────────────────────────
 
@@ -1915,6 +2078,258 @@ case 'createSatisfactionRating': {
   if (error) throw new Error(error.message);
   return data;
 }
+case 'fetchBugReports': {
+  const { data, error } = await supabase
+    .from('TBL_Bug_Reports')
+    .select(`
+      "Report_ID", "Title", "Description", "Severity", "Status", "Screen_Path",
+      "Created_At", "Updated_At",
+      reporter:TBL_Users!User_ID ( User_ID, User_Name, User_Email )
+    `)
+    .order('Created_At', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+ 
+case 'fetchSatisfactionRatings': {
+  const { data, error } = await supabase
+    .from('TBL_Satisfaction_Ratings')
+    .select(`
+      "Rating_ID", "Score", "Comment", "Created_At",
+      rater:TBL_Users!User_ID ( User_ID, User_Name, User_Email )
+    `)
+    .order('Created_At', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+ 
+case 'updateBugReportStatus': {
+  const { reportId, status } = payload as { reportId: number; status: string };
+  const { error } = await supabase
+    .from('TBL_Bug_Reports')
+    .update({ Status: status, Updated_At: new Date().toISOString() })
+    .eq('Report_ID', reportId);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+   case 'getDepartmentsWithTeams': {
+      const { data, error } = await supabase
+        .from('TBL_Departments')
+        .select(`
+          Department_ID, Department_Name, Department_Code, Is_Hidden_From_Onboarding,
+          teams:TBL_Teams!Department_ID (
+            Team_ID, Team_Name, Team_Code, Department_ID
+          )
+        `)
+        .order('Department_Name', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    }
+ 
+    case 'createDepartment': {
+      const { name, code, isHidden } = payload as {
+        name: string; code: string; isHidden: boolean;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Departments')
+        .insert({
+          Department_Name:             name.trim(),
+          Department_Code:             code.trim().toLowerCase(),
+          Is_Hidden_From_Onboarding:   isHidden,
+          Created_At:                  new Date().toISOString(),
+        })
+        .select(`
+          Department_ID, Department_Name, Department_Code, Is_Hidden_From_Onboarding,
+          teams:TBL_Teams!Department_ID ( Team_ID, Team_Name, Team_Code, Department_ID )
+        `)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+ 
+    case 'updateDepartment': {
+      const { id, name, code, isHidden } = payload as {
+        id: number; name: string; code: string; isHidden: boolean;
+      };
+      const { error } = await supabase
+        .from('TBL_Departments')
+        .update({
+          Department_Name:           name.trim(),
+          Department_Code:           code.trim().toLowerCase(),
+          Is_Hidden_From_Onboarding: isHidden,
+        })
+        .eq('Department_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+ 
+    case 'deleteDepartment': {
+      const { id } = payload as { id: number };
+      // Usuarios vinculados a este dept vuelven a pedir onboarding
+      await supabase
+        .from('TBL_Users')
+        .update({ Department_ID: null, Team_ID: null, Is_New: true })
+        .eq('Department_ID', id);
+      // Eliminar los equipos del departamento
+      await supabase.from('TBL_Teams').delete().eq('Department_ID', id);
+      // Eliminar el departamento
+      const { error } = await supabase
+        .from('TBL_Departments').delete().eq('Department_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+ 
+    case 'createTeam': {
+      const { departmentId, name, code } = payload as {
+        departmentId: number; name: string; code: string;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Teams')
+        .insert({
+          Department_ID: departmentId,
+          Team_Name:     name.trim(),
+          Team_Code:     code.trim().toLowerCase(),
+          Created_At:    new Date().toISOString(),
+        })
+        .select('Team_ID, Team_Name, Team_Code, Department_ID')
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+ 
+    case 'updateTeam': {
+      const { id, name, code } = payload as { id: number; name: string; code: string };
+      const { error } = await supabase
+        .from('TBL_Teams')
+        .update({ Team_Name: name.trim(), Team_Code: code.trim().toLowerCase() })
+        .eq('Team_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+ 
+    case 'deleteTeam': {
+      const { id } = payload as { id: number };
+      // Usuarios vinculados a este equipo vuelven a pedir onboarding
+      await supabase
+        .from('TBL_Users')
+        .update({ Team_ID: null, Is_New: true })
+        .eq('Team_ID', id);
+      // Eliminar el equipo
+      const { error } = await supabase.from('TBL_Teams').delete().eq('Team_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+/* ── Reglas de automatización ───────────────────────────── */
+
+    case 'fetchAutomationRules': {
+      const { data, error } = await supabase
+        .from('TBL_Automation_Rules')
+        .select(`
+          Rule_ID, Rule_Name, Rule_Description, Rule_Team_ID,
+          Rule_Trigger, Rule_Trigger_Value, Rule_Action, Rule_Action_Value,
+          Rule_Is_Active, Rule_Exec_Count, Rule_Last_Exec_At, Rule_Created_At,
+          team:TBL_Board_Teams!Rule_Team_ID ( Board_Team_ID, Board_Team_Name, Board_Team_Code )
+        `)
+        .order('Rule_Created_At', { ascending: false });
+      if (error) throw new Error(error.message);
+
+      const rows = data as any[];
+
+      // Resolver nombre de usuario para reglas asignar_resolutor
+// Resolver nombres para asignar_resolutor y notificar_usuario (user ID específico)
+      const resolverIds = [...new Set(
+        rows
+          .filter((r) =>
+            (r.Rule_Action === 'asignar_resolutor' || r.Rule_Action === 'notificar_usuario') &&
+            r.Rule_Action_Value &&
+            !isNaN(parseInt(r.Rule_Action_Value, 10)),
+          )
+          .map((r) => parseInt(r.Rule_Action_Value, 10)),
+      )];
+
+      const userMap: Record<number, string> = {};
+      if (resolverIds.length > 0) {
+        const { data: users } = await supabase
+          .from('TBL_Users')
+          .select('User_ID, User_Name')
+          .in('User_ID', resolverIds);
+        for (const u of (users ?? []) as any[])
+          userMap[u.User_ID as number] = u.User_Name as string;
+      }
+
+const PRIO: Record<string, string> = {
+  baja: 'Baja', media: 'Media', alta: 'Alta', critica: 'Crítica',
+};
+      const NOTIFY_LABELS: Record<string, string> = {
+        'asignados':   'Resolutores asignados',
+        'solicitante': 'Solicitante',
+        'todos':       'Todos los participantes',
+      };
+
+      return rows.map((r) => ({
+        ...r,
+        Rule_Action_Resolved_Label:
+          r.Rule_Action === 'asignar_resolutor'
+            ? (userMap[parseInt(r.Rule_Action_Value, 10)] ?? null)
+            : r.Rule_Action === 'asignar_prioridad'
+            ? (PRIO[r.Rule_Action_Value] ?? null)
+            : r.Rule_Action === 'notificar_usuario'
+            ? (NOTIFY_LABELS[r.Rule_Action_Value] ?? userMap[parseInt(r.Rule_Action_Value, 10)] ?? null)
+            : null,
+      }));
+    }
+
+    case 'createAutomationRule': {
+      const p = payload as {
+        name: string; description: string | null; teamId: number | null;
+        trigger: string; triggerValue: string | null;
+        action: string; actionValue: string;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Automation_Rules')
+        .insert({
+          Rule_Name:          p.name.trim(),
+          Rule_Description:   p.description?.trim() ?? null,
+          Rule_Team_ID:       p.teamId ?? null,
+          Rule_Trigger:       p.trigger,
+          Rule_Trigger_Value: p.triggerValue ?? null,
+          Rule_Action:        p.action,
+          Rule_Action_Value:  p.actionValue,
+          Rule_Is_Active:     true,
+          Rule_Exec_Count:    0,
+          Rule_Created_At:    new Date().toISOString(),
+        })
+        .select(`
+          Rule_ID, Rule_Name, Rule_Description, Rule_Team_ID,
+          Rule_Trigger, Rule_Trigger_Value, Rule_Action, Rule_Action_Value,
+          Rule_Is_Active, Rule_Exec_Count, Rule_Last_Exec_At, Rule_Created_At,
+          team:TBL_Board_Teams!Rule_Team_ID ( Board_Team_ID, Board_Team_Name, Board_Team_Code )
+        `)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'toggleAutomationRule': {
+      const { ruleId, isActive } = payload as { ruleId: number; isActive: boolean };
+      const { error } = await supabase
+        .from('TBL_Automation_Rules')
+        .update({ Rule_Is_Active: isActive })
+        .eq('Rule_ID', ruleId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'deleteAutomationRule': {
+      const { ruleId } = payload as { ruleId: number };
+      const { error } = await supabase
+        .from('TBL_Automation_Rules')
+        .delete()
+        .eq('Rule_ID', ruleId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);

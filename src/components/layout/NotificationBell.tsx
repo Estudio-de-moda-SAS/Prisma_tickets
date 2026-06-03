@@ -120,7 +120,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, PanelProps>(
     const handleClick = (n: Notification) => {
       if (!n.isRead) onMarkRead(n.notificationId);
       if (n.requestId) {
-        navigate(`/board?ticket=${n.requestId}`);
+        navigate(`/ticket/${n.requestId}`);
         onClose();
       }
     };
