@@ -599,7 +599,11 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
   type="button"
   onMouseEnter={() => {
     const r = priorityBtnRef.current?.getBoundingClientRect();
-    if (r) setPriorityInfoPos({ top: r.top, left: r.right + 8 });  }}
+if (r) {
+  const estHeight = 460;
+  const top = Math.max(8, Math.min(r.top, window.innerHeight - estHeight - 8));
+  setPriorityInfoPos({ top, left: r.right + 8 });
+}}}
   onMouseLeave={() => setPriorityInfoPos(null)}
   style={{
     width: 14, height: 14, borderRadius: '50%',

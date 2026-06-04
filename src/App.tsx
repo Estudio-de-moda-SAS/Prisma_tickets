@@ -115,15 +115,8 @@ export default function App() {
         }
       >
         {/* Raíz: redirige al board activo en la sesión */}
-        <Route
-          index
-          element={
-            <RequireTI>
-              <DefaultBoardRedirect />
-            </RequireTI>
-          }
-        />
-
+// DESPUÉS
+<Route index element={<Navigate to="/home" replace />} />
         {/* Board por equipo — cada kanban tiene su propia ruta */}
         <Route
           path="board/:equipo"
