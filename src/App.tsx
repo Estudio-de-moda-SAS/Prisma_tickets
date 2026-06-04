@@ -2,7 +2,6 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRole, canSeeBoard } from "@/auth/roles";
-import { useBoardStore } from "@/store/boardStore";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BoardPage } from "@/pages/BoardPage";
 import { HomePage } from "@/pages/HomePage";
@@ -78,12 +77,6 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   if (!dbReady) return null;
   if (role.role !== 'admin') return <Navigate to="/home" replace />;
   return <>{children}</>;
-}
-
-/** Redirige al último board activo en la sesión (default: desarrollo). */
-function DefaultBoardRedirect() {
-  const { equipoActivo } = useBoardStore();
-  return <Navigate to={`/board/${equipoActivo}`} replace />;
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
