@@ -213,7 +213,7 @@ export async function logout(): Promise<void> {
   const account = ensureActiveAccount();
   await msal.logoutRedirect({
     account,
-    postLogoutRedirectUri: 'https://solvi.estudiodemoda.com.co/',
+    postLogoutRedirectUri: `${window.location.origin}/login`,
   });
 }
 

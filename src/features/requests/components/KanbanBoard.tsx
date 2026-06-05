@@ -25,6 +25,7 @@ import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useCloseRequest } from '../hooks/useCloseRequest';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useNotifications } from '../hooks/useNotifications';
+import { useBoardStore } from '@/store/boardStore';
 import { config } from '@/config';
 import type { Notification } from '@/types/commons';
 
@@ -55,12 +56,12 @@ const COLUMN_IDS = new Set<string>([
 ]);
 
 const COLUMN_LABELS: Record<KanbanColumna, string> = {
-  sin_categorizar:  'Sin categorizar',
+  sin_categorizar:  'Sin Categorizar',
   icebox:           'Icebox',
   backlog:          'Backlog',
-  todo:             'To do',
-  en_progreso:      'En progreso',
-  en_revision_qas:  'En revisión QAS',
+  todo:             'To Do',
+  en_progreso:      'En Progreso',
+  en_revision_qas:  'En Revisión QAS',
   cliente_review:   'Client Review',
   ready_to_deploy:  'Ready to Deploy',
   hecho:            'Hecho',
@@ -73,8 +74,6 @@ type PendingClosure = {
   targetColumnId: number;
 };
 
-const BOARD_BASE_URL = '/';
-
 export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
   const [activeCard,     setActiveCard]     = useState<Request | null>(null);
   const [overColumn,     setOverColumn]     = useState<KanbanColumna | null>(null);
@@ -85,11 +84,11 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   const navigate = useNavigate();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
+  const { kanbanZoom }  = useBoardStore();
   const { Requests }    = useGraphServices();
   const { data: currentUser } = useCurrentUser();
 
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
-
   const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
 
   const unreadByRequestId = useMemo(() => {
@@ -102,6 +101,10 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     return map;
   }, [notifications]);
 
+  // URLs base derivadas del equipo — consistentes con la estructura /board/:equipo/ticket/:id
+  const boardUrl  = `/board/${equipo}`;
+  const ticketUrl = (id: string) => `/board/${equipo}/ticket/${id}`;
+
   // ── Abrir/cerrar modal ──────────────────────────────────────
   function setModal(id: string | null) {
     setModalId(id);
@@ -109,11 +112,11 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     onModalId?.(id);
 
     if (id) {
-      history.replaceState(null, '', `/ticket/${id}`);
+      history.replaceState(null, '', ticketUrl(id));
       const ticketNotifs = unreadByRequestId.get(id) ?? [];
       ticketNotifs.forEach((n) => markRead(n.notificationId));
     } else {
-      history.replaceState(null, '', BOARD_BASE_URL);
+      history.replaceState(null, '', boardUrl);
     }
   }
 
@@ -147,11 +150,11 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
   const parentCard = parentInBoard ?? parentFetched ?? null;
 
-function openParentModal(parentId: string) {
-  setParentModalId(modalId);   // guardar la sub actual como "origen"
-  setModalId(parentId);        // mostrar el padre como modal principal
-  history.replaceState(null, '', `/ticket/${parentId}`);
-}
+  function openParentModal(parentId: string) {
+    setParentModalId(modalId);
+    setModalId(parentId);
+    history.replaceState(null, '', ticketUrl(parentId));
+  }
 
   function findColumn(id: string): KanbanColumna | null {
     for (const [col, items] of Object.entries(board)) {
@@ -176,9 +179,9 @@ function openParentModal(parentId: string) {
     setOverColumn(null);
     if (!over) return;
 
-    const activeId  = String(active.id);
-    const overId    = String(over.id);
-    const targetCol = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
+    const activeId   = String(active.id);
+    const overId     = String(over.id);
+    const targetCol  = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
@@ -186,10 +189,7 @@ function openParentModal(parentId: string) {
     const card = Object.values(board).flat().find((r) => r.id === activeId);
     if (!card) return;
 
-    // Solo pedir evidencia si:
-    // 1. La columna destino requiere evidencia (solo en_revision_qas)
-    // 2. La tarjeta NO tiene ya un closure existente
-    const yaHayClosure = !!card.cierreInfo;
+    const yaHayClosure      = !!card.cierreInfo;
     const necesitaEvidencia = COLUMNAS_CIERRE.has(targetCol) && !yaHayClosure;
 
     if (necesitaEvidencia) {
@@ -201,51 +201,43 @@ function openParentModal(parentId: string) {
       return;
     }
 
-    // En todos los demás casos, mover directo
     onMove(activeId, targetCol);
   }
 
-function handleClosureConfirm(note: string, attachments: File[]) {
-  if (!pendingClosure || !currentUser) return;
-  closeRequest(
-    {
-      requestId:      pendingClosure.card.id,
-      closedBy:       currentUser.User_ID,
-      closureNote:    note,
-      targetColumnId: pendingClosure.targetColumnId,
-      attachments,
-    },
-    {
-      onSuccess: () => {
-        setPendingClosure(null);
+  function handleClosureConfirm(note: string, attachments: File[]) {
+    if (!pendingClosure || !currentUser) return;
+    closeRequest(
+      {
+        requestId:      pendingClosure.card.id,
+        closedBy:       currentUser.User_ID,
+        closureNote:    note,
+        targetColumnId: pendingClosure.targetColumnId,
+        attachments,
       },
-      onError: () => {
-        setPendingClosure(null);
+      {
+        onSuccess: () => setPendingClosure(null),
+        onError:   () => setPendingClosure(null),
       },
-    },
-  );
-}
+    );
+  }
 
-function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: string, attachments: File[]) {
-  if (!currentUser) return;
-  closeRequest(
-    {
-      requestId:      id,
-      closedBy:       currentUser.User_ID,
-      closureNote:    note,
-      targetColumnId: COLUMN_ID_MAP[columna],
-      attachments,
-    },
-    {
-      onSuccess: () => {
-        setPendingClosure(null);
+  function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: string, attachments: File[]) {
+    if (!currentUser) return;
+    closeRequest(
+      {
+        requestId:      id,
+        closedBy:       currentUser.User_ID,
+        closureNote:    note,
+        targetColumnId: COLUMN_ID_MAP[columna],
+        attachments,
       },
-      onError: () => {
-        setPendingClosure(null);
+      {
+        onSuccess: () => setPendingClosure(null),
+        onError:   () => setPendingClosure(null),
       },
-    },
-  );
-}
+    );
+  }
+
   const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
 
   return (
@@ -257,7 +249,16 @@ function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: st
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div ref={scrollRef} className="kanban" style={kanbanStyle} {...scrollHandlers}>
+        <div
+          ref={scrollRef}
+          className="kanban"
+          style={{
+            ...kanbanStyle,
+            zoom:   kanbanZoom,
+            height: `calc((100vh - 120px) / ${kanbanZoom})`,
+          }}
+          {...scrollHandlers}
+        >
           {columnas.map((col) => (
             <KanbanColumn
               key={col}
@@ -292,54 +293,53 @@ function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: st
         />
       )}
 
-{modalCard && !parentCard && (
-  <RequestModal
-    request={modalCard}
-    equipo={equipo}
-    onClose={() => setModal(null)}
-    onMove={(id, columna) => onMove(id, columna)}
-    onMoveWithClosure={handleModalMoveWithClosure}
-    onOpenRequest={(id) => {
-      if (modalCard.parentId) {
-        openParentModal(id);
-      } else {
-        setParentModalId(modalCard.id);
-        setModalId(id);
-        history.replaceState(null, '', `/ticket/${id}`);
-      }
-    }}
-  />
-)}
+      {modalCard && !parentCard && (
+        <RequestModal
+          request={modalCard}
+          equipo={equipo}
+          onClose={() => setModal(null)}
+          onMove={(id, columna) => onMove(id, columna)}
+          onMoveWithClosure={handleModalMoveWithClosure}
+          onOpenRequest={(id) => {
+            if (modalCard.parentId) {
+              openParentModal(id);
+            } else {
+              setParentModalId(modalCard.id);
+              setModalId(id);
+              history.replaceState(null, '', ticketUrl(id));
+            }
+          }}
+        />
+      )}
 
-{parentCard && modalCard && (
-  <RequestModal
-    request={modalCard}           // ← padre (o hijo navegado)
-    equipo={equipo}
-    onClose={() => {
-      // Cerrar modal actual → volver al origen
-      setModalId(parentModalId);
-      setParentModalId(null);
-      if (parentModalId) {
-        history.replaceState(null, '', `/ticket/${parentModalId}`);
-      } else {
-        history.replaceState(null, '', BOARD_BASE_URL);
-      }
-    }}
-    onMove={(id, columna) => onMove(id, columna)}
-    onMoveWithClosure={handleModalMoveWithClosure}
-    onOpenRequest={(id) => openParentModal(id)}
-    backLabel="← Volver"
-    onBack={() => {
-      setModalId(parentModalId);
-      setParentModalId(null);
-      if (parentModalId) {
-        history.replaceState(null, '', `/ticket/${parentModalId}`);
-      } else {
-        history.replaceState(null, '', BOARD_BASE_URL);
-      }
-    }}
-  />
-)}
+      {parentCard && modalCard && (
+        <RequestModal
+          request={modalCard}
+          equipo={equipo}
+          onClose={() => {
+            setModalId(parentModalId);
+            setParentModalId(null);
+            if (parentModalId) {
+              history.replaceState(null, '', ticketUrl(parentModalId));
+            } else {
+              history.replaceState(null, '', boardUrl);
+            }
+          }}
+          onMove={(id, columna) => onMove(id, columna)}
+          onMoveWithClosure={handleModalMoveWithClosure}
+          onOpenRequest={(id) => openParentModal(id)}
+          backLabel="← Volver"
+          onBack={() => {
+            setModalId(parentModalId);
+            setParentModalId(null);
+            if (parentModalId) {
+              history.replaceState(null, '', ticketUrl(parentModalId));
+            } else {
+              history.replaceState(null, '', boardUrl);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

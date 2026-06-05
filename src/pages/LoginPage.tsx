@@ -1,12 +1,11 @@
 import { useAuth } from '@/auth/AuthProvider';
 import { Navigate } from 'react-router-dom';
-import './LoginPage.css';
+import '@/styles/LoginPage.css';
 
 export function LoginPage() {
-  const { account, signIn, ready } = useAuth();
-
-  if (ready && account) return <Navigate to="/" replace />;
-
+const { account, signIn, ready, dbReady } = useAuth();
+  // DESPUÉS
+if (ready && dbReady && account) return <Navigate to="/home" replace />;
   return (
     <div className="lp-root">
       {/* Geometric background */}

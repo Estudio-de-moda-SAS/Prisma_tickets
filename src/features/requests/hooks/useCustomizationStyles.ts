@@ -42,12 +42,18 @@ export function useCardClasses(basePrioridad: string) {
 
 export function useCardVisibility() {
   const { customization } = useBoardCustomization();
-  const { showDesc, showProgress, showAvatars, showCategory, density } = customization.card;
+  const {
+    showDesc, showProgress, showAvatars, showCategory,
+    showPriority, showDate, density,
+  } = customization.card;
   return {
     showDesc:     density !== 'compact' && showDesc,
     showProgress: density !== 'compact' && showProgress,
     showAvatars:  density !== 'compact' && showAvatars,
     showCategory,
+    // Nuevos — se conectan en RequestCard cuando corresponda
+    showPriority: density !== 'compact' && (showPriority ?? true),
+    showDate:     density !== 'compact' && (showDate ?? false),
   };
 }
 
@@ -72,18 +78,20 @@ export function useCardStyle(uiTheme: 'dark' | 'light' = 'dark'): React.CSSPrope
   return { backgroundColor: `rgba(${r},${g},${b},${cardOpacity / 100})` };
 }
 
+/**
+ * Los colores de prioridad son del sistema — no editables por el usuario.
+ * Siempre usa PRIORITY_DEFAULTS independientemente del store.
+ */
 export function usePriorityColor(prioridad: string): string {
-  const { customization } = useBoardCustomization();
-  const colors = customization.priorityColors ?? PRIORITY_DEFAULTS;
-  return (colors as Record<string, string>)[prioridad]
-    ?? PRIORITY_DEFAULTS[prioridad as keyof typeof PRIORITY_DEFAULTS]
-    ?? '#5a6a8a';
+  return PRIORITY_DEFAULTS[prioridad as keyof typeof PRIORITY_DEFAULTS] ?? '#5a6a8a';
 }
 
 export function useBoardStyle() {
   const { customization } = useBoardCustomization();
   return {
-    kanbanStyle:  { gap: `${customization.columnGap}px` } as React.CSSProperties,
-    showBoardBg:  customization.showBoardBg,
+    kanbanStyle: { gap: `${customization.columnGap}px` } as React.CSSProperties,
+    showBoardBg: customization.showBoardBg,
+    groupBy:     customization.groupBy,   // disponible para KanbanBoard cuando se implemente agrupación
+    sortBy:      customization.sortBy,    // disponible para KanbanBoard cuando se implemente ordenamiento
   };
 }

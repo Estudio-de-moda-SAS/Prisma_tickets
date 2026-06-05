@@ -5,7 +5,7 @@ import { EQUIPOS } from '@/features/requests/types';
 import { EQUIPO_COLORS } from '@/components/layout/siderbarConstants';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ThemeToggle } from './ThemeToggle';
+
 import { NotificationBell } from './NotificationBell';
 import { BugReportModal } from './BugReportModal';
 import { useLocation } from 'react-router-dom';
@@ -89,8 +89,11 @@ export function Topbar({ titulo }: TopbarProps) {
           )}
 
           <NotificationBell userId={currentUser?.User_ID ?? null} />
+          {/* El modo oscuro necesita cambios en el sidebar
+          import { ThemeToggle } from './ThemeToggle'; //este arriba con los demas imports
           <div className="topbar__divider" />
           <ThemeToggle />
+          */}
           <div className="topbar__divider" />
           <div className="topbar__avatar">{initiales}</div>
         </div>

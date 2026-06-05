@@ -1,13 +1,4 @@
 // src/pages/TicketPage.tsx
-//
-// Este componente se usa SOLO cuando alguien llega directo a /ticket/:ticketId
-// (link compartido, pestaña nueva). Renderiza el modal con position:fixed
-// sobre el layout existente — el board o home siguen montados debajo.
-//
-// Cuando el modal se abre desde KanbanBoard u HomePage, NO se usa este componente:
-// esos componentes actualizan la URL con history.replaceState y manejan
-// su propio estado de modal internamente.
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
 import { HomeRequestModal } from '@/features/requests/components/HomeRequestModal';
@@ -18,8 +9,8 @@ import { useCloseRequest } from '@/features/requests/hooks/useCloseRequest';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { config } from '@/config';
-import type { KanbanColumna } from '@/features/requests/types';
-
+import { EQUIPOS } from '@/features/requests/types';
+import type { KanbanColumna, Equipo } from '@/features/requests/types';
 const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
   sin_categorizar:  1,
   icebox:           2,
@@ -91,22 +82,25 @@ function NotFound({ onClose }: { onClose: () => void }) {
 }
 
 export function TicketPage() {
-  const { ticketId }           = useParams<{ ticketId: string }>();
-  const navigate               = useNavigate();
-  const result                 = useTicketResolver(ticketId);
-  const { equipoActivo }       = useBoardStore();
-  const { data: currentUser }  = useCurrentUser();
-  const columnMap              = useColumnMap(config.DEFAULT_BOARD_ID);
+  const { equipo: equipoParam, ticketId } = useParams<{ equipo: string; ticketId: string }>();
+  const navigate                          = useNavigate();
+  const result                            = useTicketResolver(ticketId);
+  const { equipoActivo }                  = useBoardStore();
+  const { data: currentUser }             = useCurrentUser();
+  const columnMap                         = useColumnMap(config.DEFAULT_BOARD_ID);
 
-  const equipo = result.kind === 'kanban'
-    ? (result.request.equipo[0] ?? equipoActivo)
-    : equipoActivo;
+// Valida el param de URL igual que en BoardPage
+const equipoFromUrl = (equipoParam && equipoParam in EQUIPOS)
+  ? (equipoParam as Equipo)
+  : undefined;
 
+const equipo: Equipo = result.kind === 'kanban'
+  ? (result.request.equipo[0] ?? equipoFromUrl ?? equipoActivo)
+  : (equipoFromUrl ?? equipoActivo);
+  
   const { mutate: mover }        = useMoveRequest(equipo);
   const { mutate: closeRequest } = useCloseRequest(equipo);
 
-  // Al cerrar: volver a la página anterior del historial.
-  // Si no hay historial (link directo), ir a /home.
   function handleClose() {
     if (window.history.length > 2) {
       navigate(-1);
@@ -137,8 +131,6 @@ export function TicketPage() {
     });
   }
 
-  // Estos estados son transitorios — TicketPage solo existe para
-  // links directos, no para la navegación normal dentro de la app.
   if (result.kind === 'loading')   return <Loader />;
   if (result.kind === 'not_found') return <NotFound onClose={handleClose} />;
 
@@ -158,7 +150,7 @@ export function TicketPage() {
       onClose={handleClose}
       onMove={handleMove}
       onMoveWithClosure={handleMoveWithClosure}
-      onOpenRequest={(id) => navigate(`/ticket/${id}`, { replace: true })}
+      onOpenRequest={(id) => navigate(`/board/${equipo}/ticket/${id}`, { replace: true })}
     />
   );
 }

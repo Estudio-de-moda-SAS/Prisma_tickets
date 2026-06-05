@@ -14,7 +14,8 @@ const MOCK_USER: UserProfile = {
   Department_ID: 1,
   Team_ID:       1,
   Is_New:        false,
-  team: { Team_Code: 'desarrollo', Team_Name: 'Desarrollo & UX' },
+  team:       { Team_Code: 'desarrollo', Team_Name: 'Desarrollo & UX' },
+  department: { Department_ID: 7, Department_Name: 'TI', Department_Code: 'ti' },
   Is_Active:    true,
 };
 

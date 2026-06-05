@@ -33,8 +33,9 @@ function loadChartJs(cb: () => void) {
 const EQUIPO_COLORS: Record<Equipo, string> = {
   desarrollo: '#378ADD',
   crm:        '#1D9E75',
-  sistemas:   '#EF9F27',
+  sistemas:   '#20D5C4',
   analisis:   '#7F77DD',
+  solvi:      '#F5B544',
 };
 
 /* ─── Helpers ─────────────────────────────────────────────── */

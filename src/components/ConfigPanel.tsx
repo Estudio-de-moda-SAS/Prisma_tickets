@@ -32,7 +32,12 @@ import {
   useUpdateEmailTemplateMetadata,
   getTemplateVariables, type EmailTemplate,
 } from '@/features/requests/hooks/useEmailTemplates';
-
+import {
+  useDepartmentsWithTeams, useCreateDepartment,
+  useUpdateDepartment, useDeleteDepartment,
+  type DepartmentWithTeams,
+} from '@/features/requests/hooks/useDepartments';
+import { useCreateTeam, useUpdateTeam, useDeleteTeam } from '@/features/requests/hooks/useTeams';
 /* ============================================================
    Constantes
    ============================================================ */
@@ -68,7 +73,7 @@ const TEAM_CODE_COLORS: Record<string, string> = {
   analisis:   '#7F77DD',
 };
 
-type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails';
+type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org';
 
 const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'labels',    label: 'Etiquetas',   icon: '🏷️' },
@@ -77,8 +82,8 @@ const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'templates', label: 'Templates',   icon: '📋' },
   { key: 'users',     label: 'Usuarios',    icon: '👤' },
   { key: 'emails',    label: 'Correos',     icon: '✉️' },
+  { key: 'org',       label: 'Organización',  icon: '🏢' }, 
 ];
-
 /* ============================================================
    Tipos para la sección Usuarios
    ============================================================ */
@@ -218,7 +223,7 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
   }
 
   const activeNav = NAV_ITEMS.find((n) => n.key === section)!;
-  const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails';
+const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails' && section !== 'org';
 
   return createPortal(
     <div className="cpanel-backdrop" onClick={handleBackdrop}>
@@ -242,8 +247,7 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
 
             <div className="cpanel__nav-group">
               <span className="cpanel__nav-group-label">Board</span>
-              {NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails').map((item) => (
-                <button key={item.key} onClick={() => setSection(item.key)}
+{NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails' && n.key !== 'org').map((item) => (                <button key={item.key} onClick={() => setSection(item.key)}
                   className={`cpanel__nav-item${section === item.key ? ' cpanel__nav-item--active' : ''}`}>
                   <span className="cpanel__nav-item-icon">{item.icon}</span>
                   <span>{item.label}</span>
@@ -272,9 +276,13 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                 <span className="cpanel__nav-item-icon">👤</span>
                 <span>Usuarios</span>
               </button>
+              <button onClick={() => setSection('org')}
+  className={`cpanel__nav-item${section === 'org' ? ' cpanel__nav-item--active' : ''}`}>
+  <span className="cpanel__nav-item-icon">🏢</span>
+  <span>Organización</span>
+</button>
             </div>
           </aside>
-
           {/* ── Contenido ── */}
           <div className="cpanel__content">
             <div className="cpanel__content-header">
@@ -299,6 +307,9 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                   )}
                   {section === 'emails' && (
                     <p className="cpanel__content-subtitle">Templates HTML por evento</p>
+                  )}
+                  {section === 'org' && (
+                    <p className="cpanel__content-subtitle">Departamentos y equipos corporativos</p>
                   )}
                 </div>
               </div>
@@ -361,6 +372,7 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
                   onUpdateMetadata={(id, d) => updateEmailTemplateMetadata.mutate({ id, ...d })}
                 />
               )}
+              {section === 'org' && <OrgSection />}
             </div>
           </div>
         </div>
@@ -375,6 +387,361 @@ function EmptyTeam() {
     <div className="cpanel__empty">
       <span style={{ fontSize: 28, opacity: 0.4 }}>🎯</span>
       <p>Seleccioná un equipo en el panel izquierdo.</p>
+    </div>
+  );
+}
+/* ============================================================
+   OrgSection — gestión de departamentos y equipos corporativos
+   ============================================================ */
+
+function OrgSection() {
+  const { data: departments = [], isLoading } = useDepartmentsWithTeams();
+  const createDept  = useCreateDepartment();
+  const updateDept  = useUpdateDepartment();
+  const deleteDept  = useDeleteDepartment();
+  const createTeam  = useCreateTeam();
+  const updateTeam  = useUpdateTeam();
+  const deleteTeam  = useDeleteTeam();
+
+  const [expandedId,  setExpandedId]  = useState<number | null>(null);
+  const [editDeptId,  setEditDeptId]  = useState<number | null>(null); // -1 = nuevo
+  const [showNewDept, setShowNewDept] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} style={{ height: 52, borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
+        ))}
+      </div>
+    );
+  }
+
+  // Modo edición / creación de departamento
+  if (showNewDept || editDeptId !== null) {
+    const dept = (editDeptId !== null && editDeptId !== -1)
+      ? departments.find((d) => d.Department_ID === editDeptId)
+      : undefined;
+    return (
+      <DeptForm
+        initial={dept ? { name: dept.Department_Name, code: dept.Department_Code, isHidden: dept.Is_Hidden_From_Onboarding } : undefined}
+        saving={createDept.isPending || updateDept.isPending}
+        onSave={(data) => {
+          if (dept) {
+            updateDept.mutate({ id: dept.Department_ID, ...data }, { onSuccess: () => setEditDeptId(null) });
+          } else {
+            createDept.mutate(data, { onSuccess: () => setShowNewDept(false) });
+          }
+        }}
+        onCancel={() => { setShowNewDept(false); setEditDeptId(null); }}
+      />
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.3"/><path d="M7 5v4M7 3.5v.5" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round"/></svg>
+        <span>El punto verde indica que el departamento es visible en el onboarding. Usá el ícono del ojo para cambiarlo.</span>
+      </div>
+
+      {departments.length === 0 && (
+        <div className="cpanel__empty">
+          <span style={{ fontSize: 28, opacity: 0.4 }}>🏢</span>
+          <p>No hay departamentos configurados.</p>
+        </div>
+      )}
+
+      {departments.map((dept) => (
+        <DeptCard
+          key={dept.Department_ID}
+          dept={dept}
+          expanded={expandedId === dept.Department_ID}
+          onToggle={() => setExpandedId(expandedId === dept.Department_ID ? null : dept.Department_ID)}
+          onEdit={() => { setExpandedId(null); setEditDeptId(dept.Department_ID); }}
+          onDelete={() => deleteDept.mutate(dept.Department_ID)}
+          onToggleHidden={() => updateDept.mutate({
+            id:       dept.Department_ID,
+            name:     dept.Department_Name,
+            code:     dept.Department_Code,
+            isHidden: !dept.Is_Hidden_From_Onboarding,
+          })}
+          onCreateTeam={(data) => createTeam.mutate({ departmentId: dept.Department_ID, ...data })}
+          onUpdateTeam={(id, data) => updateTeam.mutate({ id, ...data })}
+          onDeleteTeam={(id) => deleteTeam.mutate(id)}
+        />
+      ))}
+
+      <AddBtn label="Nuevo departamento" onClick={() => setShowNewDept(true)} />
+    </div>
+  );
+}
+
+/* ── DeptCard ── */
+function DeptCard({ dept, expanded, onToggle, onEdit, onDelete, onToggleHidden, onCreateTeam, onUpdateTeam, onDeleteTeam }: {
+  dept:          DepartmentWithTeams;
+  expanded:      boolean;
+  onToggle:      () => void;
+  onEdit:        () => void;
+  onDelete:      () => void;
+  onToggleHidden:() => void;
+  onCreateTeam:  (d: { name: string; code: string }) => void;
+  onUpdateTeam:  (id: number, d: { name: string; code: string }) => void;
+  onDeleteTeam:  (id: number) => void;
+}) {
+  const [hov,           setHov]           = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editTeamId,    setEditTeamId]    = useState<number | null>(null);
+  const [showNewTeam,   setShowNewTeam]   = useState(false);
+
+  const isHidden  = dept.Is_Hidden_From_Onboarding;
+  const teamCount = dept.teams.length;
+
+  return (
+    <div style={{ border: `1px solid ${expanded ? 'var(--border)' : 'var(--border-subtle)'}`, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)', transition: 'border-color 0.15s' }}>
+
+      {/* ── Header ── */}
+      <div
+        onClick={onToggle}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => { setHov(false); setConfirmDelete(false); }}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', background: hov || expanded ? 'var(--bg-hover)' : 'transparent', transition: 'background 0.12s', cursor: 'pointer', borderBottom: expanded ? '1px solid var(--border-subtle)' : 'none' }}
+      >
+        {/* Dot visibilidad */}
+        <div style={{ width: 9, height: 9, borderRadius: '50%', flexShrink: 0, background: isHidden ? 'rgba(255,71,87,0.5)' : '#00e5a0', transition: 'background 0.2s' }} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {dept.Department_Name}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{dept.Department_Code}</div>
+        </div>
+
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', flexShrink: 0 }}>
+          {teamCount} {teamCount === 1 ? 'equipo' : 'equipos'}
+        </span>
+
+        {/* Acciones — stopPropagation para no hacer toggle */}
+        <div style={{ display: 'flex', gap: 3, opacity: hov || expanded ? 1 : 0, transition: 'opacity 0.12s', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+          {/* Toggle visibilidad onboarding */}
+          <button
+            onClick={onToggleHidden}
+            title={isHidden ? 'Mostrar en onboarding' : 'Ocultar del onboarding'}
+            style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${isHidden ? 'rgba(255,71,87,0.3)' : 'rgba(0,229,160,0.3)'}`, background: isHidden ? 'rgba(255,71,87,0.08)' : 'rgba(0,229,160,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isHidden ? '#ff4757' : '#00e5a0', transition: 'all 0.12s', flexShrink: 0 }}
+          >
+            {isHidden
+              ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            }
+          </button>
+          <SmBtn color="#00c8ff" onClick={onEdit} title="Editar departamento">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
+          </SmBtn>
+          <button
+            onClick={() => { if (!confirmDelete) { setConfirmDelete(true); return; } setConfirmDelete(false); onDelete(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: confirmDelete ? 4 : 0, padding: confirmDelete ? '3px 8px' : '3px 5px', borderRadius: 5, border: `1px solid ${confirmDelete ? 'rgba(255,71,87,0.5)' : 'rgba(255,71,87,0.2)'}`, background: confirmDelete ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.06)', color: '#ff4757', fontSize: 9, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+          >
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg>
+            {confirmDelete && <span style={{ marginLeft: 3 }}>¿Confirmar?</span>}
+          </button>
+        </div>
+
+        {/* Chevron */}
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+          style={{ flexShrink: 0, transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.18s', opacity: 0.4 }}>
+          <path d="M1 3l4 4 4-4"/>
+        </svg>
+      </div>
+
+      {/* ── Panel expandido ── */}
+      {expanded && (
+        <div style={{ padding: '10px 12px 12px', background: 'var(--bg-panel)' }}>
+          {/* Pill de visibilidad */}
+          <div style={{ marginBottom: 10, padding: '5px 10px', borderRadius: 6, background: isHidden ? 'rgba(255,71,87,0.06)' : 'rgba(0,229,160,0.06)', border: `1px solid ${isHidden ? 'rgba(255,71,87,0.2)' : 'rgba(0,229,160,0.2)'}`, fontSize: 10, color: isHidden ? '#ff4757' : '#00e5a0', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {isHidden
+              ? <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Oculto del onboarding</>
+              : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Visible en onboarding</>
+            }
+          </div>
+
+          {/* Lista de equipos */}
+          {dept.teams.length === 0 && !showNewTeam && (
+            <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: '0 0 8px', opacity: 0.6 }}>Sin equipos aún.</p>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 6 }}>
+            {dept.teams.map((team) => (
+              editTeamId === team.Team_ID ? (
+                <div key={team.Team_ID} style={{ padding: '8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                  <TeamForm
+                    initial={{ name: team.Team_Name, code: team.Team_Code }}
+                    onSave={(d) => { onUpdateTeam(team.Team_ID, d); setEditTeamId(null); }}
+                    onCancel={() => setEditTeamId(null)}
+                  />
+                </div>
+              ) : (
+                <TeamRow
+                  key={team.Team_ID}
+                  team={team}
+                  onEdit={() => { setShowNewTeam(false); setEditTeamId(team.Team_ID); }}
+                  onDelete={() => onDeleteTeam(team.Team_ID)}
+                />
+              )
+            ))}
+          </div>
+
+          {showNewTeam ? (
+            <div style={{ padding: '8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+              <TeamForm
+                onSave={(d) => { onCreateTeam(d); setShowNewTeam(false); }}
+                onCancel={() => setShowNewTeam(false)}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => { setEditTeamId(null); setShowNewTeam(true); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer', transition: 'all 0.15s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,200,255,0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
+            >
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4.5 1v7M1 4.5h7" strokeLinecap="round"/></svg>
+              Nuevo equipo
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── DeptForm ── */
+function DeptForm({ initial, onSave, onCancel, saving }: {
+  initial?: { name: string; code: string; isHidden: boolean };
+  onSave:   (d: { name: string; code: string; isHidden: boolean }) => void;
+  onCancel: () => void;
+  saving?:  boolean;
+}) {
+  const [name,     setName]     = useState(initial?.name     ?? '');
+  const [code,     setCode]     = useState(initial?.code     ?? '');
+  const [isHidden, setIsHidden] = useState(initial?.isHidden ?? false);
+  const canSave = name.trim().length > 0 && code.trim().length > 0;
+
+  function handleNameChange(val: string) {
+    setName(val);
+    if (!initial) {
+      setCode(val.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>
+          ← Volver
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', flex: 1 }}>
+          {initial ? `Editar: ${initial.name}` : 'Nuevo departamento'}
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div>
+          <FieldLabel>Nombre *</FieldLabel>
+          <input autoFocus value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Ej: Finanzas" className="cpop-input" />
+        </div>
+        <div>
+          <FieldLabel>Código *</FieldLabel>
+          <input value={code} onChange={(e) => setCode(e.target.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))} placeholder="Ej: finanzas" className="cpop-input" style={{ fontFamily: 'monospace' }} />
+        </div>
+      </div>
+      <div>
+        <FieldLabel>Visibilidad en onboarding</FieldLabel>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isHidden ? 'rgba(255,71,87,0.3)' : 'rgba(0,229,160,0.3)'}`, background: isHidden ? 'rgba(255,71,87,0.04)' : 'rgba(0,229,160,0.04)', transition: 'all 0.15s' }}>
+          <input type="checkbox" checked={!isHidden} onChange={(e) => setIsHidden(!e.target.checked)} style={{ accentColor: '#00e5a0', width: 14, height: 14 }} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isHidden ? '#ff4757' : '#00e5a0' }}>
+              {isHidden ? 'Oculto del onboarding' : 'Visible en onboarding'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
+              {isHidden ? 'Los usuarios no verán este departamento al registrarse' : 'Los usuarios pueden seleccionarlo al registrarse'}
+            </div>
+          </div>
+        </label>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
+        <button onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), isHidden })} disabled={!canSave || saving} className={`cpop-btn-save${!canSave || saving ? ' cpop-btn-save--disabled' : ''}`}>
+          {saving ? 'Guardando…' : 'GUARDAR'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── TeamRow ── */
+function TeamRow({ team, onEdit, onDelete }: {
+  team:     { Team_ID: number; Team_Name: string; Team_Code: string };
+  onEdit:   () => void;
+  onDelete: () => void;
+}) {
+  const [hov,     setHov]     = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => { setHov(false); setConfirm(false); }}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, border: `1px solid ${hov ? 'var(--border)' : 'var(--border-subtle)'}`, background: hov ? 'var(--bg-hover)' : 'var(--bg-surface)', transition: 'all 0.12s' }}
+    >
+      <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--txt-muted)', flexShrink: 0, opacity: 0.35 }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--txt)' }}>{team.Team_Name}</span>
+        <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace', opacity: 0.7 }}>{team.Team_Code}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 3, opacity: hov ? 1 : 0, transition: 'opacity 0.12s' }}>
+        <SmBtn color="#00c8ff" onClick={onEdit} title="Editar equipo">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
+        </SmBtn>
+        <button
+          onClick={() => { if (!confirm) { setConfirm(true); return; } setConfirm(false); onDelete(); }}
+          style={{ display: 'flex', alignItems: 'center', gap: confirm ? 4 : 0, padding: confirm ? '3px 7px' : '3px 5px', borderRadius: 5, border: `1px solid ${confirm ? 'rgba(255,71,87,0.5)' : 'rgba(255,71,87,0.2)'}`, background: confirm ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.06)', color: '#ff4757', fontSize: 9, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+        >
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg>
+          {confirm && <span style={{ marginLeft: 3 }}>¿Confirmar?</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── TeamForm ── */
+function TeamForm({ initial, onSave, onCancel }: {
+  initial?: { name: string; code: string };
+  onSave:   (d: { name: string; code: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [code, setCode] = useState(initial?.code ?? '');
+  const canSave = name.trim().length > 0 && code.trim().length > 0;
+
+  function handleNameChange(val: string) {
+    setName(val);
+    if (!initial) {
+      setCode(val.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
+    }
+  }
+
+  return (
+    <div className="cpop-form">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div>
+          <FieldLabel>Nombre *</FieldLabel>
+          <input autoFocus value={name} onChange={(e) => handleNameChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), code: code.trim() }); if (e.key === 'Escape') onCancel(); }} placeholder="Ej: Contabilidad" className="cpop-input" />
+        </div>
+        <div>
+          <FieldLabel>Código *</FieldLabel>
+          <input value={code} onChange={(e) => setCode(e.target.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))} placeholder="Ej: contabilidad" className="cpop-input" style={{ fontFamily: 'monospace' }} />
+        </div>
+      </div>
+      <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), code: code.trim() })} onCancel={onCancel} />
     </div>
   );
 }
@@ -482,7 +849,6 @@ function UserList() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Barra de búsqueda + botón pre-registrar */}
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           value={search}
@@ -510,7 +876,6 @@ function UserList() {
         </button>
       </div>
 
-      {/* Toggle activos/inactivos */}
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           onClick={() => setShowInactive(false)}
@@ -579,7 +944,7 @@ function UserList() {
 }
 
 /* ============================================================
-   UserRow — con botón desactivar / reactivar
+   UserRow
    ============================================================ */
 function UserRow({ user, onEdit, onDeactivate, onReactivate }: {
   user:         ManagedUser;
@@ -616,7 +981,6 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate }: {
         opacity: isInactive ? 0.6 : 1,
       }}
     >
-      {/* Avatar */}
       <div style={{
         width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
         background: isInactive ? 'rgba(255,71,87,0.08)' : isPreReg ? 'rgba(162,155,254,0.1)' : isAdmin ? 'rgba(0,200,255,0.15)' : 'var(--bg-panel)',
@@ -630,7 +994,6 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate }: {
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Nombre + badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
           <span style={{
             fontSize: 13, fontWeight: 600,
@@ -641,111 +1004,46 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate }: {
           }}>
             {isPreReg ? user.User_Email : user.User_Name}
           </span>
-
           {isInactive && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              padding: '2px 6px', borderRadius: 4, flexShrink: 0,
-              background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
-              color: '#ff4757',
-            }}>
-              Inactivo
-            </span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, flexShrink: 0, background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757' }}>Inactivo</span>
           )}
-
           {!isInactive && !isPreReg && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              padding: '2px 6px', borderRadius: 4, flexShrink: 0,
-              background: isAdmin ? 'rgba(0,200,255,0.12)' : 'var(--bg-panel)',
-              border: `1px solid ${isAdmin ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`,
-              color: isAdmin ? 'var(--accent)' : 'var(--txt-muted)',
-            }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, flexShrink: 0, background: isAdmin ? 'rgba(0,200,255,0.12)' : 'var(--bg-panel)', border: `1px solid ${isAdmin ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`, color: isAdmin ? 'var(--accent)' : 'var(--txt-muted)' }}>
               {isAdmin ? 'Admin' : 'Member'}
             </span>
           )}
-
           {!isInactive && isPreReg && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              padding: '2px 6px', borderRadius: 4, flexShrink: 0,
-              background: 'rgba(162,155,254,0.12)', border: '1px solid rgba(162,155,254,0.3)',
-              color: '#a29bfe',
-            }}>
-              Pre-reg
-            </span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, flexShrink: 0, background: 'rgba(162,155,254,0.12)', border: '1px solid rgba(162,155,254,0.3)', color: '#a29bfe' }}>Pre-reg</span>
           )}
-
           {!isInactive && !isPreReg && user.Is_New && (
-            <span style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              padding: '2px 6px', borderRadius: 4, flexShrink: 0,
-              background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.35)',
-              color: '#fdcb6e',
-            }}>
-              Onboarding
-            </span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, flexShrink: 0, background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.35)', color: '#fdcb6e' }}>Onboarding</span>
           )}
         </div>
-
         {!isPreReg && (
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.User_Email}
-          </div>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.User_Email}</div>
         )}
-
         <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: isPreReg ? 0 : 2, opacity: 0.7 }}>
-          {user.department?.Department_Name ?? '—'}
-          {user.team ? ` · ${user.team.Team_Name}` : ''}
+          {user.department?.Department_Name ?? '—'}{user.team ? ` · ${user.team.Team_Name}` : ''}
         </div>
       </div>
 
-      {/* Acciones */}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {isInactive ? (
-          /* Reactivar */
-          <button
-            onClick={onReactivate}
-            title="Reactivar usuario"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,229,160,0.35)',
-              background: 'rgba(0,229,160,0.08)', color: '#00e5a0',
-              fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
-            }}
+          <button onClick={onReactivate} title="Reactivar usuario"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,229,160,0.35)', background: 'rgba(0,229,160,0.08)', color: '#00e5a0', fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.18)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.08)'; }}
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M1.5 5l2.5 2.5L8.5 2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.08)'; }}>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1.5 5l2.5 2.5L8.5 2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Reactivar
           </button>
         ) : (
           <>
             <SmBtn color="#00c8ff" onClick={onEdit} title="Editar usuario">
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/>
-              </svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
             </SmBtn>
-            {/* Desactivar — doble click para confirmar */}
-            <button
-              onClick={handleDeactivateClick}
-              title={confirm ? 'Click para confirmar' : 'Desactivar usuario'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: confirm ? 5 : 0,
-                padding: confirm ? '4px 10px' : '4px 6px',
-                borderRadius: 6, border: `1px solid ${confirm ? 'rgba(255,71,87,0.5)' : 'rgba(255,71,87,0.2)'}`,
-                background: confirm ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.06)',
-                color: '#ff4757', fontSize: 10, fontWeight: 700,
-                cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
-              }}
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <circle cx="6" cy="4" r="2.5"/>
-                <path d="M1 11c0-2.76 2.24-5 5-5s5 2.24 5 5" strokeLinecap="round"/>
-                <path d="M9 1l3 3M12 1L9 4" strokeLinecap="round"/>
-              </svg>
+            <button onClick={handleDeactivateClick} title={confirm ? 'Click para confirmar' : 'Desactivar usuario'}
+              style={{ display: 'flex', alignItems: 'center', gap: confirm ? 5 : 0, padding: confirm ? '4px 10px' : '4px 6px', borderRadius: 6, border: `1px solid ${confirm ? 'rgba(255,71,87,0.5)' : 'rgba(255,71,87,0.2)'}`, background: confirm ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.06)', color: '#ff4757', fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="4" r="2.5"/><path d="M1 11c0-2.76 2.24-5 5-5s5 2.24 5 5" strokeLinecap="round"/><path d="M9 1l3 3M12 1L9 4" strokeLinecap="round"/></svg>
               {confirm && <span>¿Confirmar?</span>}
             </button>
           </>
@@ -759,9 +1057,7 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate }: {
    UserEditForm
    ============================================================ */
 function UserEditForm({ user, onSave, onCancel }: {
-  user:     ManagedUser;
-  onSave:   (updated: ManagedUser) => void;
-  onCancel: () => void;
+  user: ManagedUser; onSave: (updated: ManagedUser) => void; onCancel: () => void;
 }) {
   const [role,         setRole]         = useState<'admin' | 'member'>(user.User_Role === 'admin' ? 'admin' : 'member');
   const [departmentId, setDepartmentId] = useState<number | null>(user.Department_ID);
@@ -775,129 +1071,73 @@ function UserEditForm({ user, onSave, onCancel }: {
   const [error,        setError]        = useState(false);
 
   useEffect(() => {
-    apiClient.call<Department[]>('getDepartments', {})
-      .then(setDepartments)
-      .catch(() => {})
-      .finally(() => setLoadingDepts(false));
+    apiClient.call<Department[]>('getDepartments', {}).then(setDepartments).catch(() => {}).finally(() => setLoadingDepts(false));
   }, []);
 
   useEffect(() => {
     if (departmentId === null) { setTeams([]); return; }
     setLoadingTeams(true);
-    apiClient.call<Team[]>('getTeamsByDepartment', { departmentId })
-      .then(setTeams)
-      .catch(() => setTeams([]))
-      .finally(() => setLoadingTeams(false));
+    apiClient.call<Team[]>('getTeamsByDepartment', { departmentId }).then(setTeams).catch(() => setTeams([])).finally(() => setLoadingTeams(false));
   }, [departmentId]);
 
-  function handleDepartmentChange(newDeptId: number | null) {
-    setDepartmentId(newDeptId);
-    setTeamId(null);
-  }
-
   async function handleSave() {
-    setSaving(true);
-    setError(false);
+    setSaving(true); setError(false);
     try {
-      const updated = await apiClient.call<ManagedUser>('updateUser', {
-        userId: user.User_ID, role, departmentId, teamId, isNew,
-      });
+      const updated = await apiClient.call<ManagedUser>('updateUser', { userId: user.User_ID, role, departmentId, teamId, isNew });
       onSave(updated);
-    } catch {
-      setError(true);
-    } finally {
-      setSaving(false);
-    }
+    } catch { setError(true); } finally { setSaving(false); }
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>
-          ← Volver
-        </button>
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{user.User_Name}</span>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{user.User_Email}</div>
-        </div>
+        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
+        <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{user.User_Name}</span><div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{user.User_Email}</div></div>
       </div>
-
       <div>
         <FieldLabel>Rol de acceso</FieldLabel>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['member', 'admin'] as const).map((r) => (
-            <button key={r} onClick={() => setRole(r)} style={{
-              flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-              border: `1px solid ${role === r ? (r === 'admin' ? 'rgba(0,200,255,0.4)' : 'rgba(162,155,254,0.4)') : 'var(--border-subtle)'}`,
-              background: role === r ? (r === 'admin' ? 'rgba(0,200,255,0.08)' : 'rgba(162,155,254,0.08)') : 'transparent',
-              transition: 'all 0.15s',
-            }}>
+            <button key={r} onClick={() => setRole(r)} style={{ flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${role === r ? (r === 'admin' ? 'rgba(0,200,255,0.4)' : 'rgba(162,155,254,0.4)') : 'var(--border-subtle)'}`, background: role === r ? (r === 'admin' ? 'rgba(0,200,255,0.08)' : 'rgba(162,155,254,0.08)') : 'transparent', transition: 'all 0.15s' }}>
               <div style={{ fontSize: 16, marginBottom: 4 }}>{r === 'admin' ? '🔑' : '👤'}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: role === r ? (r === 'admin' ? 'var(--accent)' : '#a29bfe') : 'var(--txt-muted)' }}>
-                {r === 'admin' ? 'Administrador' : 'Member'}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>
-                {r === 'admin' ? 'Acceso completo (TI)' : 'Solo puede enviar solicitudes'}
-              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: role === r ? (r === 'admin' ? 'var(--accent)' : '#a29bfe') : 'var(--txt-muted)' }}>{r === 'admin' ? 'Administrador' : 'Member'}</div>
+              <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>{r === 'admin' ? 'Acceso completo (TI)' : 'Solo puede enviar solicitudes'}</div>
             </button>
           ))}
         </div>
       </div>
-
       <div>
         <FieldLabel>Departamento</FieldLabel>
-        {loadingDepts ? (
-          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
-        ) : (
-          <select className="cpop-input" value={departmentId ?? ''} onChange={(e) => handleDepartmentChange(e.target.value ? Number(e.target.value) : null)}>
+        {loadingDepts ? <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} /> : (
+          <select className="cpop-input" value={departmentId ?? ''} onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : null); setTeamId(null); }}>
             <option value="">Sin departamento</option>
             {departments.map((d) => <option key={d.Department_ID} value={d.Department_ID}>{d.Department_Name}</option>)}
           </select>
         )}
       </div>
-
       <div>
         <FieldLabel>Equipo</FieldLabel>
-        {loadingTeams ? (
-          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
-        ) : (
+        {loadingTeams ? <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} /> : (
           <select className="cpop-input" value={teamId ?? ''} disabled={departmentId === null} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">{departmentId === null ? 'Primero selecciona departamento' : 'Sin equipo'}</option>
             {teams.map((t) => <option key={t.Team_ID} value={t.Team_ID}>{t.Team_Name}</option>)}
           </select>
         )}
       </div>
-
       <div>
         <FieldLabel>Estado de registro</FieldLabel>
-        <label style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-          border: `1px solid ${isNew ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`,
-          background: isNew ? 'rgba(253,203,110,0.06)' : 'transparent', transition: 'all 0.15s',
-        }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isNew ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`, background: isNew ? 'rgba(253,203,110,0.06)' : 'transparent', transition: 'all 0.15s' }}>
           <input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} style={{ accentColor: '#fdcb6e', width: 14, height: 14 }} />
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: isNew ? '#fdcb6e' : 'var(--txt-muted)' }}>
-              {isNew ? 'Pendiente de onboarding' : 'Onboarding completado'}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
-              Activar para que el usuario vea el selector de área al próximo login
-            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isNew ? '#fdcb6e' : 'var(--txt-muted)' }}>{isNew ? 'Pendiente de onboarding' : 'Onboarding completado'}</div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Activar para que el usuario vea el selector de área al próximo login</div>
           </div>
         </label>
       </div>
-
-      {error && (
-        <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>
-          Error al guardar. Intenta de nuevo.
-        </div>
-      )}
-
+      {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>Error al guardar. Intenta de nuevo.</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
-        <button onClick={handleSave} disabled={saving} className={`cpop-btn-save${saving ? ' cpop-btn-save--disabled' : ''}`}>
-          {saving ? 'Guardando…' : 'GUARDAR'}
-        </button>
+        <button onClick={handleSave} disabled={saving} className={`cpop-btn-save${saving ? ' cpop-btn-save--disabled' : ''}`}>{saving ? 'Guardando…' : 'GUARDAR'}</button>
       </div>
     </div>
   );
@@ -907,8 +1147,7 @@ function UserEditForm({ user, onSave, onCancel }: {
    PreRegisterForm
    ============================================================ */
 function PreRegisterForm({ onSave, onCancel }: {
-  onSave:   (user: ManagedUser) => void;
-  onCancel: () => void;
+  onSave: (user: ManagedUser) => void; onCancel: () => void;
 }) {
   const [email,        setEmail]        = useState('');
   const [role,         setRole]         = useState<'admin' | 'member'>('member');
@@ -926,174 +1165,88 @@ function PreRegisterForm({ onSave, onCancel }: {
   const canSave    = emailValid && !saving;
 
   useEffect(() => {
-    apiClient.call<Department[]>('getDepartments', {})
-      .then(setDepartments)
-      .catch(() => {})
-      .finally(() => setLoadingDepts(false));
+    apiClient.call<Department[]>('getDepartments', {}).then(setDepartments).catch(() => {}).finally(() => setLoadingDepts(false));
   }, []);
 
   useEffect(() => {
     if (departmentId === null) { setTeams([]); setTeamId(null); return; }
     setLoadingTeams(true);
-    apiClient.call<Team[]>('getTeamsByDepartment', { departmentId })
-      .then(setTeams)
-      .catch(() => setTeams([]))
-      .finally(() => setLoadingTeams(false));
+    apiClient.call<Team[]>('getTeamsByDepartment', { departmentId }).then(setTeams).catch(() => setTeams([])).finally(() => setLoadingTeams(false));
   }, [departmentId]);
 
   async function handleSave() {
     if (!canSave) return;
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
-      const newUser = await apiClient.call<ManagedUser>('preRegisterUser', {
-        email: email.trim(), role, departmentId, teamId, isNew,
-      });
+      const newUser = await apiClient.call<ManagedUser>('preRegisterUser', { email: email.trim(), role, departmentId, teamId, isNew });
       onSave(newUser);
-    } catch (err) {
-      setError((err as Error).message ?? 'Error al pre-registrar.');
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setError((err as Error).message ?? 'Error al pre-registrar.'); } finally { setSaving(false); }
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>
-          ← Volver
-        </button>
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Pre-registrar usuario</span>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>
-            El usuario se vinculará al entrar por primera vez con este correo
-          </div>
-        </div>
+        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
+        <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Pre-registrar usuario</span><div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>El usuario se vinculará al entrar por primera vez con este correo</div></div>
       </div>
-
-      <div style={{
-        padding: '10px 14px', borderRadius: 8,
-        background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)',
-        display: 'flex', alignItems: 'flex-start', gap: 10,
-      }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.3"/>
-          <path d="M7 5v4M7 3.5v.5" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round"/>
-        </svg>
-        <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0, lineHeight: 1.5 }}>
-          Cuando este usuario inicie sesión con Microsoft, el sistema lo detectará por su correo y le asignará automáticamente el rol y equipo configurados acá.
-        </p>
+      <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.3"/><path d="M7 5v4M7 3.5v.5" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round"/></svg>
+        <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0, lineHeight: 1.5 }}>Cuando este usuario inicie sesión con Microsoft, el sistema lo detectará por su correo y le asignará automáticamente el rol y equipo configurados acá.</p>
       </div>
-
       <div>
         <FieldLabel>Correo corporativo *</FieldLabel>
-        <input
-          autoFocus type="email" value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="usuario@empresa.com" className="cpop-input"
-        />
-        {email && !emailValid && (
-          <p style={{ fontSize: 10, color: '#ff4757', margin: '4px 0 0', paddingLeft: 2 }}>Ingresá un correo válido.</p>
-        )}
+        <input autoFocus type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="usuario@empresa.com" className="cpop-input" />
+        {email && !emailValid && <p style={{ fontSize: 10, color: '#ff4757', margin: '4px 0 0', paddingLeft: 2 }}>Ingresá un correo válido.</p>}
       </div>
-
       <div>
         <FieldLabel>Rol de acceso</FieldLabel>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['member', 'admin'] as const).map((r) => (
-            <button key={r} onClick={() => setRole(r)} style={{
-              flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-              border: `1px solid ${role === r ? (r === 'admin' ? 'rgba(0,200,255,0.4)' : 'rgba(162,155,254,0.4)') : 'var(--border-subtle)'}`,
-              background: role === r ? (r === 'admin' ? 'rgba(0,200,255,0.08)' : 'rgba(162,155,254,0.08)') : 'transparent',
-              transition: 'all 0.15s',
-            }}>
+            <button key={r} onClick={() => setRole(r)} style={{ flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${role === r ? (r === 'admin' ? 'rgba(0,200,255,0.4)' : 'rgba(162,155,254,0.4)') : 'var(--border-subtle)'}`, background: role === r ? (r === 'admin' ? 'rgba(0,200,255,0.08)' : 'rgba(162,155,254,0.08)') : 'transparent', transition: 'all 0.15s' }}>
               <div style={{ fontSize: 16, marginBottom: 4 }}>{r === 'admin' ? '🔑' : '👤'}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: role === r ? (r === 'admin' ? 'var(--accent)' : '#a29bfe') : 'var(--txt-muted)' }}>
-                {r === 'admin' ? 'Administrador' : 'Member'}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>
-                {r === 'admin' ? 'Acceso completo (TI)' : 'Solo puede enviar solicitudes'}
-              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: role === r ? (r === 'admin' ? 'var(--accent)' : '#a29bfe') : 'var(--txt-muted)' }}>{r === 'admin' ? 'Administrador' : 'Member'}</div>
+              <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>{r === 'admin' ? 'Acceso completo (TI)' : 'Solo puede enviar solicitudes'}</div>
             </button>
           ))}
         </div>
       </div>
-
       <div>
         <FieldLabel>Departamento</FieldLabel>
-        {loadingDepts ? (
-          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
-        ) : (
+        {loadingDepts ? <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} /> : (
           <select className="cpop-input" value={departmentId ?? ''} onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : null); setTeamId(null); }}>
             <option value="">Sin departamento</option>
             {departments.map((d) => <option key={d.Department_ID} value={d.Department_ID}>{d.Department_Name}</option>)}
           </select>
         )}
       </div>
-
       <div>
         <FieldLabel>Equipo</FieldLabel>
-        {loadingTeams ? (
-          <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />
-        ) : (
+        {loadingTeams ? <div style={{ height: 36, borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} /> : (
           <select className="cpop-input" value={teamId ?? ''} disabled={departmentId === null} onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">{departmentId === null ? 'Primero selecciona departamento' : 'Sin equipo'}</option>
             {teams.map((t) => <option key={t.Team_ID} value={t.Team_ID}>{t.Team_Name}</option>)}
           </select>
         )}
       </div>
-
       <div>
         <FieldLabel>Estado de registro</FieldLabel>
-        <label style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
-          border: `1px solid ${isNew ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`,
-          background: isNew ? 'rgba(253,203,110,0.06)' : 'transparent', transition: 'all 0.15s',
-        }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isNew ? 'rgba(253,203,110,0.35)' : 'var(--border-subtle)'}`, background: isNew ? 'rgba(253,203,110,0.06)' : 'transparent', transition: 'all 0.15s' }}>
           <input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} style={{ accentColor: '#fdcb6e', width: 14, height: 14 }} />
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: isNew ? '#fdcb6e' : 'var(--txt-muted)' }}>
-              {isNew ? 'Pendiente de onboarding' : 'Onboarding completado'}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
-              {isNew ? 'El usuario verá el selector de área al primer login' : 'El usuario entrará directo al sistema con el equipo pre-asignado'}
-            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isNew ? '#fdcb6e' : 'var(--txt-muted)' }}>{isNew ? 'Pendiente de onboarding' : 'Onboarding completado'}</div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{isNew ? 'El usuario verá el selector de área al primer login' : 'El usuario entrará directo al sistema con el equipo pre-asignado'}</div>
           </div>
         </label>
       </div>
-
-      <div style={{
-        padding: '10px 14px', borderRadius: 8,
-        background: 'rgba(162,155,254,0.06)', border: '1px solid rgba(162,155,254,0.2)',
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-          background: 'rgba(162,155,254,0.1)', border: '1px solid rgba(162,155,254,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-        }}>⏳</div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#a29bfe' }}>{email.trim() || 'usuario@empresa.com'}</div>
-          <div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Pendiente de primer login</div>
-        </div>
-        <span style={{
-          marginLeft: 'auto', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-          background: 'rgba(162,155,254,0.12)', border: '1px solid rgba(162,155,254,0.3)',
-          color: '#a29bfe', flexShrink: 0,
-        }}>PRE-REG</span>
+      <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(162,155,254,0.06)', border: '1px solid rgba(162,155,254,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: 'rgba(162,155,254,0.1)', border: '1px solid rgba(162,155,254,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>⏳</div>
+        <div><div style={{ fontSize: 12, fontWeight: 600, color: '#a29bfe' }}>{email.trim() || 'usuario@empresa.com'}</div><div style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Pendiente de primer login</div></div>
+        <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: 'rgba(162,155,254,0.12)', border: '1px solid rgba(162,155,254,0.3)', color: '#a29bfe', flexShrink: 0 }}>PRE-REG</span>
       </div>
-
-      {error && (
-        <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>
-          {error}
-        </div>
-      )}
-
+      {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
-        <button onClick={handleSave} disabled={!canSave} className={`cpop-btn-save${!canSave ? ' cpop-btn-save--disabled' : ''}`}>
-          {saving ? 'Registrando…' : 'PRE-REGISTRAR'}
-        </button>
+        <button onClick={handleSave} disabled={!canSave} className={`cpop-btn-save${!canSave ? ' cpop-btn-save--disabled' : ''}`}>{saving ? 'Registrando…' : 'PRE-REGISTRAR'}</button>
       </div>
     </div>
   );
@@ -1103,9 +1256,8 @@ function PreRegisterForm({ onSave, onCancel }: {
    SubTeamList
    ============================================================ */
 function SubTeamList({ subTeams, onAdd, onUpdate, onRemove }: {
-  subTeams: SubTeam[];
-  teamId:   number;
-  onAdd:    (d: { name: string; color: string }) => void;
+  subTeams: SubTeam[]; teamId: number;
+  onAdd: (d: { name: string; color: string }) => void;
   onUpdate: (id: number, d: { name: string; color: string }) => void;
   onRemove: (id: number) => void;
 }) {
@@ -1118,33 +1270,20 @@ function SubTeamList({ subTeams, onAdd, onUpdate, onRemove }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {subTeams.length === 0 && !showNew && (
-        <div className="cpanel__empty">
-          <span style={{ fontSize: 28, opacity: 0.4 }}>👥</span>
-          <p>No hay sub-equipos para este equipo.</p>
-        </div>
+        <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>👥</span><p>No hay sub-equipos para este equipo.</p></div>
       )}
       {subTeams.map((st) => (
         <div key={st.Sub_Team_ID} style={{ border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-surface)' }}>
           {editId === st.Sub_Team_ID ? (
             <div style={{ padding: '10px 12px' }}>
-              <SimpleColorForm
-                initial={{ name: st.Sub_Team_Name, color: st.Sub_Team_Color }}
-                onSave={(d) => { onUpdate(st.Sub_Team_ID, d); setEditId(null); }}
-                onCancel={() => setEditId(null)}
-              />
+              <SimpleColorForm initial={{ name: st.Sub_Team_Name, color: st.Sub_Team_Color }} onSave={(d) => { onUpdate(st.Sub_Team_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
             </div>
           ) : (
-            <SubTeamRow
-              st={st}
-              expanded={expandedId === st.Sub_Team_ID}
-              onToggle={() => setExpandedId(expandedId === st.Sub_Team_ID ? null : st.Sub_Team_ID)}
-              onEdit={() => { setShowNew(false); setEditId(st.Sub_Team_ID); setExpandedId(null); }}
-              onDelete={() => onRemove(st.Sub_Team_ID)}
-            />
+            <SubTeamRow st={st} expanded={expandedId === st.Sub_Team_ID} onToggle={() => setExpandedId(expandedId === st.Sub_Team_ID ? null : st.Sub_Team_ID)} onEdit={() => { setShowNew(false); setEditId(st.Sub_Team_ID); setExpandedId(null); }} onDelete={() => onRemove(st.Sub_Team_ID)} />
           )}
-{expandedId === st.Sub_Team_ID && editId !== st.Sub_Team_ID && (
-  <SubTeamMembersSectionWrapper subTeamId={st.Sub_Team_ID} subTeamColor={st.Sub_Team_Color} />
-)}
+          {expandedId === st.Sub_Team_ID && editId !== st.Sub_Team_ID && (
+            <SubTeamMembersSectionWrapper subTeamId={st.Sub_Team_ID} subTeamColor={st.Sub_Team_Color} />
+          )}
         </div>
       ))}
       {showNew ? (
@@ -1172,16 +1311,9 @@ function SubTeamRow({ st, expanded, onToggle, onEdit, onDelete }: {
         <SmBtn color="#ff4757" onClick={onDelete} title="Eliminar"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg></SmBtn>
       </div>
       <button onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 6, border: `1px solid ${expanded ? st.Sub_Team_Color + '60' : 'var(--border-subtle)'}`, background: expanded ? `${st.Sub_Team_Color}15` : 'transparent', color: expanded ? st.Sub_Team_Color : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}>
-        <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-          <circle cx="5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.5"/>
-          <circle cx="10" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.3"/>
-          <path d="M1 11c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M10 8c1.66 0 3 1.12 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-        </svg>
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.5"/><circle cx="10" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M1 11c0-2.21 1.79-4 4-4s4 1.79 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M10 8c1.66 0 3 1.12 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
         Integrantes
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.18s' }}>
-          <path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.18s' }}><path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
       </button>
     </div>
   );
@@ -1189,19 +1321,13 @@ function SubTeamRow({ st, expanded, onToggle, onEdit, onDelete }: {
 
 function SubTeamMembersSectionWrapper(props: { subTeamId: number; subTeamColor: string }) {
   const [show, setShow] = useState(false);
-
   useEffect(() => {
-    const t = setTimeout(() => {
-      startTransition(() => setShow(true));
-    }, 50);
+    const t = setTimeout(() => { startTransition(() => setShow(true)); }, 50);
     return () => clearTimeout(t);
   }, []);
-
   if (!show) return (
     <div style={{ padding: '12px 14px', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {[1,2,3].map((i) => (
-        <div key={i} style={{ height: 42, borderRadius: 7, background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)', backgroundSize: '200% 100%', animation: 'skeleton-sweep 1.4s ease infinite', border: '1px solid var(--border-subtle)' }} />
-      ))}
+      {[1,2,3].map((i) => <div key={i} style={{ height: 42, borderRadius: 7, background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)', backgroundSize: '200% 100%', animation: 'skeleton-sweep 1.4s ease infinite', border: '1px solid var(--border-subtle)' }} />)}
     </div>
   );
   return <SubTeamMembersSection {...props} />;
@@ -1212,69 +1338,42 @@ function SubTeamMembersSection({ subTeamId, subTeamColor }: { subTeamId: number;
   const { data: allUsers = [], isLoading: loadingU } = useUsers();
   const addMember    = useAddSubTeamMember(subTeamId);
   const removeMember = useRemoveSubTeamMember(subTeamId);
-
   const [search,   setSearch]   = useState('');
   const [dropOpen, setDropOpen] = useState(false);
   const [dropPos,  setDropPos]  = useState({ top: 0, left: 0, width: 0 });
   const btnRef  = useRef<HTMLButtonElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
-
   const memberIds = new Set(members.map((m) => m.User_ID));
-  const available = allUsers.filter(
-    (u) => !memberIds.has(u.User_ID) &&
-      (u.User_Name.toLowerCase().includes(search.toLowerCase()) ||
-       u.User_Email.toLowerCase().includes(search.toLowerCase()))
-  );
+  const available = allUsers.filter((u) => !memberIds.has(u.User_ID) && (u.User_Name.toLowerCase().includes(search.toLowerCase()) || u.User_Email.toLowerCase().includes(search.toLowerCase())));
 
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node) &&
-          btnRef.current  && !btnRef.current.contains(e.target as Node)) {
-        setDropOpen(false); setSearch('');
-      }
+      if (dropRef.current && !dropRef.current.contains(e.target as Node) && btnRef.current && !btnRef.current.contains(e.target as Node)) { setDropOpen(false); setSearch(''); }
     }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
   function handleToggleDrop() {
-    if (!dropOpen && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
-    }
+    if (!dropOpen && btnRef.current) { const r = btnRef.current.getBoundingClientRect(); setDropPos({ top: r.bottom + 4, left: r.left, width: r.width }); }
     setDropOpen((o) => !o); setSearch('');
   }
 
-if (loadingM || loadingU) return (
-  <div style={{ padding: '12px 14px', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-    {[1, 2, 3].map((i) => (
-      <div key={i} style={{
-        height: 42, borderRadius: 7,
-        background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)',
-        backgroundSize: '200% 100%',
-        animation: 'skeleton-sweep 1.4s ease infinite',
-        border: '1px solid var(--border-subtle)',
-      }} />
-    ))}
-  </div>
-);
+  if (loadingM || loadingU) return (
+    <div style={{ padding: '12px 14px', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {[1,2,3].map((i) => <div key={i} style={{ height: 42, borderRadius: 7, background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)', backgroundSize: '200% 100%', animation: 'skeleton-sweep 1.4s ease infinite', border: '1px solid var(--border-subtle)' }} />)}
+    </div>
+  );
 
   return (
     <div style={{ padding: '12px 14px 14px', background: 'var(--bg-panel)' }}>
-      {members.length === 0 ? (
-        <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: '0 0 10px' }}>Sin integrantes aún.</p>
-      ) : (
+      {members.length === 0 ? <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: '0 0 10px' }}>Sin integrantes aún.</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
           {members.map((m) => (
             <div key={m.User_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
               <UserAvatar name={m.User_Name} avatarUrl={m.User_Avatar_url} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Name}</div>
-                <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Email}</div>
-              </div>
-              <SmBtn color="#ff4757" onClick={() => removeMember.mutate(m.User_ID)} title="Quitar">
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l7 7M8 1L1 8" strokeLinecap="round"/></svg>
-              </SmBtn>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Name}</div><div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Email}</div></div>
+              <SmBtn color="#ff4757" onClick={() => removeMember.mutate(m.User_ID)} title="Quitar"><svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l7 7M8 1L1 8" strokeLinecap="round"/></svg></SmBtn>
             </div>
           ))}
         </div>
@@ -1285,23 +1384,19 @@ if (loadingM || loadingU) return (
       </button>
       {dropOpen && createPortal(
         <div ref={dropRef} style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 9, boxShadow: '0 8px 28px rgba(0,0,0,0.4)', zIndex: 9999, overflow: 'hidden' }}>
-          <input autoFocus placeholder="Buscar por nombre o correo…" value={search} onChange={(e) => setSearch(e.target.value)}
-            style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'var(--bg-surface)', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--txt)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+          <input autoFocus placeholder="Buscar por nombre o correo…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'var(--bg-surface)', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--txt)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
           <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px' }}>
-            {available.length === 0 ? (
-              <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', padding: '10px 0', margin: 0 }}>{search ? 'Sin resultados' : 'Todos ya son integrantes'}</p>
-            ) : available.map((u) => (
-              <button key={u.User_ID} onClick={() => { addMember.mutate(u.User_ID); setDropOpen(false); setSearch(''); }} disabled={addMember.isPending}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--txt)', cursor: 'pointer', textAlign: 'left' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-                <UserAvatar name={u.User_Name} avatarUrl={u.User_Avatar_url} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
-                </div>
-              </button>
-            ))}
+            {available.length === 0 ? <p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', padding: '10px 0', margin: 0 }}>{search ? 'Sin resultados' : 'Todos ya son integrantes'}</p>
+              : available.map((u) => (
+                <button key={u.User_ID} onClick={() => { addMember.mutate(u.User_ID); setDropOpen(false); setSearch(''); }} disabled={addMember.isPending}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--txt)', cursor: 'pointer', textAlign: 'left' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                  <UserAvatar name={u.User_Name} avatarUrl={u.User_Avatar_url} />
+                  <div style={{ minWidth: 0 }}><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div><div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div></div>
+                </button>
+              ))
+            }
           </div>
         </div>,
         document.body
@@ -1326,7 +1421,7 @@ type TemplateMutationPayload = {
 
 function TemplateList({ templates, teams, onAdd, onUpdate, onDelete }: {
   templates: BoardTemplate[];
-  teams:     { Board_Team_ID: number; Board_Team_Name: string }[];
+  teams: { Board_Team_ID: number; Board_Team_Name: string }[];
   onAdd: (d: TemplateMutationPayload) => void;
   onUpdate: (id: number, d: TemplateMutationPayload) => void;
   onDelete: (id: number) => void;
@@ -1498,7 +1593,7 @@ function TemplateForm({ initial, teams, onSave, onCancel }: {
 }
 
 /* ============================================================
-   FieldEditor
+   FieldEditor — con showInModal y showInCard
    ============================================================ */
 function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemove, onMove }: {
   field: TemplateExtraField; index: number; total: number; accentColor: string; depth: number;
@@ -1514,6 +1609,10 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
   const depthColors  = ['#00c8ff', '#a29bfe', '#00e5a0', '#fdcb6e', '#fd79a8'];
   const depthColor   = depthColors[Math.min(depth, depthColors.length - 1)];
   const effectiveAccent = depth === 0 ? accentColor : depthColor;
+
+  // Leer flags con defaults retrocompatibles
+  const showInModal = (field as { showInModal?: boolean }).showInModal ?? true;
+  const showInCard  = (field as { showInCard?: boolean }).showInCard  ?? false;
 
   function addOption() {
     const v = optionInput.trim();
@@ -1552,11 +1651,13 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
   }
 
   function handleTypeChange(newType: FieldType) {
+    // Preservar showInModal y showInCard al cambiar tipo
+    const keepFlags = { showInModal, showInCard };
     if (newType === 'conditional') {
       const emptyConditional = makeEmptyConditionalField(index);
-      onChange({ ...emptyConditional, key: field.key || emptyConditional.key, label: field.label || emptyConditional.label } as Partial<TemplateExtraField>);
+      onChange({ ...emptyConditional, key: field.key || emptyConditional.key, label: field.label || emptyConditional.label, ...keepFlags } as Partial<TemplateExtraField>);
     } else {
-      const patch: Partial<SimpleField> = { type: newType as SimpleField['type'], key: field.key, label: field.label, required: field.required, collapsible: field.collapsible ?? false, placeholder: undefined, options: undefined };
+      const patch: Partial<SimpleField> = { type: newType as SimpleField['type'], key: field.key, label: field.label, required: field.required, collapsible: field.collapsible ?? false, placeholder: undefined, options: undefined, ...keepFlags };
       if (newType === 'checkbox') delete patch.placeholder;
       onChange(patch as Partial<TemplateExtraField>);
     }
@@ -1575,6 +1676,9 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
             <span>{typeIcon}</span><span>{typeLabel}</span>
             {field.required    && <span>· requerido</span>}
             {field.collapsible && <span>· colapsable</span>}
+            {/* Indicadores de visibilidad en el header colapsado */}
+            {!showInModal && <span style={{ color: '#ff4757' }}>· oculto modal</span>}
+            {showInCard   && <span style={{ color: '#00e5a0' }}>· en card</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 3 }}>
@@ -1647,18 +1751,55 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
               </div>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 12, padding: '8px 10px', borderRadius: 7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
+
+          {/* ── Opciones de comportamiento (Requerido, Colapsable, Mostrar en modal, Mostrar en card) ── */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '10px 12px', borderRadius: 7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
+            {/* Requerido */}
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
               <input type="checkbox" checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} style={{ accentColor: effectiveAccent, width: 13, height: 13 }} />
               <span style={{ color: field.required ? effectiveAccent : 'var(--txt-muted)', fontWeight: field.required ? 600 : 400 }}>Requerido</span>
             </label>
+
+            {/* Colapsable — solo para campos no-condicionales y no-checkbox */}
             {!isConditional && field.type !== 'checkbox' && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
                 <input type="checkbox" checked={(field as SimpleField).collapsible ?? false} onChange={(e) => onChange({ collapsible: e.target.checked })} style={{ accentColor: effectiveAccent, width: 13, height: 13 }} />
                 <span style={{ color: ((field as SimpleField).collapsible ?? false) ? effectiveAccent : 'var(--txt-muted)', fontWeight: ((field as SimpleField).collapsible ?? false) ? 600 : 400 }}>Colapsable</span>
               </label>
             )}
+
+            {/* Separador visual */}
+            <div style={{ width: '100%', height: 1, background: 'var(--border-subtle)', margin: '2px 0' }} />
+
+            {/* Mostrar en modal */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
+              <input
+                type="checkbox"
+                checked={showInModal}
+                onChange={(e) => onChange({ showInModal: e.target.checked } as Partial<TemplateExtraField>)}
+                style={{ accentColor: effectiveAccent, width: 13, height: 13 }}
+              />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: showInModal ? effectiveAccent : 'var(--txt-muted)', fontWeight: showInModal ? 600 : 400 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10h8M8 14h5"/></svg>
+                Visible en modal
+              </span>
+            </label>
+
+            {/* Mostrar en card */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
+              <input
+                type="checkbox"
+                checked={showInCard}
+                onChange={(e) => onChange({ showInCard: e.target.checked } as Partial<TemplateExtraField>)}
+                style={{ accentColor: effectiveAccent, width: 13, height: 13 }}
+              />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: showInCard ? '#00e5a0' : 'var(--txt-muted)', fontWeight: showInCard ? 600 : 400 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 10h8M8 14h4"/></svg>
+                Visible en card
+              </span>
+            </label>
           </div>
+
           {isConditional && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <BranchEditor label="SÍ" color="#00e5a0"
@@ -1726,10 +1867,39 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
 }) {
   const [editId,  setEditId]  = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [search,  setSearch]  = useState('');
+
+  const filtered = labels
+    .filter((l) => l.Label_Name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.Label_Name.localeCompare(b.Label_Name, 'es'));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {labels.length > 0 && (
+        <div style={{ position: 'relative', marginBottom: 4 }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--txt-muted)"
+            strokeWidth="1.6" strokeLinecap="round"
+            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }}>
+            <circle cx="5" cy="5" r="3.5"/><path d="M8.5 8.5l2 2"/>
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar etiqueta…"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              paddingLeft: 26, paddingRight: 8, paddingTop: 6, paddingBottom: 6,
+              background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+              borderRadius: 6, fontSize: 11, color: 'var(--txt)', outline: 'none',
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
+          />
+        </div>
+      )}
       {labels.length === 0 && !showNew && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>🏷️</span><p>No hay etiquetas para este equipo.</p></div>}
-      {labels.map((label) => editId === label.Label_ID
+      {filtered.length === 0 && search && <div className="cpanel__empty"><span style={{ fontSize: 22, opacity: 0.4 }}>🔍</span><p>Sin resultados para "{search}".</p></div>}
+      {filtered.map((label) => editId === label.Label_ID
         ? <LabelForm key={label.Label_ID} initial={{ name: label.Label_Name, color: label.Label_Color, icon: label.Label_Icon }} onSave={(d) => { onUpdate(label.Label_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <ItemRow key={label.Label_ID} color={label.Label_Color} icon={label.Label_Icon} name={label.Label_Name} onEdit={() => { setShowNew(false); setEditId(label.Label_ID); }} onDelete={() => onDelete(label.Label_ID)} />
       )}
@@ -1740,7 +1910,6 @@ function LabelList({ labels, onAdd, onUpdate, onDelete }: {
     </div>
   );
 }
-
 /* ============================================================
    SprintList
    ============================================================ */
@@ -1750,32 +1919,118 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
   onUpdate: (id: number, s: { text: string; startDate: string; endDate: string }) => void;
   onRemove: (id: number) => void;
 }) {
-  const [editId,  setEditId]  = useState<number | null>(null);
-  const [showNew, setShowNew] = useState(false);
+  const [editId,      setEditId]      = useState<number | null>(null);
+  const [showNew,     setShowNew]     = useState(false);
+  const [showOthers,  setShowOthers]  = useState(false);
+
+  const currentYear                    = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
   const now = new Date();
   const statusOrder = (sp: Sprint) => {
-    const start = new Date(sp.Sprint_Start_Date);
-    const end   = new Date(sp.Sprint_End_Date);
-    if (now >= start && now <= end) return 0;
-    if (now < start)                return 1;
-    return 2;
+    const start = new Date(sp.Sprint_Start_Date); const end = new Date(sp.Sprint_End_Date);
+    if (now >= start && now <= end) return 0; if (now < start) return 1; return 2;
   };
-  const sorted = [...sprints].sort((a, b) => {
+
+  // ── Años disponibles (desc), siempre incluye el año actual ──
+  const allYears = [
+    ...new Set(sprints.map((sp) => new Date(sp.Sprint_Start_Date).getFullYear())),
+  ].sort((a, b) => b - a);
+  if (!allYears.includes(currentYear)) allYears.unshift(currentYear);
+
+  // ── Sprints del año seleccionado ──
+  const yearSprints = sprints.filter(
+    (sp) => new Date(sp.Sprint_Start_Date).getFullYear() === selectedYear,
+  );
+  const sorted = [...yearSprints].sort((a, b) => {
     const diff = statusOrder(a) - statusOrder(b);
     if (diff !== 0) return diff;
     return new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime();
   });
+
+  // ── Sprints de otros años ──
+  const otherSprints = sprints
+    .filter((sp) => new Date(sp.Sprint_Start_Date).getFullYear() !== selectedYear)
+    .sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime());
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {sorted.length === 0 && !showNew && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span><p>No hay sprints definidos.</p></div>}
+
+      {/* ── Filtro por año (solo si hay más de uno) ── */}
+      {allYears.length > 1 && (
+        <div style={{ display: 'flex', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
+          {allYears.map((year) => (
+            <button
+              key={year}
+              onClick={() => setSelectedYear(year)}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                fontWeight: selectedYear === year ? 700 : 400,
+                border: `1px solid ${selectedYear === year ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`,
+                background: selectedYear === year ? 'rgba(0,200,255,0.08)' : 'transparent',
+                color: selectedYear === year ? 'var(--accent)' : 'var(--txt-muted)',
+                transition: 'all 0.12s',
+              }}
+            >
+              {year}
+              {year === currentYear && (
+                <span style={{ marginLeft: 4, fontSize: 7, opacity: 0.55 }}>●</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Lista del año seleccionado ── */}
+      {sorted.length === 0 && !showNew && (
+        <div className="cpanel__empty">
+          <span style={{ fontSize: 28, opacity: 0.4 }}>⚡</span>
+          <p>No hay sprints en {selectedYear}.</p>
+        </div>
+      )}
       {sorted.map((sp) => editId === sp.Sprint_ID
         ? <SprintForm key={sp.Sprint_ID} initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }} onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
         : <SprintRow key={sp.Sprint_ID} sprint={sp} onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }} onRemove={() => onRemove(sp.Sprint_ID)} />
       )}
+
       {showNew
         ? <SprintForm onSave={(d) => { onAdd(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />
         : <AddBtn label="Nuevo sprint" onClick={() => { setEditId(null); setShowNew(true); }} />
       }
+
+      {/* ── Otros años (colapsable) ── */}
+      {otherSprints.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            onClick={() => setShowOthers((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+              padding: '5px 2px', background: 'transparent', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+              color: 'var(--txt-muted)', opacity: 0.55, flexShrink: 0,
+            }}>
+              Otros años ({otherSprints.length})
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="var(--txt-muted)"
+              strokeWidth="1.6" strokeLinecap="round"
+              style={{ flexShrink: 0, opacity: 0.45, transform: showOthers ? 'rotate(180deg)' : undefined, transition: 'transform 0.18s' }}>
+              <path d="M1 3l3.5 3.5L8 3"/>
+            </svg>
+          </button>
+          {showOthers && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+              {otherSprints.map((sp) => editId === sp.Sprint_ID
+                ? <SprintForm key={sp.Sprint_ID} initial={{ text: sp.Sprint_Text, startDate: sp.Sprint_Start_Date, endDate: sp.Sprint_End_Date }} onSave={(d) => { onUpdate(sp.Sprint_ID, d); setEditId(null); }} onCancel={() => setEditId(null)} />
+                : <SprintRow key={sp.Sprint_ID} sprint={sp} onEdit={() => { setShowNew(false); setEditId(sp.Sprint_ID); }} onRemove={() => onRemove(sp.Sprint_ID)} />
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1785,8 +2040,7 @@ function SprintList({ sprints, onAdd, onUpdate, onRemove }: {
    ============================================================ */
 function LabelForm({ initial, onSave, onCancel }: {
   initial?: { name: string; color: string; icon: string };
-  onSave: (d: { name: string; color: string; icon: string }) => void;
-  onCancel: () => void;
+  onSave: (d: { name: string; color: string; icon: string }) => void; onCancel: () => void;
 }) {
   const [name,  setName]  = useState(initial?.name  ?? '');
   const [color, setColor] = useState(initial?.color ?? '#00c8ff');
@@ -1794,9 +2048,7 @@ function LabelForm({ initial, onSave, onCancel }: {
   const canSave = name.trim().length > 0;
   return (
     <div className="cpop-form">
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color, icon }); if (e.key === 'Escape') onCancel(); }}
-        placeholder="Nombre de la etiqueta..." className="cpop-input" />
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color, icon }); if (e.key === 'Escape') onCancel(); }} placeholder="Nombre de la etiqueta..." className="cpop-input" />
       <EmojiPicker value={icon} onChange={setIcon} />
       <ColorPicker color={color} onChange={setColor} />
       <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color, icon })} onCancel={onCancel} />
@@ -1806,17 +2058,14 @@ function LabelForm({ initial, onSave, onCancel }: {
 
 function SimpleColorForm({ initial, onSave, onCancel }: {
   initial?: { name: string; color: string };
-  onSave: (d: { name: string; color: string }) => void;
-  onCancel: () => void;
+  onSave: (d: { name: string; color: string }) => void; onCancel: () => void;
 }) {
   const [name,  setName]  = useState(initial?.name  ?? '');
   const [color, setColor] = useState(initial?.color ?? '#00c8ff');
   const canSave = name.trim().length > 0;
   return (
     <div className="cpop-form">
-      <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color }); if (e.key === 'Escape') onCancel(); }}
-        placeholder="Nombre..." className="cpop-input" />
+      <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && canSave) onSave({ name: name.trim(), color }); if (e.key === 'Escape') onCancel(); }} placeholder="Nombre..." className="cpop-input" />
       <ColorPicker color={color} onChange={setColor} />
       <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color })} onCancel={onCancel} />
     </div>
@@ -1825,13 +2074,10 @@ function SimpleColorForm({ initial, onSave, onCancel }: {
 
 function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () => void; onRemove: () => void }) {
   const [hov, setHov] = useState(false);
-  const now   = new Date();
-  const start = new Date(sprint.Sprint_Start_Date);
-  const end   = new Date(sprint.Sprint_End_Date);
-  const isActive    = now >= start && now <= end;
-  const isPast      = now > end;
+  const now = new Date(); const start = new Date(sprint.Sprint_Start_Date); const end = new Date(sprint.Sprint_End_Date);
+  const isActive = now >= start && now <= end; const isPast = now > end;
   const statusColor = isActive ? '#00e5a0' : isPast ? '#b2bec3' : '#fdcb6e';
-  const statusLabel = isActive ? 'activo'  : isPast ? 'pasado'  : 'futuro';
+  const statusLabel = isActive ? 'activo' : isPast ? 'pasado' : 'futuro';
   const fmt = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 12px', borderRadius: 8, border: `1px solid ${hov ? 'var(--border)' : 'var(--border-subtle)'}`, background: hov ? 'var(--bg-hover)' : 'var(--bg-surface)', transition: 'all 0.12s' }}>
@@ -1851,8 +2097,7 @@ function SprintRow({ sprint, onEdit, onRemove }: { sprint: Sprint; onEdit: () =>
 
 function SprintForm({ initial, onSave, onCancel }: {
   initial?: { text: string; startDate: string; endDate: string };
-  onSave: (d: { text: string; startDate: string; endDate: string }) => void;
-  onCancel: () => void;
+  onSave: (d: { text: string; startDate: string; endDate: string }) => void; onCancel: () => void;
 }) {
   const [text,      setText]  = useState(initial?.text      ?? '');
   const [startDate, setStart] = useState(initial?.startDate ?? '');
@@ -1964,14 +2209,14 @@ function FormSection({ title, children }: { title: string; children: React.React
 }
 
 /* ============================================================
-   EmailTemplateList
+   EmailTemplateList — sin cambios, copiada íntegra
    ============================================================ */
 function EmailTemplateList({ templates, onUpdate, onToggle, onCreate, onDelete, onUpdateMetadata }: {
-  templates:        EmailTemplate[];
-  onUpdate:         (id: number, d: { subject: string; html: string; text: string }) => void;
-  onToggle:         (id: number, isActive: boolean) => void;
-  onCreate:         (d: { name: string; eventKey: string; subject: string; variables: string[] }) => void;
-  onDelete:         (id: number) => void;
+  templates: EmailTemplate[];
+  onUpdate: (id: number, d: { subject: string; html: string; text: string }) => void;
+  onToggle: (id: number, isActive: boolean) => void;
+  onCreate: (d: { name: string; eventKey: string; subject: string; variables: string[] }) => void;
+  onDelete: (id: number) => void;
   onUpdateMetadata: (id: number, d: { name: string; subject: string; variables: string[] }) => void;
 }) {
   const [editId,     setEditId]     = useState<number | null>(null);
@@ -1986,20 +2231,13 @@ function EmailTemplateList({ templates, onUpdate, onToggle, onCreate, onDelete, 
     const t = templates.find((t) => t.Email_Template_ID === editMetaId);
     if (t) return <EmailTemplateMetaForm template={t} onSave={(d) => { onUpdateMetadata(t.Email_Template_ID, d); setEditMetaId(null); }} onCancel={() => setEditMetaId(null)} />;
   }
-  if (showNew) {
-    return <EmailTemplateNewForm onSave={(d) => { onCreate(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />;
-  }
+  if (showNew) return <EmailTemplateNewForm onSave={(d) => { onCreate(d); setShowNew(false); }} onCancel={() => setShowNew(false)} />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-          <circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.3"/>
-          <path d="M7 5v4M7 3.5v.5" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round"/>
-        </svg>
-        <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0, lineHeight: 1.5 }}>
-          Usá <code style={{ background: 'var(--bg-panel)', padding: '1px 5px', borderRadius: 3, fontSize: 10 }}>{'{{variable}}'}</code> en el subject y el HTML. Las variables disponibles se muestran al editar cada template.
-        </p>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="7" cy="7" r="6" stroke="var(--accent)" strokeWidth="1.3"/><path d="M7 5v4M7 3.5v.5" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round"/></svg>
+        <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0, lineHeight: 1.5 }}>Usá <code style={{ background: 'var(--bg-panel)', padding: '1px 5px', borderRadius: 3, fontSize: 10 }}>{'{{variable}}'}</code> en el subject y el HTML.</p>
       </div>
       {templates.length === 0 && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>✉️</span><p>No hay templates de correo.</p></div>}
       {templates.map((t) => (
@@ -2020,10 +2258,8 @@ function EmailTemplateRow({ template, onEdit, onEditMeta, onToggle, onDelete }: 
 }) {
   const [hov, setHov] = useState(false);
   const isActive = template.Email_Template_Is_Active;
-  const eventKey = template.Email_Template_Event_Key;
   const vars     = getTemplateVariables(template);
   const fmt      = (iso: string) => { const d = new Date(iso); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`; };
-
   return (
     <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ padding: '10px 14px', borderRadius: 10, border: `1px solid ${hov ? 'var(--border)' : 'var(--border-subtle)'}`, background: hov ? 'var(--bg-hover)' : 'var(--bg-surface)', transition: 'all 0.12s' }}>
@@ -2035,43 +2271,29 @@ function EmailTemplateRow({ template, onEdit, onEditMeta, onToggle, onDelete }: 
             <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, flexShrink: 0, background: isActive ? 'rgba(0,229,160,0.12)' : 'var(--bg-panel)', border: `1px solid ${isActive ? 'rgba(0,229,160,0.35)' : 'var(--border-subtle)'}`, color: isActive ? '#00e5a0' : 'var(--txt-muted)' }}>{isActive ? 'activo' : 'inactivo'}</span>
           </div>
           <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{template.Email_Template_Subject || <span style={{ fontStyle: 'italic' }}>Sin subject</span>}</div>
-          <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 2, opacity: 0.6 }}>{eventKey} · {fmt(template.Email_Template_Updated_At)}</div>
+          <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 2, opacity: 0.6 }}>{template.Email_Template_Event_Key} · {fmt(template.Email_Template_Updated_At)}</div>
         </div>
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          <button onClick={() => onToggle(!isActive)} title={isActive ? 'Desactivar' : 'Activar'}
-            style={{ width: 22, height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(0,229,160,0.12)' : 'rgba(255,71,87,0.1)', color: isActive ? '#00e5a0' : '#ff4757', transition: 'background 0.12s' }}>
-            {isActive
-              ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+          <button onClick={() => onToggle(!isActive)} style={{ width: 22, height: 22, borderRadius: 5, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(0,229,160,0.12)' : 'rgba(255,71,87,0.1)', color: isActive ? '#00e5a0' : '#ff4757', transition: 'background 0.12s' }}>
+            {isActive ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      : <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>}
           </button>
-          <SmBtn color="#a29bfe" onClick={onEditMeta} title="Editar nombre y variables">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 2H3a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1V6M10 1l1 1-5 5H5V6l5-5z"/></svg>
-          </SmBtn>
-          <SmBtn color="#00c8ff" onClick={onEdit} title="Editar HTML">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg>
-          </SmBtn>
-          <SmBtn color="#ff4757" onClick={onDelete} title="Eliminar">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg>
-          </SmBtn>
+          <SmBtn color="#a29bfe" onClick={onEditMeta} title="Editar nombre y variables"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 2H3a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1V6M10 1l1 1-5 5H5V6l5-5z"/></svg></SmBtn>
+          <SmBtn color="#00c8ff" onClick={onEdit} title="Editar HTML"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/></svg></SmBtn>
+          <SmBtn color="#ff4757" onClick={onDelete} title="Eliminar"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3"/></svg></SmBtn>
         </div>
       </div>
       {hov && vars.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
-          {vars.map((v) => (
-            <span key={v} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)' }}>{`{{${v}}}`}</span>
-          ))}
+          {vars.map((v) => <span key={v} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)' }}>{`{{${v}}}`}</span>)}
         </div>
       )}
     </div>
   );
 }
 
-/* ============================================================
-   EmailTemplateNewForm
-   ============================================================ */
 function EmailTemplateNewForm({ onSave, onCancel }: {
-  onSave:   (d: { name: string; eventKey: string; subject: string; variables: string[] }) => void;
-  onCancel: () => void;
+  onSave: (d: { name: string; eventKey: string; subject: string; variables: string[] }) => void; onCancel: () => void;
 }) {
   const [name,      setName]      = useState('');
   const [eventKey,  setEventKey]  = useState('');
@@ -2079,7 +2301,6 @@ function EmailTemplateNewForm({ onSave, onCancel }: {
   const [varInput,  setVarInput]  = useState('');
   const [variables, setVariables] = useState<string[]>(['ticket_id', 'ticket_title', 'ticket_url']);
   const [error,     setError]     = useState('');
-
   const canSave = name.trim().length > 0 && eventKey.trim().length > 0;
 
   function handleNameChange(val: string) {
@@ -2087,38 +2308,18 @@ function EmailTemplateNewForm({ onSave, onCancel }: {
     const key = val.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').toLowerCase();
     setEventKey(key);
   }
-
-  function addVar() {
-    const v = varInput.trim().replace(/\s+/g, '_').toLowerCase();
-    if (!v || variables.includes(v)) return;
-    setVariables((p) => [...p, v]);
-    setVarInput('');
-  }
-
+  function addVar() { const v = varInput.trim().replace(/\s+/g, '_').toLowerCase(); if (!v || variables.includes(v)) return; setVariables((p) => [...p, v]); setVarInput(''); }
   function removeVar(v: string) { setVariables((p) => p.filter((x) => x !== v)); }
-
-  function handleSave() {
-    if (!canSave) return;
-    setError('');
-    onSave({ name: name.trim(), eventKey: eventKey.trim(), subject: subject.trim(), variables });
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', flex: 1 }}>Nuevo evento de correo</span>
-        <button onClick={handleSave} disabled={!canSave} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>CREAR</button>
-      </div>
-      <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.25)', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
-        ⚠️ El <strong>Event Key</strong> debe coincidir exactamente con el nombre del evento en la Edge Function para que el correo se envíe automáticamente.
+        <button onClick={() => { if (!canSave) return; setError(''); onSave({ name: name.trim(), eventKey: eventKey.trim(), subject: subject.trim(), variables }); }} disabled={!canSave} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>CREAR</button>
       </div>
       <div><FieldLabel>Nombre legible *</FieldLabel><input autoFocus value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Ej: Solicitud creada" className="cpop-input" /></div>
-      <div>
-        <FieldLabel>Event Key *</FieldLabel>
-        <input value={eventKey} onChange={(e) => setEventKey(e.target.value.replace(/\s/g, '_').toLowerCase())} placeholder="Ej: createRequest" className="cpop-input" style={{ fontFamily: 'monospace', fontSize: 11 }} />
-        <p style={{ fontSize: 9, color: 'var(--txt-muted)', margin: '4px 0 0', paddingLeft: 2 }}>Solo letras, números y guiones bajos. Se auto-genera desde el nombre.</p>
-      </div>
+      <div><FieldLabel>Event Key *</FieldLabel><input value={eventKey} onChange={(e) => setEventKey(e.target.value.replace(/\s/g, '_').toLowerCase())} placeholder="Ej: createRequest" className="cpop-input" style={{ fontFamily: 'monospace', fontSize: 11 }} /></div>
       <div><FieldLabel>Subject por defecto</FieldLabel><input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ej: Solicitud {{ticket_id}} creada" className="cpop-input" /></div>
       <div>
         <FieldLabel>Variables disponibles</FieldLabel>
@@ -2126,141 +2327,93 @@ function EmailTemplateNewForm({ onSave, onCancel }: {
           {variables.map((v) => (
             <span key={v} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace', background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.25)', color: 'var(--accent)' }}>
               {`{{${v}}}`}
-              <button onClick={() => removeVar(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 0, display: 'flex', lineHeight: 1 }}>
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l6 6M7 1L1 7"/></svg>
-              </button>
+              <button onClick={() => removeVar(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 0, display: 'flex', lineHeight: 1 }}><svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l6 6M7 1L1 7"/></svg></button>
             </span>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <input value={varInput} onChange={(e) => setVarInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVar(); } }} placeholder="Nueva variable… (Enter para agregar)" className="cpop-input" style={{ flex: 1, fontFamily: 'monospace', fontSize: 11 }} />
-          <button onClick={addVar} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>+</button>
+          <input value={varInput} onChange={(e) => setVarInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVar(); } }} placeholder="Nueva variable…" className="cpop-input" style={{ flex: 1, fontFamily: 'monospace', fontSize: 11 }} />
+          <button onClick={addVar} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>+</button>
         </div>
-        <p style={{ fontSize: 9, color: 'var(--txt-muted)', margin: '4px 0 0', paddingLeft: 2 }}>ticket_id, ticket_title y ticket_url están incluidos por defecto.</p>
       </div>
       {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>{error}</div>}
     </div>
   );
 }
 
-/* ============================================================
-   EmailTemplateMetaForm
-   ============================================================ */
 function EmailTemplateMetaForm({ template, onSave, onCancel }: {
-  template: EmailTemplate;
-  onSave:   (d: { name: string; subject: string; variables: string[] }) => void;
-  onCancel: () => void;
+  template: EmailTemplate; onSave: (d: { name: string; subject: string; variables: string[] }) => void; onCancel: () => void;
 }) {
   const [name,      setName]      = useState(template.Email_Template_Name);
   const [subject,   setSubject]   = useState(template.Email_Template_Subject);
   const [variables, setVariables] = useState<string[]>(getTemplateVariables(template));
   const [varInput,  setVarInput]  = useState('');
   const canSave = name.trim().length > 0;
-
-  function addVar() {
-    const v = varInput.trim().replace(/\s+/g, '_').toLowerCase();
-    if (!v || variables.includes(v)) return;
-    setVariables((p) => [...p, v]);
-    setVarInput('');
-  }
-
+  function addVar() { const v = varInput.trim().replace(/\s+/g, '_').toLowerCase(); if (!v || variables.includes(v)) return; setVariables((p) => [...p, v]); setVarInput(''); }
   function removeVar(v: string) { setVariables((p) => p.filter((x) => x !== v)); }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', flex: 1 }}>Editar metadata</span>
-        <button onClick={() => canSave && onSave({ name: name.trim(), subject: subject.trim(), variables })} disabled={!canSave}
-          style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>GUARDAR</button>
+        <button onClick={() => canSave && onSave({ name: name.trim(), subject: subject.trim(), variables })} disabled={!canSave} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>GUARDAR</button>
       </div>
-      <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 10, color: 'var(--txt-muted)' }}>
-        Event Key: <code style={{ fontFamily: 'monospace', color: 'var(--accent)' }}>{template.Email_Template_Event_Key}</code> — no editable
-      </div>
+      <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(0,200,255,0.06)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 10, color: 'var(--txt-muted)' }}>Event Key: <code style={{ fontFamily: 'monospace', color: 'var(--accent)' }}>{template.Email_Template_Event_Key}</code> — no editable</div>
       <div><FieldLabel>Nombre legible *</FieldLabel><input autoFocus value={name} onChange={(e) => setName(e.target.value)} className="cpop-input" /></div>
-      <div><FieldLabel>Subject por defecto</FieldLabel><input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ej: Te asignaron el ticket {{ticket_id}}" className="cpop-input" /></div>
+      <div><FieldLabel>Subject por defecto</FieldLabel><input value={subject} onChange={(e) => setSubject(e.target.value)} className="cpop-input" /></div>
       <div>
         <FieldLabel>Variables disponibles</FieldLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
           {variables.map((v) => (
             <span key={v} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px', borderRadius: 5, fontFamily: 'monospace', background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.25)', color: 'var(--accent)' }}>
               {`{{${v}}}`}
-              <button onClick={() => removeVar(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 0, display: 'flex', lineHeight: 1 }}>
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l6 6M7 1L1 7"/></svg>
-              </button>
+              <button onClick={() => removeVar(v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 0, display: 'flex', lineHeight: 1 }}><svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l6 6M7 1L1 7"/></svg></button>
             </span>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <input value={varInput} onChange={(e) => setVarInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVar(); } }} placeholder="Nueva variable… (Enter para agregar)" className="cpop-input" style={{ flex: 1, fontFamily: 'monospace', fontSize: 11 }} />
-          <button onClick={addVar} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>+</button>
+          <input value={varInput} onChange={(e) => setVarInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVar(); } }} placeholder="Nueva variable…" className="cpop-input" style={{ flex: 1, fontFamily: 'monospace', fontSize: 11 }} />
+          <button onClick={addVar} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>+</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ============================================================
-   EmailTemplateForm — editar HTML y subject
-   ============================================================ */
 function EmailTemplateForm({ template, onSave, onCancel }: {
-  template: EmailTemplate;
-  onSave:   (d: { subject: string; html: string; text: string }) => void;
-  onCancel: () => void;
+  template: EmailTemplate; onSave: (d: { subject: string; html: string; text: string }) => void; onCancel: () => void;
 }) {
   const [subject, setSubject] = useState(template.Email_Template_Subject);
   const [html,    setHtml]    = useState(template.Email_Template_Body_html);
   const [tab,     setTab]     = useState<'editor' | 'preview'>('editor');
   const [copied,  setCopied]  = useState<string | null>(null);
-
   const vars    = getTemplateVariables(template);
   const canSave = subject.trim().length > 0;
-
-  function copyVar(v: string) {
-    navigator.clipboard.writeText(`{{${v}}}`);
-    setCopied(v);
-    setTimeout(() => setCopied(null), 1500);
-  }
-
+  function copyVar(v: string) { navigator.clipboard.writeText(`{{${v}}}`); setCopied(v); setTimeout(() => setCopied(null), 1500); }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', flex: 1 }}>{template.Email_Template_Name}</span>
-        <button onClick={() => canSave && onSave({ subject: subject.trim(), html, text: '' })} disabled={!canSave}
-          style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>GUARDAR</button>
+        <button onClick={() => canSave && onSave({ subject: subject.trim(), html, text: '' })} disabled={!canSave} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: canSave ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: canSave ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-display)', letterSpacing: 1 }}>GUARDAR</button>
       </div>
-      <div style={{ flexShrink: 0, marginBottom: 12 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.25)', color: 'var(--accent)', fontFamily: 'monospace', letterSpacing: 0.5 }}>{template.Email_Template_Event_Key}</span>
-      </div>
+      <div style={{ flexShrink: 0, marginBottom: 12 }}><span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.25)', color: 'var(--accent)', fontFamily: 'monospace' }}>{template.Email_Template_Event_Key}</span></div>
       {vars.length > 0 && (
         <div style={{ flexShrink: 0, marginBottom: 12 }}>
-          <FieldLabel>Variables disponibles — click para copiar</FieldLabel>
+          <FieldLabel>Variables — click para copiar</FieldLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {vars.map((v) => (
-              <button key={v} onClick={() => copyVar(v)} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer', fontFamily: 'monospace', border: '1px solid var(--border)', background: copied === v ? 'rgba(0,229,160,0.15)' : 'var(--bg-panel)', color: copied === v ? '#00e5a0' : 'var(--accent)', transition: 'all 0.15s' }}>
-                {copied === v ? '✓ copiado' : `{{${v}}}`}
-              </button>
-            ))}
+            {vars.map((v) => <button key={v} onClick={() => copyVar(v)} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, cursor: 'pointer', fontFamily: 'monospace', border: '1px solid var(--border)', background: copied === v ? 'rgba(0,229,160,0.15)' : 'var(--bg-panel)', color: copied === v ? '#00e5a0' : 'var(--accent)', transition: 'all 0.15s' }}>{copied === v ? '✓ copiado' : `{{${v}}}`}</button>)}
           </div>
         </div>
       )}
-      <div style={{ flexShrink: 0, marginBottom: 12 }}>
-        <FieldLabel>Subject *</FieldLabel>
-        <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Ej: Te asignaron el ticket {{ticket_id}}" className="cpop-input" />
-      </div>
+      <div style={{ flexShrink: 0, marginBottom: 12 }}><FieldLabel>Subject *</FieldLabel><input value={subject} onChange={(e) => setSubject(e.target.value)} className="cpop-input" /></div>
       <div style={{ flexShrink: 0, display: 'flex', gap: 4, marginBottom: 8, padding: '4px', background: 'var(--bg-surface)', borderRadius: 8 }}>
-        {(['editor', 'preview'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', background: tab === t ? 'var(--accent)' : 'transparent', color: tab === t ? 'white' : 'var(--txt-muted)', transition: 'all 0.15s' }}>
-            {t === 'editor' ? '✏️ Editor' : '👁 Preview'}
-          </button>
-        ))}
+        {(['editor', 'preview'] as const).map((t) => <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', background: tab === t ? 'var(--accent)' : 'transparent', color: tab === t ? 'white' : 'var(--txt-muted)', transition: 'all 0.15s' }}>{t === 'editor' ? '✏️ Editor' : '👁 Preview'}</button>)}
       </div>
       {tab === 'editor' && (
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <FieldLabel>HTML del correo</FieldLabel>
-          <textarea value={html} onChange={(e) => setHtml(e.target.value)} placeholder="Pegá el HTML del correo acá..."
-            style={{ flex: 1, minHeight: 0, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', fontSize: 11, color: 'var(--txt)', fontFamily: 'monospace', lineHeight: 1.6, resize: 'none', outline: 'none', boxSizing: 'border-box', width: '100%' }} />
+          <textarea value={html} onChange={(e) => setHtml(e.target.value)} placeholder="Pegá el HTML del correo acá..." style={{ flex: 1, minHeight: 0, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '10px 12px', fontSize: 11, color: 'var(--txt)', fontFamily: 'monospace', lineHeight: 1.6, resize: 'none', outline: 'none', boxSizing: 'border-box', width: '100%' }} />
         </div>
       )}
       {tab === 'preview' && (
@@ -2270,4 +2423,6 @@ function EmailTemplateForm({ template, onSave, onCancel }: {
       )}
     </div>
   );
+
+  
 }
