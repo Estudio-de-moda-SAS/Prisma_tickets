@@ -1,6 +1,6 @@
 // src/pages/BoardPage.tsx
 import { useMemo, useState } from 'react';
-import { useBoardStore } from '@/store/boardStore';
+import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
@@ -36,11 +36,6 @@ const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
   historial:        9,
 };
 
-/**
- * Aplana recursivamente los campos de un schema de template para un único template.
- * Deduplica por key dentro de ese template.
- * Asigna fieldType según el tipo de campo.
- */
 function flattenTemplateFields(
   fields: TemplateExtraField[],
   seen:   Set<string>,
@@ -49,39 +44,119 @@ function flattenTemplateFields(
   for (const f of fields) {
     if (isConditionalField(f)) {
       const cf = f as ConditionalField;
-      // El disparador del condicional es un checkbox → boolean
       if (cf.key && cf.label?.trim() && !seen.has(cf.key)) {
         seen.add(cf.key);
         result.push({ key: cf.key, label: cf.label, fieldType: 'boolean' });
       }
       flattenTemplateFields(cf.trueBranch,  seen, result);
       flattenTemplateFields(cf.falseBranch, seen, result);
-} else {
-  if (!f.key || f.key === '__labels') continue;
-  if (seen.has(f.key)) continue;
-  // ← ignorar campos sin label — fueron "eliminados" de ramas condicionales
-  if (!f.label?.trim()) continue;
-  seen.add(f.key);
+    } else {
+      if (!f.key || f.key === '__labels') continue;
+      if (seen.has(f.key)) continue;
+      if (!f.label?.trim()) continue;
+      seen.add(f.key);
 
-  let fieldType: TemplateFieldOption['fieldType'];
-  if (f.type === 'select' || f.type === 'radio') {
-    fieldType = 'select_radio';
-  } else if (f.type === 'checkbox') {
-    fieldType = 'boolean';
-  } else {
-    fieldType = 'text';
+      let fieldType: TemplateFieldOption['fieldType'];
+      if (f.type === 'select' || f.type === 'radio') {
+        fieldType = 'select_radio';
+      } else if (f.type === 'checkbox') {
+        fieldType = 'boolean';
+      } else {
+        fieldType = 'text';
+      }
+
+      result.push({
+        key:     f.key,
+        label:   f.label,
+        fieldType,
+        options: (f.type === 'select' || f.type === 'radio') ? (f.options ?? []) : undefined,
+      });
+    }
   }
+}
 
-  result.push({
-    key:     f.key,
-    label:   f.label,
-    fieldType,
-    options: (f.type === 'select' || f.type === 'radio') ? (f.options ?? []) : undefined,
+/* ============================================================
+   Control de zoom del Kanban
+   ============================================================ */
+function KanbanZoomControl() {
+  const { kanbanZoom, stepKanbanZoom, resetKanbanZoom } = useBoardStore();
+
+  const atMin = kanbanZoom <= ZOOM_MIN + 0.001;
+  const atMax = kanbanZoom >= ZOOM_MAX - 0.001;
+  const isDefault = Math.round(kanbanZoom * 100) === 100;
+
+  const btnStyle = (disabled: boolean): React.CSSProperties => ({
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    height:         26,
+    width:          26,
+    background:     'var(--bg-surface)',
+    border:         '1px solid var(--border-subtle)',
+    color:          disabled ? 'var(--txt-dim)' : 'var(--txt-muted)',
+    cursor:         disabled ? 'not-allowed' : 'pointer',
+    padding:        0,
+    transition:     'color 0.15s, background 0.15s',
+    flexShrink:     0,
   });
-}
-}
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      {/* Zoom out */}
+      <button
+        style={{ ...btnStyle(atMin), borderRadius: '6px 0 0 6px' }}
+        disabled={atMin}
+        onClick={() => stepKanbanZoom(-1)}
+        title="Zoom out"
+      >
+        <svg width="10" height="2" viewBox="0 0 10 2" fill="none">
+          <path d="M1 1h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {/* Porcentaje — clic resetea a 100 % */}
+      <span
+        onClick={!isDefault ? resetKanbanZoom : undefined}
+        title={!isDefault ? 'Restablecer 100%' : undefined}
+        style={{
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          height:         26,
+          minWidth:       38,
+          fontSize:       10,
+          fontFamily:     'var(--font-display)',
+          letterSpacing:  '0.5px',
+          background:     'var(--bg-surface)',
+          borderTop:      '1px solid var(--border-subtle)',
+          borderBottom:   '1px solid var(--border-subtle)',
+          color:          !isDefault ? 'var(--accent)' : 'var(--txt-muted)',
+          cursor:         !isDefault ? 'pointer' : 'default',
+          userSelect:     'none',
+          transition:     'color 0.15s',
+        }}
+      >
+        {Math.round(kanbanZoom * 100)}%
+      </span>
+
+      {/* Zoom in */}
+      <button
+        style={{ ...btnStyle(atMax), borderRadius: '0 6px 6px 0' }}
+        disabled={atMax}
+        onClick={() => stepKanbanZoom(1)}
+        title="Zoom in"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
 }
 
+/* ============================================================
+   BoardPage
+   ============================================================ */
 export function BoardPage() {
   const { equipoActivo }             = useBoardStore();
   const { data, isLoading, isError } = useBoardEquipo(equipoActivo);
@@ -91,11 +166,11 @@ export function BoardPage() {
 
   const [externalModalId, setExternalModalId] = useState<string | null>(null);
 
-const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
-const boardTeamId = useMemo(() => {
-  const team = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
-  return team?.Board_Team_ID ?? null;
-}, [boardTeams, equipoActivo]);
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const boardTeamId = useMemo(() => {
+    const team = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
+    return team?.Board_Team_ID ?? null;
+  }, [boardTeams, equipoActivo]);
 
   const { data: users     = [] } = useUsers();
   const { data: subTeams  = [] } = useSubTeams(boardTeamId);
@@ -114,35 +189,33 @@ const boardTeamId = useMemo(() => {
     retry: 1,
   });
 
-  // Construir lista de plantillas con sus campos tipados (una por template, sin deduplicar entre ellas)
-const templateOptions = useMemo((): TemplateFilterOption[] => {
-  return templates
-    .filter((t) => {
-      if (!t.Request_Template_Is_Active) return false;
-      // Sin restricción de equipos → disponible para todos
-      if (!t.Request_Template_Teams || t.Request_Template_Teams.length === 0) return true;
-      // Con restricción → solo si el equipo activo está en la lista
-      if (boardTeamId === null) return true;
-      return t.Request_Template_Teams.includes(boardTeamId);
-        })
-    .map((t) => {
-      const seen:   Set<string>          = new Set();
-      const fields: TemplateFieldOption[] = [];
-      flattenTemplateFields(
-        t.Request_Template_Form_Schema as TemplateExtraField[],
-        seen,
-        fields,
-      );
-      return {
-        id:     t.Request_Template_ID,
-        label:  t.Request_Template_Name,
-        icon:   t.Request_Template_Icon ?? '📋',
-        color:  t.Request_Template_Color ?? undefined,
-        fields,
-      };
-    })
-    .filter((t) => t.fields.length > 0);
-}, [templates, boardTeamId]); // ← agregar boardTeamId a las deps
+  const templateOptions = useMemo((): TemplateFilterOption[] => {
+    return templates
+      .filter((t) => {
+        if (!t.Request_Template_Is_Active) return false;
+        if (!t.Request_Template_Teams || t.Request_Template_Teams.length === 0) return true;
+        if (boardTeamId === null) return true;
+        return t.Request_Template_Teams.includes(boardTeamId);
+      })
+      .map((t) => {
+        const seen:   Set<string>           = new Set();
+        const fields: TemplateFieldOption[] = [];
+        flattenTemplateFields(
+          t.Request_Template_Form_Schema as TemplateExtraField[],
+          seen,
+          fields,
+        );
+        return {
+          id:     t.Request_Template_ID,
+          label:  t.Request_Template_Name,
+          icon:   t.Request_Template_Icon ?? '📋',
+          color:  t.Request_Template_Color ?? undefined,
+          fields,
+        };
+      })
+      .filter((t) => t.fields.length > 0);
+  }, [templates, boardTeamId]);
+
   const dynamicOptions = useMemo((): FilterDynamicOptions => ({
     assignee:  users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
     subequipo: subTeams.map((s) => ({ value: s.Sub_Team_Name, label: s.Sub_Team_Name })),
@@ -172,6 +245,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
           <BoardCustomizationTrigger />
+          <KanbanZoomControl />
         </div>
 
         {config.USE_MOCK && (

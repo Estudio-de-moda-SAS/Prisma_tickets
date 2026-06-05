@@ -36,6 +36,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: true,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-002',
@@ -70,6 +71,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   icebox: [
@@ -106,6 +108,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-009',
@@ -140,6 +143,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   backlog: [
@@ -176,6 +180,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-005',
@@ -210,6 +215,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-010',
@@ -244,6 +250,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   todo: [
@@ -280,6 +287,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-011',
@@ -314,6 +322,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   en_progreso: [
@@ -350,6 +359,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-012',
@@ -384,6 +394,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   en_revision_qas: [],
@@ -423,6 +434,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
     {
       id: 'mock-013',
@@ -457,6 +469,7 @@ export const MOCK_BOARD: BoardData = {
       isConfidential: false,
       requesterTeamName: null,
       loggedHours: null,
+      templateSchemaSnapshot: [],
     },
   ],
   historial: [],

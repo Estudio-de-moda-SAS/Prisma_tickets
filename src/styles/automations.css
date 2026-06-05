@@ -450,3 +450,182 @@
   background: var(--info);
   box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
 }
+/* ── Modal de nueva automatización ─────────────────────────── */
+.auto-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.auto-modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.auto-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel);
+  z-index: 1;
+}
+
+.auto-modal__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-modal__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.auto-modal__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--txt);
+}
+
+.auto-modal__close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-muted);
+  transition: color 0.12s, background 0.12s;
+}
+.auto-modal__close:hover { color: var(--txt); background: var(--bg-hover); }
+
+.auto-modal__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auto-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.auto-modal__field--flex { flex: 1; min-width: 160px; }
+
+.auto-modal__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.auto-modal__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--txt-muted);
+}
+
+.auto-modal__required { color: var(--danger); }
+
+.auto-modal__input,
+.auto-modal__select,
+.auto-modal__textarea {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--txt);
+  font-size: 13px;
+  padding: 8px 10px;
+  transition: border-color 0.12s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.auto-modal__input:focus,
+.auto-modal__select:focus,
+.auto-modal__textarea:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.auto-modal__textarea { resize: none; line-height: 1.5; }
+.auto-modal__select   { cursor: pointer; }
+
+.auto-modal__divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 2px 0;
+}
+
+.auto-modal__section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: -4px;
+}
+
+.auto-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-subtle);
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-panel);
+}
+
+.auto-modal__cancel-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--txt-muted);
+  font-size: 13px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.auto-modal__cancel-btn:hover { color: var(--txt); border-color: var(--border); }
+
+.auto-modal__submit-btn {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  border-radius: var(--radius-md);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: opacity 0.12s;
+}
+.auto-modal__submit-btn:hover:not(:disabled) { opacity: 0.85; }
+.auto-modal__submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }

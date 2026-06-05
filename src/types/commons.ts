@@ -37,6 +37,7 @@ export type UserProfile = {
     Team_Code: string;
     Team_Name: string;
   } | null;
+  department?: { Department_ID: number; Department_Name: string; Department_Code: string } | null;
 };
 
 /* ── Criterios de aceptación ── */

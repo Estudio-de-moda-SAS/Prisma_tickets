@@ -236,6 +236,11 @@ export function ClientReviewBanner({
     if (!currentUserId) return;
     setError('');
 
+if (decision === 'rejected' && !feedbackNote.trim()) {
+  setError('Debes explicar el motivo del rechazo.');
+  return;
+}
+
     const targetColumnId = decision === 'approved' ? readyToDeployColumnId : enRevisionQasColumnId;
     const payload: SubmitClientFeedbackPayload = {
       requestId,
@@ -413,7 +418,7 @@ export function ClientReviewBanner({
                   fontSize: 9, fontWeight: 700, letterSpacing: 2,
                   textTransform: 'uppercase', color: 'var(--txt-muted)',
                 }}>
-                  Nota {decision === 'rejected' ? '(recomendada)' : '(opcional)'}
+Nota {decision === 'rejected' ? '(obligatoria)' : '(opcional)'}
                 </label>
                 <textarea
                   autoFocus
@@ -458,20 +463,20 @@ export function ClientReviewBanner({
             {/* Botón confirmar */}
             <button
               onClick={handleSubmit}
-              disabled={isPending || !decision}
+disabled={isPending || !decision || (decision === 'rejected' && !feedbackNote.trim())}
               style={{
                 alignSelf: 'flex-end',
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '8px 20px', borderRadius: 7,
                 border: 'none',
-                background: !decision || isPending
-                  ? 'var(--bg-surface)'
-                  : decision === 'approved'
+background: !decision || isPending || (decision === 'rejected' && !feedbackNote.trim())
+  ? 'var(--bg-surface)'
+  : decision === 'approved'
                     ? 'linear-gradient(135deg, #00b894, #00e5a0)'
                     : 'var(--danger)',
-                color: !decision || isPending ? 'var(--txt-muted)' : 'white',
+color: !decision || isPending || (decision === 'rejected' && !feedbackNote.trim()) ? 'var(--txt-muted)' : 'white',
                 fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-display)',
-                letterSpacing: 0.5, cursor: !decision || isPending ? 'not-allowed' : 'pointer',
+                letterSpacing: 0.5, cursor: !decision || isPending || (decision === 'rejected' && !feedbackNote.trim()) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s', opacity: isPending ? 0.7 : 1,
               }}
             >

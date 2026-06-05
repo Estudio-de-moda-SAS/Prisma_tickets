@@ -10,7 +10,6 @@ import {
   useBoardTemplates,
   getTemplateDefinition,
 } from '@/features/requests/hooks/useBoardMetadata';
-import { useSubTeams }    from '@/features/requests/hooks/useSubTeams';
 import { useSprints }     from '@/features/requests/hooks/useSprints';
 import { useUsers }       from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
@@ -278,12 +277,11 @@ function ExtraFieldRenderer({ field, values, onChange, accent }: {
     const conditionalField = field as ConditionalField;
     const triggerValue = values[conditionalField.key] ?? '';
     const isTrue       = triggerValue === 'true';
-    const isFalse      = triggerValue === 'false';
 
     // Rama activa según el valor del disparador (es un array de campos)
-    const activeBranch: TemplateExtraField[] | null = isTrue
-      ? conditionalField.trueBranch
-      : isFalse ? conditionalField.falseBranch : null;
+const activeBranch: TemplateExtraField[] = isTrue
+  ? conditionalField.trueBranch
+  : conditionalField.falseBranch;
 
     return (
       <div style={{ marginBottom: 14 }}>
@@ -490,11 +488,8 @@ function validateExtraFields(
       // Si es requerido, el disparador debe tener un valor
       if (field.required && triggerValue !== 'true' && triggerValue !== 'false') return false;
       // Validar la rama activa recursivamente (ramas ya son arrays)
-      if (triggerValue === 'true') {
-        if (!validateExtraFields(field.trueBranch, values)) return false;
-      } else if (triggerValue === 'false') {
-        if (!validateExtraFields(field.falseBranch, values)) return false;
-      }
+const activeBranch = triggerValue === 'true' ? field.trueBranch : field.falseBranch;
+if (!validateExtraFields(activeBranch, values)) return false;
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -556,7 +551,6 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(null);
   const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
-  const { data: subTeams = [] } = useSubTeams(selectedBoardTeamId);
   const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedBoardTeamId);
 
   const [titulo,             setTitulo]             = useState('');
@@ -572,7 +566,6 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>([]);
   const [createAttempted,    setCreateAttempted]    = useState(false);
 
-  const subDD      = usePortalDropdown();
   const catDD      = usePortalDropdown();
   const sprintDD   = usePortalDropdown();
   const assigneeDD = usePortalDropdown();
@@ -608,12 +601,27 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
     setAssigneeIds((prev) => prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]);
   }
 
-  function selectTeam(id: number) {
-    setSelectedBoardTeamId(id);
-    setSelectedTemplateId(null);
-    setExtraValues({});
-  }
+function selectTeam(id: number) {
+  setSelectedBoardTeamId(id);
+  setSelectedTemplateId(null);
+  setExtraValues({});
+}
 
+function goToTemplate() {
+  if (selectedBoardTeamId === null) return;
+  const filtered = allTemplates.filter(
+    (t) =>
+      t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 ||
+        t.Request_Template_Teams?.includes(selectedBoardTeamId)),
+  );
+  if (filtered.length === 1) {
+    setSelectedTemplateId(filtered[0].Request_Template_ID);
+    setStep('form');
+  } else {
+    setStep('template');
+  }
+}
   // Handler unificado para los campos extra (simples y ramas de condicionales)
   function handleExtraChange(key: string, value: string) {
     setExtraValues((prev) => ({ ...prev, [key]: value }));
@@ -659,6 +667,7 @@ const formData: Record<string, unknown> = {
         parentId,
         requesterTeamId: currentUser.Team_ID ?? null, 
         isConfidential:   parentIsConfidential,
+        requesterDepartmentId: currentUser.Department_ID ?? null,
         acceptanceCriteria,
         formData, 
       },
@@ -673,6 +682,8 @@ const formData: Record<string, unknown> = {
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
     extraFieldsReady && acceptanceCriteria.length > 0;
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
+const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
+const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
 
   return (
@@ -712,8 +723,7 @@ const formData: Record<string, unknown> = {
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
           <StepIndicator step={step} />
 
-          {step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={() => setStep('template')} />}
-
+{step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={goToTemplate} />}
           {step === 'template' && (
             <StepTemplate templates={allTemplates} selectedBoardTeamId={selectedBoardTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />
           )}
@@ -766,7 +776,6 @@ const formData: Record<string, unknown> = {
               {/* Campos extra del template — incluye condicionales */}
               {templateDef && normalizedExtraFields.length > 0 && (
                 <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${accent}20`, background: `${accent}05` }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 14 }}>{templateDef.nombre} — Datos adicionales</div>
                   {normalizedExtraFields.map((field) => (
                     <ExtraFieldRenderer
                       key={field.key}
@@ -780,15 +789,38 @@ const formData: Record<string, unknown> = {
               )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <FieldBlock label="Prioridad">
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
-                      const active = prioridad === p;
-                      return <button type="button" key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
-                    })}
-                  </div>
-                </FieldBlock>
-
+<div>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
+      Prioridad
+    </span>
+    <button
+      ref={priorityBtnRef}
+      type="button"
+      onMouseEnter={() => {
+        const r = priorityBtnRef.current?.getBoundingClientRect();
+        if (r) setPriorityInfoPos({ top: r.top, left: r.right + 8 });
+      }}
+      onMouseLeave={() => setPriorityInfoPos(null)}
+      style={{
+        width: 14, height: 14, borderRadius: '50%',
+        border: '1px solid var(--border)',
+        background: 'var(--bg-surface)',
+        color: 'var(--txt-muted)',
+        fontSize: 8, fontWeight: 700,
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0, lineHeight: 1,
+      }}
+    >?</button>
+  </div>
+  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+    {(Object.keys(PRIORIDADES) as Prioridad[]).map((p) => {
+      const active = prioridad === p;
+      return <button type="button" key={p} onClick={() => setPrioridad(p)} style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 5, color: PRI_COLOR[p], background: active ? `${PRI_COLOR[p]}15` : 'transparent', border: `1px solid ${active ? `${PRI_COLOR[p]}35` : 'var(--border-subtle)'}`, cursor: 'pointer', transition: 'all 0.12s' }}>{PRIORIDADES[p]}</button>;
+    })}
+  </div>
+</div>
                 <FieldBlock label="Resolutor">
                   <div style={{ position: 'relative' }}>
                     <button ref={assigneeDD.triggerRef} onClick={() => { assigneeDD.toggle(); setUserSearch(''); }} style={triggerStyle(assigneeDD.open, '124,58,237')}>
@@ -828,22 +860,6 @@ const formData: Record<string, unknown> = {
                   </div>
                 </FieldBlock>
 
-                <FieldBlock label="Sub-equipo">
-                  <div style={{ position: 'relative' }}>
-                    <button ref={subDD.triggerRef} onClick={subDD.toggle} disabled={!selectedBoardTeamId} style={{ ...triggerStyle(subDD.open, '0,200,255'), opacity: selectedBoardTeamId ? 1 : 0.5 }}>
-                      {selectedSubIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin sub-equipo</span>
-                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedSubIds((p) => p.filter((x) => x !== sid)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>; })}
-                      <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                    </button>
-                    {subDD.open && selectedBoardTeamId && (
-                      <PortalPanel rect={subDD.rect}>
-                        {subTeams.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sub-equipos.</div>
-                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => setSelectedSubIds((p) => sel ? p.filter((x) => x !== sub.Sub_Team_ID) : [...p, sub.Sub_Team_ID])}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })}
-                      </PortalPanel>
-                    )}
-                  </div>
-                </FieldBlock>
 
                 <FieldBlock label="Etiquetas">
                   <div style={{ position: 'relative' }}>
@@ -887,12 +903,55 @@ const formData: Record<string, unknown> = {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: 4 }}>
-                <button type="button" onClick={() => setStep('template')} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
-              </div>
+<button type="button" onClick={() => {
+  if (selectedBoardTeamId === null) { setStep('equipo'); return; }
+  const filtered = allTemplates.filter(
+    (t) => t.Request_Template_Is_Active &&
+      (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(selectedBoardTeamId)),
+  );
+  setStep(filtered.length === 1 ? 'equipo' : 'template');
+}} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>              </div>
             </div>
           )}
         </div>
       </div>
+      {priorityInfoPos && createPortal(
+  <div style={{
+    position: 'fixed',
+    top: priorityInfoPos.top,
+    left: priorityInfoPos.left,
+    zIndex: 99999,
+    width: 340,
+    borderRadius: 10,
+    background: 'var(--bg-panel)',
+    border: '1px solid var(--border-subtle)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+    padding: '14px 16px',
+    pointerEvents: 'none',
+  }}>
+    <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12, fontFamily: 'var(--font-display)' }}>
+      ¿Cómo elegir la prioridad?
+    </div>
+    {[
+      { emoji: '🔴', label: 'Crítica', color: '#ff4757', desc: 'Actividades críticas que permiten cumplir indicadores o procesos comerciales de la compañía (PAC de última hora, etc.).' },
+      { emoji: '🟠', label: 'Alta',    color: '#fdcb6e', desc: 'Requieren programación y flujo detallado, pero no bloquean la activación comercial (proyectos incubadora, fidelización, retos, etc.).' },
+      { emoji: '🟡', label: 'Media',   color: '#74b9ff', desc: 'Necesario para el funcionamiento regular sin impacto crítico. Puede programarse en tiempo estimado (bases de datos, reportes, documentaciones, etc.).' },
+      { emoji: '🟢', label: 'Baja',    color: '#b2bec3', desc: 'No afectan el trabajo diario pero ayudan a entender y crear estrategias (mejoras a reportes o aplicativos que ya funcionan, etc.).' },
+    ].map(({ emoji, label, color, desc }) => (
+      <div key={label} style={{ display: 'flex', gap: 10, padding: '8px 10px', borderRadius: 7, marginBottom: 6, background: `${color}08`, border: `1px solid ${color}20` }}>
+        <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{emoji}</span>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: 'var(--font-display)', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', lineHeight: 1.55 }}>{desc}</div>
+        </div>
+      </div>
+    ))}
+    <div style={{ marginTop: 4, fontSize: 9, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+      Por favor sé honesto en este campo.
+    </div>
+  </div>,
+  document.body
+)}
     </div>
   );
 }

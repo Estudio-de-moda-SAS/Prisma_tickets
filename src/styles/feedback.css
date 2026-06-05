@@ -373,28 +373,33 @@
 }
 
 /* ── Sidebar satisfaction button ── */
+/* ── Satisfaction btn ─────────────────────────────────────── */
 .sidebar__satisfaction-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  background: rgba(230, 160, 30, 0.07);
-  border: 1px solid rgba(230, 160, 30, 0.18);
-  border-radius: var(--radius-sm, 6px);
-  color: var(--txt-muted);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-  font-family: var(--font-body, inherit);
-  margin-bottom: 6px;
   justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  background: rgba(251, 146, 60, 0.10);
+  border: 1px solid rgba(251, 146, 60, 0.30);
+  color: #fb923c;
 }
+
 .sidebar__satisfaction-btn:hover {
-  background: rgba(230, 160, 30, 0.13);
-  border-color: rgba(230, 160, 30, 0.30);
-  color: #c08820;
+  background: rgba(251, 146, 60, 0.20);
+  border-color: rgba(251, 146, 60, 0.55);
+  color: #fdba74;
+  box-shadow: 0 0 10px rgba(251, 146, 60, 0.15);
 }
 .sidebar--collapsed .sidebar__satisfaction-btn {
   justify-content: center;

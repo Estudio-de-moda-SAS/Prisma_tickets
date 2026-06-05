@@ -3,13 +3,14 @@
 /* ============================================================
    Equipos disponibles
    ============================================================ */
-export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis';
+export type Equipo = 'desarrollo' | 'crm' | 'sistemas' | 'analisis' | 'solvi';
 
 export const EQUIPOS: Record<Equipo, string> = {
   desarrollo: 'Desarrollo & UX',
   crm:        'CRM',
   sistemas:   'Sistemas de Información',
   analisis:   'Ciencia de Datos',
+  solvi:      'SOLVI',
 };
 
 /* ============================================================
@@ -28,12 +29,12 @@ export type KanbanColumna =
   | 'historial';
 
 export const KANBAN_COLUMNAS: Record<KanbanColumna, string> = {
-  sin_categorizar:  'Sin categorizar',
+  sin_categorizar:  'Sin Categorizar',
   icebox:           'Icebox',
   backlog:          'Backlog',
-  todo:             'To do',
-  en_progreso:      'En progreso',
-  en_revision_qas:  'En revisión QAS',
+  todo:             'To Do',
+  en_progreso:      'En Progreso',
+  en_revision_qas:  'En Revisión QAS',
   cliente_review:   'Cliente Review',
   ready_to_deploy:  'Ready to Deploy',
   hecho:            'Hecho',
@@ -248,7 +249,7 @@ export type Request = {
   extraFields:        RequestExtraFields | null;
   formData:           Record<string, unknown>;
   templateFormSchema: unknown[];
-
+  templateSchemaSnapshot: unknown[];
   // ── Hijos ──────────────────────────────────────────────────
   childCount?:  number;
 
@@ -284,6 +285,7 @@ export type CrearRequestPayload = {
   estimatedHours:      number | null;
   parentId:            string | null;
   requesterTeamId:     number | null;
+  requesterDepartmentId: number | null;
   isConfidential:      boolean;
   formData?:           Record<string, unknown>;
   /** Títulos de criterios de aceptación — mínimo 1 requerido */

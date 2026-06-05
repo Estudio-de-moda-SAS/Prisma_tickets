@@ -4,12 +4,11 @@ import {
   useCustomizationStore,
   BOARD_THEMES,
   COLUMN_DEFAULTS,
-  PRIORITY_DEFAULTS,
   getColumnConfig,
   type BoardTheme,
   type CardDensity,
-  type CardStyle,
-  type PriorityColors,
+  type GroupBy,
+  type SortBy,
 } from '@/store/customizationStore';
 import { useBoardStore } from '@/store/boardStore';
 import { KANBAN_COLUMNAS, COLUMNAS_BOARD } from '@/features/requests/types';
@@ -26,9 +25,9 @@ function hexToHsv(hex: string): [number, number, number] {
   const d = max - min;
   let h = 0;
   if (d !== 0) {
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    if (max === r)      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
     else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
+    else                h = ((r - g) / d + 4) / 6;
   }
   return [h * 360, max === 0 ? 0 : d / max, max];
 }
@@ -70,22 +69,16 @@ function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
   const [sat, setSat] = useState(s);
   const [val, setVal] = useState(v);
 
-  // `hex` se deriva de hue/sat/val — no necesita estado propio
   const hex = hsvToHex(hue, sat, val);
-
-  // hexInput permite edición libre en el input sin forzar rerenders
   const [hexInput, setHexInput] = useState(safeHex);
 
   const gradRef  = useRef<HTMLDivElement>(null);
   const hueRef   = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Sincroniza hexInput y notifica al padre cuando cambia el color por el picker
   useEffect(() => {
     setHexInput(hex);
     onChange(hex);
-    // onChange se omite intencionalmente: si el padre no usa useCallback
-    // causaría un bucle infinito. El padre debe memoizar onChange.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hex]);
 
@@ -193,10 +186,18 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
    Iconos de sección
    ============================================================ */
 const SECTION_ICONS = {
-  theme: (
+  vista: (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <circle cx="7" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M7 1v1M7 12v1M1 7h1M12 7h1M2.93 2.93l.7.7M10.37 10.37l.7.7M10.37 3.63l-.7.7M3.63 10.37l-.7.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  ),
+  cards: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="1" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="1" y="8" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
   ),
   columns: (
@@ -206,44 +207,53 @@ const SECTION_ICONS = {
       <rect x="10" y="2" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
   ),
-  cards: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="1" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="1" y="8" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-};
-
-const EMOJI_OPTIONS = ['', '🔥', '⚡', '🎯', '📦', '🚀', '✅', '❄️', '📋', '⚙️', '🎨', '💡'];
-
-const DENSITY_OPTIONS: { value: CardDensity; label: string; desc: string }[] = [
-  { value: 'compact',  label: 'Compacto',  desc: 'Solo título y badge'    },
-  { value: 'normal',   label: 'Normal',    desc: 'Descripción y avatares' },
-  { value: 'expanded', label: 'Expandido', desc: 'Todo visible'           },
-];
-
-const STYLE_OPTIONS: { value: CardStyle; label: string }[] = [
-  { value: 'default',  label: 'Default'  },
-  { value: 'bordered', label: 'Bordered' },
-  { value: 'flat',     label: 'Flat'     },
-  { value: 'glass',    label: 'Glass'    },
-];
-
-const PRIORITY_LABELS: Record<keyof PriorityColors, string> = {
-  baja: 'Baja', media: 'Media', alta: 'Alta', critica: 'Crítica',
 };
 
 /* ============================================================
-   Sección: Tema
+   Constantes de opciones
    ============================================================ */
-function ThemeSection() {
-  const { getCustomization, setTheme, setColumnGap, setShowBoardBg } = useCustomizationStore();
+const EMOJI_OPTIONS = ['', '🔥', '⚡', '🎯', '📦', '🚀', '✅', '❄️', '📋', '⚙️', '🎨', '💡'];
+
+const DENSITY_OPTIONS: { value: CardDensity; label: string; desc: string }[] = [
+  { value: 'compact',  label: 'Compacto',  desc: 'Solo título'        },
+  { value: 'normal',   label: 'Normal',    desc: 'Campos principales' },
+  { value: 'expanded', label: 'Expandido', desc: 'Todo visible'       },
+];
+
+const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: 'none',      label: 'Sin agrupar' },
+  { value: 'prioridad', label: 'Prioridad'   },
+  { value: 'asignado',  label: 'Asignado'    },
+];
+
+const SORT_BY_OPTIONS: { value: SortBy; label: string }[] = [
+  { value: 'manual',              label: 'Manual'      },
+  { value: 'prioridad',           label: 'Prioridad'   },
+  { value: 'fecha_creacion',      label: 'Fecha'       },
+  { value: 'fecha_actualizacion', label: 'Actualizado' },
+];
+
+/* ============================================================
+   Sección: Vista
+   (tema global + agrupación + ordenamiento + layout)
+   ============================================================ */
+function VistaSection() {
+  const {
+    getCustomization,
+    setTheme,
+    setGroupBy,
+    setSortBy,
+  } = useCustomizationStore();
   const { equipoActivo } = useBoardStore();
   const customization    = getCustomization(equipoActivo);
 
   return (
     <div className="cp-section">
-      <p className="cp-section__label">Tema de color <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 4 }}>global</span></p>
+      {/* Tema */}
+      <p className="cp-section__label">
+        Tema de color
+        <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 4 }}>global</span>
+      </p>
       <div className="cp-theme-grid">
         {(Object.entries(BOARD_THEMES) as [BoardTheme, typeof BOARD_THEMES[BoardTheme]][]).map(([key, t]) => (
           <button
@@ -260,25 +270,89 @@ function ThemeSection() {
         ))}
       </div>
 
-      <p className="cp-section__label" style={{ marginTop: 20 }}>
-        Separación entre columnas
-        <span className="cp-section__label-val">{customization.columnGap}px</span>
-      </p>
-      <input type="range" min={6} max={28} step={2}
-        value={customization.columnGap}
-        onChange={(e) => setColumnGap(equipoActivo, Number(e.target.value))}
-        className="cp-slider"
-      />
+      <div className="cp-section-divider" />
 
-      <div className="cp-toggle-row" style={{ marginTop: 16 }}>
-        <span className="cp-toggle-row__label">Fondo de columnas</span>
-        <button
-          className={`cp-toggle ${customization.showBoardBg ? 'cp-toggle--on' : ''}`}
-          onClick={() => setShowBoardBg(equipoActivo, !customization.showBoardBg)}
-        >
-          <span className="cp-toggle__thumb" />
-        </button>
+      {/* Agrupación */}
+      <p className="cp-section__label">Agrupación</p>
+      <div className="cp-radio-group">
+        {GROUP_BY_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`cp-radio-btn ${customization.groupBy === opt.value ? 'cp-radio-btn--active' : ''}`}
+            onClick={() => setGroupBy(equipoActivo, opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
+
+      {/* Ordenar por */}
+      <p className="cp-section__label" style={{ marginTop: 14 }}>Ordenar por</p>
+      <div className="cp-radio-group">
+        {SORT_BY_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`cp-radio-btn ${customization.sortBy === opt.value ? 'cp-radio-btn--active' : ''}`}
+            onClick={() => setSortBy(equipoActivo, opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+/* ============================================================
+   Sección: Tarjetas
+   ============================================================ */
+function CardsSection({ boardId }: { boardId: string }) {
+  const { getCustomization, updateCard } = useCustomizationStore();
+  const card = getCustomization(boardId).card;
+
+  type ToggleKey = 'showDesc' | 'showPriority' | 'showAvatars' | 'showCategory' | 'showProgress' | 'showDate' | 'roundedCorner';
+
+  const toggles: { key: ToggleKey; label: string }[] = [
+    { key: 'showDesc',      label: 'Descripción'          },
+    { key: 'showPriority',  label: 'Prioridad'            },
+    { key: 'showAvatars',   label: 'Asignados'            },
+    { key: 'showCategory',  label: 'Categoría'            },
+    { key: 'showProgress',  label: 'Barra de progreso'    },
+    { key: 'showDate',      label: 'Fecha creación'       },
+    { key: 'roundedCorner', label: 'Esquinas redondeadas' },
+  ];
+
+  return (
+    <div className="cp-section">
+      <p className="cp-section__label">Densidad</p>
+      <div className="cp-density-grid">
+        {DENSITY_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`cp-density-btn ${card.density === opt.value ? 'cp-density-btn--active' : ''}`}
+            onClick={() => updateCard(boardId, { density: opt.value })}
+          >
+            <span className="cp-density-btn__name">{opt.label}</span>
+            <span className="cp-density-btn__desc">{opt.desc}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="cp-section-divider" />
+
+      <p className="cp-section__label">Campos visibles</p>
+      {toggles.map(({ key, label }) => (
+        <div key={key} className="cp-toggle-row">
+          <span className="cp-toggle-row__label">{label}</span>
+          <button
+            className={`cp-toggle ${card[key] ? 'cp-toggle--on' : ''}`}
+            onClick={() => updateCard(boardId, { [key]: !card[key] })}
+          >
+            <span className="cp-toggle__thumb" />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -299,7 +373,6 @@ function ColumnsSection({ boardId }: { boardId: string }) {
         const isModified =
           cfg.headerColor !== def.headerColor ||
           cfg.hidden      !== def.hidden      ||
-          cfg.width       !== def.width       ||
           cfg.emoji       !== def.emoji;
 
         return (
@@ -340,115 +413,11 @@ function ColumnsSection({ boardId }: { boardId: string }) {
                     ))}
                   </div>
                 </div>
-                <div className="cp-field">
-                  <label className="cp-field__label">
-                    Ancho <span className="cp-section__label-val">{cfg.width}px</span>
-                  </label>
-                  <input type="range" min={200} max={400} step={10}
-                    value={cfg.width}
-                    onChange={(e) => updateColumn(boardId, col, { width: Number(e.target.value) })}
-                    className="cp-slider"
-                  />
-                </div>
               </div>
             )}
           </div>
         );
       })}
-    </div>
-  );
-}
-
-/* ============================================================
-   Sección: Tarjetas
-   ============================================================ */
-function CardsSection({ boardId }: { boardId: string }) {
-  const { getCustomization, updateCard, updatePriorityColor, resetPriorityColors } =
-    useCustomizationStore();
-  const customization  = getCustomization(boardId);
-  const card           = customization.card;
-  const priorityColors = customization.priorityColors ?? PRIORITY_DEFAULTS;
-
-  const isModifiedPriority =
-    JSON.stringify(priorityColors) !== JSON.stringify(PRIORITY_DEFAULTS);
-
-  const toggles: { key: keyof typeof card; label: string }[] = [
-    { key: 'showDesc',      label: 'Descripción'          },
-    { key: 'showProgress',  label: 'Barra de progreso'    },
-    { key: 'showAvatars',   label: 'Avatares'             },
-    { key: 'showCategory',  label: 'Categoría'            },
-    { key: 'roundedCorner', label: 'Esquinas redondeadas' },
-  ];
-
-  return (
-    <div className="cp-section">
-      <p className="cp-section__label">Densidad</p>
-      <div className="cp-density-grid">
-        {DENSITY_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`cp-density-btn ${card.density === opt.value ? 'cp-density-btn--active' : ''}`}
-            onClick={() => updateCard(boardId, { density: opt.value })}
-          >
-            <span className="cp-density-btn__name">{opt.label}</span>
-            <span className="cp-density-btn__desc">{opt.desc}</span>
-          </button>
-        ))}
-      </div>
-
-      <p className="cp-section__label" style={{ marginTop: 20 }}>Estilo visual</p>
-      <div className="cp-style-grid">
-        {STYLE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`cp-style-btn ${card.style === opt.value ? 'cp-style-btn--active' : ''}`}
-            onClick={() => updateCard(boardId, { style: opt.value })}
-          >
-            <span className="cp-style-btn__preview" data-style={opt.value} />
-            <span>{opt.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <p className="cp-section__label" style={{ marginTop: 20 }}>
-        Opacidad del fondo
-        <span className="cp-section__label-val">{card.cardOpacity ?? 100}%</span>
-      </p>
-      <input type="range" min={10} max={100} step={5}
-        value={card.cardOpacity ?? 100}
-        onChange={(e) => updateCard(boardId, { cardOpacity: Number(e.target.value) })}
-        className="cp-slider"
-      />
-
-      <div className="cp-section__label" style={{ marginTop: 20 }}>
-        Colores por prioridad
-        {isModifiedPriority && (
-          <button className="cp-col-row__reset" onClick={() => resetPriorityColors(boardId)}>↺ Reset</button>
-        )}
-      </div>
-      <div className="cp-priority-grid">
-        {(Object.keys(PRIORITY_LABELS) as (keyof PriorityColors)[]).map((p) => (
-          <ColorField
-            key={p}
-            label={PRIORITY_LABELS[p]}
-            value={priorityColors[p]}
-            onChange={(c) => updatePriorityColor(boardId, p, c)}
-          />
-        ))}
-      </div>
-
-      <p className="cp-section__label" style={{ marginTop: 20 }}>Campos visibles</p>
-      {toggles.map(({ key, label }) => (
-        <div key={key} className="cp-toggle-row">
-          <span className="cp-toggle-row__label">{label}</span>
-          <button
-            className={`cp-toggle ${card[key as keyof typeof card] ? 'cp-toggle--on' : ''}`}
-            onClick={() => updateCard(boardId, { [key]: !card[key as keyof typeof card] })}
-          >
-            <span className="cp-toggle__thumb" />
-          </button>
-        </div>
-      ))}
     </div>
   );
 }
@@ -500,22 +469,22 @@ export function BoardCustomizationPanel({ anchor }: { anchor: { top: number; lef
       </div>
 
       <div className="cp-tabs">
-        {(['theme', 'columns', 'cards'] as const).map((s) => (
+        {(['vista', 'cards', 'columns'] as const).map((s) => (
           <button
             key={s}
             className={`cp-tab ${activeSection === s ? 'cp-tab--active' : ''}`}
             onClick={() => setActiveSection(s)}
           >
             {SECTION_ICONS[s]}
-            {s === 'theme' ? 'Tema' : s === 'columns' ? 'Columnas' : 'Tarjetas'}
+            {s === 'vista' ? 'Vista' : s === 'cards' ? 'Tarjetas' : 'Columnas'}
           </button>
         ))}
       </div>
 
       <div className="cp-panel__body">
-        {activeSection === 'theme'   && <ThemeSection />}
-        {activeSection === 'columns' && <ColumnsSection boardId={equipoActivo} />}
+        {activeSection === 'vista'   && <VistaSection />}
         {activeSection === 'cards'   && <CardsSection   boardId={equipoActivo} />}
+        {activeSection === 'columns' && <ColumnsSection boardId={equipoActivo} />}
       </div>
 
       <div className="cp-panel__footer">

@@ -430,27 +430,26 @@ const { data: comments    = [] } = useComments(requestId);  const { data: attach
   });
 
   const catDD      = useDropdown();
-  const subDD      = useDropdown();
   const sprintDD   = useDropdown();
   const assigneeDD = useDropdown();
+  const priorDD    = useDropdown();
+  const moverDD    = useDropdown();
 
   const [rightTab,         setRightTab]         = useState<RightTab>('comments');
-  const [showSubRequests,  setShowSubRequests]  = useState(children.length > 0);
-  const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
+const [showSubRequests,  setShowSubRequests]  = useState(false);  const [columnaActual,    setColumnaActual]    = useState<KanbanColumna>(request.columna);
   const [descripcion,      setDescripcion]      = useState(request.descripcion ?? '');
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>(request.labelIds ?? []);
   const [selectedSubIds,   setSelectedSubIds]   = useState<number[]>(request.subTeamIds ?? []);
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(request.sprintId ?? null);
   const [assigneeIds,      setAssigneeIds]      = useState<number[]>(request.assignees?.map((a) => a.userId) ?? []);
   const [userSearch,       setUserSearch]       = useState('');
+  const [labelSearch,      setLabelSearch]      = useState('');
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
-  useEffect(() => {
-    if (children.length > 0) setShowSubRequests(true);
-  }, [children.length]);
+
 const [showTimerWarning, setShowTimerWarning] = useState(false);
 // Solo corre al montar (request.id cambia = nuevo modal)
 useEffect(() => {
@@ -674,7 +673,7 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             {readOnly && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>Solo lectura</span>}
             {isCerrada && !readOnly && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: 'var(--success)', background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)' }}><Lock size={10} />Cerrada</span>}
             {effectiveRequest.isConfidential && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: '3px 10px', borderRadius: 4, color: '#fdcb6e', background: 'rgba(253,203,110,0.1)', border: '1px solid rgba(253,203,110,0.35)' }}>
                 <ShieldAlert size={10} />Confidencial
               </span>
             )}
@@ -686,7 +685,7 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 <GitFork size={10} />Sub-solicitud
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5,  padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
               {KANBAN_COLUMNAS[columnaActual]}
             </span>
 
@@ -707,9 +706,9 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.75)'; e.currentTarget.style.background = 'rgba(0,200,255,0.2)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,200,255,0.28)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = showSubRequests ? 'rgba(0,200,255,0.65)' : childCount > 0 ? 'rgba(0,200,255,0.5)' : 'rgba(0,200,255,0.32)'; e.currentTarget.style.background = showSubRequests ? 'rgba(0,200,255,0.16)' : childCount > 0 ? 'rgba(0,200,255,0.1)' : 'rgba(0,200,255,0.05)'; e.currentTarget.style.color = showSubRequests || childCount > 0 ? 'var(--accent)' : 'rgba(0,200,255,0.75)'; e.currentTarget.style.boxShadow = childCount > 0 ? '0 0 10px rgba(0,200,255,0.2), inset 0 0 0 1px rgba(0,200,255,0.06)' : 'none'; }}
                 >
-                  <GitFork size={11} />DIVIDIR
+                  <GitFork size={11} />Sub-Solicitudes
                   {childCount > 0 && (
-                    <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: showSubRequests ? 'rgba(0,200,255,0.25)' : 'rgba(0,200,255,0.15)', color: 'var(--accent)', border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'rgba(0,200,255,0.3)'}` }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: showSubRequests ? 'rgba(0,200,255,0.25)' : 'rgba(0,200,255,0.15)', color: 'var(--accent)', border: `1px solid ${showSubRequests ? 'rgba(0,200,255,0.45)' : 'rgba(0,200,255,0.3)'}` }}>
                       {childDone}/{childCount}
                     </span>
                   )}
@@ -741,24 +740,51 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             />
           )}
 
-          {/* Sub-requests panel */}
-          {showSubRequests && !isSubRequest && !readOnly && (
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(0,200,255,0.02)', flexShrink: 0, maxHeight: 360, overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <GitFork size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)' }}>Sub-solicitudes</span>
-              </div>
-              <SubRequestsPanel
-                parentId={requestId}
-                parentTitle={effectiveRequest.titulo}
-                parentIsConfidential={effectiveRequest.isConfidential ?? false}
-                onOpenChild={(childId) => onOpenRequest?.(childId)}
-              />
-            </div>
-          )}
+{/* ── Cuerpo + overlay sub-solicitudes ── */}
+          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-          {/* ── Cuerpo ── */}
-          <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            {/* Sub-solicitudes: panel flotante, no desplaza el contenido */}
+            {showSubRequests && !isSubRequest && !readOnly && (
+              <>
+                {/* Scrim — opaca el contenido, click para cerrar */}
+                <div
+                  onClick={() => setShowSubRequests(false)}
+                  style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)', zIndex: 40, cursor: 'pointer' }}
+                />
+                {/* Panel flotante */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0,
+                  zIndex: 50,
+                  background: 'var(--bg-panel)',
+                  borderBottom: '1px solid rgba(0,200,255,0.25)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+                  maxHeight: '62%',
+                  overflowY: 'auto',
+                }}>
+                  <div style={{ padding: '14px 24px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <GitFork size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: 'var(--accent)', flex: 1 }}>Sub-Solicitudes</span>
+                      <button
+                        onClick={() => setShowSubRequests(false)}
+                        style={{ width: 22, height: 22, borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, lineHeight: 1, transition: 'all 0.15s' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,71,87,0.4)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+                      >×</button>
+                    </div>
+                    <SubRequestsPanel
+                      parentId={requestId}
+                      parentTitle={effectiveRequest.titulo}
+                      parentIsConfidential={effectiveRequest.isConfidential ?? false}
+                      onOpenChild={(childId) => onOpenRequest?.(childId)}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── Cuerpo ── */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
             {/* Panel izquierdo */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
@@ -813,14 +839,15 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 />
               </FieldBlock>
 
-              {(effectiveRequest.templateFormSchema?.length ?? 0) > 0 && (
-                <TemplateFormDataPanel
-                  formData={effectiveRequest.formData ?? {}}
-                  schema={effectiveRequest.templateFormSchema ?? []}
-                  accentColor="var(--accent)"
-                />
-              )}
-
+{((effectiveRequest.templateFormSchema?.length ?? 0) > 0 ||
+  (effectiveRequest.templateSchemaSnapshot?.length ?? 0) > 0) && (
+  <TemplateFormDataPanel
+    formData={effectiveRequest.formData ?? {}}
+    schema={effectiveRequest.templateFormSchema ?? []}
+    snapshotSchema={effectiveRequest.templateSchemaSnapshot ?? []}
+    accentColor="var(--accent)"
+  />
+)}
               <FieldBlock label="Criterios de aceptación">
                 <AcceptanceCriteriaPanel requestId={requestId} readOnly={readOnly} currentUserId={currentUser?.User_ID} />
               </FieldBlock>
@@ -916,33 +943,10 @@ onToggleAssignee={(userId) => {
   </div>
 </FieldBlock>
 
-                <FieldBlock label="Prioridad">
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 5, color: PRI_COLOR[effectiveRequest.prioridad], background: `${PRI_COLOR[effectiveRequest.prioridad]}15`, border: `1px solid ${PRI_COLOR[effectiveRequest.prioridad]}35` }}>{PRIORIDADES[effectiveRequest.prioridad]}</span>
-                </FieldBlock>
-
-                <FieldBlock label="Equipo">
-                  <div ref={subDD.ref} style={{ position: 'relative' }}>
-                    <button onClick={() => { if (!readOnly) subDD.setOpen((o) => !o); }} style={triggerBase(subDD.open, '0,200,255')}>
-                      {selectedSubIds.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin equipo</span>
-                        : selectedSubIds.map((sid) => { const sub = subTeams.find((s) => s.Sub_Team_ID === sid); if (!sub) return null; return <span key={sid} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: sub.Sub_Team_Color, background: `${sub.Sub_Team_Color}18`, border: `1px solid ${sub.Sub_Team_Color}35` }}>{sub.Sub_Team_Name}{!readOnly && <span onMouseDown={(e) => { e.stopPropagation(); handleToggleSubTeam(sid); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>}</span>; })
-                      }
-                      {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: subDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
-                    </button>
-                    {subDD.open && !readOnly && (
-                      <DropdownPanel>
-                        {subTeams.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay equipos configurados.</div>
-                          : subTeams.map((sub) => { const sel = selectedSubIds.includes(sub.Sub_Team_ID); return <DropdownItem key={sub.Sub_Team_ID} selected={sel} onClick={() => handleToggleSubTeam(sub.Sub_Team_ID)}><span style={{ width: 8, height: 8, borderRadius: '50%', background: sub.Sub_Team_Color, flexShrink: 0 }} /><span style={{ flex: 1 }}>{sub.Sub_Team_Name}</span>{sel && <Checkmark />}</DropdownItem>; })
-                        }
-                      </DropdownPanel>
-                    )}
-                  </div>
-                </FieldBlock>
 
                 <FieldBlock label="Etiquetas">
                   <div ref={catDD.ref} style={{ position: 'relative' }}>
-                    <button onClick={() => { if (!readOnly) catDD.setOpen((o) => !o); }} style={triggerBase(catDD.open, '0,200,255')}>
+                    <button onClick={() => { if (!readOnly) { catDD.setOpen((o) => !o); setLabelSearch(''); } }} style={triggerBase(catDD.open, '0,200,255')}>
                       {selectedLabelIds.length === 0
                         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin etiquetas</span>
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => (
@@ -954,14 +958,41 @@ onToggleAssignee={(userId) => {
                       }
                       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
-                    {catDD.open && !readOnly && (
-                      <DropdownPanel>
-                        {labels.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
-                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })
-                        }
-                      </DropdownPanel>
-                    )}
+{catDD.open && !readOnly && (
+  <DropdownPanel>
+    <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <input
+        autoFocus
+        value={labelSearch}
+        onChange={(e) => setLabelSearch(e.target.value)}
+        placeholder="Buscar etiqueta..."
+        style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+      />
+    </div>
+    {labels.length === 0
+      ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
+      : (() => {
+          const filtered = labels.filter((l) =>
+            l.Label_Name.toLowerCase().includes(labelSearch.toLowerCase())
+          );
+          if (filtered.length === 0) return (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin resultados.</div>
+          );
+          return filtered.map((label) => {
+            const sel = selectedLabelIds.includes(label.Label_ID);
+            return (
+              <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>
+                {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
+                <span style={{ flex: 1 }}>{label.Label_Name}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
+                {sel && <Checkmark />}
+              </DropdownItem>
+            );
+          });
+        })()
+    }
+  </DropdownPanel>
+)}
                   </div>
                 </FieldBlock>
 
@@ -998,12 +1029,81 @@ onToggleAssignee={(userId) => {
                   </div>
                 </FieldBlock>
 
-                <FieldBlock label="Puntaje">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[effectiveRequest.prioridad] }}>{PUNTAJE[effectiveRequest.prioridad]}</span>
-                    <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
-                  </div>
-                </FieldBlock>
+<FieldBlock label="Prioridad">
+  <div ref={priorDD.ref} style={{ position: 'relative' }}>
+    <button
+      onClick={() => { if (!readOnly) priorDD.setOpen((o) => !o); }}
+      style={{
+        ...triggerBase(priorDD.open, '0,200,255'),
+        flexWrap: 'nowrap',
+      }}
+    >
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
+
+        color: PRI_COLOR[effectiveRequest.prioridad],
+      }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+          background: PRI_COLOR[effectiveRequest.prioridad],
+        }} />
+        {PRIORIDADES[effectiveRequest.prioridad]}
+      </span>
+      {!readOnly && (
+        <ChevDown size={12} style={{
+          marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0,
+          transform: priorDD.open ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.15s',
+        }} />
+      )}
+    </button>
+
+    {priorDD.open && !readOnly && (
+      <DropdownPanel>
+        {(Object.entries(PRIORIDADES) as [Prioridad, string][]).map(([pri, label]) => {
+          const sel = effectiveRequest.prioridad === pri;
+          return (
+            <DropdownItem
+              key={pri}
+              selected={sel}
+              onClick={() => {
+                update({ id: requestId, patch: { prioridad: pri } });
+                priorDD.setOpen(false);
+              }}
+            >
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: PRI_COLOR[pri],
+              }} />
+              <span style={{
+                flex: 1, fontSize: 12, fontWeight: 700,
+                letterSpacing: 0.5,
+                color: PRI_COLOR[pri],
+              }}>
+                {label}
+              </span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)',
+                color: PRI_COLOR[pri], opacity: 0.7,
+              }}>
+                {PUNTAJE[pri]} pts
+              </span>
+              {sel && <Checkmark />}
+            </DropdownItem>
+          );
+        })}
+      </DropdownPanel>
+    )}
+  </div>
+</FieldBlock>
+
+<FieldBlock label="Puntaje">
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[effectiveRequest.prioridad] }}>{PUNTAJE[effectiveRequest.prioridad]}</span>
+    <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
+  </div>
+</FieldBlock>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1062,33 +1162,94 @@ onToggleAssignee={(userId) => {
 />
 )}
 
-              {!readOnly && (
-                <FieldBlock label="Mover a">
-                  {isCerrada ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}>
-                      <Lock size={12} />Esta solicitud está cerrada y no puede moverse.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                      {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
-                        const active     = columnaActual === col;
-                        const esCierre   = COLUMNAS_CIERRE.has(col);
-                        const showBadge  = esCierre && !yaHayClosure;
-                        return (
-                          <button key={col} onClick={() => handleMover(col)}
-                            style={{ padding: '6px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', border: `1px solid ${active ? COL_COLOR[col] + '60' : showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`, background: active ? `${COL_COLOR[col]}15` : 'transparent', color: active ? COL_COLOR[col] : showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)', cursor: active ? 'default' : 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}
-                            onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '50'; e.currentTarget.style.color = COL_COLOR[col]; } }}
-                            onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; } }}
-                          >
-                            {showBadge && <CheckCircle size={9} />}{label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </FieldBlock>
-              )}
+{!readOnly && (
+  <FieldBlock label="Mover a">
+    {isCerrada ? (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}>
+        <Lock size={12} />Esta solicitud está cerrada y no puede moverse.
+      </div>
+    ) : (
+      <div ref={moverDD.ref} style={{ position: 'relative' }}>
+        {/* Trigger — muestra la columna actual */}
+        <button
+          onClick={() => moverDD.setOpen((o) => !o)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 12px', borderRadius: 6, width: '100%',
+            border: `1px solid ${moverDD.open ? COL_COLOR[columnaActual] + '60' : COL_COLOR[columnaActual] + '35'}`,
+            background: moverDD.open ? `${COL_COLOR[columnaActual]}18` : `${COL_COLOR[columnaActual]}0d`,
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+        >
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+            background: COL_COLOR[columnaActual],
+          }} />
+<span style={{
+  flex: 1, fontSize: 12, fontWeight: 700, letterSpacing: 1,
+   color: COL_COLOR[columnaActual],
+  textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6,
+}}>
+  {KANBAN_COLUMNAS[columnaActual]}
+  <span style={{
+    fontSize: 8, fontWeight: 600, letterSpacing: 0.5,
+    padding: '1px 5px', borderRadius: 3,
+    border: `1px solid ${COL_COLOR[columnaActual]}35`,
+    background: `${COL_COLOR[columnaActual]}12`,
+    color: COL_COLOR[columnaActual], opacity: 0.75,
+    textTransform: 'uppercase',
+  }}>
+    Mover
+  </span>
+</span>
+          <ChevDown size={12} style={{
+            color: COL_COLOR[columnaActual], opacity: 0.7, flexShrink: 0,
+            transform: moverDD.open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.15s',
+          }} />
+        </button>
+
+        {moverDD.open && (
+          <div style={{
+            position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
+            zIndex: 200, background: 'var(--bg-panel)',
+            border: '1px solid var(--border)', borderRadius: 8,
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
+            overflow: 'hidden', minWidth: 180,
+          }}>
+            <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
+                const active    = columnaActual === col;
+                const esCierre  = COLUMNAS_CIERRE.has(col);
+                const showBadge = esCierre && !yaHayClosure;
+                return (
+                  <button
+                    key={col}
+                    onClick={() => { handleMover(col); if (!COLUMNAS_CIERRE.has(col) || yaHayClosure) moverDD.setOpen(false); }}
+                    style={{
+                      padding: '5px 11px', borderRadius: 6,
+                      fontSize: 11, fontWeight: 700, letterSpacing: 1,
+                      transition: 'all 0.12s',
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      cursor: active ? 'default' : 'pointer',
+                      border: `1px solid ${active ? COL_COLOR[col] + '60' : showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`,
+                      background: active ? `${COL_COLOR[col]}18` : 'transparent',
+                      color: active ? COL_COLOR[col] : showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)',
+                    }}
+                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '55'; e.currentTarget.style.color = COL_COLOR[col]; e.currentTarget.style.background = `${COL_COLOR[col]}10`; } }}
+                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; } }}
+                  >
+                    {showBadge && <CheckCircle size={9} />}{label}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        )}
+      </div>
+    )}
+  </FieldBlock>
+)}            </div>
 
             {/* Panel derecho */}
             <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1100,7 +1261,7 @@ onToggleAssignee={(userId) => {
                   const active = rightTab === tab.key;
                   return (
                     <button key={tab.key} onClick={() => setRightTab(tab.key)}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>
                       {tab.icon}{tab.label}
                       {tab.count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>{tab.count}</span>}
                     </button>
@@ -1174,12 +1335,13 @@ onToggleAssignee={(userId) => {
                   )}
                 </>
               )}
-            </div>
+</div>
+          </div>
           </div>
         </div>
       </div>
 {showTimerWarning && (
-  <div style={{
+    <div style={{
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 200,
@@ -1332,7 +1494,7 @@ function SubTeamGroup({ subTeam, members, isLoading, assigneeIds, selectedSubIds
 function CopyLinkButton({ ticketId }: { ticketId: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {
-    navigator.clipboard.writeText(`${window.location.origin}/ticket/${ticketId}`)
+  navigator.clipboard.writeText(`${window.location.origin}/ticket/${ticketId}`)
       .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
   return (
@@ -1347,89 +1509,139 @@ function CopyLinkButton({ ticketId }: { ticketId: string }) {
   );
 }
 
-function TemplateFormDataPanel({ formData, schema, accentColor }: { formData: Record<string, unknown>; schema: unknown[]; accentColor: string }) {
-  // Justo antes de flattenSchema, agregar:
-const savedLabels: Record<string, string> = (() => {
-  try { return JSON.parse(formData['__labels'] as string ?? '{}'); }
-  catch { return {}; }
-})();
-function flattenSchema(fields: unknown[]): { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] {
-  const result: { key: string; label: string; isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string }[] = [];
+function TemplateFormDataPanel({ formData, schema, snapshotSchema }: {
+  formData:        Record<string, unknown>;
+  schema:          unknown[];
+  snapshotSchema?: unknown[];
+  accentColor:     string;
+}) {
+  // ── Tipos internos ──────────────────────────────────────────────────────────
+  type FlatField = {
+    key:         string;
+    label:       string;
+    guards:      { parentKey: string; requiredValue: string }[];
+    showInModal: boolean;
+  };
+
+    const savedLabels: Record<string, string> = (() => {
+    try { return JSON.parse(formData['__labels'] as string ?? '{}'); }
+    catch { return {}; }
+  })();
+  // ── flattenSchemaDeep ───────────────────────────────────────────────────────
+  // Aplana el schema completo, acumulando la cadena de guards padre → hijo.
+  // Fix del bug: antes solo se registraba 1 nivel de condicional. Ahora cada
+  // campo condicional agrega su guard a TODOS sus descendientes, sin importar
+  // cuántos niveles de profundidad haya.
+// Colecta TODOS los keys del schema (para excluirlos de orphans si son invisibles)
+function collectAllKeys(fields: unknown[]): Set<string> {
+  const keys = new Set<string>();
   for (const f of fields) {
     const field = f as Record<string, unknown>;
     if (!field.key) continue;
+    keys.add(field.key as string);
     if (field.type === 'conditional') {
-      if (field.label) result.push({ key: field.key as string, label: field.label as string, isConditionalParent: true });
-      for (const child of flattenSchema((field.trueBranch as unknown[]) ?? [])) {
-        result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'true' });
+      for (const k of collectAllKeys((field.trueBranch as unknown[]) ?? [])) keys.add(k);
+      for (const k of collectAllKeys((field.falseBranch as unknown[]) ?? [])) keys.add(k);
+    }
+  }
+  return keys;
+}
+
+function collectVisibleLevel(fields: unknown[]): FlatField[] {
+  const result: FlatField[] = [];
+
+  for (const f of fields) {
+    const field = f as Record<string, unknown>;
+    if (!field.key) continue;
+    const showInModal = (field.showInModal as boolean | undefined) ?? true;
+
+    if (field.type === 'conditional') {
+      // Mostrar el campo condicional en sí solo si showInModal: true
+      if (showInModal && field.label) {
+        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal });
       }
-      for (const child of flattenSchema((field.falseBranch as unknown[]) ?? [])) {
-        result.push({ ...child, conditionalParentKey: field.key as string, conditionalParentValue: 'false' });
-      }
+      // SIEMPRE explorar la rama activa (independientemente de showInModal del padre)
+      // para recolectar hijos que sí sean visibles
+      const val = formData[field.key as string];
+      const effective = (val === undefined || val === null || val === '') ? 'false' : String(val);
+      const activeBranch = effective === 'true'
+        ? (field.trueBranch as unknown[]) ?? []
+        : (field.falseBranch as unknown[]) ?? [];
+      result.push(...collectVisibleLevel(activeBranch));
     } else {
-      if (field.label) result.push({ key: field.key as string, label: field.label as string });
+      if (showInModal && field.label) {
+        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal });
+      }
     }
   }
   return result;
 }
-    const schemaFields = flattenSchema(schema);
-  const schemaKeys   = new Set(schemaFields.map((f) => f.key));
 
-  // Campos huérfanos: están en formData pero ya no en el schema
-const orphanFields = Object.keys(formData)
-  .filter((k) => !schemaKeys.has(k) && k !== '__labels')
-  .map((k) => ({
-    key:   k,
-    label: savedLabels[k] ?? k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-  }));
-  const allFields = [...schemaFields, ...orphanFields];
-const entries = allFields.filter(({ key, ...rest }) => {
-  if (key === '__labels') return false;
-  const val = formData[key];
-  const fieldMeta = rest as { isConditionalParent?: boolean; conditionalParentKey?: string; conditionalParentValue?: string };
-  // Campo padre condicional: siempre mostrarlo (tiene valor o no — si no tiene, significa "No")
-  if (fieldMeta.isConditionalParent) {
-    // Si pertenece a una rama (caso raro de nested), verificar padre
-    if (fieldMeta.conditionalParentKey) {
-      const parentVal = formData[fieldMeta.conditionalParentKey];
-      if (parentVal !== fieldMeta.conditionalParentValue) return false;
+const schemaFields  = collectVisibleLevel(schema);
+const allLiveKeys   = collectAllKeys(schema);
+
+// Lookup del snapshot para recuperar label+showInModal de keys huérfanos
+function collectAllWithMeta(fields: unknown[]): Map<string, { label: string; showInModal: boolean }> {
+  const map = new Map<string, { label: string; showInModal: boolean }>();
+  for (const f of fields) {
+    const field = f as Record<string, unknown>;
+    if (!field.key || !field.label) continue;
+    const showInModal = (field.showInModal as boolean | undefined) ?? true;
+    map.set(field.key as string, { label: field.label as string, showInModal });
+    if (field.type === 'conditional') {
+      for (const [k, v] of collectAllWithMeta((field.trueBranch  as unknown[]) ?? [])) map.set(k, v);
+      for (const [k, v] of collectAllWithMeta((field.falseBranch as unknown[]) ?? [])) map.set(k, v);
     }
-    return true;
   }
-  if (val === undefined || val === '' || val === null) return false;
-  if (fieldMeta.conditionalParentKey) {
-    const parentVal = formData[fieldMeta.conditionalParentKey];
-    if (parentVal !== fieldMeta.conditionalParentValue) return false;
-  }
-  return true;
-});
-  if (entries.length === 0) return null;  
-  if (entries.length === 0) return null;
-function renderValue(key: string): React.ReactNode {
-  const val = formData[key];
-if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
-if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
-if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
-  return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
+  return map;
 }
+
+const snapshotMeta = collectAllWithMeta(snapshotSchema ?? []);
+
+const orphanFields: FlatField[] = Object.keys(formData)
+  .filter((k) => !allLiveKeys.has(k) && k !== '__labels')
+  .map((k) => {
+    const snap = snapshotMeta.get(k);
+    const showInModal = snap?.showInModal ?? true;
+    const label = snap?.label
+      ?? savedLabels[k]
+      ?? k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return { key: k, label, guards: [], showInModal };
+  })
+  .filter((f) => f.showInModal); // respetar showInModal del snapshot
+
+  const entries = [...schemaFields, ...orphanFields].filter(({ key, showInModal }) => {
+  if (key === '__labels') return false;
+  if (!showInModal) return false;
+  const val = formData[key];
+  if (val === 'true' || val === 'false') return true;
+  return val !== undefined && val !== '' && val !== null;
+});
+  if (entries.length === 0) return null;
+
+  // ── Renderizado del valor ───────────────────────────────────────────────────
+  function renderValue(key: string): React.ReactNode {
+    const val = formData[key];
+    if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
+    if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
+    if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
+    return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
+  }
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: accentColor, background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.18)', padding: '3px 10px', borderRadius: 3, flexShrink: 0 }}>Datos adicionales</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {entries.map(({ key, label }) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', flexShrink: 0, minWidth: 110, textTransform: 'uppercase' }}>{label}</span>
-            <span style={{ flex: 1, height: 1, borderBottom: '1px dashed var(--border-subtle)', alignSelf: 'center' }} />
-            <span style={{ fontSize: 12, fontWeight: 500, textAlign: 'right' }}>{renderValue(key)}</span>
-          </div>
-        ))}
-      </div>
+<div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+  {entries.map(({ key, label }) => (
+    <div key={key} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', lineHeight: 1.5, paddingTop: 1 }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.6, color: 'var(--txt)' }}>{renderValue(key)}</span>
+    </div>
+  ))}
+</div>
     </div>
   );
 }
+
 
 function DividirTooltip() {
   const [visible, setVisible] = useState(false);
@@ -1532,7 +1744,7 @@ function SprintDot({ sprint }: { sprint: { Sprint_Start_Date: string; Sprint_End
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>;
+  return <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 1, color: 'var(--txt-muted)', marginBottom: 8 }}>{children}</span>;
 }
 
 function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) {
@@ -1546,7 +1758,7 @@ function PersonChip({ name, teamName}: { name: string; teamName?: string | null;
       <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{ini}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{name}</span>
-        {teamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>{teamName}</span>}
+        {teamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)',  letterSpacing: 0.5, fontWeight: 600 }}>{teamName}</span>}
       </div>
     </div>
   );
@@ -1587,7 +1799,7 @@ function TimerOrInputBlock({
             onClick={() => setMode(m)}
             style={{
               padding: '4px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
-              textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+              border: 'none', cursor: 'pointer',
               background: mode === m ? 'var(--accent-2)' : 'transparent',
               color:      mode === m ? 'white' : 'var(--txt-muted)',
               transition: 'all 0.15s', fontFamily: 'var(--font-display)',
