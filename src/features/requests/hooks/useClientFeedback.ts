@@ -16,10 +16,10 @@ export const clientFeedbackKeys = {
   byRequest: (requestId: string) => ['clientFeedback', requestId] as const,
 };
 
-/* ── Fetch del feedback existente ── */
+/* ── Fetch del historial completo de feedback ── */
 export function useClientFeedback(requestId: string) {
   const { Requests } = useGraphServices();
-  return useQuery<ClientFeedback | null>({
+  return useQuery<ClientFeedback[]>({
     queryKey: clientFeedbackKeys.byRequest(requestId),
     queryFn:  () => Requests.fetchClientFeedback(requestId),
     enabled:  !config.USE_MOCK,
@@ -59,7 +59,6 @@ export function useSubmitClientFeedback(equipo: Equipo) {
 
       const targetColumna = payload.decision === 'approved' ? 'ready_to_deploy' : 'en_revision_qas';
 
-      // Mover optimistamente la tarjeta a su nueva columna
       queryClient.setQueryData<BoardData>(queryKey, (prev) => {
         if (!prev) return prev;
 
@@ -85,11 +84,7 @@ export function useSubmitClientFeedback(equipo: Equipo) {
 
         next[targetColumna] = [
           ...next[targetColumna],
-          {
-            ...card,
-            columna:  targetColumna,
-            columnId: payload.targetColumnId,
-          },
+          { ...card, columna: targetColumna, columnId: payload.targetColumnId },
         ];
 
         return next;

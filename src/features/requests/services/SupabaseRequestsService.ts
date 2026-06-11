@@ -53,7 +53,7 @@ type RawRequestRow = {
 
   requester: { User_Name: string; User_Email: string; User_Avatar_url: string; department?: { Department_Name: string } | null } | null;
   requester_team: { Team_ID: number; Team_Name: string; Team_Code: string } | null;
-  column:         { Board_Column_Name: string } | null;
+  column:         { Board_Column_Name: string; Board_Column_Slug: string | null } | null;
 
   assignments: {
     Request_Assignment_At: string;
@@ -67,7 +67,7 @@ type RawRequestRow = {
   child_count?: { count: number }[];
   criteria_summary?: { total: number; accepted: number; rejected: number } | null;
 
-  closure: {
+closure: Array<{
     Closure_ID:      number;
     Closure_Note:    string;
     Attachment_URL:  string | null;
@@ -83,7 +83,7 @@ type RawRequestRow = {
       File_Size:             number;
       Created_At:            string;
     }[];
-  } | null;
+  }> | null;
 };
 
 const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
@@ -109,7 +109,9 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 function mapRowToRequest(row: RawRequestRow): Request {
-  const columna              = COLUMN_NAME_TO_KANBAN[row.column?.Board_Column_Name ?? ''] ?? 'sin_categorizar';
+  const columna              = row.column?.Board_Column_Slug
+    ?? COLUMN_NAME_TO_KANBAN[row.column?.Board_Column_Name ?? '']
+    ?? 'sin_categorizar';
   const score                = row.Request_Score ?? 3;
   const prioridad: Prioridad = SCORE_TO_PRIORIDAD[score] ?? 'media';
 
@@ -165,34 +167,34 @@ const templateSchemaSnapshot = (
     row.template_schema?.Request_Template_Form_Schema ??
     []
   );
-  let cierreInfo: CierreInfo | null = null;
-  if (row.closure) {
-    const rawAtts = row.closure.closure_attachments ?? [];
-    const attachments: ClosureAttachment[] = rawAtts.map((a) => ({
-      attachmentId: a.Closure_Attachment_ID,
-      storagePath:  a.Storage_Path,
-      fileName:     a.File_Name,
-      mimeType:     a.Mime_Type,
-      fileSize:     a.File_Size,
-      createdAt:    a.Created_At,
-      signedUrl:    null,
-    }));
-
-    cierreInfo = {
-      closureId:      row.closure.Closure_ID,
-      closureNote:    row.closure.Closure_Note,
-      closedAt:       row.closure.Closed_At,
-      closedBy: {
-        userId:   row.closure.closer?.User_ID   ?? 0,
-        userName: row.closure.closer?.User_Name ?? '',
-      },
-      attachments,
-      attachmentUrl:  row.closure.Attachment_URL,
-      attachmentName: row.closure.Attachment_Name,
-      attachmentMime: row.closure.Attachment_Mime,
+function mapOneClosure(c: NonNullable<RawRequestRow['closure']>[number]): CierreInfo {
+    return {
+      closureId:      c.Closure_ID,
+      closureNote:    c.Closure_Note,
+      closedAt:       c.Closed_At,
+      closedBy: { userId: c.closer?.User_ID ?? 0, userName: c.closer?.User_Name ?? '' },
+      attachments:    (c.closure_attachments ?? []).map((a) => ({
+        attachmentId: a.Closure_Attachment_ID,
+        storagePath:  a.Storage_Path,
+        fileName:     a.File_Name,
+        mimeType:     a.Mime_Type,
+        fileSize:     a.File_Size,
+        createdAt:    a.Created_At,
+        signedUrl:    null,
+      })),
+      attachmentUrl:  c.Attachment_URL,
+      attachmentName: c.Attachment_Name,
+      attachmentMime: c.Attachment_Mime,
     };
   }
 
+  const cierreHistorial: CierreInfo[] = Array.isArray(row.closure)
+    ? [...row.closure]
+        .sort((a, b) => new Date(b.Closed_At).getTime() - new Date(a.Closed_At).getTime())
+        .map(mapOneClosure)
+    : [];
+
+  const cierreInfo: CierreInfo | null = cierreHistorial[0] ?? null;
   return {
     id:              row.Request_ID,
     templateId:      row.Request_Template_ID,
@@ -229,6 +231,7 @@ const templateSchemaSnapshot = (
     childCount,
     criteriaSummary,
     cierreInfo,
+    cierreHistorial: cierreHistorial.length > 0 ? cierreHistorial : undefined,
     isConfidential:  row.Request_Is_Confidential ?? false,
     clientFeedback:  undefined,
   };
@@ -269,8 +272,15 @@ export class SupabaseRequestsService {
     const row    = await apiClient.call<RawRequestRow>('fetchById', { id });
     const mapped = mapRowToRequest(row);
 
-    if (mapped.cierreInfo && mapped.cierreInfo.attachments.length > 0) {
-      mapped.cierreInfo.attachments = await this.fetchClosureAttachments(mapped.cierreInfo.closureId);
+    if (mapped.cierreHistorial && mapped.cierreHistorial.length > 0) {
+      mapped.cierreHistorial = await Promise.all(
+        mapped.cierreHistorial.map(async (cierre) => {
+          if (cierre.attachments.length === 0) return cierre;
+          const withUrls = await this.fetchClosureAttachments(cierre.closureId);
+          return { ...cierre, attachments: withUrls };
+        }),
+      );
+      mapped.cierreInfo = mapped.cierreHistorial[0] ?? null;
     }
     return mapped;
   }
@@ -303,10 +313,9 @@ export class SupabaseRequestsService {
     }));
   }
 
-  async fetchClientFeedback(requestId: string): Promise<ClientFeedback | null> {
-    const raw = await apiClient.call<RawClientFeedback | null>('fetchClientFeedback', { requestId });
-    if (!raw) return null;
-    return mapRawFeedback(raw);
+  async fetchClientFeedback(requestId: string): Promise<ClientFeedback[]> {
+    const rows = await apiClient.call<RawClientFeedback[]>('fetchClientFeedback', { requestId });
+    return (rows ?? []).map(mapRawFeedback);
   }
 
   async submitClientFeedback(payload: SubmitClientFeedbackPayload): Promise<ClientFeedback> {

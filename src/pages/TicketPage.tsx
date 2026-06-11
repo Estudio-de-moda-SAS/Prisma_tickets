@@ -1,6 +1,6 @@
 // src/pages/TicketPage.tsx
-import { useParams, useNavigate } from 'react-router-dom';
-import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import type { Location } from 'react-router-dom';import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
 import { HomeRequestModal } from '@/features/requests/components/HomeRequestModal';
 import { RequestModal } from '@/features/requests/components/RequestModal';
 import { useBoardStore } from '@/store/boardStore';
@@ -11,6 +11,7 @@ import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { config } from '@/config';
 import { EQUIPOS } from '@/features/requests/types';
 import type { KanbanColumna, Equipo } from '@/features/requests/types';
+
 const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
   sin_categorizar:  1,
   icebox:           2,
@@ -29,7 +30,7 @@ function Loader() {
     <div style={{
       position: 'fixed', inset: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(0,0,0,0.55)', zIndex: 300,
+      background: 'rgba(59,130,246,0.04)', zIndex: 300,
     }}>
       <div style={{
         width: 40, height: 40, borderRadius: '50%',
@@ -82,6 +83,8 @@ function NotFound({ onClose }: { onClose: () => void }) {
 }
 
 export function TicketPage() {
+  const location   = useLocation();
+const bgLocation = (location.state as { backgroundLocation?: Location } | null)?.backgroundLocation;
   const { equipo: equipoParam, ticketId } = useParams<{ equipo: string; ticketId: string }>();
   const navigate                          = useNavigate();
   const result                            = useTicketResolver(ticketId);
@@ -101,13 +104,13 @@ const equipo: Equipo = result.kind === 'kanban'
   const { mutate: mover }        = useMoveRequest(equipo);
   const { mutate: closeRequest } = useCloseRequest(equipo);
 
-  function handleClose() {
-    if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/home', { replace: true });
-    }
+function handleClose() {
+  if (bgLocation || window.history.length > 2) {
+    navigate(-1);
+  } else {
+    navigate('/home', { replace: true });
   }
+}
 
   function handleMove(id: string, columna: KanbanColumna) {
     const columnId = columnMap?.[columna];

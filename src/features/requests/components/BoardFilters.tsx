@@ -39,9 +39,15 @@ export type TemplateFilterOption = {
    Opciones dinámicas que el padre debe proveer
    ============================================================ */
 export type FilterDynamicOptions = {
-  subequipo?:  { value: string; label: string }[];
-  etiqueta?:   { value: string; label: string }[];
-  assignee?:   { value: string; label: string }[];
+  subequipo?:       { value: string; label: string }[];
+  etiqueta?:        { value: string; label: string }[];
+  assignee?:        { value: string; label: string }[];
+  assigneeGrouped?: {
+    subTeamId:    string;
+    subTeamName:  string;
+    subTeamColor: string;
+    members:      { value: string; label: string; email: string }[];
+  }[];
   sprint?:     { value: string; label: string }[];
   categoria?:  { value: string; label: string }[];
   /** Plantillas del board con sus campos ya tipados */
@@ -106,6 +112,7 @@ function getOptions(
   if (field === 'template_field') return getOptionsForTemplateField(tf);
   if (FIELD_SELECT_OPTIONS[field]) return FIELD_SELECT_OPTIONS[field]!;
   if (field === 'etiqueta') return dynamic.etiqueta ?? dynamic.categoria ?? [];
+  if (field === 'equipo')   return dynamic.subequipo ?? [];
   return dynamic[field as keyof FilterDynamicOptions] as { value: string; label: string }[] ?? [];
 }
 
@@ -176,9 +183,184 @@ function ActiveChip({
 }
 
 /* ============================================================
-   ConditionRow
+   AssigneeFilterPicker
    ============================================================ */
-function ConditionRow({
+
+type AssigneeGroupData = NonNullable<FilterDynamicOptions['assigneeGrouped']>[number];
+
+function pickerInitials(name: string) {
+  return name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
+}
+
+function AssigneeGroupBlock({
+  group, filtered, selected, onSelect,
+}: {
+  group:    AssigneeGroupData;
+  filtered: AssigneeGroupData['members'];
+  selected: string;
+  onSelect: (val: string) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  if (!filtered.length) return null;
+  return (
+    <div>
+      <div className="filter-ag-header" onClick={() => setCollapsed((v) => !v)}>
+        <div className="filter-ag-header__dot" style={{ background: group.subTeamColor }} />
+        <span className="filter-ag-header__name">{group.subTeamName}</span>
+        <svg width="9" height="9" viewBox="0 0 8 8" fill="none"
+          style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+      {!collapsed && filtered.map((m) => {
+        const sel = m.value === selected;
+        return (
+          <div key={m.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onClick={() => onSelect(m.value)}>
+            <div className="filter-ag-item__av" style={sel ? { background: group.subTeamColor } : undefined}>
+              {pickerInitials(m.label)}
+            </div>
+            <div className="filter-ag-item__info">
+              <div className="filter-ag-item__name">{m.label}</div>
+              <div className="filter-ag-item__email">{m.email}</div>
+            </div>
+            {sel && (
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AssigneeFilterPicker({
+  value, groups, flat, onChange,
+}: {
+  value:    string;
+  groups?:  FilterDynamicOptions['assigneeGrouped'];
+  flat:     { value: string; label: string }[];
+  onChange: (val: string) => void;
+}) {
+  const [open,   setOpen]   = useState(false);
+  const [search, setSearch] = useState('');
+  const [pos,    setPos]    = useState({ top: 0, left: 0, width: 260 });
+  const triggerRef          = useRef<HTMLButtonElement>(null);
+  const dropRef             = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = flat.find((o) => o.value === value)?.label ?? '';
+
+  useEffect(() => {
+    if (!open) return;
+    function out(e: MouseEvent) {
+      if (
+        triggerRef.current?.contains(e.target as Node) ||
+        dropRef.current?.contains(e.target as Node)
+      ) return;
+      setOpen(false);
+      setSearch('');
+    }
+    document.addEventListener('mousedown', out);
+    return () => document.removeEventListener('mousedown', out);
+  }, [open]);
+
+  function openPicker() {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left, width: Math.max(260, r.width) });
+    }
+    setOpen((o) => !o);
+    setSearch('');
+  }
+
+  function handleSelect(val: string) {
+    onChange(val === value ? '' : val);
+    setOpen(false);
+    setSearch('');
+  }
+
+  const hasGroups = (groups?.length ?? 0) > 0;
+
+  const noResults = hasGroups && groups!.every((g) =>
+    g.members.filter(
+      (m) => !search ||
+        m.label.toLowerCase().includes(search.toLowerCase()) ||
+        m.email.toLowerCase().includes(search.toLowerCase()),
+    ).length === 0,
+  );
+
+  return (
+    <div className="filter-assignee-wrap">
+      <button ref={triggerRef} className="filter-assignee-trigger" onClick={openPicker}>
+        {value && selectedLabel ? (
+          <>
+            <div className="filter-assignee-trigger__av">{pickerInitials(selectedLabel)}</div>
+            <span className="filter-assignee-trigger__name">{selectedLabel}</span>
+          </>
+        ) : (
+          <span className="filter-assignee-trigger__placeholder">Seleccionar…</span>
+        )}
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"
+          style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--txt-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        </svg>
+      </button>
+
+      {open && createPortal(
+        <div ref={dropRef} className="filter-assignee-drop" style={{ top: pos.top, left: pos.left, width: pos.width }}>
+          <div className="filter-assignee-search">
+            <input
+              autoFocus
+              className="filter-assignee-search__input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar usuario…"
+            />
+          </div>
+          <div className="filter-assignee-list">
+            {hasGroups
+              ? groups!.map((g) => (
+                  <AssigneeGroupBlock
+                    key={g.subTeamId}
+                    group={g}
+                    filtered={g.members.filter(
+                      (m) => !search ||
+                        m.label.toLowerCase().includes(search.toLowerCase()) ||
+                        m.email.toLowerCase().includes(search.toLowerCase()),
+                    )}
+                    selected={value}
+                    onSelect={handleSelect}
+                  />
+                ))
+              : flat
+                  .filter((o) => !search || o.label.toLowerCase().includes(search.toLowerCase()))
+                  .map((o) => (
+                    <div key={o.value} className={`filter-ag-item${o.value === value ? ' filter-ag-item--sel' : ''}`} onClick={() => handleSelect(o.value)}>
+                      <div className="filter-ag-item__av">{pickerInitials(o.label)}</div>
+                      <div className="filter-ag-item__info">
+                        <div className="filter-ag-item__name">{o.label}</div>
+                      </div>
+                      {o.value === value && (
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                          <path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                  ))
+            }
+            {noResults && <div className="filter-assignee-empty">Sin resultados</div>}
+          </div>
+        </div>,
+        document.getElementById('portal-root') ?? document.body,
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   ConditionRow
+   ============================================================ */function ConditionRow({
   boardId,
   condition,
   index,
@@ -414,6 +596,13 @@ function ConditionRow({
                 onChange={(e) => updateCondition(boardId, condition.id, { value2: e.target.value })}
               />
             </div>
+          ) : condition.field === 'assignee' ? (
+            <AssigneeFilterPicker
+              value={condition.value}
+              groups={dynamicOptions.assigneeGrouped}
+              flat={dynamicOptions.assignee ?? []}
+              onChange={(val) => updateCondition(boardId, condition.id, { value: val })}
+            />
           ) : hasOptions ? (
             <select
               className="filter-select filter-select--value"

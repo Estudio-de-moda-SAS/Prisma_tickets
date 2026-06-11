@@ -1,6 +1,7 @@
 // src/features/requests/hooks/useRequests.ts
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
+import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 import { MOCK_BOARD } from '../mock/Mockboard';
 import type { Equipo, BoardData, KanbanColumna, Request } from '../types';
@@ -154,5 +155,21 @@ export function useMisSolicitudes(nombre: string) {
     staleTime:            0,
     refetchOnMount:       true,
     refetchOnWindowFocus: true,
+  });
+}
+
+/* ============================================================
+   Hook — eliminar solicitud
+   ============================================================ */
+export function useDeleteRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.call<{ ok: boolean }>('deleteRequest', { id }),
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: ['request', id] });
+      queryClient.invalidateQueries({ queryKey: requestKeys.all });
+    },
   });
 }

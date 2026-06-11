@@ -21,9 +21,11 @@ export function AppLayout() {
   const navigate     = useNavigate();
   const titulo       = TITULOS[pathname] ?? 'Prisma Tickets';
 
+  // ← nueva línea
+  const isFullBleed = /^\/tasks\//.test(pathname);
+
   const { data: currentUser, isLoading } = useCurrentUser();
 
-  // Redirigir en effect, no durante el render
   React.useEffect(() => {
     if (!isLoading && currentUser?.Is_New) {
       navigate('/onboarding', { replace: true });
@@ -36,7 +38,8 @@ export function AppLayout() {
         <Sidebar />
         <div className="app-layout__main">
           <Topbar titulo={titulo} />
-          <main className="app-layout__content">
+          {/* ← clase condicional */}
+          <main className={`app-layout__content${isFullBleed ? ' app-layout__content--full-bleed' : ''}`}>
             <Outlet />
           </main>
         </div>

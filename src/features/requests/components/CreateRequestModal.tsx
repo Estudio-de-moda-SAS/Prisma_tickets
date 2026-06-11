@@ -1,9 +1,8 @@
 // src/features/requests/components/CreateRequestModal.tsx
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronDown as ChevDown, GitFork, Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { PRIORIDADES } from '../types';
-import type { Prioridad } from '../types';
 import {
   useLabelsByTeamId,
   useBoardTeams,
@@ -11,16 +10,21 @@ import {
   getTemplateDefinition,
 } from '@/features/requests/hooks/useBoardMetadata';
 import { useSprints }     from '@/features/requests/hooks/useSprints';
-import { useUsers }       from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap }   from '@/features/requests/hooks/useColumnMap';
 import { useCreateRequest } from '@/features/requests/hooks/useCreateRequest';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
+import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
+import { useRole } from '@/auth/roles';
 import { config } from '@/config';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField} from '@/features/requests/templates/types';
 import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
 import type { ConditionalField } from '@/features/requests/templates/types';
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
+import { useUsers } from '@/features/requests/hooks/useUsers';
+import type { Prioridad } from '../types';
+import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
 
 /* ── Normaliza ramas legacy (objeto → array) ── */
 function normalizeBranch(field: import('@/features/requests/templates/types').TemplateExtraField): import('@/features/requests/templates/types').TemplateExtraField {
@@ -123,13 +127,9 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, flex: 1, overflowY: 'auto' }}>
         {teams.map((team) => {
-          const code     = team.Board_Team_Code as keyof typeof EQUIPO_COLORS;
-          const colors   = EQUIPO_COLORS[code];
-          const Icon     = EQUIPO_ICONS[code];
-          const selected = selectedTeamId === team.Board_Team_ID;
-          const dot      = colors?.dot    ?? team.Board_Team_Color;
-          const glow     = colors?.glow   ?? `${team.Board_Team_Color}12`;
-          const border   = colors?.border ?? `${team.Board_Team_Color}30`;
+          const selected            = selectedTeamId === team.Board_Team_ID;
+          const { dot, glow, border } = teamColors(team.Board_Team_Color);
+          const Icon = getTeamIcon(team.Board_Team_Icon);
           return (
             <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
               style={{ padding: '16px', borderRadius: 8, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
@@ -143,7 +143,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
                 </div>
               )}
               <div style={{ width: 32, height: 32, borderRadius: 7, background: selected ? `${dot}20` : 'var(--bg-panel)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {Icon ? <Icon size={14} style={{ color: selected ? dot : 'var(--txt-muted)', opacity: selected ? 1 : 0.6 }} /> : <span style={{ fontSize: 14 }}>🏢</span>}
+                <Icon size={14} style={{ opacity: selected ? 1 : 0.6 }} />
               </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 2 }}>{team.Board_Team_Name}</div>
@@ -164,15 +164,16 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
 }
 
 /* ── Step 2: Template ── */
-function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: {
+function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack, hideBack = false }: {
   templates:           BoardTemplate[];
   selectedBoardTeamId: number | null;
   selectedTemplateId:  number | null;
   onSelect:            (id: number) => void;
   onNext:              () => void;
   onBack:              () => void;
+  hideBack?:           boolean;
 }) {
-  const filtered = templates.filter((t) =>
+    const filtered = templates.filter((t) =>
     t.Request_Template_Is_Active &&
     (t.Request_Template_Teams?.length === 0 ||
      (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId)))
@@ -217,7 +218,7 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
         })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, flexShrink: 0 }}>
-        <button type="button" onClick={onBack} style={{ padding: '8px 18px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
+        {!hideBack && <button type="button" onClick={onBack} style={{ padding: '8px 18px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>}
         <button type="button" onClick={onNext} disabled={selectedTemplateId === null}
           style={{ padding: '8px 24px', borderRadius: 6, border: 'none', background: selectedTemplateId !== null ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: selectedTemplateId !== null ? 'white' : 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: selectedTemplateId !== null ? 'pointer' : 'not-allowed' }}>
           Continuar →
@@ -227,6 +228,7 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
   );
 }
 
+
 /* ── Primitivos ── */
 function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
@@ -234,6 +236,70 @@ function DropdownItem({ children, selected, onClick }: { children: React.ReactNo
     <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', background: hover ? 'rgba(0,200,255,0.06)' : selected ? 'rgba(0,200,255,0.04)' : 'transparent', color: selected ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: selected ? 600 : 400, transition: 'background 0.1s' }}>
       {children}
+    </div>
+  );
+}
+function SubTeamGroup({ subTeam, members, isLoading, assigneeIds, selectedSubIds, onToggleAssignee }: {
+  subTeam:        { Sub_Team_ID: number; Sub_Team_Name: string; Sub_Team_Color: string };
+  members:        SubTeamMember[];
+  isLoading:      boolean;
+  assigneeIds:    number[];
+  selectedSubIds: number[];
+  onToggleAssignee: (userId: number) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const hasAssigned = members.some((m) => assigneeIds.includes(m.User_ID));
+  const isSubAssigned = selectedSubIds.includes(subTeam.Sub_Team_ID);
+
+  return (
+    <div>
+      {/* Header del sub-equipo */}
+      <div
+        onClick={() => setCollapsed((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', cursor: 'pointer', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)', userSelect: 'none' }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.04)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-surface)'; }}
+      >
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: subTeam.Sub_Team_Color, flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: isSubAssigned ? subTeam.Sub_Team_Color : 'var(--txt)', letterSpacing: 0.3 }}>
+          {subTeam.Sub_Team_Name}
+        </span>
+        {hasAssigned && (
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${subTeam.Sub_Team_Color}20`, color: subTeam.Sub_Team_Color, border: `1px solid ${subTeam.Sub_Team_Color}40` }}>
+            asignado
+          </span>
+        )}
+        <svg width="9" height="9" viewBox="0 0 8 8" fill="none" style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+
+      {/* Miembros */}
+      {!collapsed && (
+        <div>
+          {isLoading && (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando…</div>
+          )}
+          {!isLoading && members.length === 0 && (
+            <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin integrantes.</div>
+          )}
+          {members.map((u) => {
+            const sel = assigneeIds.includes(u.User_ID);
+            return (
+              <DropdownItem key={u.User_ID} selected={sel} onClick={() => onToggleAssignee(u.User_ID)}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: sel ? `linear-gradient(135deg,${subTeam.Sub_Team_Color},${subTeam.Sub_Team_Color}99)` : 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                  {initials(u.User_Name)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
+                </div>
+                {sel && <Checkmark />}
+              </DropdownItem>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -283,78 +349,76 @@ const activeBranch: TemplateExtraField[] = isTrue
   ? conditionalField.trueBranch
   : conditionalField.falseBranch;
 
-    return (
-      <div style={{ marginBottom: 14 }}>
-        {/* Checkbox disparador */}
-        <button
-          type="button"
-          onClick={() => onChange(conditionalField.key, isTrue ? 'false' : 'true')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-            borderRadius: 8, width: '100%',
-            border: `1px solid ${isTrue ? accent + '50' : 'var(--border-subtle)'}`,
-            background: isTrue ? `${accent}0d` : 'var(--bg-surface)',
-            cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
-          }}
-        >
-          {/* Checkbox visual */}
-          <div style={{
-            width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-            border: `2px solid ${isTrue ? accent : 'var(--border)'}`,
-            background: isTrue ? accent : 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.15s',
-          }}>
-            {isTrue && (
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <span style={{
-              fontSize: 13,
-              color: isTrue ? 'var(--txt)' : 'var(--txt-muted)',
-              fontWeight: isTrue ? 600 : 400,
-              transition: 'color 0.15s',
-            }}>
-              {conditionalField.label}
-              {conditionalField.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
-            </span>
-          </div>
-        </button>
-
-        {/* Rama activa — solo si al menos un campo tiene label definido */}
-        {activeBranch && activeBranch.some((f) => f.label.trim() !== '') && (
-          <div style={{
-            marginTop: 8,
-            padding: '12px 14px',
-            borderRadius: 8,
-            border: `1px solid ${isTrue ? '#00e5a025' : 'var(--border-subtle)'}`,
-            background: isTrue ? '#00e5a006' : 'var(--bg-surface)',
-            position: 'relative',
-          }}>
-            {/* Línea lateral de color */}
-            <div style={{
-              position: 'absolute', left: 0, top: 8, bottom: 8, width: 3,
-              borderRadius: '0 3px 3px 0',
-              background: isTrue ? '#00e5a0' : 'var(--border)',
-            }} />
-            <div style={{ paddingLeft: 8 }}>
-              {activeBranch.map((branchField) => (
-                <ExtraFieldRenderer
-                  key={branchField.key}
-                  field={branchField}
-                  values={values}
-                  onChange={onChange}
-                  accent={isTrue ? '#00e5a0' : accent}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+return (
+  <div style={{ marginBottom: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+        {conditionalField.label}
+        {conditionalField.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+      </span>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {(['true', 'false'] as const).map((val) => {
+          const isSelected   = triggerValue === val;
+          const label        = val === 'true' ? 'Sí' : 'No';
+          const selectedColor = val === 'true' ? accent : 'var(--txt-muted)';
+          return (
+            <button
+              key={val}
+              type="button"
+              onClick={() => onChange(conditionalField.key, val)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '8px 20px', borderRadius: 7, cursor: 'pointer',
+                border: `1px solid ${isSelected ? (val === 'true' ? accent + '60' : 'rgba(178,190,195,0.5)') : 'var(--border-subtle)'}`,
+                background: isSelected ? (val === 'true' ? `${accent}12` : 'rgba(178,190,195,0.08)') : 'transparent',
+                color: isSelected ? selectedColor : 'var(--txt-muted)',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+                letterSpacing: 1, textTransform: 'uppercase',
+                transition: 'all 0.15s',
+              }}
+            >
+              <div style={{
+                width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                border: `2px solid ${isSelected ? selectedColor : 'var(--border)'}`,
+                background: isSelected ? selectedColor : 'transparent',
+                transition: 'all 0.15s',
+              }} />
+              {label}
+            </button>
+          );
+        })}
       </div>
-    );
+    </div>
+
+    {activeBranch && activeBranch.some((f) => f.label.trim() !== '') && (
+      <div style={{
+        marginTop: 8, padding: '12px 14px', borderRadius: 8,
+        border: `1px solid ${isTrue ? '#00e5a025' : `${accent}25`}`,
+        background: isTrue ? '#00e5a006' : `${accent}06`,
+        position: 'relative',
+      }}>
+        <div style={{
+          position: 'absolute', left: 0, top: 8, bottom: 8, width: 3,
+          borderRadius: '0 3px 3px 0',
+          background: isTrue ? '#00e5a0' : accent,
+        }} />
+        <div style={{ paddingLeft: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {activeBranch.map((branchField) => (
+              <ExtraFieldRenderer
+                key={branchField.key}
+                field={branchField}
+                values={values}
+                onChange={onChange}
+                accent={isTrue ? '#00e5a0' : accent}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
   }
 
   // ── Campos simples ────────────────────────────────────────
@@ -429,13 +493,34 @@ const activeBranch: TemplateExtraField[] = isTrue
     </div>
   );
 }
-
+function AutoTextarea({ value, onChange, style }: {
+  value: string;
+  onChange: (v: string) => void;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = '1px';
+    el.style.height = el.scrollHeight + 'px';
+  });
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      rows={1}
+      style={{ resize: 'none', overflow: 'hidden', ...style }}
+    />
+  );
+}
 /* ── AcceptanceCriteriaEditor ── */
 function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = false }: {
   criteria: string[]; onChange: (criteria: string[]) => void; accent: string; showError?: boolean;
 }) {
   const [newText, setNewText] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   function addCriteria() {
     const trimmed = newText.trim();
@@ -452,12 +537,16 @@ function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = fals
       {criteria.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {criteria.map((c, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: `${accent}08`, border: `1px solid ${accent}20` }}>
-              <div style={{ width: 18, height: 18, borderRadius: 4, background: `${accent}15`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 10px', borderRadius: 6, background: `${accent}08`, border: `1px solid ${accent}20` }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: `${accent}15`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                 <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke={accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
-              <input value={c} onChange={(e) => { const next = [...criteria]; next[idx] = e.target.value; onChange(next); }} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: 'var(--txt)', fontFamily: 'var(--font-body)' }} />
-              <button type="button" onClick={() => onChange(criteria.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+              <AutoTextarea
+                value={c}
+                onChange={(v) => { const next = [...criteria]; next[idx] = v; onChange(next); }}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: 'var(--txt)', fontFamily: 'var(--font-body)', lineHeight: 1.5, padding: 0 }}
+              />
+              <button type="button" onClick={() => onChange(criteria.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0, marginTop: 2 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
                 <Trash2 size={11} />
               </button>
             </div>
@@ -465,7 +554,15 @@ function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = fals
         </div>
       )}
       <div style={{ display: 'flex', gap: 6 }}>
-        <input ref={inputRef} value={newText} onChange={(e) => setNewText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCriteria(); } }} placeholder="Ej: El usuario puede iniciar sesión con Azure AD…" style={{ flex: 1, padding: '7px 11px', borderRadius: 6, border: `1px solid ${hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = `${accent}50`; }} onBlur={(e) => { e.currentTarget.style.borderColor = hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'; }} />
+        <textarea ref={inputRef} value={newText} rows={1}
+          onChange={(e) => setNewText(e.target.value)}
+          onInput={(e) => { const t = e.currentTarget; t.style.height = '1px'; t.style.height = t.scrollHeight + 'px'; }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCriteria(); } }}
+          placeholder="Ej: El usuario puede iniciar sesión con Azure AD…"
+          style={{ flex: 1, padding: '7px 11px', borderRadius: 6, border: `1px solid ${hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', resize: 'none', overflow: 'hidden', lineHeight: 1.5, transition: 'border-color 0.15s' }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = `${accent}50`; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = hasError ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'; }}
+        />
         <button type="button" onClick={addCriteria} disabled={!newText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 6, border: `1px solid ${newText.trim() ? accent + '50' : 'var(--border-subtle)'}`, background: newText.trim() ? `${accent}15` : 'transparent', color: newText.trim() ? accent : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: newText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}>
           <Plus size={12} /> Añadir
         </button>
@@ -512,6 +609,8 @@ type Props = {
   parentId?:             string | null;
   parentTitle?:          string;
   parentIsConfidential?: boolean;
+  defaultTeamId?:        number;
+  defaultColumnSlug?:    string;
 };
   function HorasInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
     const initH = value != null ? Math.floor(value) : 0;
@@ -533,22 +632,36 @@ type Props = {
       </div>
     );
   }
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+  return { open, setOpen, ref };
+}
 
 
-export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle, parentIsConfidential = false }: Props) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+// DESPUÉS
+export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle, parentIsConfidential = false, defaultTeamId, defaultColumnSlug }: Props) {  const overlayRef = useRef<HTMLDivElement>(null);
   const boardId    = config.DEFAULT_BOARD_ID;
-
   const { data: currentUser }      = useCurrentUser();
   const { data: users        = [] } = useUsers();
   const { data: sprints      = [] } = useSprints();
   const { data: teams        = [] } = useBoardTeams(boardId);
   const { data: allTemplates = [] } = useBoardTemplates(boardId);
+  const role        = useRole();
+  const visibleTeams = teams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
+   const [step,                setStep]               = useState<Step>(defaultTeamId !== undefined ? 'template' : 'equipo');
 
-  const [step,                setStep]               = useState<Step>('equipo');
-  const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(null);
+  const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(defaultTeamId ?? null);
   const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
   const { data: labels   = [] } = useLabelsByTeamId(boardId, selectedBoardTeamId);
@@ -568,7 +681,7 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
 
   const catDD      = usePortalDropdown();
   const sprintDD   = usePortalDropdown();
-  const assigneeDD = usePortalDropdown();
+    
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -577,6 +690,20 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   }, [onClose]);
 
   useEffect(() => { setSelectedLabelIds([]); setSelectedSubIds([]); }, [selectedBoardTeamId]);
+
+  const didAutoAdvance = useRef(false);
+  useEffect(() => {
+    if (defaultTeamId === undefined || allTemplates.length === 0 || didAutoAdvance.current) return;
+    didAutoAdvance.current = true;
+    const filtered = allTemplates.filter(
+      (t) => t.Request_Template_Is_Active &&
+        (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(defaultTeamId))
+    );
+    if (filtered.length === 1) {
+      setSelectedTemplateId(filtered[0].Request_Template_ID);
+      setStep('form');
+    }
+  }, [allTemplates, defaultTeamId]);
 
   const triggerStyle = (open: boolean, accentRgb: string): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
@@ -587,15 +714,19 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   });
 
   const templateDef   = selectedTemplateId !== null ? getTemplateDefinition(selectedTemplateId, allTemplates) : null;
-  // Normaliza ramas legacy (objeto → array) para templates guardados con el formato anterior
+  const filteredTemplatesForTeam = selectedBoardTeamId !== null
+    ? allTemplates.filter(
+        (t) => t.Request_Template_Is_Active &&
+          (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(selectedBoardTeamId))
+      )
+    : [];
+  const showFormBack = defaultTeamId !== undefined ? filteredTemplatesForTeam.length > 1 : true;  // Normaliza ramas legacy (objeto → array) para templates guardados con el formato anterior
   const normalizedExtraFields = templateDef?.extraFields.map(normalizeBranch) ?? [];
   const accent        = templateDef?.visual.accentColor ?? 'var(--accent)';
   const assignedUsers = users.filter((u) => assigneeIds.includes(u.User_ID));
-  const filteredUsers = users.filter((u) =>
-    u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
-  );
   const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
+  const assigneeDD = useDropdown();
+  const { data: subTeams = [] } = useSubTeams(selectedBoardTeamId);
 
   function handleToggleAssignee(userId: number) {
     setAssigneeIds((prev) => prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]);
@@ -605,6 +736,29 @@ function selectTeam(id: number) {
   setSelectedBoardTeamId(id);
   setSelectedTemplateId(null);
   setExtraValues({});
+}
+function DropdownPanel({ children }: { children: React.ReactNode }) {
+  return <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden', minWidth: 180 }}>{children}</div>;
+}
+function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAssigneeIds?: number[]) {
+  const base = currentSubIds ?? selectedSubIds;
+  const next = base.includes(subId)
+    ? base.filter((s) => s !== subId)
+    : [...base, subId];
+  setSelectedSubIds(next);
+
+  // Si se remueve el sub-equipo, desasignar sus miembros del estado local
+  if (base.includes(subId)) {
+    const membersOfSub = groupedMembers
+      .find((g) => g.subTeam.Sub_Team_ID === subId)
+      ?.members ?? [];
+    const memberIds = membersOfSub.map((m) => m.User_ID);
+    const baseAssignees = currentAssigneeIds ?? assigneeIds;
+    const toRemove = baseAssignees.filter((id) => memberIds.includes(id));
+    toRemove.forEach((userId) => {
+      setAssigneeIds((prev) => prev.filter((id) => id !== userId));
+    });
+  }
 }
 
 function goToTemplate() {
@@ -642,7 +796,7 @@ function goToTemplate() {
   function handleCreate() {
     if (!titulo.trim() || !currentUser || !selectedTemplateId) return;
     if (acceptanceCriteria.length === 0) { setCreateAttempted(true); return; }
-    const columnId = columnMap?.['sin_categorizar'] ?? 1;
+    const columnId = (defaultColumnSlug ? columnMap?.[defaultColumnSlug] : null) ?? columnMap?.['sin_categorizar'] ?? 1;
 
     if (templateDef && !validateExtraFields(normalizedExtraFields, extraValues)) return;
 const labelsMap = flattenSchemaLabels(normalizedExtraFields);
@@ -679,16 +833,21 @@ const formData: Record<string, unknown> = {
     ? validateExtraFields(normalizedExtraFields, extraValues)
     : true;
 
+
   const isFormReady = !!titulo.trim() && !!currentUser && !!selectedTemplateId &&
     extraFieldsReady && acceptanceCriteria.length > 0;
   const headerTitle = step === 'equipo' ? 'Nueva solicitud' : step === 'template' ? 'Tipo de solicitud' : 'Detalles';
 const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
 const priorityBtnRef = useRef<HTMLButtonElement>(null);
-
+const groupedMembers = useSubTeamMembersGrouped(subTeams);
+  const parts = assignedUsers.map((u) => u.User_Name).join(', ').split(' ');
+  const displayName = parts.length >= 3
+    ? `${parts[0]} ${parts[2]}`
+    : parts.join(' ');
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}>
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}>
       <div style={{ width: '100%', maxWidth: step === 'form' ? 780 : 680, maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: parentId ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
 
@@ -723,9 +882,9 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
           <StepIndicator step={step} />
 
-{step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={goToTemplate} />}
+{step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedBoardTeamId} onSelect={selectTeam} onNext={goToTemplate} />}
           {step === 'template' && (
-            <StepTemplate templates={allTemplates} selectedBoardTeamId={selectedBoardTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />
+            <StepTemplate templates={allTemplates} selectedBoardTeamId={selectedBoardTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} hideBack={defaultTeamId !== undefined} />
           )}
 
           {step === 'form' && (
@@ -760,9 +919,11 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
               </div>
 
               <FieldBlock label="Descripción">
-                <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Describe el problema con detalle..." rows={3}
-                  style={{ width: '100%', minHeight: 80, padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
-              </FieldBlock>
+<textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+  onInput={(e) => { const t = e.currentTarget; t.style.height = '1px'; t.style.height = t.scrollHeight + 'px'; }}
+  placeholder="Describe el problema con detalle..." rows={3}
+  style={{ width: '100%', minHeight: 80, padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6, resize: 'none', overflow: 'hidden', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} />
+                </FieldBlock>
 
               <div style={{ padding: '16px', borderRadius: 8, border: `1px solid ${acceptanceCriteria.length > 0 ? accent + '30' : 'var(--border-subtle)'}`, background: acceptanceCriteria.length > 0 ? `${accent}05` : 'transparent', transition: 'border-color 0.2s, background 0.2s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -821,45 +982,85 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
     })}
   </div>
 </div>
-                <FieldBlock label="Resolutor">
-                  <div style={{ position: 'relative' }}>
-                    <button ref={assigneeDD.triggerRef} onClick={() => { assigneeDD.toggle(); setUserSearch(''); }} style={triggerStyle(assigneeDD.open, '124,58,237')}>
-                      {assignedUsers.length === 0
-                        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
-                        : assignedUsers.map((u) => (
-                            <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                              <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-                              {u.User_Name.split(' ')[0]}
-                              <span onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span>
-                            </span>
-                          ))}
-                      <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
-                    </button>
-                    {assigneeDD.open && (
-                      <PortalPanel rect={assigneeDD.rect}>
-                        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-                          <input autoFocus value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Buscar usuario…" style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                        <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-                          {filteredUsers.map((u) => {
-                            const sel = assigneeIds.includes(u.User_ID);
-                            return (
-                              <DropdownItem key={u.User_ID} selected={sel} onClick={() => handleToggleAssignee(u.User_ID)}>
-                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 12, fontWeight: sel ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Name}</div>
-                                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</div>
-                                </div>
-                                {sel && <Checkmark />}
-                              </DropdownItem>
-                            );
-                          })}
-                        </div>
-                      </PortalPanel>
-                    )}
-                  </div>
-                </FieldBlock>
+<FieldBlock label="Resolutor">
+  <div ref={assigneeDD.ref} style={{ position: 'relative' }}>
+    <button
+      onClick={() => { assigneeDD.setOpen((o) => !o); setUserSearch(''); } }
+      style={triggerStyle(assigneeDD.open, '124,58,237')}
+    >
+      {assignedUsers.length === 0
+        ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
+        : assignedUsers.map((u) => (
+          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+            {displayName}
+              <span
+                onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
+                style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
+              >×</span>
+          </span>
+        ))
+      }
+      { <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
+    </button>
 
+    {assigneeDD.open && (
+      <DropdownPanel>
+        <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <input
+            autoFocus
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Buscar usuario..."
+            style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+          />
+        </div>
+        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+          {groupedMembers.length === 0 ? (
+            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sub-equipos configurados.</div>
+          ) : (
+            groupedMembers.map(({ subTeam, members, isLoading }) => {
+              const filtered = members.filter((u) =>
+                u.User_Name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.User_Email.toLowerCase().includes(userSearch.toLowerCase())
+              );
+              if (!isLoading && filtered.length === 0 && userSearch) return null;
+              return (
+                <SubTeamGroup
+                  key={subTeam.Sub_Team_ID}
+                  subTeam={subTeam}
+                  members={filtered}
+                  isLoading={isLoading}
+                  assigneeIds={assigneeIds}
+                  selectedSubIds={selectedSubIds}
+onToggleAssignee={(userId) => {
+  const isRemoving = assigneeIds.includes(userId);
+  handleToggleAssignee(userId);
+
+  if (!isRemoving) {
+    // Asignando → agregar sub-equipo si no está, en un solo patch junto con el assign
+    if (!selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  } else {
+    // Desasignando → si era el único de este sub-equipo, removerlo
+    const othersInSub = members.filter(
+      (m) => m.User_ID !== userId && assigneeIds.includes(m.User_ID)
+    );
+    if (othersInSub.length === 0 && selectedSubIds.includes(subTeam.Sub_Team_ID)) {
+      handleToggleSubTeam(subTeam.Sub_Team_ID, selectedSubIds, assigneeIds);
+    }
+  }
+}}
+                />
+              );
+            })
+          )}
+        </div>
+      </DropdownPanel>
+    )}
+  </div>
+</FieldBlock>
 
                 <FieldBlock label="Etiquetas">
                   <div style={{ position: 'relative' }}>
@@ -903,14 +1104,14 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: 4 }}>
-<button type="button" onClick={() => {
-  if (selectedBoardTeamId === null) { setStep('equipo'); return; }
-  const filtered = allTemplates.filter(
-    (t) => t.Request_Template_Is_Active &&
-      (t.Request_Template_Teams?.length === 0 || t.Request_Template_Teams?.includes(selectedBoardTeamId)),
-  );
-  setStep(filtered.length === 1 ? 'equipo' : 'template');
-}} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>              </div>
+  {showFormBack && (
+    <button type="button" onClick={() => {
+      if (defaultTeamId !== undefined) { setStep('template'); return; }
+      if (selectedBoardTeamId === null) { setStep('equipo'); return; }
+      setStep(filteredTemplatesForTeam.length === 1 ? 'equipo' : 'template');
+    }} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
+  )}
+</div>
             </div>
           )}
         </div>

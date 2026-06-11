@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Zap, Search, X, Clock } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
-import { EQUIPOS } from '@/features/requests/types';
+import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -23,7 +23,8 @@ import { isConditionalField } from '@/features/requests/templates/types';
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
    ══════════════════════════════════════════════════════════════ */
-const PRIORIDAD_COLOR: Record<string, string> = {
+const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
+   const PRIORIDAD_COLOR: Record<string, string> = {
   baja:    '#4EA8DE',
   media:   '#F4C542',
   alta:    '#EF9F27',
@@ -40,13 +41,6 @@ const COLUMNA_COLOR: Record<string, string> = {
   todo:            '#F4C542',          en_progreso: '#1D9E75',
   en_revision_qas: '#f59e0b',          ready_to_deploy: '#a78bfa',
   hecho:           '#4CAF50',          historial: 'var(--txt-muted)',
-};
-const EQUIPO_DESCRIPTIONS: Record<Equipo, string> = {
-  desarrollo: 'Interfaces de usuario, experiencia y desarrollo de productos digitales.',
-  crm:        'Gestión de relaciones con clientes y automatizaciones comerciales.',
-  sistemas:   'Infraestructura, integraciones, APIs y bases de datos corporativos.',
-  analisis:   'Analítica avanzada, modelos predictivos y dashboards de inteligencia.',
-  solvi:      'Soporte brindado por el equipo de LISTO EDM.',
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -196,15 +190,16 @@ function SprintBanner() {
 /* ══════════════════════════════════════════════════════════════
    EquipoTab
    ══════════════════════════════════════════════════════════════ */
-function EquipoTab({ equipo, label, isActive, onClick }: {
-  equipo: Equipo; label: string; isActive: boolean; onClick: () => void;
+function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, isAdminOnly, onClick }: {
+  equipo: string; teamColor: string; teamIcon: string; description: string;
+  label: string; isActive: boolean; isAdminOnly?: boolean; onClick: () => void;
 }) {
-  const c    = EQUIPO_COLORS[equipo];
-  const Icon = EQUIPO_ICONS[equipo];
+  const c    = teamColors(teamColor);
+  const Icon = getTeamIcon(teamIcon);
   const { data: board } = useBoardEquipo(equipo);
   const all    = board ? boardToFlat(board) : [];
-  const active = all.filter((r) => r.columna !== 'hecho' && r.columna !== 'historial').length;
-  const done   = all.filter((r) => r.columna === 'hecho').length;
+  const active = all.filter((r) => !DONE_COLUMNS.has(r.columna)).length;
+  const done   = all.filter((r) =>  DONE_COLUMNS.has(r.columna)).length;
 
   return (
     <button onClick={onClick} style={{
@@ -226,11 +221,14 @@ function EquipoTab({ equipo, label, isActive, onClick }: {
             <Icon size={14} style={{ color: c.dot }} />
           </div>
           <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? c.dot : 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', transition: 'color 0.2s' }}>{label}</span>
+          {isAdminOnly && (
+            <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757', letterSpacing: '0.5px', flexShrink: 0 }}>🔒 Admin</span>
+          )}
         </div>
         {isActive && <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.dot, boxShadow: `0 0 8px ${c.dot}`, flexShrink: 0 }} />}
       </div>
       <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 33 }}>
-        {EQUIPO_DESCRIPTIONS[equipo]}
+        {description}
       </p>
       <div style={{ display: 'flex', paddingTop: 10, borderTop: `1px solid ${isActive ? c.dot + '20' : 'rgba(255,255,255,0.05)'}`, transition: 'border-color 0.2s' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -250,10 +248,22 @@ function EquipoTab({ equipo, label, isActive, onClick }: {
 /* ══════════════════════════════════════════════════════════════
    TicketRow
    ══════════════════════════════════════════════════════════════ */
-function TicketRow({ r, isLast, onClick, activeSprint }: {
-  r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null;
+function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
+  r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null; sprints: Sprint[];
 }) {
   const inSprint = activeSprint && r.sprintId === activeSprint.Sprint_ID;
+  const futureSprint = !inSprint && r.sprintId
+    ? sprints.find(s =>
+        s.Sprint_ID === r.sprintId &&
+        new Date(s.Sprint_Start_Date).getTime() > Date.now()
+      ) ?? null
+    : null;
+  const pastSprint = !inSprint && !futureSprint && r.sprintId
+    ? sprints.find(s =>
+        s.Sprint_ID === r.sprintId &&
+        new Date(s.Sprint_End_Date).getTime() + 86_400_000 < Date.now()
+      ) ?? null
+    : null;
   return (
     <div
       onClick={onClick}
@@ -269,6 +279,16 @@ function TicketRow({ r, isLast, onClick, activeSprint }: {
       {inSprint && (
         <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
           <Zap size={8} />{activeSprint!.Sprint_Text}
+        </span>
+      )}
+{futureSprint && (
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          <Clock size={8} />{futureSprint.Sprint_Text}
+        </span>
+      )}
+      {pastSprint && (
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          <Clock size={8} />{pastSprint.Sprint_Text}
         </span>
       )}
       <span style={{ width: 110, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
@@ -336,15 +356,16 @@ function flattenTemplateFields(
    Deriva dynamicOptions igual que BoardPage para que BoardFilters
    muestre las listas reales de la DB en cada campo dinámico.
    ══════════════════════════════════════════════════════════════ */
-function EquipoPanel({ equipo, activeSprint, onRowClick }: {
-  equipo:         Equipo;
+function EquipoPanel({ equipo, teamColor, label, activeSprint, onRowClick }: {
+  equipo:         string;
+  teamColor:      string;
+  label:          string;
   activeSprint:   Sprint | null;
   onRowClick:     (r: Request) => void;
   onVerMas:       () => void;
   canAccessBoard: boolean;
 }) {
-  const c       = EQUIPO_COLORS[equipo];
-  const label   = EQUIPOS[equipo];
+  const c = teamColors(teamColor);
   const boardId = `home-${equipo}`;
 
   const { data: rawBoard, isLoading } = useBoardEquipo(equipo);
@@ -501,7 +522,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
       ) : (
         <div style={{ maxHeight: 440, overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
           {visible.map((r, i) => (
-            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1} onClick={() => onRowClick(r)} activeSprint={activeSprint} />
+            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1} onClick={() => onRowClick(r)} activeSprint={activeSprint} sprints={sprints} />
           ))}
         </div>
       )}
@@ -522,7 +543,10 @@ export function HomePage() {
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo>('desarrollo');
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const { data: sprints = [] } = useSprints();
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: sprints    = [] } = useSprints();
+  const visibleTeams = boardTeams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
+
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
   const userName  = account?.name ?? '';
@@ -573,8 +597,18 @@ export function HomePage() {
 
       {/* Tabs de equipo */}
       <div style={{ display: 'flex', gap: 10 }}>
-        {(Object.entries(EQUIPOS) as [Equipo, string][]).map(([eq, label]) => (
-          <EquipoTab key={eq} equipo={eq} label={label} isActive={activeEquipo === eq} onClick={() => setActiveEquipo(eq)} />
+        {visibleTeams.map((team) => (
+          <EquipoTab
+            key={team.Board_Team_Code}
+            equipo={team.Board_Team_Code}
+            label={team.Board_Team_Name}
+            teamColor={team.Board_Team_Color}
+            teamIcon={team.Board_Team_Icon ?? '🗂️'}
+            description={team.Board_Team_Description ?? ''}
+            isActive={activeEquipo === team.Board_Team_Code}
+            isAdminOnly={team.Board_Team_Is_Admin_Only ?? false}
+            onClick={() => setActiveEquipo(team.Board_Team_Code)}
+          />
         ))}
       </div>
 
@@ -582,7 +616,8 @@ export function HomePage() {
       <EquipoPanel
         key={activeEquipo}
         equipo={activeEquipo}
-        activeSprint={activeSprint}
+teamColor={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Color ?? '#00c8ff'}
+  label={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Name ?? activeEquipo}        activeSprint={activeSprint}
         onRowClick={handleRowClick}
         onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
         canAccessBoard={userCanSeeBoard}

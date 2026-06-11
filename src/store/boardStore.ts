@@ -1,17 +1,16 @@
 // src/store/boardStore.ts
 import { create } from 'zustand';
-import type { Equipo } from '@/features/requests/types';
 
 const ZOOM_MIN  = 0.5;
 const ZOOM_MAX  = 1.3;
 const ZOOM_STEP = 0.1;
 
 type BoardUIState = {
-  equipoActivo:    Equipo;
+  equipoActivo:    string;
   sidebarAbierto:  boolean;
   kanbanZoom:      number;
 
-  setEquipoActivo: (equipo: Equipo) => void;
+  setEquipoActivo: (equipo: string) => void;
   toggleSidebar:   () => void;
   setKanbanZoom:   (zoom: number) => void;
   stepKanbanZoom:  (dir: 1 | -1) => void;

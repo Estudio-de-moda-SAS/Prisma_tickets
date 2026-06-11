@@ -133,6 +133,10 @@ export function OnboardingPage() {
             Esto nos ayuda a mostrarte la información correcta.
           </p>
         </div>
+{/* ── Nota TI ── */}
+        <p className="ob-card__note" style={{ color: 'var(--txt-muted)', borderLeft: '2px solid var(--accent)', paddingLeft: '10px' }}>
+          ¿Perteneces al equipo de TI? Comunícate con un administrador para que te asigne el acceso correspondiente.
+        </p>
 
         {/* ── Departamento ── */}
         <div className="ob-field">
@@ -182,6 +186,8 @@ export function OnboardingPage() {
           )}
         </div>
 )}
+
+        {/* ── Nota de contacto ── */}
 
         {/* ── Nota de contacto ── */}
         <p className="ob-card__note">
