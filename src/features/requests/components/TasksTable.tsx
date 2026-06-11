@@ -681,11 +681,6 @@ const [grabbing, setGrabbing] = useState(false);
       });
     });
 
-    const seenMembers = new Set<string>();
-    const assigneeOptions = groupedMembers
-      .flatMap(g => g.isLoading ? [] : g.members.map(m => ({ value: m.User_Name, label: m.User_Name })))
-      .filter(m => { if (seenMembers.has(m.value)) return false; seenMembers.add(m.value); return true; });
-
     return {
 assignee: users.map(u => ({ value: u.User_Name, label: u.User_Name })),      assigneeGrouped: groupedMembers
         .filter(g => !g.isLoading)
