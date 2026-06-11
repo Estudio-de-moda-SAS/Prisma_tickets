@@ -248,10 +248,22 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
 /* ══════════════════════════════════════════════════════════════
    TicketRow
    ══════════════════════════════════════════════════════════════ */
-function TicketRow({ r, isLast, onClick, activeSprint }: {
-  r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null;
+function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
+  r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null; sprints: Sprint[];
 }) {
   const inSprint = activeSprint && r.sprintId === activeSprint.Sprint_ID;
+  const futureSprint = !inSprint && r.sprintId
+    ? sprints.find(s =>
+        s.Sprint_ID === r.sprintId &&
+        new Date(s.Sprint_Start_Date).getTime() > Date.now()
+      ) ?? null
+    : null;
+  const pastSprint = !inSprint && !futureSprint && r.sprintId
+    ? sprints.find(s =>
+        s.Sprint_ID === r.sprintId &&
+        new Date(s.Sprint_End_Date).getTime() + 86_400_000 < Date.now()
+      ) ?? null
+    : null;
   return (
     <div
       onClick={onClick}
@@ -267,6 +279,16 @@ function TicketRow({ r, isLast, onClick, activeSprint }: {
       {inSprint && (
         <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
           <Zap size={8} />{activeSprint!.Sprint_Text}
+        </span>
+      )}
+{futureSprint && (
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          <Clock size={8} />{futureSprint.Sprint_Text}
+        </span>
+      )}
+      {pastSprint && (
+        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.28)', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          <Clock size={8} />{pastSprint.Sprint_Text}
         </span>
       )}
       <span style={{ width: 110, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
@@ -500,7 +522,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
       ) : (
         <div style={{ maxHeight: 440, overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
           {visible.map((r, i) => (
-            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1} onClick={() => onRowClick(r)} activeSprint={activeSprint} />
+            <TicketRow key={r.id} r={r} isLast={i === visible.length - 1} onClick={() => onRowClick(r)} activeSprint={activeSprint} sprints={sprints} />
           ))}
         </div>
       )}
