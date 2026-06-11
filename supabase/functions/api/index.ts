@@ -66,7 +66,6 @@ function errorResponse(message: string, status: number) {
 const SIGNED_URL_EXPIRES_IN = 3600;
 
 /** Columnas que al llegar a ellas finalizan el ticket */
-const FINAL_COLUMN_IDS = new Set([6, 9]); // hecho=6, historial=9
 
 function extractStoragePath(storedValue: string): string {
   if (!storedValue.startsWith('http')) return storedValue;
@@ -125,7 +124,7 @@ const BASE_SELECT = `
     Department_Name
   ),
   column:TBL_Board_Columns!Request_Board_Column_ID (
-    Board_Column_Name
+    Board_Column_Name, Board_Column_Slug
   ),
   assignments:TBL_Requests_Assignments (
     Request_Assignment_At,
@@ -254,10 +253,38 @@ async function getRequestParticipants(
 
   return { assigneeIds, requestedBy };
 }
+/** Verifica si la columna destino está marcada como cierre para los equipos del ticket */
+async function isCloseColumn(
+  supabase: ReturnType<typeof createServiceClient>,
+  columnId: number,
+  requestId: string,
+): Promise<boolean> {
+  const { data: reqTeams } = await supabase
+    .from('TBL_Request_Team')
+    .select('Request_Team_ID')
+    .eq('Request_Team_Request_ID', requestId);
+
+  const teamIds = ((reqTeams ?? []) as { Request_Team_ID: number }[])
+    .map((t) => t.Request_Team_ID);
+  if (teamIds.length === 0) return false;
+
+  const { data: cfg } = await supabase
+    .from('TBL_Team_Column_Config')
+    .select('Config_ID')
+    .eq('Column_ID', columnId)
+    .in('Team_ID', teamIds)
+    .eq('Is_Close_Column', true)
+    .limit(1)
+    .maybeSingle();
+
+  return cfg !== null;
+}
+
 /* ── Helper: renderizar template con variables ── */
 function renderTemplate(html: string, vars: Record<string, string>): string {
-  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
+    return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
 }
+
 
 /* ── Helper: enviar email por evento ── */
 async function sendEventEmail(
@@ -545,27 +572,47 @@ async function handleAction(
     }
     case 'moveToColumn': {
       const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
-      const { data: colData } = await supabase
-        .from('TBL_Board_Columns')
-        .select('Board_Column_Name')
-        .eq('Board_Column_ID', columnId)
-        .single();
+const [colRes, reqRes] = await Promise.all([
+        supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', columnId).single(),
+        supabase.from('TBL_Requests').select('Request_Finished_At').eq('Request_ID', id).single(),
+      ]);
+      const colData   = colRes.data;
+      const wasClosed = !!(reqRes.data as any)?.Request_Finished_At;
+      const willClose = await isCloseColumn(supabase, columnId, id);
 
-      // Si es columna final, sellar fecha de cierre y progreso
-      const isFinal   = FINAL_COLUMN_IDS.has(columnId);
       const updateData: Record<string, unknown> = { Request_Board_Column_ID: columnId };
-      if (isFinal) {
+      if (willClose) {
         updateData['Request_Finished_At'] = new Date().toISOString();
         updateData['Request_Progress']    = 100;
+      } else if (wasClosed) {
+        // Reapertura: limpiar cierre (el registro TBL_Request_Closure se conserva como historial)
+        updateData['Request_Finished_At'] = null;
+        updateData['Request_Progress']    = 0;
       }
 
       const { error } = await supabase
         .from('TBL_Requests').update(updateData).eq('Request_ID', id);
       if (error) throw new Error(error.message);
 
+// Comentario automático si el ticket se reabre
+      if (!willClose && wasClosed && movedBy) {
+        const colName = (colData as any)?.Board_Column_Name ?? 'otra columna';
+        const { data: moverData } = await supabase
+          .from('TBL_Users').select('User_Name').eq('User_ID', movedBy).single();
+        const moverName = (moverData as any)?.User_Name ?? 'Un miembro del equipo';
+        const fechaLocal = new Date().toLocaleDateString('es-CO', {
+          timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
+        });
+        await supabase.from('TBL_Comments').insert({
+          Comment_Request_ID: id,
+          Comment_User_ID:    movedBy,
+          Comment_Text:       `Este ticket fue reabierto el ${fechaLocal} por ${moverName} al ser movido a la columna «${colName}». La evidencia de cierre registrada anteriormente se conserva como historial. Si este movimiento fue un error, coordiná con el responsable del ticket para gestionarlo correctamente.`,
+          Comment_Created_At: new Date().toISOString(),
+        });
+      }
+
       if (movedBy) {
-        const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, id);
-        const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+        const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, id);        const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
           .filter((uid) => uid !== movedBy);
         const colName = (colData as { Board_Column_Name: string } | null)?.Board_Column_Name ?? 'otra columna';
         await insertNotifications(supabase, {
@@ -775,9 +822,9 @@ case 'updateRequest': {
       // Crear el registro de closure (evidencia)
       // NOTA: ya NO sella Request_Finished_At aquí — eso ocurre en moveToColumn
       // cuando la columna destino es hecho (6) o historial (9).
-      const { data: closure, error: closureErr } = await supabase
+const { data: closure, error: closureErr } = await supabase
         .from('TBL_Request_Closure')
-        .insert({
+        .upsert({
           Request_ID:       p.requestId,
           Closed_By:        p.closedBy,
           Closure_Note:     p.closureNote,
@@ -795,12 +842,12 @@ case 'updateRequest': {
         .single();
       if (closureErr) throw new Error(closureErr.message);
 
-      // Mover la columna (moveToColumn se encarga del Finished_At si aplica)
-      const isFinal = FINAL_COLUMN_IDS.has(p.targetColumnId);
+      // Mover la columna — sellar si está marcada como columna de cierre
+      const willClose = await isCloseColumn(supabase, p.targetColumnId, p.requestId);
       const updateData: Record<string, unknown> = {
         Request_Board_Column_ID: p.targetColumnId,
       };
-      if (isFinal) {
+      if (willClose) {
         updateData['Request_Finished_At'] = new Date().toISOString();
         updateData['Request_Progress']    = 100;
       }
@@ -930,11 +977,9 @@ case 'updateRequest': {
           submitter:TBL_Users!Submitted_By ( User_Name )
         `)
         .eq('Request_ID', requestId)
-        .order('Submitted_At', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return data ?? null;
+.order('Submitted_At', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
     }
 
     case 'submitClientFeedback': {
@@ -945,6 +990,20 @@ case 'updateRequest': {
         feedbackNote:   string | null;
         targetColumnId: number;
       };
+// Validar límite: 1 feedback por ciclo de cierre
+      const [closureRes, feedbackRes] = await Promise.all([
+        supabase
+          .from('TBL_Request_Closure')
+          .select('Closure_ID', { count: 'exact', head: true })
+          .eq('Request_ID', p.requestId),
+        supabase
+          .from('TBL_Client_Feedback')
+          .select('Feedback_ID', { count: 'exact', head: true })
+          .eq('Request_ID', p.requestId),
+      ]);
+      if ((feedbackRes.count ?? 0) >= (closureRes.count ?? 1)) {
+        throw new Error('Ya se registró feedback para este ciclo de cierre. El ticket debe reabrirse y cerrarse nuevamente para enviar uno nuevo.');
+      }
 
       // Guardar el feedback
       const { data: feedback, error: fbErr } = await supabase
@@ -1355,8 +1414,7 @@ case 'preRegisterUser': {
 case 'fetchAllTeams': {
   const { data, error } = await supabase
     .from('TBL_Board_Teams')
-    .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description');
-  if (error) throw new Error(error.message);
+.select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only');  if (error) throw new Error(error.message);
   return data;
 }
 
@@ -1375,8 +1433,10 @@ case 'fetchTeamsByBoardId': {
     case 'fetchBoardColumns': {
       const { boardId } = payload as { boardId: number };
       const { data, error } = await supabase
-        .from('TBL_Board_Columns').select('Board_Column_ID, Board_Column_Name')
-        .eq('Board_Column_Board_ID', boardId).order('Board_Column_Position', { ascending: true });
+        .from('TBL_Board_Columns')
+        .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color, Board_Column_Limit')
+        .eq('Board_Column_Board_ID', boardId)
+        .order('Board_Column_Position', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     }
@@ -2331,6 +2391,183 @@ const PRIO: Record<string, string> = {
       return { ok: true };
     }
 
+    // ── Kanbans admin ────────────────────────────────────────────
+
+    case 'createKanbanTeam': {
+const { name, code, color, description, icon, isAdminOnly } = payload as {
+        name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
+      };
+      const { data, error } = await supabase
+        .from('TBL_Board_Teams')
+        .insert({
+          Board_Team_Name:           name.trim(),
+          Board_Team_Code:           code.trim().toLowerCase(),
+          Board_Team_Color:          color,
+          Board_Team_Description:    description?.trim() || null,
+          Board_Team_Icon:           icon ?? '🗂️',
+          Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
+        })
+        .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Is_Admin_Only')        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'updateKanbanTeam': {
+      const { id, name, code, description, color, icon, isAdminOnly } = payload as {
+        id: number; name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
+      };
+      const { error } = await supabase
+        .from('TBL_Board_Teams')
+        .update({
+          Board_Team_Name:           name.trim(),
+          Board_Team_Code:           code.trim().toLowerCase(),
+          Board_Team_Color:          color,
+          Board_Team_Description:    description?.trim() || null,
+          Board_Team_Icon:           icon ?? '🗂️',
+          Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
+        })
+        .eq('Board_Team_ID', id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'fetchTeamColumnConfig': {
+      const { boardId, teamId } = payload as { boardId: number; teamId: number };
+      const { data: cols, error: colsErr } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color, Board_Column_Limit')
+        .eq('Board_Column_Board_ID', boardId)
+        .order('Board_Column_Position', { ascending: true });
+      if (colsErr) throw new Error(colsErr.message);
+ 
+      const columnIds = (cols as any[]).map((c) => c.Board_Column_ID);
+      const { data: configs, error: configsErr } = await supabase
+        .from('TBL_Team_Column_Config')
+.select('Config_ID, Column_ID, Is_Visible, Evidence_Required, Evidence_Label, Is_Close_Column, Team_Column_Color, Team_Column_Title_Color')        .eq('Team_ID', teamId)
+        .in('Column_ID', columnIds.length > 0 ? columnIds : [-1]);
+      if (configsErr) throw new Error(configsErr.message);
+ 
+      const configMap = new Map<number, any>();
+      for (const c of (configs ?? []) as any[]) configMap.set(c.Column_ID, c);
+ 
+      return (cols as any[]).map((col) => {
+        const cfg = configMap.get(col.Board_Column_ID);
+        return {
+          Board_Column_ID:       col.Board_Column_ID,
+          Board_Column_Name:     col.Board_Column_Name,
+          Board_Column_Slug:     col.Board_Column_Slug ?? '',
+          Board_Column_Position: col.Board_Column_Position,
+          Board_Column_Color:    col.Board_Column_Color,
+          Board_Column_Limit:    col.Board_Column_Limit,
+          Config_ID:             cfg?.Config_ID         ?? null,
+          Is_Visible:            cfg?.Is_Visible         ?? true,
+          Evidence_Required:     cfg?.Evidence_Required  ?? false,
+          Evidence_Label:        cfg?.Evidence_Label      ?? null,
+          Is_Close_Column:       cfg?.Is_Close_Column     ?? false,
+          Team_Column_Color:       cfg?.Team_Column_Color        ?? null,
+          Team_Column_Title_Color: cfg?.Team_Column_Title_Color  ?? null,
+        };
+      });
+    }
+
+case 'upsertTeamColumnConfig': {
+const { teamId, columnId, isVisible, evidenceRequired, evidenceLabel, isCloseColumn, teamColor, teamTitleColor } = payload as {
+        teamId: number; columnId: number;
+        isVisible: boolean; evidenceRequired: boolean;
+        evidenceLabel: string | null; isCloseColumn?: boolean;
+        teamColor?: string | null; teamTitleColor?: string | null;
+      };
+      const row: Record<string, unknown> = {
+        Team_ID:           teamId,
+        Column_ID:         columnId,
+        Is_Visible:        isVisible,
+        Evidence_Required: evidenceRequired,
+        Evidence_Label:    evidenceLabel ?? null,
+        Is_Close_Column:   isCloseColumn ?? false,
+      };
+      if (teamColor      !== undefined) row['Team_Column_Color']       = teamColor;
+      if (teamTitleColor !== undefined) row['Team_Column_Title_Color'] = teamTitleColor;
+      const { error } = await supabase
+        .from('TBL_Team_Column_Config')
+        .upsert(row, { onConflict: 'Team_ID,Column_ID' });
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'updateBoardColumn': {
+      const { columnId, name, color, limit } = payload as {
+        columnId: number; name: string; color: string; limit: number;
+      };
+      const { error } = await supabase
+        .from('TBL_Board_Columns')
+        .update({
+          Board_Column_Name:  name.trim(),
+          Board_Column_Color: color,
+          Board_Column_Limit: limit,
+        })
+        .eq('Board_Column_ID', columnId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    case 'createBoardColumn': {
+      const { boardId, name, color, limit } = payload as {
+        boardId: number; name: string; color: string; limit: number;
+      };
+      // Auto-generar slug desde el nombre
+      const slug = name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+ 
+      const { data: maxData } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_Position')
+        .eq('Board_Column_Board_ID', boardId)
+        .order('Board_Column_Position', { ascending: false })
+        .limit(1).maybeSingle();
+      const nextPos = maxData ? ((maxData as any).Board_Column_Position + 1) : 0;
+ 
+      const { data, error } = await supabase
+        .from('TBL_Board_Columns')
+        .insert({
+          Board_Column_Board_ID: boardId,
+          Board_Column_Name:     name.trim(),
+          Board_Column_Slug:     slug,
+          Board_Column_Color:    color,
+          Board_Column_Limit:    limit ?? 0,
+          Board_Column_Position: nextPos,
+        })
+        .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color, Board_Column_Limit')
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    case 'reorderBoardColumn': {
+      const { columnId, direction, boardId } = payload as {
+        columnId: number; direction: 'up' | 'down'; boardId: number;
+      };
+      const { data: cols, error: colsErr } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_ID, Board_Column_Position')
+        .eq('Board_Column_Board_ID', boardId)
+        .order('Board_Column_Position', { ascending: true });
+      if (colsErr) throw new Error(colsErr.message);
+      const sorted = cols as { Board_Column_ID: number; Board_Column_Position: number }[];
+      const idx = sorted.findIndex((c) => c.Board_Column_ID === columnId);
+      if (idx === -1) return { ok: true };
+      const si = direction === 'up' ? idx - 1 : idx + 1;
+      if (si < 0 || si >= sorted.length) return { ok: true };
+      const posA = sorted[idx].Board_Column_Position;
+      const posB = sorted[si].Board_Column_Position;
+      const idB  = sorted[si].Board_Column_ID;
+      await Promise.all([
+        supabase.from('TBL_Board_Columns').update({ Board_Column_Position: posB }).eq('Board_Column_ID', columnId),
+        supabase.from('TBL_Board_Columns').update({ Board_Column_Position: posA }).eq('Board_Column_ID', idB),
+      ]);
+      return { ok: true };
+    }
+    
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);
   }

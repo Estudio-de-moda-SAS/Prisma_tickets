@@ -83,8 +83,8 @@ next[payload.columna] = [
       queryClient.invalidateQueries({ queryKey });
     },
 
-// DESPUÉS
 onSettled: () => {
+  queryClient.invalidateQueries({ queryKey });
 },
   });
 }

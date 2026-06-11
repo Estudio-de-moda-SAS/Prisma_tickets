@@ -1,5 +1,6 @@
 // src/features/requests/components/HomeRequestModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { X, ShieldAlert, Send, Trash2 } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
@@ -11,7 +12,8 @@ import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { ClientReviewBanner } from './ClientReviewBanner';
 import { config } from '@/config';
-
+import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
+import { useGraphServices } from '@/graph/GraphServicesProvider';
 const PRI_COLOR: Record<Prioridad, string> = {
   baja:    'var(--txt-muted)',
   media:   'var(--info)',
@@ -44,9 +46,12 @@ function fmtD(iso: string) {
 
 function fmtRelative(isoString: string) {
   const now  = new Date();
-  const date = new Date(isoString);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60)    return 'hace un momento';
+  // Si PostgREST devuelve el timestamp sin zona (ej: "2024-01-15T10:30:00"),
+  // JS lo interpreta como hora local → diff negativo → siempre "hace un momento".
+  // Forzamos UTC añadiendo 'Z' cuando no hay indicador de zona.
+  const normalized = /Z|[+-]\d{2}:\d{2}$/.test(isoString) ? isoString : isoString + 'Z';
+  const date = new Date(normalized);
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);  if (diff < 60)    return 'hace un momento';
   if (diff < 3600)  return `hace ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
   return date.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' });
@@ -257,7 +262,11 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const { mutate: createComment, isPending: sending }              = useCreateComment();
   const { mutate: deleteComment }                                  = useDeleteComment();
   const { data: currentUser }                                      = useCurrentUser();
-  const { data: clientFeedback }                                   = useClientFeedback(request.id);
+  const { data: feedbackHistorial = [] }                           = useClientFeedback(request.id);
+  const cierreCount    = (request.cierreHistorial?.length ?? 0);
+  const clientFeedback = cierreCount > 0 && feedbackHistorial.length >= cierreCount
+    ? (feedbackHistorial[0] ?? null)
+    : null;
 
   const columnMap = useColumnMap(boardId);
   const readyToDeployColumnId = columnMap?.['ready_to_deploy'] ?? 7;
@@ -302,7 +311,17 @@ export function HomeRequestModal({ request, onClose }: Props) {
     // Cerrar el modal tras 1.2s para que el usuario vea el mensaje de confirmación
     setTimeout(onClose, 1200);
   }
-
+    const { Requests }     = useGraphServices();
+    const requestId    = request.id;
+    const { data: freshRequest } = useQuery<Request>({
+      queryKey: ['request', requestId],
+      queryFn:  () => Requests.fetchById(requestId),
+      enabled:  !config.USE_MOCK,
+      staleTime: 0,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+    });
+  const effectiveRequest = freshRequest ?? request;
   const selectedSprint   = sprints.find((s) => s.Sprint_ID === request.sprintId) ?? null;
   const colColor         = COL_COLOR[request.columna] ?? 'var(--txt-muted)';
 const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
@@ -310,7 +329,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}
     >
       <div style={{
         width: '100%', maxWidth: 900, maxHeight: '90vh',
@@ -379,10 +398,9 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
             </FieldBlock>
 
             <FieldBlock label="Descripción">
-              <div style={{ padding: '10px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', minHeight: 72 }}>
-                {request.descripcion
-                  ? <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{request.descripcion}</span>
-                  : <span style={{ fontSize: 13, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin descripción</span>
+<div style={{ padding: '10px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', minHeight: 72, overflow: 'hidden' }}>
+  {request.descripcion
+    ? <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{request.descripcion}</span>                  : <span style={{ fontSize: 13, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin descripción</span>
                 }
               </div>
             </FieldBlock>
@@ -446,6 +464,25 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
                 <FieldValue>{fmtColombia(request.fechaApertura)}</FieldValue>
               </FieldBlock>
             </div>
+{(effectiveRequest.cierreHistorial?.length ?? 0) > 0 && (
+  <FieldBlock label={
+    (effectiveRequest.cierreHistorial?.length ?? 0) > 1
+      ? `Historial de evidencia · ${effectiveRequest.cierreHistorial!.length} registros`
+      : 'Evidencia de avance'
+  }>
+    <CierreTimeline historial={effectiveRequest.cierreHistorial!} />
+  </FieldBlock>
+)}
+{feedbackHistorial.length > 0 && (
+  <FieldBlock label={
+    feedbackHistorial.length > 1
+      ? `Historial de feedback · ${feedbackHistorial.length} respuestas`
+      : 'Feedback del cliente'
+  }>
+    <FeedbackTimeline historial={feedbackHistorial} />
+  </FieldBlock>
+)}
+
           </div>
 
           {/* Panel derecho — comentarios */}

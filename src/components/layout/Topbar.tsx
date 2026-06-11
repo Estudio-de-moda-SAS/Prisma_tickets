@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useBoardStore } from '@/store/boardStore';
-import { EQUIPOS } from '@/features/requests/types';
-import { EQUIPO_COLORS } from '@/components/layout/siderbarConstants';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { teamColors } from '@/components/layout/siderbarConstants';
+import { config } from '@/config';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -27,14 +28,16 @@ export function Topbar({ titulo }: TopbarProps) {
 
   const [bugOpen, setBugOpen] = useState(false);
 
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const activeTeam = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
   const hoy = format(new Date(), "EEE d MMM yyyy", { locale: es });
 
   const initiales = account?.name
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() ?? 'U';
 
-  const c           = EQUIPO_COLORS[equipoActivo];
+  const c           = teamColors(activeTeam?.Board_Team_Color ?? '#00c8ff');
   const isBoard     = pathname.startsWith('/board') || pathname === '/';
-  const badgeLabel  = isBoard ? EQUIPOS[equipoActivo] : 'PRISMA TICKETS';
+  const badgeLabel  = isBoard ? (activeTeam?.Board_Team_Name ?? equipoActivo) : 'PRISMA TICKETS';
   const badgeColor  = isBoard ? c.dot    : 'var(--accent)';
   const badgeBg     = isBoard ? c.glow   : 'rgba(0,200,255,0.06)';
   const badgeBorder = isBoard ? c.border : 'rgba(0,200,255,0.20)';

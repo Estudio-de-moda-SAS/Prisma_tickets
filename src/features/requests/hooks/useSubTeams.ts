@@ -12,7 +12,7 @@ export function useSubTeams(teamId: number | null) {
   return useQuery<SubTeam[]>({
     queryKey:  ['subTeams', teamId],
     queryFn:   () => apiClient.call<SubTeam[]>('fetchSubTeamsByTeamId', { teamId }),
-    enabled:   teamId !== null,
+    enabled:   !!teamId,
     staleTime: 0,
     retry:     1,
   });

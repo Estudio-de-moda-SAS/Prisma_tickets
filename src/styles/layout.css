@@ -205,7 +205,7 @@
 .sidebar__nav-item--sub {
   padding: 6px 8px !important;
   font-size: 11px !important;
-  color: var(--txt-muted) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
   border-radius: var(--radius-md);
   font-weight: 400 !important;
 }
@@ -213,7 +213,7 @@
 .sidebar__nav-item--sub::before { display: none !important; }
 
 .sidebar__nav-item--sub:hover {
-  color: var(--txt) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
   background: var(--accent-glow);
 }
 
@@ -509,4 +509,32 @@
 .sidebar__nav-sub--team .sidebar__nav-item--sub.sidebar__nav-item--active .sidebar__sub-dot {
   background: var(--team-color) !important;
   opacity: 1 !important;
+}
+
+/* Páginas full-bleed (board, tasks): manejan su propio padding interno */
+.app-layout__content--full-bleed {
+  padding: 0;
+  overflow: hidden;
+}
+/* ── Scrollbar del nav ────────────────────────────────────── */
+.sidebar__nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sidebar-border) transparent;
+}
+
+.sidebar__nav::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar__nav::-webkit-scrollbar-thumb {
+  background: var(--sidebar-border);
+  border-radius: 99px;
+}
+
+.sidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

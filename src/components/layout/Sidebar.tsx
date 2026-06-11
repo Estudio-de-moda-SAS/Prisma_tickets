@@ -2,17 +2,17 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useMatch } from 'react-router-dom';
 import {
-  BarChart2, ChevronDown, Home, LogOut, Plus, Star,
-  LayoutGrid, Zap, PanelLeftClose, PanelLeftOpen, Shield,
+  BarChart2, Home, LogOut, Plus, Star,
+  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard, canSeeConfig, canSeeStats, canSeeAutomations } from '@/auth/roles';
 import { useBoardStore } from '@/store/boardStore';
-import { EQUIPOS } from '@/features/requests/types';
-import type { Equipo } from '@/features/requests/types';
 import { ConfigPanelTrigger } from '@/components/ConfigPanel';
-import { EQUIPO_COLORSSIDEBARLABELS, EQUIPO_ICONS } from './siderbarConstants';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { teamSidebarColors, getTeamIcon } from './siderbarConstants';
+import { config } from '@/config';
 import { SatisfactionModal } from './SatisfactionModal';
 
 export function Sidebar() {
@@ -25,8 +25,12 @@ const {
   setEquipoActivo,
 } = useBoardStore();
 
-const boardMatch = useMatch('/board/:equipo');
-
+const boardMatch        = useMatch('/board/:equipo');
+const tasksMatch        = useMatch('/tasks/:equipo');
+const teamReqMatch      = useMatch('/requests/team/:equipo');
+const activeTeamKey     = boardMatch?.params?.equipo
+                       ?? tasksMatch?.params?.equipo
+                       ?? teamReqMatch?.params?.equipo;
   const navigate = useNavigate();
   const [automatizacionesOpen, setAutomatizacionesOpen] = useState(false);
   const [satisfactionOpen,     setSatisfactionOpen]     = useState(false);
@@ -48,12 +52,13 @@ const boardMatch = useMatch('/board/:equipo');
       .join('')
       .toUpperCase() ?? 'U';
 
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const equiposVisibles = (isAdmin || isTIMember)
-    ? (Object.entries(EQUIPOS) as [Equipo, string][])
+    ? boardTeams.filter((t) => isAdmin || !t.Board_Team_Is_Admin_Only)
     : [];
-
-function handleEquipo(key: Equipo) {
-  if (boardMatch?.params?.equipo === key) {
+  
+function handleEquipo(key: string) {
+  if (activeTeamKey === key) {
     setTeamSubOpen(v => !v);   // ya estamos en este board → solo colapsa/expande
   } else {
     setEquipoActivo(key);
@@ -130,10 +135,12 @@ function handleEquipo(key: Equipo) {
             <>
               <NavLabel top>Equipos</NavLabel>
 
-              {equiposVisibles.map(([key, label]) => {
-                const c  = EQUIPO_COLORSSIDEBARLABELS[key];
-const ia = boardMatch?.params?.equipo === key;
-                const Icon = EQUIPO_ICONS[key];
+              {equiposVisibles.map((team) => {
+                const key   = team.Board_Team_Code;
+                const label = team.Board_Team_Name;
+                const c     = teamSidebarColors(team.Board_Team_Color);
+const ia = activeTeamKey === key;
+                const Icon = getTeamIcon(team.Board_Team_Icon);
 
                 return (
                   <div key={key} className="sidebar__nav-group">
@@ -143,16 +150,12 @@ const ia = boardMatch?.params?.equipo === key;
                       className="sidebar__nav-item sidebar__nav-item--team"
                       style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
                     >
-                      <Icon
-                        size={15}
-                        style={{ color: ia ? c.dot : undefined, opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'color 0.12s, opacity 0.12s' }}
-                      />
+                      <Icon size={15} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
                       {sidebarAbierto && (
                         <span style={{ color: ia ? c.dot : undefined }}>{label}</span>
                       )}
                     </button>
-
-                    {ia && sidebarAbierto && teamSubOpen && (
+                                        {ia && sidebarAbierto && teamSubOpen && (
                       <div
                         className="sidebar__nav-sub sidebar__nav-sub--team"
                         style={{
@@ -172,13 +175,23 @@ const ia = boardMatch?.params?.equipo === key;
                           <span>Board</span>
                         </NavLink>
 
+<NavLink
+  to={`/tasks/${key}`}
+  className={({ isActive: active }) =>
+    ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+  }
+>
+  <LayoutList size={12} />
+  <span>Listado de Tareas</span>
+</NavLink>
+
                         <NavLink
                           to={`/requests/team/${key}`}
                           className={({ isActive: active }) =>
                             ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
                           }
                         >
-                          <span  />
+                          <ClipboardList size={12} />
                           <span>Mis solicitudes</span>
                         </NavLink>
                       </div>
@@ -213,8 +226,7 @@ const ia = boardMatch?.params?.equipo === key;
                       >
                         <Zap size={16} />
                         <span style={{ flex: 1 }}>Automatizaciones</span>
-                        <ChevronDown
-                          size={12}
+                        <span
                           className={['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join(' ')}
                         />
                       </button>

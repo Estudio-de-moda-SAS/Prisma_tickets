@@ -6,7 +6,6 @@ export type FilterField =
   | 'prioridad'
   | 'columna'
   | 'equipo'
-  | 'subequipo'
   | 'etiqueta'
   | 'solicitante'
   | 'assignee'
@@ -157,7 +156,6 @@ export const FIELD_LABELS: Record<FilterField, string> = {
   prioridad:       'Prioridad',
   columna:         'Columna',
   equipo:          'Equipo',
-  subequipo:       'Sub-equipo',
   etiqueta:        'Etiqueta',
   solicitante:     'Solicitante',
   assignee:        'Resolutor',
@@ -175,8 +173,7 @@ export const FIELD_ICONS: Record<FilterField, string> = {
   titulo:          'T',
   prioridad:       '▲',
   columna:         '▦',
-  equipo:          '⊞',
-  subequipo:       '⊟',
+  equipo:       '⊞',
   etiqueta:        '◈',
   solicitante:     '◉',
   assignee:        '◎',
@@ -197,12 +194,11 @@ export const FIELD_CATEGORY: Record<FilterField, FieldCategory> = {
   solicitante:     'text',
   prioridad:       'enum',
   columna:         'enum',
-  equipo:          'enum',
   confidencial:    'boolean',
   tiene_hijos:     'boolean',
   es_hijo:         'boolean',
   desactualizado:  'boolean',
-  subequipo:       'dynamic',
+  equipo:       'dynamic',
   etiqueta:        'dynamic',
   assignee:        'dynamic',
   sprint:          'dynamic',
@@ -227,8 +223,7 @@ export const FIELD_OPERATORS: Record<FilterField, FilterOperator[]> = {
   titulo:          ['contiene', 'no_contiene', 'esta_vacio', 'no_esta_vacio'],
   prioridad:       ['es', 'no_es'],
   columna:         ['es', 'no_es'],
-  equipo:          ['es', 'no_es'],
-  subequipo:       ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
+  equipo:       ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
   etiqueta:        ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
   solicitante:     ['contiene', 'no_contiene', 'esta_vacio', 'no_esta_vacio'],
   assignee:        ['es', 'no_es', 'esta_vacio', 'no_esta_vacio'],
@@ -259,12 +254,6 @@ export const FIELD_SELECT_OPTIONS: Partial<Record<FilterField, { value: string; 
     { value: 'ready_to_deploy',  label: 'Ready to Deploy'  },
     { value: 'hecho',            label: 'Hecho'            },
     { value: 'historial',        label: 'Historial'        },
-  ],
-  equipo: [
-    { value: 'desarrollo', label: 'Desarrollo & UX'          },
-    { value: 'crm',        label: 'CRM'                      },
-    { value: 'sistemas',   label: 'Sistemas de Información'  },
-    { value: 'analisis',   label: 'Ciencia de Datos'         },
   ],
   confidencial: [
     { value: 'true',  label: 'Sí' },

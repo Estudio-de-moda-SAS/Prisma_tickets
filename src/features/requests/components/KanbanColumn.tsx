@@ -8,12 +8,14 @@ import type { KanbanColumna, Request } from '../types';
 import type { Notification } from '@/types/commons';
 
 type Props = {
-  id:                  KanbanColumna;
+  id:                  string;
   titulo:              string;
+  color?:              string;
+  titleColor?:         string;
   requests:            Request[];
   isOver:              boolean;
   onCardClick:         (card: Request) => void;
-  onAddClick:          (columna: KanbanColumna) => void;
+  onAddClick:          (columna: string) => void;
   unreadByRequestId?:  Map<string, Notification[]>;
 };
 
@@ -39,18 +41,25 @@ function formatHours(totalHours: number): string {
   return `${m}m`;
 }
 
-export function KanbanColumn({ id, titulo, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
+export function KanbanColumn({ id, titulo, color, titleColor, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
   const { setNodeRef } = useDroppable({ id });
   const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
   const { getCustomization } = useCustomizationStore();
 
+  const showBg = getCustomization(id).showBoardBg;
   const colStyle: React.CSSProperties = {
     ...containerStyle,
-    ...(!getCustomization(id).showBoardBg
-      ? { background: 'transparent', borderColor: 'transparent' }
-      : {}),
+    // Color dinámico desde TBL_Board_Columns — overrides el color hardcodeado del CSS
+    ...(color && showBg ? {
+      background:  `${color}12`,
+      borderColor: `${color}30`,
+    } : {}),
+    ...(!showBg ? { background: 'transparent', borderColor: 'transparent' } : {}),
   };
-
+  const effectiveTitleStyle: React.CSSProperties = {
+    ...titleStyle,
+    ...(titleColor ? { color: titleColor } : (color ? { color } : {})),
+  };
   // Contador de horas estimadas — solo para la columna "To do"
 const totalHours    = (id === 'todo' || id === 'en_progreso')
   ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
@@ -80,7 +89,8 @@ const isEnProgreso  = id === 'en_progreso';
     >
       <div className="kanban__col-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
-          <span className="kanban__col-title" style={titleStyle}>
+          <span className="kanban__col-title" style={effectiveTitleStyle}>
+
             {emoji && (
               <span style={{ marginRight: 5, fontSize: 12 }}>{emoji}</span>
             )}
