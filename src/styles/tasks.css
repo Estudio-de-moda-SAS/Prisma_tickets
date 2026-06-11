@@ -776,15 +776,9 @@
 }
 
 /* Efecto ola: cada fila arranca su shimmer ligeramente después */
-.tasks-tr--skel:nth-child(1) .tasks-skel { animation-delay: 0.00s; }
-.tasks-tr--skel:nth-child(2) .tasks-skel { animation-delay: 0.08s; }
-.tasks-tr--skel:nth-child(3) .tasks-skel { animation-delay: 0.16s; }
-.tasks-tr--skel:nth-child(4) .tasks-skel { animation-delay: 0.24s; }
-.tasks-tr--skel:nth-child(5) .tasks-skel { animation-delay: 0.32s; }
-.tasks-tr--skel:nth-child(6) .tasks-skel { animation-delay: 0.40s; }
-.tasks-tr--skel:nth-child(7) .tasks-skel { animation-delay: 0.48s; }
-.tasks-tr--skel:nth-child(8) .tasks-skel { animation-delay: 0.56s; }
-
+.tasks-tr--skel .tasks-skel {
+  animation-delay: var(--skel-delay, 0s);
+}
 .tasks-tr--skel {
   pointer-events: none;
 }

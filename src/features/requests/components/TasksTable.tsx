@@ -14,7 +14,12 @@ import {
 } from '@/store/filterStore';
 import { SCORE_TO_PRIORIDAD } from '@/features/requests/types';
 import '@/styles/tasks.css';
-
+import { useBoardTeams }            from '@/features/requests/hooks/useBoardMetadata';
+import { useSubTeams }              from '@/features/requests/hooks/useSubTeams';
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import { useSprints }               from '@/features/requests/hooks/useSprints';
+import { useUsers }                 from '@/features/requests/hooks/useUsers';
+import { config }                   from '@/config';
 // Referencia estable para evitar re-renders cuando no hay condiciones
 const EMPTY_CONDITIONS: FilterCondition[] = [];
 // ─── Priority ─────────────────────────────────────────────────────────────────
@@ -92,7 +97,7 @@ function fmtFieldValue(value: unknown): string | null {
 }
 // ─── Filter logic ─────────────────────────────────────────────────────────────
 
-function matchCondition(row: TaskRow, cond: FilterCondition): boolean {
+function matchCondition(row: TaskRow, cond: FilterCondition, subTeamMemberMap: Map<string, number[]>): boolean {
   const { field, operator, value, value2 } = cond;
 
   switch (field) {
@@ -117,19 +122,19 @@ function matchCondition(row: TaskRow, cond: FilterCondition): boolean {
       return true;
     }
     case 'assignee': {
-      const ids = row.assignments.map(a => String(a.assignee.User_ID));
-      if (operator === 'esta_vacio')    return ids.length === 0;
-      if (operator === 'no_esta_vacio') return ids.length > 0;
-      if (operator === 'es')    return ids.includes(value);
-      if (operator === 'no_es') return !ids.includes(value);
+      const names = row.assignments.map(a => a.assignee.User_Name.toLowerCase());
+      if (operator === 'esta_vacio')    return names.length === 0;
+      if (operator === 'no_esta_vacio') return names.length > 0;
+      if (operator === 'es')    return names.includes(value.toLowerCase());
+      if (operator === 'no_es') return !names.includes(value.toLowerCase());
       return true;
     }
     case 'etiqueta': {
-      const ids = row.labels.map(l => String(l.label.Label_ID));
-      if (operator === 'esta_vacio')    return ids.length === 0;
-      if (operator === 'no_esta_vacio') return ids.length > 0;
-      if (operator === 'es')    return ids.includes(value);
-      if (operator === 'no_es') return !ids.includes(value);
+      const names = row.labels.map(l => l.label.Label_Name.toLowerCase());
+      if (operator === 'esta_vacio')    return names.length === 0;
+      if (operator === 'no_esta_vacio') return names.length > 0;
+      if (operator === 'es')    return names.includes(value.toLowerCase());
+      if (operator === 'no_es') return !names.includes(value.toLowerCase());
       return true;
     }
     case 'sprint': {
@@ -143,9 +148,13 @@ function matchCondition(row: TaskRow, cond: FilterCondition): boolean {
       return true;
     }
     case 'equipo': {
-      const code = row.requester_team?.Team_Code ?? '';
-      if (operator === 'es')    return code === value;
-      if (operator === 'no_es') return code !== value;
+      const assigneeIds  = row.assignments.map(a => a.assignee.User_ID);
+      const subTeamUsers = subTeamMemberMap.get(value) ?? [];
+      const hasMatch     = assigneeIds.some(id => subTeamUsers.includes(id));
+      if (operator === 'es')            return hasMatch;
+      if (operator === 'no_es')         return !hasMatch;
+      if (operator === 'esta_vacio')    return assigneeIds.length === 0;
+      if (operator === 'no_esta_vacio') return assigneeIds.length > 0;
       return true;
     }
     case 'solicitante': {
@@ -193,9 +202,10 @@ function matchCondition(row: TaskRow, cond: FilterCondition): boolean {
 }
 
 function applyTaskFilters(
-  rows:        TaskRow[],
-  conditions:  FilterCondition[],
-  conjunction: FilterConjunction,
+  rows:             TaskRow[],
+  conditions:       FilterCondition[],
+  conjunction:      FilterConjunction,
+  subTeamMemberMap: Map<string, number[]>,
 ): TaskRow[] {
   const active = conditions.filter(
     c =>
@@ -206,8 +216,8 @@ function applyTaskFilters(
   if (!active.length) return rows;
   return rows.filter(row =>
     conjunction === 'AND'
-      ? active.every(c => matchCondition(row, c))
-      : active.some(c  => matchCondition(row, c)),
+      ? active.every(c => matchCondition(row, c, subTeamMemberMap))
+      : active.some(c  => matchCondition(row, c, subTeamMemberMap)),
   );
 }
 
@@ -442,8 +452,7 @@ function TaskTableRow({ row, index, teamCode, taskListFields }: {
 }
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const SKEL_ROWS  = 8;
-const NAME_W     = ['55%','72%','65%','80%','58%','70%','62%','75%'];
+const SKEL_ROWS = Math.max(12, Math.ceil((window.innerHeight - 200) / 44));const NAME_W     = ['55%','72%','65%','80%','58%','70%','62%','75%'];
 const SKEL_DOT   = <div className="tasks-skel tasks-skel--dot" />;
 
 function TasksTableSkeleton() {
@@ -507,7 +516,7 @@ function TasksTableSkeleton() {
           </thead>
           <tbody>
             {Array.from({ length: SKEL_ROWS }, (_, i) => (
-              <tr key={i} className="tasks-tr tasks-tr--skel">
+              <tr key={i} className="tasks-tr tasks-tr--skel" style={{ '--skel-delay': `${i * 0.08}s` } as React.CSSProperties}>
                 {/* # */}
                 <td className="tasks-td tasks-td--seq tasks-td--freeze-seq">
                   <div className="tasks-skel" style={{ width: 14, height: 11, margin: '0 auto' }} />
@@ -617,6 +626,14 @@ function TasksTableSkeleton() {
 
 export function TasksTable({ teamCode }: { teamCode: string }) {
   const { data = [], isLoading } = useTasksData(teamCode);
+
+  const { data: teams = [] }      = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const boardTeamId               = teams.find(t => t.Board_Team_Code === teamCode)?.Board_Team_ID ?? null;
+  const { data: subTeams = [] }   = useSubTeams(boardTeamId);
+  const groupedMembers            = useSubTeamMembersGrouped(subTeams);
+  const { data: allSprints = [] } = useSprints();
+  const { data: users       = [] } = useUsers();
+
 const taskListFields = useMemo(() => {
   const seen = new Set<string>();
   const result: Array<{ key: string; label: string }> = [];
@@ -630,7 +647,7 @@ const taskListFields = useMemo(() => {
   return result;
 }, [data]);
   // Namespace propio para filtros, separado de los boards kanban
-  const boardId     = `tasks-${teamCode}`;
+  const boardId     = `${teamCode}`;
   const conditions  = useFilterStore(s => s.byBoard[boardId]?.conditions  ?? EMPTY_CONDITIONS);
   const conjunction = useFilterStore(s => s.byBoard[boardId]?.conjunction ?? 'AND');
   const [q,   setQ]      = useState('');
@@ -646,36 +663,54 @@ const dragMoved     = useRef(false);
 const [grabbing, setGrabbing] = useState(false);
 
   // ── Opciones dinámicas derivadas del dataset cargado
-  const dynamicOptions = useMemo((): FilterDynamicOptions => {
-    const assigneeMap = new Map<number, string>();
-    const labelMap    = new Map<number, string>();
-    const sprintSet   = new Set<string>();
+  const subTeamMemberMap = useMemo(() => {
+    const map = new Map<string, number[]>();
+    groupedMembers.forEach(g => {
+      if (!g.isLoading)
+        map.set(g.subTeam.Sub_Team_Name, g.members.map(m => m.User_ID));
+    });
+    return map;
+  }, [groupedMembers]);
 
+  const dynamicOptions = useMemo((): FilterDynamicOptions => {
+    const labelMap = new Map<number, string>();
     data.forEach(row => {
-      row.assignments.forEach(a => {
-        if (!assigneeMap.has(a.assignee.User_ID))
-          assigneeMap.set(a.assignee.User_ID, a.assignee.User_Name);
-      });
       row.labels.forEach(l => {
         if (!labelMap.has(l.label.Label_ID))
           labelMap.set(l.label.Label_ID, l.label.Label_Name);
       });
-      row.sprints.forEach(s => {
-        if (s.sprint?.Sprint_Text) sprintSet.add(s.sprint.Sprint_Text);
-      });
     });
 
+    const seenMembers = new Set<string>();
+    const assigneeOptions = groupedMembers
+      .flatMap(g => g.isLoading ? [] : g.members.map(m => ({ value: m.User_Name, label: m.User_Name })))
+      .filter(m => { if (seenMembers.has(m.value)) return false; seenMembers.add(m.value); return true; });
+
     return {
-      assignee: Array.from(assigneeMap, ([id, name]) => ({ value: String(id), label: name })),
-      etiqueta: Array.from(labelMap,    ([id, name]) => ({ value: String(id), label: name })),
-      sprint:   Array.from(sprintSet,   t            => ({ value: t, label: t })),
+assignee: users.map(u => ({ value: u.User_Name, label: u.User_Name })),      assigneeGrouped: groupedMembers
+        .filter(g => !g.isLoading)
+        .map(g => ({
+          subTeamId:    String(g.subTeam.Sub_Team_ID),
+          subTeamName:  g.subTeam.Sub_Team_Name,
+          subTeamColor: g.subTeam.Sub_Team_Color,
+          members:      g.members.map(m => ({
+            value: m.User_Name,
+            label: m.User_Name,
+            email: m.User_Email,
+          })),
+        })),
+      etiqueta:  Array.from(labelMap, ([_id, name]) => ({ value: name, label: name })),
+      sprint:    allSprints.filter(s => !!s.Sprint_Text).map(s => ({ value: s.Sprint_Text!, label: s.Sprint_Text! })),
+      subequipo: groupedMembers
+        .filter(g => !g.isLoading)
+        .map(g => ({ value: g.subTeam.Sub_Team_Name, label: g.subTeam.Sub_Team_Name })),
     };
-  }, [data]);
+  }, [data, groupedMembers, allSprints])
 
   // ── Paso 1: aplicar condiciones del filterStore
   const afterFilters = useMemo(
-    () => applyTaskFilters(data, conditions, conjunction),
-    [data, conditions, conjunction],
+    () => applyTaskFilters(data, conditions, conjunction, subTeamMemberMap),
+    [data, conditions, conjunction, subTeamMemberMap],
   );
 
   // ── Paso 2: búsqueda de texto encima del resultado filtrado

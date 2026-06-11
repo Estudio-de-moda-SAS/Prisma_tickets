@@ -6,7 +6,8 @@ import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useUsers } from '@/features/requests/hooks/useUsers';
-import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
+import { useSubTeams }              from '@/features/requests/hooks/useSubTeams';
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useLabelsByTeamId } from '@/features/requests/hooks/useLabels';
 import { useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
@@ -185,8 +186,9 @@ export function BoardPage() {
   const { data: columnConfig = [] } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
 
   const { data: users     = [] } = useUsers();
-  const { data: subTeams  = [] } = useSubTeams(boardTeamId);
-  const { data: sprints   = [] } = useSprints();
+const { data: subTeams  = [] } = useSubTeams(boardTeamId);
+const groupedMembers            = useSubTeamMembersGrouped(subTeams);
+const { data: sprints   = [] } = useSprints();
   const { data: labels    = [] } = useLabelsByTeamId(config.DEFAULT_BOARD_ID, boardTeamId);
   const { data: templates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
 
@@ -229,12 +231,25 @@ export function BoardPage() {
   }, [templates, boardTeamId]);
 
   const dynamicOptions = useMemo((): FilterDynamicOptions => ({
-    assignee:  users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
+    assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
+    assigneeGrouped: groupedMembers
+      .filter((g) => !g.isLoading)
+      .map((g) => ({
+        subTeamId:    String(g.subTeam.Sub_Team_ID),
+        subTeamName:  g.subTeam.Sub_Team_Name,
+        subTeamColor: g.subTeam.Sub_Team_Color,
+        members:      g.members.map((m) => ({
+          value: m.User_Name, // el kanban filtra por nombre, no por ID
+          label: m.User_Name,
+          email: m.User_Email,
+        })),
+      })),
     subequipo: subTeams.map((s) => ({ value: s.Sub_Team_Name, label: s.Sub_Team_Name })),
     sprint:    sprints.map((s) => ({ value: s.Sprint_Text, label: s.Sprint_Text })),
     etiqueta:  labels.map((l) => ({ value: l.Label_Name, label: l.Label_Name })),
     templates: templateOptions,
-  }), [users, subTeams, sprints, labels, templateOptions]);
+  }), [users, groupedMembers, subTeams, sprints, labels, templateOptions]);
+  
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
