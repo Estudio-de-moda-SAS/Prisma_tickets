@@ -440,7 +440,179 @@ function TaskTableRow({ row, index, teamCode, taskListFields }: {
     </tr>
   );
 }
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
+const SKEL_ROWS  = 8;
+const NAME_W     = ['55%','72%','65%','80%','58%','70%','62%','75%'];
+const SKEL_DOT   = <div className="tasks-skel tasks-skel--dot" />;
+
+function TasksTableSkeleton() {
+  return (
+    <div className="tasks-page">
+      {/* Toolbar */}
+      <div className="tasks-toolbar">
+        <div className="tasks-toolbar__left">
+          <div className="tasks-skel" style={{ width: 16, height: 16, borderRadius: 3 }} />
+          <div className="tasks-skel" style={{ width: 150, height: 17 }} />
+          <div className="tasks-skel" style={{ width: 72, height: 20, borderRadius: 10 }} />
+        </div>
+        <div className="tasks-toolbar__right">
+          <div className="tasks-skel" style={{ width: 100, height: 30, borderRadius: 6 }} />
+          <div className="tasks-skel" style={{ width: 208, height: 30, borderRadius: 6 }} />
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div className="tasks-table-wrap">
+        <table className="tasks-table">
+          <colgroup>
+            <col className="tasks-col--seq"    />
+            <col className="tasks-col--id"     />
+            <col className="tasks-col--name"   />
+            <col className="tasks-col--assign" />
+            <col className="tasks-col--status" />
+            <col className="tasks-col--labels" />
+            <col className="tasks-col--sprint" />
+            <col className="tasks-col--team"   />
+            <col className="tasks-col--prio"   />
+            <col className="tasks-col--hest"   />
+            <col className="tasks-col--hreal"  />
+            <col className="tasks-col--prog"   />
+            <col className="tasks-col--crit"   />
+            <col className="tasks-col--pts"    />
+            <col className="tasks-col--pts"    />
+            <col className="tasks-col--crea"   />
+            <col className="tasks-col--cerr"   />
+          </colgroup>
+          <thead>
+            <tr>
+              <th className="tasks-th tasks-th--nosort tasks-th--freeze-seq">#</th>
+              <th className="tasks-th tasks-th--freeze-id">ID</th>
+              <th className="tasks-th tasks-th--freeze-name">Nombre</th>
+              <th className="tasks-th tasks-th--nosort">Asignado</th>
+              <th className="tasks-th">Estado</th>
+              <th className="tasks-th tasks-th--nosort">Etiquetas</th>
+              <th className="tasks-th tasks-th--nosort">Sprint</th>
+              <th className="tasks-th tasks-th--nosort">Equipo sol.</th>
+              <th className="tasks-th">Prioridad</th>
+              <th className="tasks-th tasks-th--r">H. Est.</th>
+              <th className="tasks-th tasks-th--r">H. Real</th>
+              <th className="tasks-th tasks-th--r">Progreso</th>
+              <th className="tasks-th tasks-th--nosort">Criterios</th>
+              <th className="tasks-th tasks-th--r">Pts. Total</th>
+              <th className="tasks-th tasks-th--r">Pts. Real.</th>
+              <th className="tasks-th">Creado</th>
+              <th className="tasks-th">Cerrado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: SKEL_ROWS }, (_, i) => (
+              <tr key={i} className="tasks-tr tasks-tr--skel">
+                {/* # */}
+                <td className="tasks-td tasks-td--seq tasks-td--freeze-seq">
+                  <div className="tasks-skel" style={{ width: 14, height: 11, margin: '0 auto' }} />
+                </td>
+                {/* ID */}
+                <td className="tasks-td tasks-td--freeze-id">
+                  <div className="tasks-skel" style={{ width: 96, height: 20, borderRadius: 4 }} />
+                </td>
+                {/* Nombre */}
+                <td className="tasks-td tasks-td--freeze-name">
+                  <div className="tasks-skel" style={{ width: NAME_W[i % NAME_W.length], height: 13 }} />
+                </td>
+                {/* Asignado */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 110, height: 26, borderRadius: 20 }} />
+                </td>
+                {/* Estado */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 88, height: 22, borderRadius: 20 }} />
+                </td>
+                {/* Etiquetas */}
+                <td className="tasks-td">
+                  {i % 3 !== 1
+                    ? <div className="tasks-skel" style={{ width: 68, height: 20, borderRadius: 20 }} />
+                    : SKEL_DOT}
+                </td>
+                {/* Sprint */}
+                <td className="tasks-td">
+                  {i % 3 === 0
+                    ? <div className="tasks-skel" style={{ width: 60, height: 20, borderRadius: 20 }} />
+                    : SKEL_DOT}
+                </td>
+                {/* Equipo sol. */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 90, height: 20, borderRadius: 20 }} />
+                </td>
+                {/* Prioridad */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 52, height: 20, borderRadius: 20 }} />
+                </td>
+                {/* H. Est. */}
+                <td className="tasks-td tasks-td--r">
+                  <div className="tasks-skel" style={{ width: 36, height: 12, marginLeft: 'auto' }} />
+                </td>
+                {/* H. Real */}
+                <td className="tasks-td tasks-td--r">
+                  {i % 2 === 0
+                    ? <div className="tasks-skel" style={{ width: 36, height: 12, marginLeft: 'auto' }} />
+                    : SKEL_DOT}
+                </td>
+                {/* Progreso */}
+                <td className="tasks-td tasks-td--r">
+                  {i % 2 !== 0
+                    ? <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                        <div className="tasks-skel" style={{ width: 50, height: 5, borderRadius: 3 }} />
+                        <div className="tasks-skel" style={{ width: 26, height: 11 }} />
+                      </div>
+                    : SKEL_DOT}
+                </td>
+                {/* Criterios */}
+                <td className="tasks-td">
+                  {i % 2 === 0
+                    ? <div className="tasks-skel" style={{ width: 42, height: 20, borderRadius: 20 }} />
+                    : SKEL_DOT}
+                </td>
+                {/* Pts. Total */}
+                <td className="tasks-td tasks-td--r">
+                  <div className="tasks-skel" style={{ width: 18, height: 12, marginLeft: 'auto' }} />
+                </td>
+                {/* Pts. Real. */}
+                <td className="tasks-td tasks-td--r">
+                  {i % 3 === 0
+                    ? <div className="tasks-skel" style={{ width: 18, height: 12, marginLeft: 'auto' }} />
+                    : SKEL_DOT}
+                </td>
+                {/* Creado */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 80, height: 12 }} />
+                </td>
+                {/* Cerrado */}
+                <td className="tasks-td">
+                  <div className="tasks-skel" style={{ width: 58, height: 20, borderRadius: 20 }} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Summary bar */}
+      <div className="tasks-summary">
+        <div className="tasks-summary__frozen">
+          <div className="tasks-skel" style={{ width: 110, height: 12 }} />
+        </div>
+        <div className="tasks-summary__right">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '0 16px' }}>
+            {[72, 72, 64, 64].map((w, i) => (
+              <div key={i} className="tasks-skel" style={{ width: w, height: 28, borderRadius: 4 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TasksTable({ teamCode }: { teamCode: string }) {
@@ -573,17 +745,7 @@ const [grabbing, setGrabbing] = useState(false);
   }
 
   // ── Loading
-  if (isLoading) {
-    return (
-      <div className="tasks-page">
-        <div className="tasks-loading">
-          <div className="tasks-loading__spinner" />
-          <span>Cargando tareas…</span>
-        </div>
-      </div>
-    );
-  }
-
+if (isLoading) return <TasksTableSkeleton />;
   // ── Render
   return (
     <div className="tasks-page">

@@ -388,7 +388,7 @@ const closureBorderStyle = isCerrada
             </span>
           ) : isSubRequest ? (
             <span style={{ alignSelf: 'flex-start', background: 'rgba(167,139,250,0.12)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-              ↳ Sub-solicitud
+              ↳ Sub-Solicitud
             </span>
           ) : isNonDefault ? (
             <span style={{ alignSelf: 'flex-start', background: `${accent}15`, color: accent, border: `1px solid ${accent}35`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>

@@ -738,3 +738,53 @@
   margin-left: 1px;
 }
 
+/* ─── Skeleton ───────────────────────────────────────────────────────────────── */
+@keyframes tasks-skel-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.tasks-skel {
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.045) 25%,
+    rgba(255, 255, 255, 0.10)  50%,
+    rgba(255, 255, 255, 0.045) 75%
+  );
+  background-size: 1200px 100%;
+  animation: tasks-skel-shimmer 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .tasks-skel {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06)  25%,
+    rgba(0, 0, 0, 0.13)  50%,
+    rgba(0, 0, 0, 0.06)  75%
+  );
+  background-size: 1200px 100%;
+}
+
+.tasks-skel--dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.35;
+}
+
+/* Efecto ola: cada fila arranca su shimmer ligeramente después */
+.tasks-tr--skel:nth-child(1) .tasks-skel { animation-delay: 0.00s; }
+.tasks-tr--skel:nth-child(2) .tasks-skel { animation-delay: 0.08s; }
+.tasks-tr--skel:nth-child(3) .tasks-skel { animation-delay: 0.16s; }
+.tasks-tr--skel:nth-child(4) .tasks-skel { animation-delay: 0.24s; }
+.tasks-tr--skel:nth-child(5) .tasks-skel { animation-delay: 0.32s; }
+.tasks-tr--skel:nth-child(6) .tasks-skel { animation-delay: 0.40s; }
+.tasks-tr--skel:nth-child(7) .tasks-skel { animation-delay: 0.48s; }
+.tasks-tr--skel:nth-child(8) .tasks-skel { animation-delay: 0.56s; }
+
+.tasks-tr--skel {
+  pointer-events: none;
+}
