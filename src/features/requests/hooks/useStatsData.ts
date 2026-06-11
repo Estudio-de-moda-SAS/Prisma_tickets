@@ -112,6 +112,13 @@ const AVATAR_GRADIENTS = [
 /** Columnas que cuentan como resueltas en todas las métricas */
 const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
 
+/** SLA targets por prioridad (días corridos desde apertura hasta cierre) */
+const SLA_TARGETS: Record<string, number> = {
+  critica:  1,
+  alta:     3,
+  media:    7,
+  baja:    14,
+};
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 function inits(name: string) {
@@ -142,10 +149,14 @@ function calcGeneral(requests: Request[], teams: BoardTeam[]): GeneralStatsReal 
     const mine = requests.filter(r => r.equipo.includes(eq));
     const done = mine.filter(r => DONE_COLUMNS.has(r.columna));
     const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
-    const conEst = done.filter(r => r.estimatedHours != null && r.fechaCierre && r.fechaApertura);
-    const sla = conEst.length > 0
-      ? Math.round(conEst.filter(r => daysBetween(r.fechaApertura, r.fechaCierre!) <= (r.estimatedHours! / 8) * 1.2).length / conEst.length * 100)
-      : mine.length > 0 ? 85 : 0;
+const sla = done.length > 0
+  ? Math.round(
+      done.filter(r =>
+        r.fechaCierre && r.fechaApertura &&
+        daysBetween(r.fechaApertura, r.fechaCierre) <= (SLA_TARGETS[r.prioridad] ?? 7)
+      ).length / done.length * 100
+    )
+  : 0;
     const score = mine.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
     return { equipo: eq, creadas: mine.length, resueltas: done.length, sla, criticas, score };
   });
@@ -158,11 +169,14 @@ function calcBoard(requests: Request[], equipo: string): BoardStatsReal {
   const mine = requests.filter(r => r.equipo.includes(equipo));
   const done = mine.filter(r => DONE_COLUMNS.has(r.columna));
   const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
-  const conEst = done.filter(r => r.estimatedHours != null && r.fechaCierre && r.fechaApertura);
-  const sla = conEst.length > 0
-    ? Math.round(conEst.filter(r => daysBetween(r.fechaApertura, r.fechaCierre!) <= (r.estimatedHours! / 8) * 1.2).length / conEst.length * 100)
-    : mine.length > 0 ? 85 : 0;
-
+const sla = done.length > 0
+  ? Math.round(
+      done.filter(r =>
+        r.fechaCierre && r.fechaApertura &&
+        daysBetween(r.fechaApertura, r.fechaCierre) <= (SLA_TARGETS[r.prioridad] ?? 7)
+      ).length / done.length * 100
+    )
+  : 0;
   const colOrder: KanbanColumna[] = [
     'sin_categorizar','icebox','backlog','todo',
     'en_progreso','en_revision_qas','ready_to_deploy','hecho',
