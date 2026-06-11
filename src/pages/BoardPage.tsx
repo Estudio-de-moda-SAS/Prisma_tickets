@@ -1,5 +1,6 @@
 // src/pages/BoardPage.tsx
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
@@ -21,6 +22,7 @@ import type { TemplateExtraField, ConditionalField } from '@/features/requests/t
 import { isConditionalField } from '@/features/requests/templates/types';
 import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 
 /** Fallback estático — mismos IDs que la BD, por si columnMap no cargó aún */
 const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
@@ -157,8 +159,17 @@ function KanbanZoomControl() {
 /* ============================================================
    BoardPage
    ============================================================ */
+// DESPUÉS
 export function BoardPage() {
-  const { equipoActivo }             = useBoardStore();
+  const { equipo: equipoParam = 'desarrollo' } = useParams<{ equipo: string }>();
+  const { setEquipoActivo }          = useBoardStore();
+
+  // Sincroniza el store con la URL (para el sidebar)
+  useEffect(() => {
+    setEquipoActivo(equipoParam);
+  }, [equipoParam]);
+
+  const equipoActivo = equipoParam; // La URL es la fuente de verdad
   const { data, isLoading, isError } = useBoardEquipo(equipoActivo);
   const { mutate: mover }            = useMoveRequest(equipoActivo);
   const columnMap                    = useColumnMap(config.DEFAULT_BOARD_ID);
@@ -171,6 +182,7 @@ export function BoardPage() {
     const team = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
     return team?.Board_Team_ID ?? null;
   }, [boardTeams, equipoActivo]);
+  const { data: columnConfig = [] } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
 
   const { data: users     = [] } = useUsers();
   const { data: subTeams  = [] } = useSubTeams(boardTeamId);
@@ -226,9 +238,9 @@ export function BoardPage() {
 
   const filteredData = useFilteredBoard(equipoActivo, data);
 
-  function handleMove(id: string, columna: KanbanColumna) {
+function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     const columnId = columnMap?.[columna] ?? COLUMN_ID_FALLBACK[columna];
-    mover({ id, columna, columnId });
+    mover({ id, columna, columnId, movedBy });
   }
 
   function handleModalId(id: string | null) {
@@ -267,6 +279,7 @@ export function BoardPage() {
         <KanbanBoard
           board={filteredData}
           equipo={equipoActivo}
+          columnConfig={columnConfig}
           onMove={handleMove}
           extraRequest={externalRequest ?? null}
           onModalId={handleModalId}

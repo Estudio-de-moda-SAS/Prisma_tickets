@@ -57,16 +57,16 @@ export const PRIORIDADES: Record<Prioridad, string> = {
  
 export const SCORE_TO_PRIORIDAD: Record<number, Prioridad> = {
   1: 'baja',
-  3: 'media',
-  5: 'alta',
-  8: 'critica',
+  2: 'media',
+  4: 'alta',
+  6: 'critica',
 };
  
 export const PRIORIDAD_TO_SCORE: Record<Prioridad, number> = {
   baja:    1,
-  media:   3,
-  alta:    5,
-  critica: 8,
+  media:   2,
+  alta:    4,
+  critica: 6,
 };
  
 /* ============================================================

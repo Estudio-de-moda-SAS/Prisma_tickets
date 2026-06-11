@@ -7,8 +7,9 @@ import {
   GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert,
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
+import { useDeleteRequest } from '../hooks/useRequests';
 import { useUpdateRequest } from '../hooks/UseUpdateRequest';
-import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE, COLUMNAS_FINALES } from '../types';
+import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE, PRIORIDAD_TO_SCORE } from '../types';
 import type { Request, KanbanColumna, Prioridad, Equipo } from '../types';
 import { useLabelsByTeamId } from '@/features/requests/hooks/useBoardMetadata';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
@@ -29,7 +30,7 @@ import { config } from '@/config';
 import type { AcceptanceCriteria } from '@/types/commons';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
-const PUNTAJE: Record<Prioridad, number> = { baja: 1, media: 3, alta: 5, critica: 8 };
+import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
@@ -57,9 +58,12 @@ function initials(name: string) {
 
 function fmtRelative(isoString: string) {
   const now  = new Date();
-  const date = new Date(isoString);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60)    return 'hace un momento';
+  // Si PostgREST devuelve el timestamp sin zona (ej: "2024-01-15T10:30:00"),
+  // JS lo interpreta como hora local → diff negativo → siempre "hace un momento".
+  // Forzamos UTC añadiendo 'Z' cuando no hay indicador de zona.
+  const normalized = /Z|[+-]\d{2}:\d{2}$/.test(isoString) ? isoString : isoString + 'Z';
+  const date = new Date(normalized);
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);  if (diff < 60)    return 'hace un momento';
   if (diff < 3600)  return `hace ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
   return date.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' });
@@ -146,7 +150,8 @@ type Props = {
   onOpenRequest?:    (requestId: string) => void;
   readOnly?:         boolean;
   backLabel?:        string;  
-  onBack?:           () => void; 
+  onBack?:           () => void;
+  onDeleted?:        (id: string) => void;
 };
 
 type RightTab = 'comments' | 'attachments';
@@ -155,6 +160,8 @@ type RightTab = 'comments' | 'attachments';
 function SubRequestsPanel({
   parentId, parentTitle, parentIsConfidential, onOpenChild,
 }: {
+  request: Request;
+  equipo: Equipo;
   parentId: string; parentTitle: string;
   parentIsConfidential: boolean; onOpenChild: (id: string) => void;
 }) {
@@ -226,59 +233,6 @@ function SubRequestsPanel({
         />
       )}
     </>
-  );
-}
-
-/* ─── CierreBanner ─────────────────────────────────────────── */
-function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreInfo']> }) {
-  function fmtColombia(iso: string) {
-    return new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' });
-  }
-  const allAttachments = [
-    ...(cierreInfo.attachments ?? []).map((a) => ({ url: a.signedUrl, name: a.fileName, mime: a.mimeType })),
-    ...((cierreInfo.attachments ?? []).length === 0 && cierreInfo.attachmentUrl
-      ? [{ url: cierreInfo.attachmentUrl, name: cierreInfo.attachmentName, mime: cierreInfo.attachmentMime }]
-      : []),
-  ];
-  return (
-    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(0,229,160,0.25)', background: 'rgba(0,229,160,0.04)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 14px', borderBottom: '1px solid rgba(0,229,160,0.15)', background: 'rgba(0,229,160,0.06)' }}>
-        <CheckCircle size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Evidencia de avance</span>
-        <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtColombia(cierreInfo.closedAt)}</span>
-      </div>
-      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#00b894,#00e5a0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(cierreInfo.closedBy.userName || 'U')}</div>
-          <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{cierreInfo.closedBy.userName || 'Usuario desconocido'}</span>
-          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>adjuntó evidencia</span>
-        </div>
-        <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.6, wordBreak: 'break-word' }}>{cierreInfo.closureNote}</div>
-        {allAttachments.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {allAttachments.map((att, idx) => {
-              if (!att.url) return null;
-              const isImage = att.mime?.startsWith('image/');
-              return (
-                <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', textDecoration: 'none', transition: 'border-color 0.15s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.2)'; }}
-                >
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
-                    {isImage ? <Image size={13} /> : <FileText size={13} />}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name ?? 'Evidencia adjunta'}</div>
-                    <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>Ver evidencia →</div>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -371,7 +325,7 @@ function AcceptanceCriteriaPanel({
    ══════════════════════════════════════════════════════════════ */
 export function RequestModal({
   request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false,
-  backLabel, onBack,
+  backLabel, onBack, onDeleted,
 }: Props) {
   const { Requests }     = useGraphServices();
   const { mutate: mover }    = useMoveRequest(equipo);
@@ -382,6 +336,8 @@ export function RequestModal({
   const { mutate: deleteComment }   = useDeleteComment();
   const { mutate: uploadAttachment, isPending: uploading } = useUploadAttachment();
   const { mutate: deleteAttachment } = useDeleteAttachment();
+  const { mutate: deleteRequest, isPending: deleting } = useDeleteRequest();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const overlayRef   = useRef<HTMLDivElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
@@ -405,13 +361,16 @@ export function RequestModal({
 
   const effectiveRequest = freshRequest ?? request;
 
-  /* isCerrada: basado en columna, NO en fechaCierre */
-  const isCerrada        = COLUMNAS_FINALES.has(effectiveRequest.columna);
+  const isCerrada        = !!effectiveRequest.fechaCierre;
   const isClienteReview  = effectiveRequest.columna === 'cliente_review';
 
   /* Feedback del cliente */
-  const { data: clientFeedback } = useClientFeedback(requestId);
-
+const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
+  const cierreCount    = effectiveRequest.cierreHistorial?.length ?? 0;
+  // Para ClientReviewBanner: mostrar feedback existente solo si ya se cubrió el ciclo actual
+  const clientFeedback = cierreCount > 0 && feedbackHistorial.length >= cierreCount
+    ? (feedbackHistorial[0] ?? null)
+    : null;
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
 
@@ -463,8 +422,18 @@ useEffect(() => {
 }, [request.id]); // ← sin freshRequest en deps
 const timerRunningRef = useRef(false);
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
+function handleDelete() {
+  deleteRequest(requestId, {
+    onSuccess: () => {
+      setShowDeleteConfirm(false);
+      onClose();
+      onDeleted?.(requestId);
+    },
+  });
+}
+
 function handleClose() {
-  if (timerRunningRef.current) {
+    if (timerRunningRef.current) {
     setShowTimerWarning(true);
     return;
   }
@@ -489,7 +458,7 @@ useEffect(() => {
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
     /* Si ya hay closure (evidencia subida al mover a QAS), no pedir de nuevo */
-    const yaHayClosure = !!effectiveRequest.cierreInfo;
+const yaHayClosure = !!effectiveRequest.fechaCierre;
     if (COLUMNAS_CIERRE.has(columna) && !yaHayClosure) {
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
@@ -608,15 +577,19 @@ function handleToggleAssignee(userId: number) {
   const zIndex = readOnly ? 110 : 100;
   const readyToDeployColumnId = columnMap?.['ready_to_deploy'] ?? 7;
   const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
-  const yaHayClosure = !!effectiveRequest.cierreInfo;
+const yaHayClosure = !!effectiveRequest.fechaCierre;
 
+  const parts = assignedUsers.map((u) => u.User_Name).join(', ').split(' ');
+  const displayName = parts.length >= 3
+    ? `${parts[0]} ${parts[2]}`
+    : parts.join(' ');
   /* ─────────────────────────────────────────────────────────── */
   return (
     <>
       <div
         ref={overlayRef}
 onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
       >
         <div style={{
           width: '100%', maxWidth: 900, maxHeight: '90vh',
@@ -717,7 +690,18 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
               </div>
             )}
 
-            <div style={{ marginLeft: 'auto' }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              {!readOnly && currentUser?.User_Role === 'admin' && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Eliminar solicitud"
+                  style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid rgba(255,71,87,0.25)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,71,87,0.55)'; e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(255,71,87,0.08)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,71,87,0.25)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
               <button onClick={handleClose} style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={15} />
               </button>
@@ -746,10 +730,9 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             {/* Sub-solicitudes: panel flotante, no desplaza el contenido */}
             {showSubRequests && !isSubRequest && !readOnly && (
               <>
-                {/* Scrim — opaca el contenido, click para cerrar */}
                 <div
                   onClick={() => setShowSubRequests(false)}
-                  style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)', zIndex: 40, cursor: 'pointer' }}
+                  style={{ position: 'absolute', inset: 0, zIndex: 40, cursor: 'pointer' }}
                 />
                 {/* Panel flotante */}
                 <div style={{
@@ -773,6 +756,8 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                       >×</button>
                     </div>
                     <SubRequestsPanel
+                      request={request}
+                      equipo={equipo}
                       parentId={requestId}
                       parentTitle={effectiveRequest.titulo}
                       parentIsConfidential={effectiveRequest.isConfidential ?? false}
@@ -872,7 +857,7 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
         : assignedUsers.map((u) => (
           <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
             <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-            {u.User_Name.split(' ')[0]}
+            {displayName}
             {!readOnly && (
               <span
                 onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
@@ -1087,7 +1072,7 @@ onToggleAssignee={(userId) => {
                 fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)',
                 color: PRI_COLOR[pri], opacity: 0.7,
               }}>
-                {PUNTAJE[pri]} pts
+                {PRIORIDAD_TO_SCORE[pri]} pts
               </span>
               {sel && <Checkmark />}
             </DropdownItem>
@@ -1100,7 +1085,7 @@ onToggleAssignee={(userId) => {
 
 <FieldBlock label="Puntaje">
   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[effectiveRequest.prioridad] }}>{PUNTAJE[effectiveRequest.prioridad]}</span>
+    <span style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-display)', color: PRI_COLOR[effectiveRequest.prioridad] }}>{PRIORIDAD_TO_SCORE[effectiveRequest.prioridad]}</span>
     <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>pts · basado en prioridad</span>
   </div>
 </FieldBlock>
@@ -1118,41 +1103,25 @@ onToggleAssignee={(userId) => {
                 </FieldBlock>
               </div>
 
-{effectiveRequest.cierreInfo && (
-  <FieldBlock label="Evidencia de avance">
-    <CierreBanner cierreInfo={effectiveRequest.cierreInfo} />
-    {/* ← AGREGAR ESTO */}
-    {clientFeedback && (
-      <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: `1px solid ${clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.25)' : 'rgba(255,71,87,0.25)'}`, background: clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.04)' : 'rgba(255,71,87,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: `1px solid ${clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.15)' : 'rgba(255,71,87,0.15)'}`, background: clientFeedback.decision === 'approved' ? 'rgba(0,229,160,0.07)' : 'rgba(255,71,87,0.07)' }}>
-          {clientFeedback.decision === 'approved'
-            ? <CheckCircle size={12} style={{ color: 'var(--success)', flexShrink: 0 }} />
-            : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-          }
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: clientFeedback.decision === 'approved' ? 'var(--success)' : 'var(--danger)', flex: 1 }}>
-            {clientFeedback.decision === 'approved' ? 'Aprobado por el cliente' : 'Rechazado por el cliente'}
-          </span>
-          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
-            {new Date(clientFeedback.submittedAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' })}
-          </span>
-        </div>
-        <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <div style={{ width: 18, height: 18, borderRadius: '50%', background: clientFeedback.decision === 'approved' ? 'linear-gradient(135deg,#00b894,#00e5a0)' : 'linear-gradient(135deg,#ff4757,#ff6b81)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>
-              {clientFeedback.submitterName.split(' ').slice(0,2).map(n => n[0] ?? '').join('').toUpperCase()}
-            </div>
-            <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500 }}>{clientFeedback.submitterName}</span>
-          </div>
-          {clientFeedback.feedbackNote && (
-            <div style={{ padding: '7px 10px', borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, wordBreak: 'break-word', fontStyle: 'italic' }}>
-              "{clientFeedback.feedbackNote}"
-            </div>
-          )}
-        </div>
-      </div>
-    )}
+{(effectiveRequest.cierreHistorial?.length ?? 0) > 0 && (
+  <FieldBlock label={
+    (effectiveRequest.cierreHistorial?.length ?? 0) > 1
+      ? `Historial de evidencia · ${effectiveRequest.cierreHistorial!.length} registros`
+      : 'Evidencia de avance'
+  }>
+    <CierreTimeline historial={effectiveRequest.cierreHistorial!} />
   </FieldBlock>
 )}
+{feedbackHistorial.length > 0 && (
+  <FieldBlock label={
+    feedbackHistorial.length > 1
+      ? `Historial de feedback · ${feedbackHistorial.length} respuestas`
+      : 'Feedback del cliente'
+  }>
+    <FeedbackTimeline historial={feedbackHistorial} />
+  </FieldBlock>
+)}
+
 {!readOnly && !isCerrada && (
 <TimerOrInputBlock
   requestId={requestId}
@@ -1164,12 +1133,7 @@ onToggleAssignee={(userId) => {
 
 {!readOnly && (
   <FieldBlock label="Mover a">
-    {isCerrada ? (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 7, background: 'rgba(0,229,160,0.05)', border: '1px solid rgba(0,229,160,0.2)', fontSize: 11, color: 'var(--success)' }}>
-        <Lock size={12} />Esta solicitud está cerrada y no puede moverse.
-      </div>
-    ) : (
-      <div ref={moverDD.ref} style={{ position: 'relative' }}>
+          <div ref={moverDD.ref} style={{ position: 'relative' }}>
         {/* Trigger — muestra la columna actual */}
         <button
           onClick={() => moverDD.setOpen((o) => !o)}
@@ -1247,7 +1211,7 @@ onToggleAssignee={(userId) => {
           </div>
         )}
       </div>
-    )}
+
   </FieldBlock>
 )}            </div>
 
@@ -1412,8 +1376,70 @@ onToggleAssignee={(userId) => {
     </div>
   </div>
 )}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 210,
+        }}>
+          <div style={{
+            background: 'var(--bg-panel)', border: '1px solid rgba(255,71,87,0.35)',
+            borderRadius: 12, padding: '24px 28px', width: 380,
+            display: 'flex', flexDirection: 'column', gap: 16,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+              background: 'linear-gradient(90deg, transparent, var(--danger), transparent)' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Trash2 size={17} style={{ color: 'var(--danger)' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>
+                  Eliminar solicitud
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
+                  Esta acción no se puede deshacer
+                </div>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
+              Se eliminarán permanentemente la solicitud <strong style={{ color: 'var(--txt)' }}>"{effectiveRequest.titulo}"</strong>, junto con sus comentarios, adjuntos, criterios y asignaciones.
+            </p>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                style={{ padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--txt)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: '1px solid rgba(255,71,87,0.45)', background: 'rgba(255,71,87,0.15)', color: 'var(--danger)', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)', transition: 'all 0.15s', opacity: deleting ? 0.6 : 1 }}
+                onMouseEnter={(e) => { if (!deleting) e.currentTarget.style.background = 'rgba(255,71,87,0.28)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.15)'; }}
+              >
+                {deleting ? 'Eliminando…' : 'Eliminar definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {pendingClosureCol && (
-        <ClosureModal
+          <ClosureModal
           request={effectiveRequest}
           targetColumna={pendingClosureCol}
           targetColumnId={pendingClosureColId}

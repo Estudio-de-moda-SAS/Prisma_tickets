@@ -11,16 +11,17 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { CreateRequestModal } from './CreateRequestModal';
 import { useDragScroll } from '../hooks/useDragScroll';
 import { useBoardStyle } from '../hooks/useCustomizationStyles';
 import { KanbanColumn } from './KanbanColumn';
 import { RequestCard } from './RequestCard';
 import { RequestModal } from './RequestModal';
 import { ClosureModal } from './ClosureModal';
-import { COLUMNAS_BOARD, COLUMNAS_CIERRE } from '../types';
-import type { BoardData, Equipo, KanbanColumna, Request } from '../types';
+import type { BoardData, Equipo, Request } from '../types';
+import type { ColumnWithConfig } from '../hooks/useKanbanAdmin';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useCloseRequest } from '../hooks/useCloseRequest';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -29,68 +30,103 @@ import { useBoardStore } from '@/store/boardStore';
 import { config } from '@/config';
 import type { Notification } from '@/types/commons';
 
-const COLUMN_ID_MAP: Record<KanbanColumna, number> = {
-  sin_categorizar:  1,
-  icebox:           2,
-  backlog:          3,
-  todo:             4,
-  en_progreso:      5,
-  en_revision_qas:  8,
-  cliente_review:   10,
-  ready_to_deploy:  7,
-  hecho:            6,
-  historial:        9,
-};
-
-type Props = {
-  board:         BoardData;
-  equipo:        Equipo;
-  onMove:        (id: string, columna: KanbanColumna) => void;
-  extraRequest?: Request | null;
-  onModalId?:    (id: string | null) => void;
-};
-
-const COLUMN_IDS = new Set<string>([
-  'sin_categorizar', 'icebox', 'backlog', 'todo', 'en_progreso',
-  'en_revision_qas', 'cliente_review', 'ready_to_deploy', 'hecho', 'historial',
-]);
-
-const COLUMN_LABELS: Record<KanbanColumna, string> = {
-  sin_categorizar:  'Sin Categorizar',
-  icebox:           'Icebox',
-  backlog:          'Backlog',
-  todo:             'To Do',
-  en_progreso:      'En Progreso',
-  en_revision_qas:  'En Revisión QAS',
-  cliente_review:   'Client Review',
-  ready_to_deploy:  'Ready to Deploy',
-  hecho:            'Hecho',
-  historial:        'Historial',
+/* ── Fallback estático para cuando columnConfig aún no cargó ── */
+const COLUMN_ID_FALLBACK: Record<string, number> = {
+  sin_categorizar: 1, icebox: 2,       backlog: 3,
+  todo: 4,            en_progreso: 5,  hecho: 6,
+  ready_to_deploy: 7, en_revision_qas: 8, historial: 9, cliente_review: 10,
 };
 
 type PendingClosure = {
   card:           Request;
-  targetColumna:  KanbanColumna;
+  targetColumna:  string;
   targetColumnId: number;
 };
 
-export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: Props) {
+type Props = {
+  board:          BoardData;
+  equipo:         Equipo;
+  columnConfig:   ColumnWithConfig[];
+  onMove:         (id: string, columna: string, movedBy?: number) => void;
+  extraRequest?:  Request | null;
+  onModalId?:     (id: string | null) => void;
+};
+
+export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest, onModalId }: Props) {
   const [activeCard,     setActiveCard]     = useState<Request | null>(null);
-  const [overColumn,     setOverColumn]     = useState<KanbanColumna | null>(null);
+  const [overColumn,     setOverColumn]     = useState<string | null>(null);
   const [modalId,        setModalId]        = useState<string | null>(null);
   const [parentModalId,  setParentModalId]  = useState<string | null>(null);
   const [pendingClosure, setPendingClosure] = useState<PendingClosure | null>(null);
 
-  const navigate = useNavigate();
+  const [createModalOpen, setCreateModalOpen] = useState<string | null>(null);
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
   const { kanbanZoom }  = useBoardStore();
   const { Requests }    = useGraphServices();
   const { data: currentUser } = useCurrentUser();
-
+  const { data: allTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const currentTeamId = useMemo(
+    () => allTeams.find(
+      (t) => t.Board_Team_Code === equipo || t.Board_Team_Name === equipo
+    )?.Board_Team_ID ?? null,
+    [allTeams, equipo],
+  );
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
   const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
 
+  /* ============================================================
+     Estructuras dinámicas derivadas de columnConfig
+     ============================================================ */
+  const visibleColumns = useMemo(() =>
+    columnConfig.length > 0
+      ? columnConfig
+          .filter((c) => c.Is_Visible)
+          .sort((a, b) => a.Board_Column_Position - b.Board_Column_Position)
+      : [], // el board no se vacía — usa las keys del board durante la carga
+    [columnConfig],
+  );
+
+  /** Slugs en orden de posición */
+  const columnSlugs = useMemo(
+    () => visibleColumns.map((c) => c.Board_Column_Slug),
+    [visibleColumns],
+  );
+
+  /** Set rápido para lookup en drag events */
+  const columnSlugSet = useMemo(() => new Set(columnSlugs), [columnSlugs]);
+
+  /** slug → nombre display */
+  const columnLabels = useMemo(
+    () => Object.fromEntries(visibleColumns.map((c) => [c.Board_Column_Slug, c.Board_Column_Name])),
+    [visibleColumns],
+  );
+
+  /** slug → Board_Column_ID */
+  const columnIdMap = useMemo(
+    () => Object.fromEntries(visibleColumns.map((c) => [c.Board_Column_Slug, c.Board_Column_ID])),
+    [visibleColumns],
+  );
+
+  /** Slugs que requieren evidencia (definido en DB por equipo) */
+  const columnColors = useMemo(
+    () => Object.fromEntries(visibleColumns.map((c) => [c.Board_Column_Slug, c.Team_Column_Color ?? c.Board_Column_Color])),
+    [visibleColumns],
+  );
+
+  const columnTitleColors = useMemo(
+    () => Object.fromEntries(
+      visibleColumns.map((c) => [c.Board_Column_Slug, c.Team_Column_Title_Color ?? undefined])
+    ) as Record<string, string | undefined>,
+    [visibleColumns],
+  );
+
+  const evidenceSlugs = useMemo(
+    () => new Set(visibleColumns.filter((c) => c.Evidence_Required).map((c) => c.Board_Column_Slug)),
+    [visibleColumns],
+  );
+
+  /* ── Notificaciones no leídas por ticket ── */
   const unreadByRequestId = useMemo(() => {
     const map = new Map<string, Notification[]>();
     for (const n of notifications) {
@@ -101,20 +137,19 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     return map;
   }, [notifications]);
 
-  // URLs base derivadas del equipo — consistentes con la estructura /board/:equipo/ticket/:id
   const boardUrl  = `/board/${equipo}`;
   const ticketUrl = (id: string) => `/board/${equipo}/ticket/${id}`;
 
-  // ── Abrir/cerrar modal ──────────────────────────────────────
+  /* ============================================================
+     Modal
+     ============================================================ */
   function setModal(id: string | null) {
     setModalId(id);
     setParentModalId(null);
     onModalId?.(id);
-
     if (id) {
       history.replaceState(null, '', ticketUrl(id));
-      const ticketNotifs = unreadByRequestId.get(id) ?? [];
-      ticketNotifs.forEach((n) => markRead(n.notificationId));
+      (unreadByRequestId.get(id) ?? []).forEach((n) => markRead(n.notificationId));
     } else {
       history.replaceState(null, '', boardUrl);
     }
@@ -129,9 +164,9 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     : null;
 
   const { data: modalCardFetched } = useQuery<Request>({
-    queryKey: ['request', modalId],
-    queryFn:  () => Requests.fetchById(modalId!),
-    enabled:  !!modalId && !config.USE_MOCK,
+    queryKey:  ['request', modalId],
+    queryFn:   () => Requests.fetchById(modalId!),
+    enabled:   !!modalId && !config.USE_MOCK,
     staleTime: 60_000,
   });
 
@@ -142,9 +177,9 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     : null;
 
   const { data: parentFetched } = useQuery<Request>({
-    queryKey: ['request', parentModalId],
-    queryFn:  () => Requests.fetchById(parentModalId!),
-    enabled:  !!parentModalId && !config.USE_MOCK,
+    queryKey:  ['request', parentModalId],
+    queryFn:   () => Requests.fetchById(parentModalId!),
+    enabled:   !!parentModalId && !config.USE_MOCK,
     staleTime: 30_000,
   });
 
@@ -156,9 +191,12 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     history.replaceState(null, '', ticketUrl(parentId));
   }
 
-  function findColumn(id: string): KanbanColumna | null {
+  /* ============================================================
+     Drag & Drop
+     ============================================================ */
+  function findColumn(id: string): string | null {
     for (const [col, items] of Object.entries(board)) {
-      if (items.some((r) => r.id === id)) return col as KanbanColumna;
+      if (items.some((r) => r.id === id)) return col;
     }
     return null;
   }
@@ -171,7 +209,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
   function handleDragOver({ over }: DragOverEvent) {
     if (!over) { setOverColumn(null); return; }
     const overId = String(over.id);
-    setOverColumn(COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId));
+    setOverColumn(columnSlugSet.has(overId) ? overId : findColumn(overId));
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
@@ -181,7 +219,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
 
     const activeId   = String(active.id);
     const overId     = String(over.id);
-    const targetCol  = COLUMN_IDS.has(overId) ? (overId as KanbanColumna) : findColumn(overId);
+    const targetCol  = columnSlugSet.has(overId) ? overId : findColumn(overId);
     const currentCol = findColumn(activeId);
 
     if (!targetCol || !currentCol || targetCol === currentCol) return;
@@ -189,21 +227,25 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     const card = Object.values(board).flat().find((r) => r.id === activeId);
     if (!card) return;
 
-    const yaHayClosure      = !!card.cierreInfo;
-    const necesitaEvidencia = COLUMNAS_CIERRE.has(targetCol) && !yaHayClosure;
+    /* ── Evidencia: dinámica desde TBL_Team_Column_Config ── */
+    const yaHayClosure      = !!card.fechaCierre;
+    const necesitaEvidencia = evidenceSlugs.has(targetCol) && !yaHayClosure;
 
     if (necesitaEvidencia) {
       setPendingClosure({
         card,
         targetColumna:  targetCol,
-        targetColumnId: COLUMN_ID_MAP[targetCol],
+        targetColumnId: columnIdMap[targetCol] ?? COLUMN_ID_FALLBACK[targetCol] ?? 0,
       });
       return;
     }
 
-    onMove(activeId, targetCol);
+    onMove(activeId, targetCol, currentUser?.User_ID);
   }
 
+  /* ============================================================
+     Cierre con evidencia
+     ============================================================ */
   function handleClosureConfirm(note: string, attachments: File[]) {
     if (!pendingClosure || !currentUser) return;
     closeRequest(
@@ -221,14 +263,14 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     );
   }
 
-  function handleModalMoveWithClosure(id: string, columna: KanbanColumna, note: string, attachments: File[]) {
+  function handleModalMoveWithClosure(id: string, columna: string, note: string, attachments: File[]) {
     if (!currentUser) return;
     closeRequest(
       {
         requestId:      id,
         closedBy:       currentUser.User_ID,
         closureNote:    note,
-        targetColumnId: COLUMN_ID_MAP[columna],
+        targetColumnId: columnIdMap[columna] ?? COLUMN_ID_FALLBACK[columna] ?? 0,
         attachments,
       },
       {
@@ -238,7 +280,14 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
     );
   }
 
-  const columnas: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
+  /* ============================================================
+     Render
+     Mientras carga columnConfig, muestra las columnas del board
+     que ya tienen datos (evita pantalla vacía).
+     ============================================================ */
+  const renderSlugs = columnSlugs.length > 0
+    ? columnSlugs
+    : Object.keys(board);
 
   return (
     <>
@@ -259,15 +308,16 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           }}
           {...scrollHandlers}
         >
-          {columnas.map((col) => (
+          {renderSlugs.map((col) => (
             <KanbanColumn
               key={col}
               id={col}
-              titulo={COLUMN_LABELS[col]}
-              requests={board[col] ?? []}
-              isOver={overColumn === col}
+              titulo={columnLabels[col] ?? col}
+              color={columnColors[col]}
+              titleColor={columnTitleColors[col]}
+              requests={board[col] ?? []}              isOver={overColumn === col}
               onCardClick={(card) => setModal(card.id)}
-              onAddClick={() => navigate('/new')}
+              onAddClick={(col) => setCreateModalOpen(col)}
               unreadByRequestId={unreadByRequestId}
             />
           ))}
@@ -298,7 +348,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           request={modalCard}
           equipo={equipo}
           onClose={() => setModal(null)}
-          onMove={(id, columna) => onMove(id, columna)}
+          onMove={(id, columna,) => onMove(id, columna)}
           onMoveWithClosure={handleModalMoveWithClosure}
           onOpenRequest={(id) => {
             if (modalCard.parentId) {
@@ -319,11 +369,7 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           onClose={() => {
             setModalId(parentModalId);
             setParentModalId(null);
-            if (parentModalId) {
-              history.replaceState(null, '', ticketUrl(parentModalId));
-            } else {
-              history.replaceState(null, '', boardUrl);
-            }
+            history.replaceState(null, '', parentModalId ? ticketUrl(parentModalId) : boardUrl);
           }}
           onMove={(id, columna) => onMove(id, columna)}
           onMoveWithClosure={handleModalMoveWithClosure}
@@ -332,12 +378,15 @@ export function KanbanBoard({ board, equipo, onMove, extraRequest, onModalId }: 
           onBack={() => {
             setModalId(parentModalId);
             setParentModalId(null);
-            if (parentModalId) {
-              history.replaceState(null, '', ticketUrl(parentModalId));
-            } else {
-              history.replaceState(null, '', boardUrl);
-            }
+            history.replaceState(null, '', parentModalId ? ticketUrl(parentModalId) : boardUrl);
           }}
+        />
+      )}
+      {createModalOpen !== null && (
+        <CreateRequestModal
+          onClose={() => setCreateModalOpen(null)}
+          defaultTeamId={currentTeamId ?? undefined}
+          defaultColumnSlug={createModalOpen}
         />
       )}
     </>

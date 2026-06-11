@@ -19,8 +19,9 @@ const MOCK_COLUMN_MAP: Record<KanbanColumna, number> = {
 };
 
 type ColumnRow = {
-  Board_Column_ID:   number;
-  Board_Column_Name: string;
+  Board_Column_ID:    number;
+  Board_Column_Name:  string;
+  Board_Column_Slug:  string | null;
 };
 
 const KANBAN_NAME_TO_COLUMNA: Record<string, KanbanColumna> = {
@@ -36,17 +37,18 @@ const KANBAN_NAME_TO_COLUMNA: Record<string, KanbanColumna> = {
   'Client Review':    'cliente_review',  // ← R mayúscula, igual que en la BD
 };
 
-export function useColumnMap(boardId: number): Record<KanbanColumna, number> | undefined {
+export function useColumnMap(boardId: number): Record<string, number> | undefined {
   const { data } = useQuery<Record<KanbanColumna, number>>({
     queryKey: ['columnMap', boardId],
     queryFn:  config.USE_MOCK
       ? () => Promise.resolve(MOCK_COLUMN_MAP)
       : async () => {
           const rows = await apiClient.call<ColumnRow[]>('fetchBoardColumns', { boardId });
-          const map = {} as Record<KanbanColumna, number>;
+          const map = {} as Record<string, number>;
           for (const row of rows) {
-            const columna = KANBAN_NAME_TO_COLUMNA[row.Board_Column_Name];
-            if (columna) map[columna] = row.Board_Column_ID;
+            // Usar slug del DB directamente; fallback al mapeo por nombre
+            const key = row.Board_Column_Slug || KANBAN_NAME_TO_COLUMNA[row.Board_Column_Name];
+            if (key) map[key] = row.Board_Column_ID;
           }
           return map;
         },

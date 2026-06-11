@@ -1,5 +1,5 @@
 // src/pages/NewRequestPage.tsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
@@ -12,11 +12,12 @@ import {
   useBoardTemplates,
   getTemplateDefinition,
 } from '@/features/requests/hooks/useBoardMetadata';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
+import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
 import { apiClient } from '@/lib/apiClient';
 import { compressImage } from '@/lib/compressImage';
 import type { Prioridad } from '@/features/requests/types';
+import { useRole } from '@/auth/roles';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
@@ -309,9 +310,32 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
 }
 
 /* ── AcceptanceCriteriaEditor ── */
+function AutoTextarea({ value, onChange, style }: {
+  value: string;
+  onChange: (v: string) => void;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+el.style.height = '1px';
+    el.style.height = el.scrollHeight + 'px';
+  });
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      rows={1}
+      style={{ resize: 'none', overflow: 'hidden', ...style }}
+    />
+  );
+}
+/* ── AcceptanceCriteriaEditor ── */
 function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = false }: { criteria: string[]; onChange: (v: string[]) => void; accent: string; showError?: boolean }) {
   const [newText, setNewText] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+const inputRef = useRef<HTMLTextAreaElement>(null);
 
   function add() {
     const t = newText.trim();
@@ -326,12 +350,16 @@ function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = fals
       {criteria.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {criteria.map((c, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: `${accent}08`, border: `1px solid ${accent}20` }}>
-              <div style={{ width: 18, height: 18, borderRadius: 4, background: `${accent}15`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 10px', borderRadius: 6, background: `${accent}08`, border: `1px solid ${accent}20` }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: `${accent}15`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                 <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke={accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
-              <input value={c} onChange={(e) => { const n = [...criteria]; n[idx] = e.target.value; onChange(n); }} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: 'var(--txt)', fontFamily: 'var(--font-body)' }} />
-              <button type="button" onClick={() => onChange(criteria.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+<AutoTextarea
+  value={c}
+  onChange={(v) => { const n = [...criteria]; n[idx] = v; onChange(n); }}
+  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: 'var(--txt)', fontFamily: 'var(--font-body)', lineHeight: 1.5, padding: 0 }}
+/>
+              <button type="button" onClick={() => onChange(criteria.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0, marginTop: 2 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
                 <Trash2 size={11} />
               </button>
             </div>
@@ -339,7 +367,7 @@ function AcceptanceCriteriaEditor({ criteria, onChange, accent, showError = fals
         </div>
       )}
       <div style={{ display: 'flex', gap: 6 }}>
-        <input ref={inputRef} value={newText} onChange={(e) => setNewText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Ej: El sistema valida el acceso con Azure AD…" style={{ flex: 1, padding: '7px 11px', borderRadius: 6, border: `1px solid ${(showError && criteria.length === 0) ? 'rgba(255,71,87,0.35)' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }} onFocus={(e) => { e.currentTarget.style.borderColor = `${accent}50`; }} onBlur={(e) => { e.currentTarget.style.borderColor = (showError && criteria.length === 0) ? 'rgba(255,71,87,0.35)' : 'var(--border-subtle)'; }} />
+        <textarea ref={inputRef} value={newText} rows={1} onChange={(e) => setNewText(e.target.value)} onInput={(e) => { const t = e.currentTarget; t.style.height = '1px'; t.style.height = t.scrollHeight + 'px'; }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); add(); } }} placeholder="Ej: El sistema valida el acceso con Azure AD…" style={{ flex: 1, padding: '7px 11px', borderRadius: 6, border: `1px solid ${(showError && criteria.length === 0) ? 'rgba(255,71,87,0.35)' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', resize: 'none', overflow: 'hidden', lineHeight: 1.5 }} onFocus={(e) => { e.currentTarget.style.borderColor = `${accent}50`; }} onBlur={(e) => { e.currentTarget.style.borderColor = (showError && criteria.length === 0) ? 'rgba(255,71,87,0.35)' : 'var(--border-subtle)'; }} />
         <button type="button" onClick={add} disabled={!newText.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 6, border: `1px solid ${newText.trim() ? accent + '50' : 'var(--border-subtle)'}`, background: newText.trim() ? `${accent}15` : 'transparent', color: newText.trim() ? accent : 'var(--txt-muted)', fontSize: 11, fontWeight: 700, cursor: newText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}>
           <Plus size={12} />Añadir
         </button>
@@ -379,14 +407,10 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
         {teams.map((team, idx) => {
-          const isAlone   = teams.length % 2 !== 0 && idx === teams.length - 1;
-          const code      = team.Board_Team_Code as keyof typeof EQUIPO_COLORS;
-          const colors    = EQUIPO_COLORS[code];
-          const Icon      = EQUIPO_ICONS[code];
-          const selected  = selectedTeamId === team.Board_Team_ID;
-          const dot       = colors?.dot    ?? team.Board_Team_Color;
-          const glow      = colors?.glow   ?? `${team.Board_Team_Color}12`;
-          const border    = colors?.border ?? `${team.Board_Team_Color}30`;
+          const isAlone             = teams.length % 2 !== 0 && idx === teams.length - 1;
+          const selected            = selectedTeamId === team.Board_Team_ID;
+          const { dot, glow, border } = teamColors(team.Board_Team_Color);
+          const Icon = getTeamIcon(team.Board_Team_Icon);
 
           return (
             <button
@@ -407,8 +431,8 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
               {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-<div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Icon ? <Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} /> : <span style={{ fontSize: 16 }}>🏢</span>}</div>
-              <div>
+<div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
+</div>              <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
   <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
@@ -550,7 +574,8 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
       <div style={cardStyle(accent)}>
         <SectionLabel>Descripción</SectionLabel>
-        <textarea style={{ ...inputStyle(focusedField === 'desc'), minHeight: 110, resize: 'vertical', lineHeight: 1.65 }} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} onFocus={() => setFocusedField('desc')} onBlur={() => setFocusedField(null)} placeholder="Describe el problema con detalle..." rows={4} />
+        <textarea style={{ ...inputStyle(focusedField === 'desc'), minHeight: 110, resize: 'none', overflow: 'hidden', lineHeight: 1.65 }} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} onInput={(e) => { const t = e.currentTarget; t.style.height = '1px'; t.style.height = t.scrollHeight + 'px'; }}
+ onFocus={() => setFocusedField('desc')} onBlur={() => setFocusedField(null)} placeholder="Describe el problema con detalle..." rows={4} />
       </div>
 
       {/* Criterios de aceptación */}
@@ -752,6 +777,8 @@ export function NuevaSolicitudPage() {
   const columnMap                 = useColumnMap(boardId);
   const { data: teams      = [] } = useBoardTeams(boardId);
   const { data: templates  = [] } = useBoardTemplates(boardId);
+  const role        = useRole();
+  const visibleTeams = teams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
 
   const [step,               setStep]               = useState<Step>('equipo');
   const [selectedTeamId,     setSelectedTeamId]     = useState<number | null>(null);
@@ -908,7 +935,7 @@ useEffect(() => {
   return (
     <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 28px 32px', maxWidth: 900, width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
-{step === 'equipo' && <StepEquipo teams={teams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
+{step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (
         <StepForm
           allTemplates={templates} templateId={selectedTemplateId}

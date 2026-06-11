@@ -149,7 +149,7 @@ export function ClosureModal({
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current && !isPending) onCancel(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}
     >
       <div style={{
         width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto',

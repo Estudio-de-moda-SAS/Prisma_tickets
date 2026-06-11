@@ -28,7 +28,7 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
   const field = cond.field as FilterField;
 
   switch (field) {
-    case 'subequipo':
+    case 'equipo':
       return (request.subTeamNames ?? []).map(norm);
 
     case 'etiqueta':
@@ -36,9 +36,6 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
 
     case 'assignee':
       return (request.assignees ?? []).map((a) => norm(a.userName));
-
-    case 'equipo':
-      return (request.equipo ?? []).map(norm);
 
     case 'sprint':
       return request.sprintName ? [norm(request.sprintName)] : [];

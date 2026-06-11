@@ -12,6 +12,8 @@ export type BoardTeam = {
   Board_Team_Code:        string;
   Board_Team_Color:       string;
   Board_Team_Description: string | null;
+  Board_Team_Icon:           string;
+  Board_Team_Is_Admin_Only:  boolean;
 };
 
 export type BoardLabel = {

@@ -1,0 +1,740 @@
+/* ================================================================
+   tasks.css — Listado de Tareas · PRISMA
+   ================================================================ */
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+
+.tasks-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+
+.tasks-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.tasks-toolbar__left  { display: flex; align-items: center; gap: 9px; }
+.tasks-toolbar__right { display: flex; align-items: center; gap: 8px; }
+
+.tasks-toolbar__icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.tasks-toolbar__title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: var(--txt);
+  margin: 0;
+}
+
+.tasks-toolbar__badge {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--txt-dim, #777);
+  background: rgba(124, 106, 247, 0.08);
+  border: 1px solid rgba(124, 106, 247, 0.16);
+  padding: 1px 8px;
+  border-radius: 20px;
+}
+
+/* ── Search ─────────────────────────────────────────────────────── */
+
+.tasks-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0 10px;
+  height: 30px;
+  transition: border-color 0.15s;
+}
+.tasks-search:focus-within  { border-color: var(--accent); }
+.tasks-search__icon         { color: var(--txt-dim, #666); flex-shrink: 0; }
+.tasks-search__input        { background: none; border: none; outline: none; color: var(--txt); font-size: 0.8rem; width: 200px; }
+.tasks-search__input::placeholder { color: var(--txt-dim, #555); }
+.tasks-search__clear        { background: none; border: none; cursor: pointer; color: var(--txt-dim, #666); font-size: 0.65rem; padding: 0; line-height: 1; transition: color 0.12s; }
+.tasks-search__clear:hover  { color: var(--txt); }
+
+/* ── Table container ─────────────────────────────────────────────── */
+
+.tasks-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+/* ── Table base ──────────────────────────────────────────────────── */
+
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.79rem;
+  min-width: 1200px;
+  table-layout: fixed;
+}
+
+/* ── Column widths via colgroup ──────────────────────────────────── */
+
+.tasks-col--seq    { width: 36px;  }
+.tasks-col--id     { width: 130px; }
+.tasks-col--name   { width: 240px; }
+.tasks-col--assign { width: 150px; }
+.tasks-col--status { width: 150px; }
+.tasks-col--labels { width: 130px; }
+.tasks-col--sprint { width: 160px; }
+.tasks-col--team   { width: 110px; }
+.tasks-col--prio   { width: 90px;  }
+.tasks-col--hest   { width: 80px;  }
+.tasks-col--hreal  { width: 80px;  }
+.tasks-col--prog   { width: 95px;  }
+.tasks-col--pts    { width: 72px;  }
+.tasks-col--crea   { width: 105px; }
+.tasks-col--cerr   { width: 105px; }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+
+.tasks-th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Header con tinte accent muy sutil — identidad PRISMA */
+  background: var(--bg-surface);
+  color: var(--txt-dim, #888);
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 10px;
+  height: 34px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Borde inferior accent: sello PRISMA */
+  border-bottom: 2px solid rgba(124, 106, 247, 0.22);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s;
+  vertical-align: middle;
+}
+
+.tasks-th:hover     { color: var(--txt); }
+.tasks-th--r        { text-align: right; }
+.tasks-th--c        { text-align: center; }
+.tasks-th--nosort   { cursor: default; }
+
+/* ── Sort icon ───────────────────────────────────────────────────── */
+
+.tasks-sort-icon          { display: inline-block; vertical-align: middle; margin-left: 2px; position: relative; top: -1px; }
+.tasks-sort-icon--idle    { opacity: 0.2; }
+.tasks-sort-icon--on      { color: var(--accent); opacity: 1; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FONDO OPACO VÍA HERENCIA DE VARIABLE CSS
+   Cada td define su propio background a partir de --cell-bg,
+   que cambia en el tr al hacer hover. Esto garantiza que las
+   celdas frozen nunca dejen ver contenido detrás de ellas.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.tasks-tr {
+  --cell-bg: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: --cell-bg 0s; /* instante, sin transición */
+}
+
+.tasks-tr:hover {
+  --cell-bg: var(--bg-surface);
+}
+
+.tasks-td {
+  background: var(--cell-bg);
+  padding: 0 10px;
+  height: 38px;
+  color: var(--txt);
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tasks-td--r { text-align: right;  }
+.tasks-td--c { text-align: center; }
+
+.tasks-td--seq {
+  color: var(--txt-dim, #666);
+  font-size: 0.71rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Borde accent en el límite de la zona congelada */
+.tasks-td--freeze-name,
+.tasks-th--freeze-name {
+  border-right: 1px solid rgba(124, 106, 247, 0.22);
+}
+
+/* Gradiente de profundidad vía ::after.
+   Al ser hijo del sticky (z-index:2), se pinta ENCIMA del contenido
+   que scrollea — a diferencia del box-shadow que queda tapado por el
+   background opaco de las celdas adyacentes.                          */
+/* Gradiente de profundidad — solo visible cuando hay scroll horizontal.
+   Empieza oculto (opacity: 0) y aparece con transición suave al scrollear. */
+.tasks-td--freeze-name::after,
+.tasks-th--freeze-name::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 56px;
+  height: 100%;
+  background: linear-gradient(to right,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.02) 65%,
+    transparent
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* Aparece suavemente cuando el usuario scrollea */
+.tasks-table-wrap--scrolled .tasks-td--freeze-name::after,
+.tasks-table-wrap--scrolled .tasks-th--freeze-name::after {
+  opacity: 1;
+}
+
+.tasks-td--empty {
+  text-align: center;
+  color: var(--txt-dim, #666);
+  padding: 48px 24px;
+  height: auto;
+  white-space: normal;
+  overflow: visible;
+  font-size: 0.83rem;
+}
+
+/* ── Hover: indicador lateral accent en la fila ─────────────────── */
+
+.tasks-tr:hover .tasks-td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ── Frozen columns ──────────────────────────────────────────────── */
+/* left calculado desde los anchos fijos: seq=36 id=130 → nombre=166 */
+
+.tasks-th--freeze-seq,
+.tasks-td--freeze-seq {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.tasks-th--freeze-id,
+.tasks-td--freeze-id {
+  position: sticky;
+  left: 36px;
+  z-index: 2;
+}
+
+.tasks-th--freeze-name,
+.tasks-td--freeze-name {
+  position: sticky;
+  left: 166px;
+  z-index: 2;
+  overflow: visible; /* ::after se proyecta a la derecha sin ser clippeado */
+}
+
+/* Los th frozen son top + left sticky → z-index mayor */
+.tasks-th--freeze-seq,
+.tasks-th--freeze-id,
+.tasks-th--freeze-name {
+  z-index: 6;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+
+.tasks-tfoot-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+}
+
+.tasks-tfoot-row .tasks-td {
+  --cell-bg: var(--bg-surface);
+  height: 34px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: none;
+}
+
+.tasks-tfoot-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-dim, #666);
+}
+
+.tasks-tfoot-sum {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Celdas frozen del tfoot — deben quedar encima de los td sticky regulares */
+.tasks-tfoot-row .tasks-td--freeze-seq,
+.tasks-tfoot-row .tasks-td--freeze-id,
+.tasks-tfoot-row .tasks-td--freeze-name {
+  z-index: 8;
+}
+
+/* ── Ticket ID ───────────────────────────────────────────────────── */
+
+.tasks-ticket-id {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+/* ── Title text ──────────────────────────────────────────────────── */
+
+.tasks-title-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--txt);
+  transition: color 0.12s;
+}
+
+.tasks-tr:hover .tasks-title-text {
+  color: var(--accent);
+}
+
+/* ── Avatar ──────────────────────────────────────────────────────── */
+
+.tasks-avatars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.tasks-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: var(--txt);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-left: -4px;
+  text-transform: uppercase;
+}
+
+.tasks-avatar:first-child    { margin-left: 0; }
+.tasks-avatar img             { width: 100%; height: 100%; object-fit: cover; }
+.tasks-avatar--overflow       { font-size: 0.52rem; background: var(--bg-surface); color: var(--txt-dim, #888); }
+
+/* ── Assignee cell ───────────────────────────────────────────────── */
+
+.tasks-assignee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tasks-assignee__av {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(124, 106, 247, 0.12);
+  border: 1.5px solid rgba(124, 106, 247, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: var(--accent);
+  overflow: hidden;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.tasks-assignee__av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tasks-assignee__name {
+  font-size: 0.77rem;
+  color: var(--txt);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tasks-assignee__extra {
+  font-size: 0.63rem;
+  color: var(--txt-dim, #888);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Status badge ────────────────────────────────────────────────── */
+
+.tasks-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tasks-status--default       { background: rgba(120,120,150,0.10); color: #888; }
+.tasks-status--uncategorized { background: rgba(110,110,140,0.08); color: #777; }
+.tasks-status--icebox        { background: rgba(100,185,225,0.10); color: #52b0d4; }
+.tasks-status--backlog       { background: rgba(130,115,210,0.11); color: #8e7ecc; }
+.tasks-status--todo          { background: rgba(90,195,120,0.11);  color: #48bb70; }
+.tasks-status--inprogress    { background: rgba(220,150,50,0.12);  color: #d48a28; }
+.tasks-status--review        { background: rgba(215,200,45,0.11);  color: #ccb820; }
+.tasks-status--client        { background: rgba(180,75,220,0.11);  color: #b24ed4; }
+.tasks-status--deploy        { background: rgba(50,140,220,0.11);  color: #328cd4; }
+.tasks-status--done          { background: rgba(50,200,100,0.12);  color: #28b860; }
+.tasks-status--history       { background: rgba(80,80,100,0.08);   color: #606070; }
+
+/* ── Priority ────────────────────────────────────────────────────── */
+
+.tasks-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tasks-priority::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tasks-priority--low      { color: #48bb70; }  .tasks-priority--low::before      { background: #48bb70; }
+.tasks-priority--medium   { color: #ccb820; }  .tasks-priority--medium::before   { background: #ccb820; }
+.tasks-priority--high     { color: #d48a28; }  .tasks-priority--high::before     { background: #d48a28; }
+.tasks-priority--critical { color: #dc3c3c; }  .tasks-priority--critical::before { background: #dc3c3c; }
+
+/* ── Labels ──────────────────────────────────────────────────────── */
+
+.tasks-tags {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.tasks-label {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.tasks-label--more {
+  background: var(--bg-surface) !important;
+  color: var(--txt-dim, #888) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* ── Sprint ──────────────────────────────────────────────────────── */
+
+.tasks-sprint {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(124, 106, 247, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(124, 106, 247, 0.18);
+}
+
+/* ── Team tag ────────────────────────────────────────────────────── */
+
+.tasks-team-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--bg-surface);
+  color: var(--txt-dim, #aaa);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── Empty cell ──────────────────────────────────────────────────── */
+
+.tasks-empty-cell { color: var(--txt-dim, #444); }
+
+/* ── Progress ────────────────────────────────────────────────────── */
+
+.tasks-progress {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.tasks-progress__track {
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-subtle);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tasks-progress__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.tasks-progress__pct {
+  font-size: 0.69rem;
+  color: var(--txt-dim, #888);
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Done / Open pills ───────────────────────────────────────────── */
+
+.tasks-done-pill {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(80, 80, 100, 0.08);
+  color: var(--txt-dim, #888);
+  border: 1px solid rgba(80, 80, 100, 0.16);
+}
+
+/* ── Open pill ───────────────────────────────────────────────────── */
+
+.tasks-open-pill {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(50, 200, 100, 0.08);
+  color: #28b860;
+  border: 1px solid rgba(50, 200, 100, 0.18);
+}
+
+/* ── Number cells ────────────────────────────────────────────────── */
+
+.tasks-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  color: var(--txt-dim, #aaa);
+}
+
+/* ── Loading ─────────────────────────────────────────────────────── */
+
+.tasks-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex: 1;
+  color: var(--txt-dim, #666);
+  font-size: 0.83rem;
+}
+
+.tasks-loading__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: tasks-spin 0.65s linear infinite;
+}
+
+@keyframes tasks-spin { to { transform: rotate(360deg); } }
+
+/* ── Light theme ─────────────────────────────────────────────────── */
+
+[data-theme="light"] .tasks-tr    { --cell-bg: #ffffff; }
+[data-theme="light"] .tasks-tr:hover { --cell-bg: #f5f4ff; }
+
+[data-theme="light"] .tasks-th {
+  background: var(--bg-surface);
+  border-bottom-color: rgba(124, 106, 247, 0.3);
+}
+
+[data-theme="light"] .tasks-tfoot-row .tasks-td { --cell-bg: var(--bg-surface); }
+
+[data-theme="light"] .tasks-td--freeze-name,
+[data-theme="light"] .tasks-th--freeze-name {
+  border-right-color: rgba(124, 106, 247, 0.28);
+}
+
+[data-theme="light"] .tasks-table-wrap--scrolled .tasks-td--freeze-name::after,
+[data-theme="light"] .tasks-table-wrap--scrolled .tasks-th--freeze-name::after {
+  background: linear-gradient(to right,
+    rgba(0, 0, 0, 0.06),
+    transparent
+  );
+}
+
+/* ── Summary bar (sibling del wrap, siempre al fondo) ───────────── */
+
+.tasks-summary {
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+/* Mismo ancho que las 3 columnas frozen: 36+130+240 = 406px */
+.tasks-summary__frozen {
+  width: 406px;
+  min-width: 406px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  border-right: 1px solid rgba(124, 106, 247, 0.22);
+}
+
+/* El overflow oculto permite que el track se mueva con transform sin scrollbar */
+.tasks-summary__right {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* El transform se aplica desde JS en cada evento de scroll */
+.tasks-summary__track {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  will-change: transform;
+}
+
+.tasks-summary__gap  { flex-shrink: 0; }
+
+.tasks-summary__cell {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+.tasks-summary__label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-dim, #666);
+}
+
+.tasks-summary__key {
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-dim, #666);
+}
+
+.tasks-summary__val {
+  font-weight: 700;
+  font-size: 0.79rem;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="light"] .tasks-summary {
+  background: var(--bg-surface);
+}
+.tasks-col--crit { width: 90px; }
+
+.tasks-criteria-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tasks-criteria-badge__reject {
+  color: var(--danger);
+  margin-left: 1px;
+}
+

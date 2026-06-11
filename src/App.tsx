@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import type { Location } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRole, canSeeBoard } from "@/auth/roles";
@@ -12,10 +13,10 @@ import { RequestsPage } from "@/pages/RequestsPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { AutomationsPage } from "@/pages/AutomationsPage";
 import { LoginPage } from "@/pages/LoginPage";
-import { TicketModalPreviewPage } from "@/pages/TicketModalPreviewPage";
 import { OnboardingPage } from '@/pages/OnBoardingPage';
 import { TicketPage } from "@/pages/TicketPage";
 import { PrismaAdminPage } from '@/pages/PrismaAdminPage';
+import { TasksPage } from '@/pages/TasksPage';
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
 
@@ -79,79 +80,104 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ─── Overlay de ticket ────────────────────────────────────────────────────────
+// Se renderiza ENCIMA de la página de fondo cuando hay backgroundLocation.
+// Las rutas aquí NO tienen AppLayout — el modal ya usa position:fixed.
+
+function TicketOverlayRoutes() {
+  return (
+    <Routes>
+      <Route path="/ticket/:ticketId"                 element={<TicketPage />} />
+      <Route path="/board/:equipo/ticket/:ticketId"   element={<TicketPage />} />
+      <Route path="/tasks/:equipo/ticket/:ticketId"   element={<TicketPage />} />
+    </Routes>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const location = useLocation();
+  const state    = location.state as { backgroundLocation?: Location } | null;
+
   return (
-    <Routes>
-      {/* Pública */}
-      <Route path="/login" element={<LoginPage />} />
+    <>
+      {/*
+       * Routes principal — cuando hay backgroundLocation, React Router renderiza
+       * ESA ubicación (la página de fondo) en lugar de la actual.
+       * Así TasksPage / BoardPage se mantienen montados debajo del modal.
+       */}
+      <Routes location={state?.backgroundLocation || location}>
+        {/* Pública */}
+        <Route path="/login" element={<LoginPage />} />
 
-      {/* Onboarding */}
-      <Route
-        path="/onboarding"
-        element={
-          <RequireAuth>
-            <OnboardingPage />
-          </RequireAuth>
-        }
-      />
-
-      {/* Rutas de app */}
-      <Route
-        element={
-          <RequireAuth>
-            <RequireOnboarding>
-              <AppLayout />
-            </RequireOnboarding>
-          </RequireAuth>
-        }
-      >
-        {/* Raíz: redirige al board activo en la sesión */}
-// DESPUÉS
-<Route index element={<Navigate to="/home" replace />} />
-        {/* Board por equipo — cada kanban tiene su propia ruta */}
+        {/* Onboarding */}
         <Route
-          path="board/:equipo"
+          path="/onboarding"
           element={
-            <RequireTI>
-              <BoardPage />
-            </RequireTI>
-          }
-        />
-<Route path="ticket/:ticketId" element={<TicketPage />} />
-        {/* Deep link de ticket — accesible por todos los roles autenticados.
-            El resolver interno decide qué modal mostrar según permisos. */}
-<Route path="board/:equipo/ticket/:ticketId" element={<TicketPage />} />
-
-        {/* Inicio — todos */}
-        <Route
-          path="home"
-          element={
-            <>
-              <ScrollToSection />
-              <HomePage />
-            </>
+            <RequireAuth>
+              <OnboardingPage />
+            </RequireAuth>
           }
         />
 
-        {/* Nueva solicitud — todos */}
-        <Route path="new"         element={<NuevaSolicitudPage />} />
-        <Route path="my-requests" element={<MisSolicitudesPage />} />
+        {/* Rutas de app */}
+        <Route
+          element={
+            <RequireAuth>
+              <RequireOnboarding>
+                <AppLayout />
+              </RequireOnboarding>
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Navigate to="/home" replace />} />
 
-        {/* TI (admin + member) */}
-        <Route path="stats" element={<RequireTI><StatsPage /></RequireTI>} />
+          <Route
+            path="board/:equipo"
+            element={<RequireTI><BoardPage /></RequireTI>}
+          />
 
-        {/* Solo admin */}
-        <Route path="requests/team/:equipo"       element={<RequireAdmin><TeamRequestsPage /></RequireAdmin>} />
-        <Route path="requests"                    element={<RequireAdmin><RequestsPage /></RequireAdmin>} />
-        <Route path="automations"                 element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
-        <Route path="automations/logs"            element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
-        <Route path="preview/create-ticket-modal" element={<RequireAdmin><TicketModalPreviewPage /></RequireAdmin>} />
-        <Route path="prisma" element={<RequireAdmin><PrismaAdminPage /></RequireAdmin>} />
-      </Route>
+          {/*
+           * Rutas de ticket dentro del layout — activas cuando el usuario entra
+           * directamente por un link copiado / bookmark (sin backgroundLocation).
+           * El modal queda sobre un AppLayout vacío, que es aceptable para deep links.
+           */}
+          <Route path="ticket/:ticketId"                 element={<TicketPage />} />
+          <Route path="board/:equipo/ticket/:ticketId"   element={<TicketPage />} />
+          <Route path="tasks/:equipo/ticket/:ticketId"   element={<TicketPage />} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          <Route
+            path="home"
+            element={
+              <>
+                <ScrollToSection />
+                <HomePage />
+              </>
+            }
+          />
+
+          <Route path="new"         element={<NuevaSolicitudPage />} />
+          <Route path="my-requests" element={<MisSolicitudesPage />} />
+
+          <Route path="stats" element={<RequireTI><StatsPage /></RequireTI>} />
+
+          <Route path="requests/team/:equipo" element={<RequireAdmin><TeamRequestsPage /></RequireAdmin>} />
+          <Route path="requests"              element={<RequireAdmin><RequestsPage /></RequireAdmin>} />
+          <Route path="automations"           element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
+          <Route path="automations/logs"      element={<RequireAdmin><AutomationsPage /></RequireAdmin>} />
+          <Route path="prisma"                element={<RequireAdmin><PrismaAdminPage /></RequireAdmin>} />
+          <Route path="tasks/:equipo"         element={<RequireTI><TasksPage /></RequireTI>} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/*
+       * Overlay modal — solo cuando se navega desde dentro de la app con
+       * state.backgroundLocation. Renderiza TicketPage encima de la página activa.
+       */}
+      {state?.backgroundLocation && <TicketOverlayRoutes />}
+    </>
   );
 }

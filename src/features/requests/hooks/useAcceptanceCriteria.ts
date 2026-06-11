@@ -64,14 +64,18 @@ export function useUpdateCriteriaStatus(requestId: string) {
       return { snapshot };
     },
 
+onSuccess: (updatedCriteria) => {
+      qc.setQueryData<AcceptanceCriteria[]>(queryKey, (prev) =>
+        prev?.map((c) =>
+          c.criteriaId === updatedCriteria.criteriaId ? updatedCriteria : c,
+        ),
+      );
+    },
+
     onError: (_err, _payload, context) => {
       if (context?.snapshot) {
         qc.setQueryData<AcceptanceCriteria[]>(queryKey, context.snapshot);
       }
-    },
-
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey });
     },
   });
 }

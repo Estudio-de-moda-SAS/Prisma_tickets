@@ -11,8 +11,9 @@ import type { Sprint } from '@/features/requests/hooks/useSprints';
 import { config } from '@/config';
 import { MOCK_BOARD } from '@/features/requests/mock/Mockboard';
 import { KANBAN_COLUMNAS, EQUIPOS, PRIORIDADES } from '@/features/requests/types';
-import { EQUIPO_COLORS, EQUIPO_ICONS } from '@/components/layout/siderbarConstants';
-import type { Request, Equipo, KanbanColumna, Prioridad } from '@/features/requests/types';
+import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import type { Request, KanbanColumna, Prioridad } from '@/features/requests/types';
 import { RequestModal } from '@/features/requests/components/RequestModal';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
@@ -73,10 +74,12 @@ export function TeamRequestsPage() {
   const { data: currentUser }   = useCurrentUser();
   const { data: sprints = [] }  = useSprints();
 
-  const equipo = equipoParam as Equipo;
-  const label  = EQUIPOS[equipo] ?? equipo;
-  const c      = EQUIPO_COLORS[equipo] ?? { dot: 'var(--accent)', glow: 'var(--accent-glow)', border: 'var(--accent-border)' };
-  const Icon   = EQUIPO_ICONS[equipo];
+  const equipo = equipoParam ?? '';
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const activeTeam = boardTeams.find((t) => t.Board_Team_Code === equipo);
+  const label      = activeTeam?.Board_Team_Name ?? EQUIPOS[equipo] ?? equipo;
+  const c          = teamColors(activeTeam?.Board_Team_Color ?? '#00c8ff');
+  const TeamIcon = getTeamIcon(activeTeam?.Board_Team_Icon);
 
   const [vista,          setVista]      = useState<Vista>('mias');
   const [filtroColumna,  setFiltroCol]  = useState<FilterColumna>('todas');
@@ -241,7 +244,7 @@ export function TeamRequestsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 9, background: c.dot + '18', border: `1px solid ${c.dot}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {Icon && <Icon size={16} style={{ color: c.dot }} />}
+            <TeamIcon size={16} style={{ color: c.dot }} />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.3px' }}>
@@ -481,8 +484,7 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
           {r.equipo.map((eq) => (
-            <span key={eq} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--accent)', background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.15)', borderRadius: 3, padding: '2px 7px' }}>{EQUIPOS[eq]}</span>
-          ))}
+            <span key={eq} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--accent)', background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.15)', borderRadius: 3, padding: '2px 7px' }}>{EQUIPOS[eq] ?? eq}</span>          ))}
         </div>
       </div>
     </div>

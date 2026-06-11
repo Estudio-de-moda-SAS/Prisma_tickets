@@ -324,7 +324,7 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
   const isSubRequest   = (request.parentId ?? null) !== null;
   const childCount     = request.childCount ?? 0;
   const primerAsignado = request.assignees?.[0] ?? null;
-  const isCerrada      = !!request.cierreInfo || !!request.fechaCierre;
+  const isCerrada = !!request.fechaCierre;
   const isConfidential = request.isConfidential ?? false;
 
   const hasActivity = unreadNotifications.length > 0;
@@ -343,12 +343,10 @@ const hasCardFields     = (cardLiveSchema.length > 0 || cardSnapshotSchema.lengt
     onClick?.();
   }
 
-  const closureBorderStyle = isCerrada && request.columna === 'ready_to_deploy'
-    ? { boxShadow: 'inset 3px 0 0 #a78bfa', borderColor: 'rgba(167,139,250,0.3)' }
-    : isCerrada && request.columna === 'hecho'
-      ? { boxShadow: 'inset 3px 0 0 var(--success)', borderColor: 'rgba(0,229,160,0.3)' }
-      : {};
-
+const closureBorderStyle = isCerrada
+  ? { boxShadow: 'inset 3px 0 0 var(--success)', borderColor: 'rgba(0,229,160,0.3)' }
+  : {};
+  
   return (
     <div
       ref={setNodeRef}
@@ -385,7 +383,7 @@ const hasCardFields     = (cardLiveSchema.length > 0 || cardSnapshotSchema.lengt
             {request.id}
           </div>
           {isCerrada ? (
-            <span style={{ alignSelf: 'flex-start', background: request.columna === 'hecho' ? 'rgba(0,229,160,0.1)' : 'rgba(167,139,250,0.1)', color: request.columna === 'hecho' ? 'var(--success)' : '#a78bfa', border: `1px solid ${request.columna === 'hecho' ? 'rgba(0,229,160,0.3)' : 'rgba(167,139,250,0.3)'}`, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ alignSelf: 'flex-start', background: 'rgba(0,229,160,0.1)', color: 'var(--success)', border: '1px solid rgba(0,229,160,0.3)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, padding: '2px 6px', borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               <IconCheck /> Cerrada
             </span>
           ) : isSubRequest ? (
