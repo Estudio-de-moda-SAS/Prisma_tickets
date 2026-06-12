@@ -3,7 +3,7 @@ import { AddBtn, SmBtn, FieldLabel, ColorPicker} from '../ConfigPanel';
 import {
   useCreateKanbanTeam, useUpdateKanbanTeam,
   useTeamColumnConfig, useUpsertTeamColumnConfig,
-  useUpdateBoardColumn, useCreateBoardColumn, useReorderBoardColumn,
+  useUpdateBoardColumn, useCreateBoardColumn, useReorderBoardColumn, useReorderBoardTeam,
   type KanbanTeam, type ColumnWithConfig,
 } from '@/features/requests/hooks/useKanbanAdmin';
 import { TEAM_ICON_MAP } from '@/components/layout/siderbarConstants';
@@ -18,6 +18,7 @@ export function KanbanSection() {
   const createKanbanTeam  = useCreateKanbanTeam();
   const updateKanbanTeam  = useUpdateKanbanTeam();
   const createBoardColumn = useCreateBoardColumn(boardId);
+  const reorderTeam       = useReorderBoardTeam();
 
   const [editTeamId,    setEditTeamId]    = useState<number | null>(null);
   const [showNewTeam,   setShowNewTeam]   = useState(false);
@@ -97,7 +98,7 @@ export function KanbanSection() {
           <p>No hay kanbans configurados.</p>
         </div>
       )}
-      {teams.map((team) => (
+      {teams.map((team, idx) => (
         <KanbanTeamCard
           key={team.Board_Team_ID}
           team={team as KanbanTeam}
@@ -105,6 +106,10 @@ export function KanbanSection() {
           expanded={expandedId === team.Board_Team_ID}
           onToggle={() => setExpandedId(expandedId === team.Board_Team_ID ? null : team.Board_Team_ID)}
           onEdit={() => { setExpandedId(null); setEditTeamId(team.Board_Team_ID); }}
+          index={idx}
+          total={teams.length}
+          onMoveUp={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'up' })}
+          onMoveDown={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'down' })}
         />
       ))}
 
@@ -136,12 +141,16 @@ export function KanbanSection() {
 }
 
 /* ── KanbanTeamCard ── */
-function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit }: {
-  team:     KanbanTeam;
-  boardId:  number;
-  expanded: boolean;
-  onToggle: () => void;
-  onEdit:   () => void;
+function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, total, onMoveUp, onMoveDown }: {
+  team:       KanbanTeam;
+  boardId:    number;
+  expanded:   boolean;
+  onToggle:   () => void;
+  onEdit:     () => void;
+  index:      number;
+  total:      number;
+  onMoveUp:   () => void;
+  onMoveDown: () => void;
 }) {
   const [hov, setHov] = useState(false);
   const color = team.Board_Team_Color;
@@ -206,6 +215,28 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit }: {
               <path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z"/>
             </svg>
           </SmBtn>
+        </div>
+
+        <div
+          style={{ display: 'flex', flexDirection: 'column', gap: 1, opacity: hov || expanded ? 1 : 0, transition: 'opacity 0.12s', flexShrink: 0 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={onMoveUp}
+            disabled={index === 0}
+            title="Subir kanban"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 12, borderRadius: 3, border: 'none', background: 'transparent', color: index === 0 ? 'var(--border)' : 'var(--txt-muted)', cursor: index === 0 ? 'default' : 'pointer' }}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 5l3-3 3 3"/></svg>
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            title="Bajar kanban"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 12, borderRadius: 3, border: 'none', background: 'transparent', color: index === total - 1 ? 'var(--border)' : 'var(--txt-muted)', cursor: index === total - 1 ? 'default' : 'pointer' }}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 3l3 3 3-3"/></svg>
+          </button>
         </div>
 
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor"

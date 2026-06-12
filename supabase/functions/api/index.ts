@@ -89,6 +89,20 @@ function mapCriteria(row: Record<string, unknown>) {
     updatedAt:     row['Updated_At'],
   };
 }
+function mapAnnouncement(row: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id:         row['announcement_id'],
+    title:      row['title'],
+    body:       row['body'] ?? null,
+    type:       row['type'],
+    showIn:     row['show_in'],
+    targetRole: row['target_role'] ?? null,
+    isActive:   row['is_active'],
+    startsAt:   row['starts_at'],
+    endsAt:     row['ends_at'] ?? null,
+    createdAt:  row['created_at'],
+  };
+}
 
 const BASE_SELECT = `
   Request_ID,
@@ -353,6 +367,22 @@ async function sendEventEmail(
       Email_Log_Sent_At:       new Date().toISOString(),
     });
   }
+}
+
+async function getPublicAnnouncements(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<unknown> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('TBL_Announcements')
+    .select('*')
+    .eq('is_active', true)
+    .lte('starts_at', now)
+    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .contains('show_in', ['login'])
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data ?? []).map(mapAnnouncement);
 }
 
 async function handleAction(
@@ -1414,7 +1444,9 @@ case 'preRegisterUser': {
 case 'fetchAllTeams': {
   const { data, error } = await supabase
     .from('TBL_Board_Teams')
-.select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only');  if (error) throw new Error(error.message);
+    .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Sort_Order')
+    .order('Board_Team_Sort_Order', { ascending: true });
+  if (error) throw new Error(error.message);
   return data;
 }
 
@@ -2567,7 +2599,134 @@ const { teamId, columnId, isVisible, evidenceRequired, evidenceLabel, isCloseCol
       ]);
       return { ok: true };
     }
-    
+    case 'reorderBoardTeam': {
+  const { teamId, direction } = payload as { teamId: number; direction: 'up' | 'down' };
+
+  const { data: teams, error: teamsErr } = await supabase
+    .from('TBL_Board_Teams')
+    .select('Board_Team_ID, Board_Team_Sort_Order')
+    .order('Board_Team_Sort_Order', { ascending: true });
+  if (teamsErr) throw new Error(teamsErr.message);
+
+  const sorted = teams as { Board_Team_ID: number; Board_Team_Sort_Order: number }[];
+  const idx = sorted.findIndex((t) => t.Board_Team_ID === teamId);
+  if (idx === -1) return { ok: true };
+
+  const si = direction === 'up' ? idx - 1 : idx + 1;
+  if (si < 0 || si >= sorted.length) return { ok: true };
+
+  const posA = sorted[idx].Board_Team_Sort_Order;
+  const posB = sorted[si].Board_Team_Sort_Order;
+  const idB  = sorted[si].Board_Team_ID;
+
+  await Promise.all([
+    supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: posB }).eq('Board_Team_ID', teamId),
+    supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: posA }).eq('Board_Team_ID', idB),
+  ]);
+  return { ok: true };
+}
+case 'get_announcements': {
+  const { surface, userRole, userDeptId, userTeamId } = payload as {
+    surface?: string; userRole?: string;
+    userDeptId?: number | null; userTeamId?: number | null;
+  };
+  const now = new Date().toISOString();
+  let query = supabase
+    .from('TBL_Announcements')
+    .select('*')
+    .eq('is_active', true)
+    .lte('starts_at', now)
+    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .order('created_at', { ascending: false });
+  if (surface) query = query.contains('show_in', [surface]);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const filtered = ((data ?? []) as Record<string, unknown>[]).filter((a) => {
+    const target = a['target_role'] as string | null;
+    if (!target) return true;
+    if (target === 'admin') return userRole === 'admin';
+    const parts    = target.split(',');
+    const teamPart = parts.find((p: string) => p.startsWith('team:'));
+    const deptPart = parts.find((p: string) => p.startsWith('dept:'));
+    if (teamPart) return parseInt(teamPart.slice(5)) === userTeamId;
+    if (deptPart) return parseInt(deptPart.slice(5)) === userDeptId;
+    return target === userRole;
+  });
+
+  return filtered.map(mapAnnouncement);
+}
+
+case 'get_all_announcements': {
+  const { data, error } = await supabase
+    .from('TBL_Announcements')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Record<string, unknown>[]).map(mapAnnouncement);
+}
+
+case 'create_announcement': {
+  const p = payload as {
+    title: string; body?: string | null; type: string;
+    showIn: string[]; targetRole?: string | null;
+    startsAt?: string; endsAt?: string | null; createdBy: number;
+  };
+  const { data, error } = await supabase
+    .from('TBL_Announcements')
+    .insert({
+      title:       p.title,
+      body:        p.body ?? null,
+      type:        p.type,
+      show_in:     p.showIn,
+      target_role: p.targetRole ?? null,
+      is_active:   true,
+      starts_at:   p.startsAt ?? new Date().toISOString(),
+      ends_at:     p.endsAt ?? null,
+      created_by:  p.createdBy,
+      created_at:  new Date().toISOString(),
+    })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return mapAnnouncement(data as Record<string, unknown>);
+}
+
+case 'update_announcement': {
+  const { id, ...u } = payload as {
+    id: string; title?: string; body?: string | null; type?: string;
+    showIn?: string[]; targetRole?: string | null;
+    isActive?: boolean; startsAt?: string; endsAt?: string | null;
+  };
+  const patch: Record<string, unknown> = {};
+  if (u.title      !== undefined) patch['title']       = u.title;
+  if (u.body       !== undefined) patch['body']        = u.body;
+  if (u.type       !== undefined) patch['type']        = u.type;
+  if (u.showIn     !== undefined) patch['show_in']     = u.showIn;
+  if (u.targetRole !== undefined) patch['target_role'] = u.targetRole;
+  if (u.isActive   !== undefined) patch['is_active']   = u.isActive;
+  if (u.startsAt   !== undefined) patch['starts_at']   = u.startsAt;
+  if (u.endsAt     !== undefined) patch['ends_at']     = u.endsAt;
+  const { data, error } = await supabase
+    .from('TBL_Announcements')
+    .update(patch)
+    .eq('announcement_id', id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return mapAnnouncement(data as Record<string, unknown>);
+}
+
+case 'delete_announcement': {
+  const { id } = payload as { id: string };
+  const { error } = await supabase
+    .from('TBL_Announcements')
+    .delete()
+    .eq('announcement_id', id);
+  if (error) throw new Error(error.message);
+  return { success: true };
+}
+
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);
   }
@@ -2577,8 +2736,21 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== 'POST')    return errorResponse('Método no permitido', 405);
 
+  // 1. Parsear body primero — necesario para saber qué action es
+  let body: { action: string; payload: Record<string, unknown> };
+  try { body = await req.json(); } catch { return errorResponse('Body inválido', 400); }
+  if (!body.action) return errorResponse('Campo "action" requerido', 400);
+
+  // 2. Bypass público — sin Azure JWT, solo announcements de login
+  if (body.action === 'get_public_announcements') {
+    const supabase = createServiceClient();
+    const result   = await getPublicAnnouncements(supabase);
+    return corsResponse({ data: result });
+  }
+
+  // 3. Auth requerida para todo lo demás
   const authHeader = req.headers.get('Authorization') ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token      = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return errorResponse('Token de autorización requerido', 401);
 
   try { await verifyAzureToken(token); } catch (err) {
@@ -2586,10 +2758,7 @@ Deno.serve(async (req: Request) => {
     return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
   }
 
-  let body: { action: string; payload: Record<string, unknown> };
-  try { body = await req.json(); } catch { return errorResponse('Body inválido', 400); }
-  if (!body.action) return errorResponse('Campo "action" requerido', 400);
-
+  // 4. Acción protegida
   const supabase = createServiceClient();
   try {
     const result = await handleAction(body.action, body.payload ?? {}, supabase);

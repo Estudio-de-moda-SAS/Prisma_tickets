@@ -20,6 +20,8 @@ import { useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateFilterOption, TemplateFieldOption } from '@/features/requests/components/BoardFilters';
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField } from '@/features/requests/templates/types';
+import { HomeAnnouncementsSection } from '@/components/layout/AnnouncementBanner';
+
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
    ══════════════════════════════════════════════════════════════ */
@@ -579,6 +581,7 @@ export function HomePage() {
             {now.charAt(0).toUpperCase() + now.slice(1)}
           </p>
         </div>
+              <HomeAnnouncementsSection />
         <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
           <button
             onClick={() => navigate('/new')}
@@ -594,7 +597,6 @@ export function HomePage() {
           <div style={{ flex: 1, minWidth: 0 }}><SprintBanner /></div>
         </div>
       </div>
-
       {/* Tabs de equipo */}
       <div style={{ display: 'flex', gap: 10 }}>
         {visibleTeams.map((team) => (

@@ -6,13 +6,14 @@ import { apiClient } from '@/lib/apiClient';
    Tipos
    ============================================================ */
 export type KanbanTeam = {
-  Board_Team_ID:          number;
-  Board_Team_Name:        string;
-  Board_Team_Code:        string;
-  Board_Team_Color:       string;
-  Board_Team_Description: string | null;
-  Board_Team_Icon:           string;
-  Board_Team_Is_Admin_Only:  boolean;
+  Board_Team_ID:            number;
+  Board_Team_Name:          string;
+  Board_Team_Code:          string;
+  Board_Team_Color:         string;
+  Board_Team_Description:   string | null;
+  Board_Team_Icon:          string;
+  Board_Team_Is_Admin_Only: boolean;
+  Board_Team_Sort_Order:    number;
 };
 
 export type ColumnWithConfig = {
@@ -188,6 +189,39 @@ export function useReorderBoardColumn(boardId: number, teamId: number) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk });
       qc.invalidateQueries({ queryKey: ['columnMap', boardId] });
+    },
+  });
+}
+
+/* ============================================================
+   Reordenar equipo kanban (optimistic swap)
+   ============================================================ */
+export function useReorderBoardTeam() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (d: { teamId: number; direction: 'up' | 'down' }) =>
+      apiClient.call('reorderBoardTeam', d),
+
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: ['boardTeams'] });
+      qc.setQueriesData<KanbanTeam[]>(
+        { queryKey: ['boardTeams'], exact: false },
+        (prev) => {
+          if (!prev) return prev;
+          const arr = [...prev];
+          const idx = arr.findIndex((t) => t.Board_Team_ID === d.teamId);
+          if (idx === -1) return prev;
+          const si = d.direction === 'up' ? idx - 1 : idx + 1;
+          if (si < 0 || si >= arr.length) return prev;
+          [arr[idx], arr[si]] = [arr[si], arr[idx]];
+          return arr;
+        },
+      );
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['boardTeams'] });
     },
   });
 }
