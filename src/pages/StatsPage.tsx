@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  BarChart2, Globe, LayoutGrid, Zap,
+  BarChart2, Globe, LayoutGrid,
   TrendingUp, TrendingDown, Minus,
   CheckCircle2, Clock, AlertTriangle, Layers,
   PlusCircle, XCircle, Star, Target,
