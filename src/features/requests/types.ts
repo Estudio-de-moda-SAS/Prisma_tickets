@@ -279,7 +279,10 @@ export type CrearRequestPayload = {
   isConfidential:      boolean;
   formData?:           Record<string, unknown>;
   /** Títulos de criterios de aceptación — mínimo 1 requerido */
+  /** Títulos de criterios de aceptación — mínimo 1 requerido */
   acceptanceCriteria:  string[];
+  /** IDs de usuarios resolutores a asignar al crear */
+  assigneeIds?:        number[];
 };
 
 export type MoverRequestPayload = {
@@ -299,7 +302,8 @@ export type ActualizarRequestPayload = {
   labelIds?:       number[];
   sprintId?:       number | null;
   estimatedHours?: number | null;
-  loggedHours?:    number | null; 
+  loggedHours?:    number | null;
+  formData?:       Record<string, unknown>; // ← nuevo
 };
 
 export type CerrarRequestPayload = {

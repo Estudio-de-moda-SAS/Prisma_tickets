@@ -7,13 +7,14 @@ import type { TemplateExtraField, TemplateDefinition, TemplateVisual } from '@/f
    Tipos de DB
    ============================================================ */
 export type BoardTeam = {
-  Board_Team_ID:          number;
-  Board_Team_Name:        string;
-  Board_Team_Code:        string;
-  Board_Team_Color:       string;
-  Board_Team_Description: string | null;
-  Board_Team_Icon:           string;
-  Board_Team_Is_Admin_Only:  boolean;
+  Board_Team_ID:            number;
+  Board_Team_Name:          string;
+  Board_Team_Code:          string;
+  Board_Team_Color:         string;
+  Board_Team_Description:   string | null;
+  Board_Team_Icon:          string;
+  Board_Team_Is_Admin_Only: boolean;
+  Board_Team_Sort_Order:    number;
 };
 
 export type BoardLabel = {

@@ -22,6 +22,7 @@ type UpdatePayload = {
     | 'sprintId'
     | 'estimatedHours'
     | 'loggedHours' 
+    | 'formData'  
   >>;
 };
 
@@ -47,6 +48,7 @@ export function useUpdateRequest(equipo: Equipo) {
         sprintId:       patch.sprintId,
         estimatedHours: patch.estimatedHours,
         loggedHours:    patch.loggedHours,
+        formData:       patch.formData, 
       });
     },
 
@@ -65,8 +67,6 @@ export function useUpdateRequest(equipo: Equipo) {
         return next;
       });
 
-      // También actualizar el cache individual del ticket para que el modal
-      // refleje el cambio inmediatamente sin esperar el refetch del board
       queryClient.setQueryData<Request>(['request', id], (prev) => {
         if (!prev) return prev;
         return { ...prev, ...patch };
@@ -85,8 +85,6 @@ export function useUpdateRequest(equipo: Equipo) {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });
         queryClient.invalidateQueries({ queryKey: requestKeys.all });
-        // Invalidar también el cache individual para que el modal
-        // tenga la data confirmada por la BD tras el round-trip
         queryClient.invalidateQueries({ queryKey: ['request', id] });
       }
     },

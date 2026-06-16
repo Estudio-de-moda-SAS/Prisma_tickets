@@ -215,7 +215,7 @@ function AssigneeGroupBlock({
       {!collapsed && filtered.map((m) => {
         const sel = m.value === selected;
         return (
-          <div key={m.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onClick={() => onSelect(m.value)}>
+          <div key={m.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); onSelect(m.value); }}>
             <div className="filter-ag-item__av" style={sel ? { background: group.subTeamColor } : undefined}>
               {pickerInitials(m.label)}
             </div>
@@ -336,7 +336,7 @@ function AssigneeFilterPicker({
               : flat
                   .filter((o) => !search || o.label.toLowerCase().includes(search.toLowerCase()))
                   .map((o) => (
-                    <div key={o.value} className={`filter-ag-item${o.value === value ? ' filter-ag-item--sel' : ''}`} onClick={() => handleSelect(o.value)}>
+                    <div key={o.value} className={`filter-ag-item${o.value === value ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); handleSelect(o.value); }}>
                       <div className="filter-ag-item__av">{pickerInitials(o.label)}</div>
                       <div className="filter-ag-item__info">
                         <div className="filter-ag-item__name">{o.label}</div>

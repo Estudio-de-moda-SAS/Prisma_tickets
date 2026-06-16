@@ -90,3 +90,32 @@ export function useDeleteCriteria(requestId: string) {
     },
   });
 }
+
+export function useUpdateCriteriaTitle(requestId: string) {
+  const qc = useQueryClient();
+  const queryKey = criteriaKeys.byRequest(requestId);
+
+  return useMutation<AcceptanceCriteria, Error, { criteriaId: number; title: string }, { snapshot: AcceptanceCriteria[] | undefined }>({
+    mutationFn: ({ criteriaId, title }) =>
+      apiClient.call('updateCriteriaTitle', { criteriaId, title }),
+
+    onMutate: async ({ criteriaId, title }) => {
+      await qc.cancelQueries({ queryKey });
+      const snapshot = qc.getQueryData<AcceptanceCriteria[]>(queryKey);
+      qc.setQueryData<AcceptanceCriteria[]>(queryKey, (prev) =>
+        prev?.map((c) => c.criteriaId === criteriaId ? { ...c, title } : c)
+      );
+      return { snapshot };
+    },
+
+    onSuccess: (updated) => {
+      qc.setQueryData<AcceptanceCriteria[]>(queryKey, (prev) =>
+        prev?.map((c) => c.criteriaId === updated.criteriaId ? updated : c)
+      );
+    },
+
+    onError: (_err, _payload, context) => {
+      if (context?.snapshot) qc.setQueryData<AcceptanceCriteria[]>(queryKey, context.snapshot);
+    },
+  });
+}

@@ -1,13 +1,43 @@
 import { useAuth } from '@/auth/AuthProvider';
 import { Navigate } from 'react-router-dom';
 import '@/styles/LoginPage.css';
+import { usePublicAnnouncements } from '@/features/requests/hooks/useAnnouncements';
 
 export function LoginPage() {
 const { account, signIn, ready, dbReady } = useAuth();
   // DESPUÉS
 if (ready && dbReady && account) return <Navigate to="/home" replace />;
+function LoginAnnouncementStrip() {
+  const { data: list = [] } = usePublicAnnouncements();
+  if (list.length === 0) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+      {list.map((a) => {
+        const TYPE_COLOR: Record<string, string> = { info: '#00c8ff', warning: '#EF9F27', critical: '#ff4757', success: '#4CAF50' };
+        const TYPE_ICON:  Record<string, string> = { info: 'ℹ️', warning: '⚠️', critical: '🚨', success: '✅' };
+        const color  = TYPE_COLOR[a.type] ?? '#00c8ff';
+        const border = color + '35';
+        return (
+  <div key={a.id} style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    padding: '9px 20px',
+    background: color + '18',
+    backdropFilter: 'blur(10px)',
+    borderBottom: `1px solid ${border}`,
+    borderLeft: `3px solid ${color}`
+  }}>
+    <span style={{ fontSize: 12 }}>{TYPE_ICON[a.type]}</span>
+    <span style={{ fontSize: 12, fontWeight: 700, color }}>{a.title}</span>
+    {a.body && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>· {a.body}</span>}
+  </div>
+        );
+      })}
+    </div>
+  );
+}
   return (
     <div className="lp-root">
+      <LoginAnnouncementStrip />
       {/* Geometric background */}
       <div className="lp-bg" aria-hidden="true">
         <svg className="lp-bg__grid" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">

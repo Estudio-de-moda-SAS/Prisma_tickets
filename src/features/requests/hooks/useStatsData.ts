@@ -26,13 +26,16 @@ export type SprintStats = {
   puntajePostPlanning: number;
   planeadasMes:        number;
   cerradasMes:         number;
+  meta:                number;
+  penalizacion:        number;
+  puntajeReal:         number;
+  cumplimiento:        number;
 };
 
 export type EquipoStatsReal = {
   equipo:    string;
   creadas:   number;
   resueltas: number;
-  sla:       number;
   criticas:  number;
   score:     number;
 };
@@ -52,8 +55,11 @@ export type BoardStatsReal = {
   equipo:       string;
   creadas:      number;
   resueltas:    number;
-  sla:          number;
   criticas:     number;
+  meta:         number;
+  penalizacion: number;
+  puntajeReal:  number;
+  cumplimiento: number;
   porColumna:   ColStatReal[];
   porPrioridad: PriStatReal[];
   resolutores:  Array<{
@@ -63,6 +69,10 @@ export type BoardStatsReal = {
     resueltas: number;
     avatarBg:  string;
   }>;
+};
+export type StatsConfig = {
+  columnPositions:  Record<string, number>;
+  statsStartByTeam: Record<string, number>;
 };
 
 export type StatsData = {
@@ -112,13 +122,6 @@ const AVATAR_GRADIENTS = [
 /** Columnas que cuentan como resueltas en todas las métricas */
 const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
 
-/** SLA targets por prioridad (días corridos desde apertura hasta cierre) */
-const SLA_TARGETS: Record<string, number> = {
-  critica:  1,
-  alta:     3,
-  media:    7,
-  baja:    14,
-};
 /* ─── Helpers ─────────────────────────────────────────────── */
 
 function inits(name: string) {
@@ -132,60 +135,108 @@ function isThisMonth(iso: string | null) {
   const d = new Date(iso), now = new Date();
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
 }
+/* ─── calcPenalizacion ────────────────────────────────────── */
+/** Doble de puntos de solicitudes sin resolver que llevan ≥2 sprints de atraso */
+function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId: number | null = null): number {
+  const sorted = [...allSprints].sort((a, b) => a.Sprint_ID - b.Sprint_ID);
+  if (sorted.length === 0) return 0;
 
+  // Referencia = sprint indicado; si no, sprint activo hoy; si no hay activo, el más reciente iniciado
+  let refIdx: number;
+  if (refSprintId != null) {
+    refIdx = sorted.findIndex(s => s.Sprint_ID === refSprintId);
+  } else {
+    const today = new Date().toISOString().slice(0, 10);
+    const active = sorted.find(s =>
+      s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
+    ) ?? [...sorted].reverse().find(s => s.Sprint_Start_Date.slice(0, 10) <= today) ?? sorted[sorted.length - 1];
+    refIdx = sorted.findIndex(s => s.Sprint_ID === active.Sprint_ID);
+  }
+  if (refIdx === -1) return 0;
+
+  return requests
+    .filter(r => !DONE_COLUMNS.has(r.columna) && r.sprintId != null)
+    .reduce((acc, r) => {
+      const reqIdx = sorted.findIndex(s => s.Sprint_ID === r.sprintId);
+      if (reqIdx === -1) return acc;
+      if (refIdx - reqIdx >= 2) return acc + 2 * (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0);
+      return acc;
+    }, 0);
+}
 /* ─── calcGeneral ─────────────────────────────────────────── */
-function calcGeneral(requests: Request[], teams: BoardTeam[]): GeneralStatsReal {
-  const total     = requests.length;
-  const resueltas = requests.filter(r => DONE_COLUMNS.has(r.columna)).length;
+function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: StatsConfig): GeneralStatsReal {
+  const activeRequests = statsConfig
+    ? requests.filter(r => r.equipo.some(eq => {
+        const minPos = statsConfig.statsStartByTeam[eq];
+        if (minPos === undefined) return true;
+        return (statsConfig.columnPositions[r.columna] ?? 0) >= minPos;
+      }))
+    : requests;
+
+  const total      = activeRequests.length;
+  const resueltas  = activeRequests.filter(r => DONE_COLUMNS.has(r.columna)).length;
   const tasaGlobal = total > 0 ? Math.round((resueltas / total) * 100) : 0;
 
-  const conCierre = requests.filter(r => DONE_COLUMNS.has(r.columna) && r.fechaCierre && r.fechaApertura);
+  const conCierre = activeRequests.filter(r => DONE_COLUMNS.has(r.columna) && r.fechaCierre && r.fechaApertura);
   const tiempoPromedio = conCierre.length > 0
     ? parseFloat((conCierre.reduce((a, r) => a + daysBetween(r.fechaApertura, r.fechaCierre!), 0) / conCierre.length).toFixed(1))
     : 0;
 
   const porEquipo: EquipoStatsReal[] = teams.map(team => {
-    const eq   = team.Board_Team_Code;
-    const mine = requests.filter(r => r.equipo.includes(eq));
-    const done = mine.filter(r => DONE_COLUMNS.has(r.columna));
+    const eq     = team.Board_Team_Code;
+    const minPos = statsConfig?.statsStartByTeam[eq];
+    const mine   = requests.filter(r =>
+      r.equipo.includes(eq) &&
+      (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
+    );
+    const done    = mine.filter(r => DONE_COLUMNS.has(r.columna));
     const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
-const sla = done.length > 0
-  ? Math.round(
-      done.filter(r =>
-        r.fechaCierre && r.fechaApertura &&
-        daysBetween(r.fechaApertura, r.fechaCierre) <= (SLA_TARGETS[r.prioridad] ?? 7)
-      ).length / done.length * 100
-    )
-  : 0;
-    const score = mine.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
-    return { equipo: eq, creadas: mine.length, resueltas: done.length, sla, criticas, score };
+    const score   = mine.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+    return { equipo: eq, creadas: mine.length, resueltas: done.length, criticas, score };
   });
 
   return { total, resueltas, tasaGlobal, tiempoPromedio, porEquipo };
 }
 
 /* ─── calcBoard ───────────────────────────────────────────── */
-function calcBoard(requests: Request[], equipo: string): BoardStatsReal {
-  const mine = requests.filter(r => r.equipo.includes(equipo));
-  const done = mine.filter(r => DONE_COLUMNS.has(r.columna));
+function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfig, allSprints: Sprint[] = [], selectedSprints: Sprint[] = []): BoardStatsReal {
+  const minPos = statsConfig?.statsStartByTeam[equipo];
+const allMine = requests.filter(r => r.equipo.includes(equipo)); // sin filtro de posición
+
+const mine = requests.filter(r =>
+  r.equipo.includes(equipo) &&
+  (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
+);
+  const done     = mine.filter(r => DONE_COLUMNS.has(r.columna));
   const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
-const sla = done.length > 0
-  ? Math.round(
-      done.filter(r =>
-        r.fechaCierre && r.fechaApertura &&
-        daysBetween(r.fechaApertura, r.fechaCierre) <= (SLA_TARGETS[r.prioridad] ?? 7)
-      ).length / done.length * 100
-    )
-  : 0;
+
+  // ── Métricas de sprint por equipo ──────────────────────────
+const sprintSet        = new Set(selectedSprints.map(s => s.Sprint_ID));
+const allMineInSprint  = selectedSprints.length > 0          // ← nuevo
+  ? allMine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
+  : allMine;
+const mineForScore     = selectedSprints.length > 0
+  ? mine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
+  : mine;
+  const puntajePlaneado  = mineForScore.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  const puntajeRealizado = mineForScore.filter(r => DONE_COLUMNS.has(r.columna))
+    .reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  const meta             = Math.round(puntajePlaneado * 0.83334);
+  const refSprintId      = selectedSprints.length > 0
+    ? [...selectedSprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
+    : null;
+  const penalizacion     = calcPenalizacion(mine, allSprints, refSprintId);
+  const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
+  const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
   const colOrder: KanbanColumna[] = [
     'sin_categorizar','icebox','backlog','todo',
     'en_progreso','en_revision_qas','ready_to_deploy','hecho',
   ];
-  const porColumna: ColStatReal[] = colOrder.map(col => ({
-    label: COL_META[col].label,
-    value: mine.filter(r => r.columna === col).length,
-    color: COL_META[col].color,
-  }));
+const porColumna: ColStatReal[] = colOrder.map(col => ({
+  label: COL_META[col].label,
+  value: allMineInSprint.filter(r => r.columna === col).length, // ← allMineInSprint
+  color: COL_META[col].color,
+}));
   const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
     label: p.label,
     value: mine.filter(r => r.prioridad === p.key).length,
@@ -207,63 +258,105 @@ const sla = done.length > 0
       avatarBg: AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
     }));
 
-  return { equipo, creadas: mine.length, resueltas: done.length, sla, criticas, porColumna, porPrioridad, resolutores };
+  return { equipo, creadas: mine.length, resueltas: done.length, criticas, meta, penalizacion, puntajeReal, cumplimiento, porColumna, porPrioridad, resolutores };
 }
 
 /* ─── calcSprint ──────────────────────────────────────────── */
-function calcSprint(requests: Request[], sprint: Sprint | null): SprintStats {
+function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsConfig, teamCode?: string | null, allSprints: Sprint[] = []): SprintStats {
   const score = (rs: Request[]) => rs.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
 
-  if (!sprint) {
+  const minPos: number | undefined = (() => {
+    if (!statsConfig || Object.keys(statsConfig.statsStartByTeam).length === 0) return undefined;
+    if (teamCode) return statsConfig.statsStartByTeam[teamCode];
+    const vals = Object.values(statsConfig.statsStartByTeam);
+    return vals.length > 0 ? Math.min(...vals) : undefined;
+  })();
+
+  const isActive = (r: Request) =>
+    minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
+
+  /* ── Sin filtro de sprint → todos los activos ── */
+  if (sprints.length === 0) {
+    const active           = requests.filter(isActive);
+    const puntajePlaneado  = score(active);
+    const puntajeRealizado = score(active.filter(r => DONE_COLUMNS.has(r.columna)));
+    const meta             = Math.round(puntajePlaneado * 0.83334);
+    const penalizacion     = calcPenalizacion(active, allSprints, null);
+    const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
+    const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
     return {
-      sprint: null, planeadas: requests.length,
-      activas:      requests.filter(r => r.columna === 'en_progreso').length,
-// 7
-completadas: requests.filter(r => DONE_COLUMNS.has(r.columna)).length,      bloqueadas:   requests.filter(r => r.columna === 'icebox').length,
+      sprint: null,
+      planeadas:    active.length,
+      activas:      active.filter(r => r.columna === 'en_progreso').length,
+      completadas:  active.filter(r => DONE_COLUMNS.has(r.columna)).length,
+      bloqueadas:   requests.filter(r => r.columna === 'icebox').length,
       postPlanning: 0,
-      puntajePlaneado:     score(requests),
-      puntajeRealizado:    score(requests.filter(r =>
-        r.columna === 'ready_to_deploy' || r.columna === 'hecho' || r.columna === 'historial'
-      )),
-      puntajePostPlanning: 0,
-      planeadasMes: requests.filter(r => isThisMonth(r.fechaApertura)).length,
-      cerradasMes: requests.filter(r =>
-        DONE_COLUMNS.has(r.columna) &&
-        isThisMonth(r.fechaCierre ?? r.fechaApertura)
+      puntajePlaneado, puntajeRealizado, puntajePostPlanning: 0,
+      planeadasMes: active.filter(r => isThisMonth(r.fechaApertura)).length,
+      cerradasMes:  active.filter(r =>
+        DONE_COLUMNS.has(r.columna) && isThisMonth(r.fechaCierre ?? r.fechaApertura)
       ).length,
+      meta, penalizacion, puntajeReal, cumplimiento,
     };
   }
 
-  const start       = new Date(sprint.Sprint_Start_Date);
-  const inSprint    = requests.filter(r => r.sprintId === sprint.Sprint_ID);
-  const planeadas   = inSprint.filter(r => new Date(r.fechaApertura) <= start);
-  const postPlan    = inSprint.filter(r => new Date(r.fechaApertura) >  start);
-const activas     = inSprint.filter(r => r.columna === 'en_progreso');
-  // "Completada" = cualquier columna final (hecho + historial), alineado con COLUMNAS_FINALES
-  const completadas = inSprint.filter(r =>
-    r.columna === 'ready_to_deploy' ||
-    r.columna === 'hecho'           ||
-    r.columna === 'historial'
+  /* ── Uno o más sprints seleccionados ── */
+  const sprintMap   = new Map(sprints.map(s => [s.Sprint_ID, s]));
+  const sprintIdSet = new Set(sprints.map(s => s.Sprint_ID));
+
+  const inSprint       = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sprintId));
+  const activeInSprint = inSprint.filter(isActive);
+  const bloqueadas     = inSprint.filter(r => r.columna === 'icebox');
+// DESPUÉS
+const planeadas = activeInSprint.filter(r => {
+  const sp = sprintMap.get(r.sprintId!);
+  return sp ? r.fechaApertura.slice(0, 10) <= sp.Sprint_Start_Date.slice(0, 10) : false;
+});
+const postPlan = activeInSprint.filter(r => {
+  const sp = sprintMap.get(r.sprintId!);
+  return sp ? r.fechaApertura.slice(0, 10) > sp.Sprint_Start_Date.slice(0, 10) : false;
+});
+  const activas     = activeInSprint.filter(r => r.columna === 'en_progreso');
+  const completadas = activeInSprint.filter(r =>
+    r.columna === 'ready_to_deploy' || r.columna === 'hecho' || r.columna === 'historial'
   );
-  const bloqueadas  = inSprint.filter(r => r.columna === 'icebox');
-  
-  const sy = start.getFullYear(), sm = start.getMonth();
-  const isSM = (iso: string | null) => { if (!iso) return false; const d = new Date(iso); return d.getFullYear() === sy && d.getMonth() === sm; };
+
+  /* planeadasMes/cerradasMes: mes del sprint más antiguo seleccionado */
+  const earliest = sprints.reduce((a, b) => a.Sprint_Start_Date < b.Sprint_Start_Date ? a : b);
+  const sy = new Date(earliest.Sprint_Start_Date).getFullYear();
+  const sm = new Date(earliest.Sprint_Start_Date).getMonth();
+  const isSM = (iso: string | null) => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return d.getFullYear() === sy && d.getMonth() === sm;
+  };
+
+  const puntajePlaneado  = score(activeInSprint);
+  const puntajeRealizado = score(completadas);
+  const meta             = Math.round(puntajePlaneado * 0.83334);
+  // refSprintId = el sprint seleccionado más reciente
+  const refSprintId      = sprints.length > 0
+    ? [...sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
+    : null;
+  const penalizacion     = calcPenalizacion(requests.filter(isActive), allSprints, refSprintId);
+  const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
+  const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
   return {
-    sprint, planeadas: planeadas.length, activas: activas.length,
-    completadas: completadas.length, bloqueadas: bloqueadas.length, postPlanning: postPlan.length,
-puntajePlaneado:     score(inSprint),   
-    puntajeRealizado:    score(completadas),
-    puntajePostPlanning: 0,           
-    planeadasMes: requests.filter(r => isSM(r.fechaApertura)).length,
-    cerradasMes: requests.filter(r =>
-      DONE_COLUMNS.has(r.columna) &&
-      isSM(r.fechaCierre ?? r.fechaApertura)
+    sprint: sprints.length === 1 ? sprints[0] : null,
+    planeadas:    planeadas.length,
+    activas:      activas.length,
+    completadas:  completadas.length,
+    bloqueadas:   bloqueadas.length,
+    postPlanning: postPlan.length,
+    puntajePlaneado, puntajeRealizado, puntajePostPlanning: 0,
+    planeadasMes: requests.filter(r => isActive(r) && isSM(r.fechaApertura)).length,
+    cerradasMes:  requests.filter(r =>
+      DONE_COLUMNS.has(r.columna) && isActive(r) && isSM(r.fechaCierre ?? r.fechaApertura)
     ).length,
+    meta, penalizacion, puntajeReal, cumplimiento,
   };
 }
-
 /* ─── buildPrimaryTeamMap ─────────────────────────────────── */
 function buildPrimaryTeamMap(requests: Request[]): Map<number, string> {
   const teamCount = new Map<number, Map<string, number>>();
@@ -287,11 +380,12 @@ function buildPrimaryTeamMap(requests: Request[]): Map<number, string> {
 
 /* ─── Hook principal ──────────────────────────────────────── */
 export function useStatsData(
-  selectedSprintId: number | null,
+  selectedSprintIds: number[],
   teams:            BoardTeam[]    = [],
   userFilter:       number | null  = null,
   /** Cuando se elige un equipo específico, el sprint se filtra a ese equipo */
   teamCodeFilter:   string | null  = null,
+  statsConfig?:     StatsConfig,
 ): StatsData {
   const boardQuery   = useBoardCompleto();
   const sprintsQuery = useSprints();
@@ -303,9 +397,10 @@ export function useStatsData(
 
   const sprints: Sprint[] = sprintsQuery.data ?? [];
 
-  const selectedSprint = useMemo(
-    () => sprints.find(s => s.Sprint_ID === selectedSprintId) ?? null,
-    [sprints, selectedSprintId],
+// DESPUÉS
+  const selectedSprints = useMemo(
+    () => sprints.filter(s => selectedSprintIds.includes(s.Sprint_ID)),
+    [sprints, selectedSprintIds],
   );
 
   /** Map userId → primaryTeam (derivado de historial de asignaciones) */
@@ -323,16 +418,19 @@ export function useStatsData(
     return filteredRequests.filter(r => r.equipo.includes(teamCodeFilter));
   }, [filteredRequests, teamCodeFilter]);
 
-  const general = useMemo(() => calcGeneral(filteredRequests, teams), [filteredRequests, teams]);
+  const general = useMemo(
+    () => calcGeneral(filteredRequests, teams, statsConfig),
+    [filteredRequests, teams, statsConfig],
+  );
 
-  const boards = useMemo(
-    () => Object.fromEntries(teams.map(t => [t.Board_Team_Code, calcBoard(filteredRequests, t.Board_Team_Code)])) as Record<string, BoardStatsReal>,
-    [filteredRequests, teams],
+const boards = useMemo(
+    () => Object.fromEntries(teams.map(t => [t.Board_Team_Code, calcBoard(filteredRequests, t.Board_Team_Code, statsConfig, sprints, selectedSprints)])) as Record<string, BoardStatsReal>,
+    [filteredRequests, teams, statsConfig, sprints, selectedSprints],
   );
 
   const sprint = useMemo(
-    () => calcSprint(sprintRequests, selectedSprint),
-    [sprintRequests, selectedSprint],
+    () => calcSprint(sprintRequests, selectedSprints, statsConfig, teamCodeFilter, sprints),
+    [sprintRequests, selectedSprints, statsConfig, teamCodeFilter, sprints],
   );
 
   return {

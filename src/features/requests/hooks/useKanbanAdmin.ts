@@ -6,13 +6,14 @@ import { apiClient } from '@/lib/apiClient';
    Tipos
    ============================================================ */
 export type KanbanTeam = {
-  Board_Team_ID:          number;
-  Board_Team_Name:        string;
-  Board_Team_Code:        string;
-  Board_Team_Color:       string;
-  Board_Team_Description: string | null;
-  Board_Team_Icon:           string;
-  Board_Team_Is_Admin_Only:  boolean;
+  Board_Team_ID:            number;
+  Board_Team_Name:          string;
+  Board_Team_Code:          string;
+  Board_Team_Color:         string;
+  Board_Team_Description:   string | null;
+  Board_Team_Icon:          string;
+  Board_Team_Is_Admin_Only: boolean;
+  Board_Team_Sort_Order:    number;
 };
 
 export type ColumnWithConfig = {
@@ -26,16 +27,18 @@ export type ColumnWithConfig = {
   Is_Visible:            boolean;
   Evidence_Required:     boolean;
   Evidence_Label:        string | null;
-  Is_Close_Column:       boolean;
-  Team_Column_Color:     string | null;
+  Is_Close_Column:         boolean;
+  Is_Stats_Start:          boolean;
+  Team_Column_Color:       string | null;
   Team_Column_Title_Color: string | null;
 };
 
 /* ── Query keys ── */
 const keys = {
-  teams:   ()                 => ['boardTeams']                    as const,
-  columns: (boardId: number)  => ['boardColumns',      boardId]    as const,
-  config:  (teamId:  number)  => ['teamColumnConfig',  teamId]     as const,
+  teams:      ()                 => ['boardTeams']                   as const,
+  columns:    (boardId: number)  => ['boardColumns',     boardId]    as const,
+  config:     (teamId:  number)  => ['teamColumnConfig', teamId]     as const,
+  statsStart: (boardId: number)  => ['statsStartConfig', boardId]    as const,
 };
 
 /* ============================================================
@@ -123,7 +126,39 @@ export function useUpsertTeamColumnConfig(teamId: number) {
     },
   });
 }
+/* ============================================================
+   Marcar columna de inicio de estadísticas (radio: una por equipo)
+   ============================================================ */
+export function useSetStatsStartColumn(boardId: number, teamId: number) {
+  const qc = useQueryClient();
+  const qk = keys.config(teamId);
 
+  return useMutation({
+    mutationFn: (columnId: number | null) =>
+      apiClient.call('setStatsStartColumn', { boardId, teamId, columnId }),
+
+    onMutate: async (columnId) => {
+      await qc.cancelQueries({ queryKey: qk });
+      const snapshot = qc.getQueryData<ColumnWithConfig[]>(qk);
+      qc.setQueryData<ColumnWithConfig[]>(qk, (prev) =>
+        prev?.map((col) => ({
+          ...col,
+          Is_Stats_Start: columnId === null ? false : col.Board_Column_ID === columnId,
+        })) ?? []
+      );
+      return { snapshot };
+    },
+
+    onError: (_e, _v, ctx) => {
+      if (ctx?.snapshot) qc.setQueryData<ColumnWithConfig[]>(qk, ctx.snapshot);
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: qk });
+      qc.invalidateQueries({ queryKey: keys.statsStart(boardId) });
+    },
+  });
+}
 /* ============================================================
    Actualizar columna global (nombre, color, límite)
    ============================================================ */
@@ -189,5 +224,55 @@ export function useReorderBoardColumn(boardId: number, teamId: number) {
       qc.invalidateQueries({ queryKey: qk });
       qc.invalidateQueries({ queryKey: ['columnMap', boardId] });
     },
+    
+  });
+  
+}
+
+/* ============================================================
+   Reordenar equipo kanban (optimistic swap)
+   ============================================================ */
+export function useReorderBoardTeam() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (d: { teamId: number; direction: 'up' | 'down' }) =>
+      apiClient.call('reorderBoardTeam', d),
+
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: ['boardTeams'] });
+      qc.setQueriesData<KanbanTeam[]>(
+        { queryKey: ['boardTeams'], exact: false },
+        (prev) => {
+          if (!prev) return prev;
+          const arr = [...prev];
+          const idx = arr.findIndex((t) => t.Board_Team_ID === d.teamId);
+          if (idx === -1) return prev;
+          const si = d.direction === 'up' ? idx - 1 : idx + 1;
+          if (si < 0 || si >= arr.length) return prev;
+          [arr[idx], arr[si]] = [arr[si], arr[idx]];
+          return arr;
+        },
+      );
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['boardTeams'] });
+    },
+  });
+}
+/* ============================================================
+   Config de inicio de stats — consumida por useStatsData
+   ============================================================ */
+export type StatsStartConfig = {
+  columnPositions:  Record<string, number>;
+  statsStartByTeam: Record<string, number>;
+};
+
+export function useStatsStartConfig(boardId: number) {
+  return useQuery<StatsStartConfig>({
+    queryKey: keys.statsStart(boardId),
+    queryFn:  () => apiClient.call<StatsStartConfig>('fetchStatsStartConfig', { boardId }),
+    staleTime: 60_000,
   });
 }

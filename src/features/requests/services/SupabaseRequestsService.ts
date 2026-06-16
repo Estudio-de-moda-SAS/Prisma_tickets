@@ -367,9 +367,10 @@ async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     labelIds:       patch.labelIds,
     sprintId:       patch.sprintId,
     estimatedHours: patch.estimatedHours,
-    loggedHours:    patch.loggedHours, 
+  loggedHours:    patch.loggedHours,
+    formData:       patch.formData, 
   });
-      if (patch.subTeamIds !== undefined) {
+        if (patch.subTeamIds !== undefined) {
       await apiClient.call('updateRequestSubTeams', { id, subTeamIds: patch.subTeamIds });
     }
   }
