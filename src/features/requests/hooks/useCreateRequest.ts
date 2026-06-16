@@ -12,26 +12,29 @@ export function useCreateRequest() {
   const { Requests } = useGraphServices();
 
   return useMutation<Request, Error, CrearRequestPayload>({
-    mutationFn: async (payload) => {
-      const { acceptanceCriteria, ...rest } = payload;
+mutationFn: async (payload) => {
+  const { acceptanceCriteria, assigneeIds = [], ...rest } = payload;
 
-      // 1. Crear el ticket — acceptanceCriteria no va al service, se maneja aparte
-      const newRequest = await Requests.createRequest({ ...rest, acceptanceCriteria: [] });
+  const newRequest = await Requests.createRequest({ ...rest, acceptanceCriteria: [] });
 
-      // 2. Crear los criterios en paralelo
-      if (acceptanceCriteria.length > 0) {
-        await Promise.all(
-          acceptanceCriteria.map((title) =>
-            apiClient.call('createAcceptanceCriteria', {
-              requestId: newRequest.id,
-              title,
-            }),
-          ),
-        );
-      }
+  await Promise.all([
+    ...acceptanceCriteria.map((title) =>
+      apiClient.call('createAcceptanceCriteria', {
+        requestId: newRequest.id,
+        title,
+      }),
+    ),
+    ...assigneeIds.map((userId) =>
+      apiClient.call('assignRequest', {
+        requestId:  newRequest.id,
+        userId,
+        assignedBy: payload.requestedBy,
+      }),
+    ),
+  ]);
 
-      return newRequest;
-    },
+  return newRequest;
+},
 
 onSuccess: (newRequest) => {
   // refetchQueries fuerza el fetch inmediato, no solo marca stale

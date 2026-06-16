@@ -78,14 +78,40 @@ function usePortalDropdown() {
 
 function PortalPanel({ rect, children }: { rect: DOMRect | null; children: React.ReactNode }) {
   if (!rect) return null;
+
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const spaceAbove = rect.top - 8;
+  const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow;
+  const maxH = Math.min(320, openUpward ? spaceAbove : spaceBelow);
+
   return createPortal(
-    <div data-portal-dropdown style={{ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 99999, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden', minWidth: 180 }} onClick={(e) => e.stopPropagation()}>
+    <div
+      data-portal-dropdown
+      style={{
+        position: 'fixed',
+        ...(openUpward
+          ? { bottom: window.innerHeight - rect.top + 4 }
+          : { top: rect.bottom + 4 }),
+        left: rect.left,
+        width: rect.width,
+        zIndex: 99999,
+        background: 'var(--bg-panel)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        overflow: 'hidden',
+        minWidth: 180,
+        maxHeight: maxH,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
       {children}
     </div>,
     document.body,
   );
 }
-
 /* ── Step indicator ── */
 function StepIndicator({ step }: { step: Step }) {
   const steps: { key: Step; label: string }[] = [
@@ -660,7 +686,7 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
    const [step,                setStep]               = useState<Step>(defaultTeamId !== undefined ? 'template' : 'equipo');
-
+const [labelSearch, setLabelSearch] = useState('');
   const [selectedBoardTeamId, setSelectedBoardTeamId] = useState<number | null>(defaultTeamId ?? null);
   const [selectedTemplateId,  setSelectedTemplateId]  = useState<number | null>(null);
 
@@ -823,10 +849,10 @@ const formData: Record<string, unknown> = {
         isConfidential:   parentIsConfidential,
         requesterDepartmentId: currentUser.Department_ID ?? null,
         acceptanceCriteria,
-        formData, 
-      },
-      { onSuccess: () => { onCreated?.(); onClose(); } },
-    );
+      formData,
+      assigneeIds,
+    },
+    { onSuccess: () => { onCreated?.(); onClose(); } },    );
   }
 
   const extraFieldsReady = templateDef
@@ -840,10 +866,7 @@ const formData: Record<string, unknown> = {
 const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
 const priorityBtnRef = useRef<HTMLButtonElement>(null);
 const groupedMembers = useSubTeamMembersGrouped(subTeams);
-  const parts = assignedUsers.map((u) => u.User_Name).join(', ').split(' ');
-  const displayName = parts.length >= 3
-    ? `${parts[0]} ${parts[2]}`
-    : parts.join(' ');
+
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
@@ -990,17 +1013,21 @@ const groupedMembers = useSubTeamMembersGrouped(subTeams);
     >
       {assignedUsers.length === 0
         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
-        : assignedUsers.map((u) => (
-          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-            {displayName}
-              <span
-                onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
-                style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
-              >×</span>
-          </span>
-        ))
-      }
+        : assignedUsers.map((u) => {
+            const p = u.User_Name.split(' ');
+            const name = p.length >= 3 ? `${p[0]} ${p[2]}` : u.User_Name;
+            return (
+              <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+                {name}
+                <span
+                  onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
+                  style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
+                >×</span>
+              </span>
+            );
+          })
+        }
       { <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
     </button>
 
@@ -1070,12 +1097,43 @@ onToggleAssignee={(userId) => {
                         : labels.filter((l) => selectedLabelIds.includes(l.Label_ID)).map((label) => <span key={label.Label_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: label.Label_Color, background: `${label.Label_Color}18`, border: `1px solid ${label.Label_Color}35` }}>{label.Label_Icon && <span>{label.Label_Icon}</span>}{label.Label_Name}<span onMouseDown={(e) => { e.stopPropagation(); setSelectedLabelIds((p) => p.filter((x) => x !== label.Label_ID)); }} style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}>×</span></span>)}
                       <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: catDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
-                    {catDD.open && selectedBoardTeamId && (
-                      <PortalPanel rect={catDD.rect}>
-                        {labels.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas.</div>
-                          : labels.map((label) => { const sel = selectedLabelIds.includes(label.Label_ID); return <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>{label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}<span style={{ flex: 1 }}>{label.Label_Name}</span><span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />{sel && <Checkmark />}</DropdownItem>; })}
-                      </PortalPanel>
-                    )}
+
+{catDD.open && selectedBoardTeamId && (
+  <PortalPanel rect={catDD.rect}>
+    <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+      <input
+        autoFocus
+        value={labelSearch}
+        onChange={(e) => setLabelSearch(e.target.value)}
+        placeholder="Buscar etiqueta..."
+        style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+      />
+    </div>
+    <div style={{ overflowY: 'auto' }}>
+      {labels.length === 0
+        ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas.</div>
+        : (() => {
+            const filtered = [...labels]
+              .filter((l) => l.Label_Name.toLowerCase().includes(labelSearch.toLowerCase()))
+              .sort((a, b) => a.Label_Name.localeCompare(b.Label_Name));
+            if (filtered.length === 0)
+              return <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin resultados.</div>;
+            return filtered.map((label) => {
+              const sel = selectedLabelIds.includes(label.Label_ID);
+              return (
+                <DropdownItem key={label.Label_ID} selected={sel} onClick={() => setSelectedLabelIds((p) => sel ? p.filter((x) => x !== label.Label_ID) : [...p, label.Label_ID])}>
+                  {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
+                  <span style={{ flex: 1 }}>{label.Label_Name}</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
+                  {sel && <Checkmark />}
+                </DropdownItem>
+              );
+            });
+          })()
+      }
+    </div>
+  </PortalPanel>
+)}
                   </div>
                 </FieldBlock>
 
@@ -1087,12 +1145,14 @@ onToggleAssignee={(userId) => {
                     </button>
                     {sprintDD.open && (
                       <PortalPanel rect={sprintDD.rect}>
-                        {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
-                          : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
-                              const sel  = selectedSprintId === sp.Sprint_ID;
-                              const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                              return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
-                            })}
+                        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                          {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
+                            : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
+                                const sel  = selectedSprintId === sp.Sprint_ID;
+                                const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
+                                return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
+                              })}
+                        </div>
                       </PortalPanel>
                     )}
                   </div>

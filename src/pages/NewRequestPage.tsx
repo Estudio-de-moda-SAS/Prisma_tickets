@@ -752,21 +752,82 @@ if (r) {
   );
 }
 
-function SuccessScreen({ onHome }: { onHome: () => void }) {
+function SuccessScreen({
+  onHome,
+  assignedSprint,
+}: {
+  onHome: () => void;
+  assignedSprint: { Sprint_Text: string; Sprint_Start_Date: string; Sprint_End_Date: string } | null;
+}) {
+  const fmt = (iso: string) => {
+    const clean = iso.includes('T') ? iso : `${iso}T00:00:00`;
+    const d = new Date(clean);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  };
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '0 28px', textAlign: 'center' }}>
       <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(0,229,160,0.08)', border: '1.5px solid rgba(0,229,160,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 40px rgba(0,229,160,0.12)' }}>
         <svg width="34" height="34" viewBox="0 0 34 34" fill="none"><path d="M6 17l8 8 14-14" stroke="#00e5a0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
-      <div style={{ maxWidth: 400 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 12 }}>Solicitud enviada</h2>
-        <p style={{ fontSize: 14, color: 'var(--txt-muted)', lineHeight: 1.75 }}>Recibimos tu pedido. El equipo correspondiente lo revisará y estará trabajando en él a la brevedad.</p>
+
+      <div style={{ maxWidth: 440 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 12 }}>
+          Solicitud enviada
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--txt-muted)', lineHeight: 1.75, marginBottom: assignedSprint ? 20 : 0 }}>
+          Recibimos tu pedido. El equipo correspondiente lo revisará y estará trabajando en él a la brevedad.
+        </p>
+
+        {assignedSprint ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 10, background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.22)' }}>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="11" rx="2" stroke="#00e5a0" strokeWidth="1.4"/>
+              <path d="M5 1v3M11 1v3M1 7h14" stroke="#00e5a0" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#00e5a0', marginBottom: 3 }}>
+                Programada para
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
+                {assignedSprint.Sprint_Text}
+              </div>
+{assignedSprint.Sprint_Start_Date && assignedSprint.Sprint_End_Date && (
+  <>
+    <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
+      {fmt(assignedSprint.Sprint_Start_Date)} → {fmt(assignedSprint.Sprint_End_Date)}
+    </div>
+    <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 6, lineHeight: 1.5, opacity: 0.8 }}>
+      El equipo puede entregarte cualquier dia entre la fecha del sprint.
+    </div>
+  </>
+)}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 10, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.22)' }}>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" stroke="#fdcb6e" strokeWidth="1.4"/>
+              <path d="M8 5v4M8 11v.5" stroke="#fdcb6e" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#fdcb6e', marginBottom: 3 }}>
+                Asignación pendiente
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+                El equipo te notificará cuando quede programada en un sprint.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <button type="button" onClick={onHome} style={{ marginTop: 4, padding: '12px 36px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', color: 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: 'pointer' }}>← Volver al inicio</button>
+
+      <button type="button" onClick={onHome} style={{ marginTop: 4, padding: '12px 36px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', color: 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: 'pointer' }}>
+        ← Volver al inicio
+      </button>
     </div>
   );
 }
-
 export function NuevaSolicitudPage() {
   const navigate     = useNavigate();
   const qc           = useQueryClient();
@@ -797,7 +858,9 @@ export function NuevaSolicitudPage() {
   const [submitAttempted,    setSubmitAttempted]    = useState(false);
   const [error,              setError]              = useState<string | null>(null);
   const [submitted,          setSubmitted]          = useState(false);
-
+const [assignedSprint, setAssignedSprint] = useState<{
+  Sprint_Text: string; Sprint_Start_Date: string; Sprint_End_Date: string;
+} | null>(null);
 const [userTeamName, setUserTeamName] = useState<string | null>(null);
 const [userTeamId,   setUserTeamId]   = useState<number | null>(null);
 const userSnapshotted = useRef(false);
@@ -905,9 +968,25 @@ useEffect(() => {
         );
       }
 
+      // Leer sprint asignado desde BASE_SELECT — bypass del mapping de GraphServicesProvider
+      try {
+        const fresh = await apiClient.call<any>('fetchById', { id: newRequest.id });
+        const s = fresh?.sprints?.[0]?.sprint;
+        if (s?.Sprint_Text) {
+          setAssignedSprint({
+            Sprint_Text:       s.Sprint_Text,
+            Sprint_Start_Date: s.Sprint_Start_Date ?? '',
+            Sprint_End_Date:   s.Sprint_End_Date   ?? '',
+          });
+        }
+      } catch { /* no bloquear el flujo */ }
+
       return newRequest;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: requestKeys.all }); setSubmitted(true); },
+onSuccess: () => {
+      qc.invalidateQueries({ queryKey: requestKeys.all });
+      setSubmitted(true);
+    },
     onError: (err: Error) => setError(err.message ?? 'Error al crear la solicitud.'),
   });
 
@@ -927,7 +1006,7 @@ useEffect(() => {
   if (submitted) {
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: '0 28px 32px' }}>
-        <SuccessScreen onHome={() => navigate('/home')} />
+        <SuccessScreen onHome={() => navigate('/home')} assignedSprint={assignedSprint} />
       </div>
     );
   }

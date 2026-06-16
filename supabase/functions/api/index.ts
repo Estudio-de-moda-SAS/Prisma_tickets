@@ -164,7 +164,7 @@ const BASE_SELECT = `
   sprints:TBL_Request_Sprint (
     Request_Sprint_ID,
     sprint:TBL_Sprint!Request_Sprint_ID (
-      Sprint_Text
+      Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date
     )
   ),
   child_count:TBL_Requests!Request_Parent_ID ( count ),
@@ -493,6 +493,103 @@ async function handleAction(
         .select('Request_ID').single();
       if (insErr) throw new Error(insErr.message);
       const newId = (inserted as { Request_ID: string }).Request_ID;
+
+      // ── Auto-asignación de sprint para usuarios externos ──────────────────
+      let resolvedSprintId: number | null = p.sprintId;
+      let autoAssignedSprint: Record<string, unknown> | null = null;
+
+      if (p.sprintId === null && p.equipoIds.length > 0) {
+        try {
+          const { data: userRoleRow } = await supabase
+            .from('TBL_Users').select('User_Role').eq('User_ID', p.requestedBy).single();
+          const userRole   = (userRoleRow as any)?.User_Role as string | undefined;
+          const isExternal = userRole !== 'admin' && userRole !== 'ti_member';
+
+          if (isExternal) {
+            const teamId = p.equipoIds[0];
+            const nowIso = new Date().toISOString();
+
+            // Solo sprints futuros (el activo no cuenta), ordenados por cercanía
+            const { data: futureSprints } = await supabase
+              .from('TBL_Sprint')
+              .select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date')
+              .gt('Sprint_Start_Date', nowIso)
+              .order('Sprint_Start_Date', { ascending: true });
+
+            if (futureSprints && (futureSprints as any[]).length > 0) {
+              const sprintIds = (futureSprints as any[]).map((s: any) => s.Sprint_ID);
+
+              // Capacidades configuradas para este equipo
+              const { data: capRows } = await supabase
+                .from('TBL_Sprint_Team_Capacity')
+                .select('Sprint_ID, External_Capacity')
+                .eq('Board_Team_ID', teamId)
+                .in('Sprint_ID', sprintIds);
+              const capMap: Record<number, number> = {};
+              for (const c of (capRows ?? []) as any[]) capMap[c.Sprint_ID] = c.External_Capacity;
+
+              // Conteo de solicitudes externas ya asignadas por sprint+equipo
+              const countMap: Record<number, number> = {};
+              const { data: srLinks } = await supabase
+                .from('TBL_Request_Sprint')
+                .select('Request_Sprint_ID, Request_Sprint_Request_ID')
+                .in('Request_Sprint_ID', sprintIds);
+
+              if ((srLinks as any[])?.length > 0) {
+                const linkedIds = [...new Set((srLinks as any[]).map((r: any) => r.Request_Sprint_Request_ID))];
+
+                const { data: teamLinks } = await supabase
+                  .from('TBL_Request_Team')
+                  .select('Request_Team_Request_ID')
+                  .eq('Request_Team_ID', teamId)
+                  .in('Request_Team_Request_ID', linkedIds);
+                const teamReqSet = new Set((teamLinks ?? []).map((r: any) => r.Request_Team_Request_ID));
+
+                if (teamReqSet.size > 0) {
+                  const { data: reqUsers } = await supabase
+                    .from('TBL_Requests')
+                    .select('Request_ID, Request_Requested_By')
+                    .in('Request_ID', [...teamReqSet]);
+
+                  const rIds = [...new Set((reqUsers ?? []).map((r: any) => r.Request_Requested_By))];
+                  if (rIds.length > 0) {
+                    const { data: roleRows } = await supabase
+                      .from('TBL_Users').select('User_ID, User_Role').in('User_ID', rIds);
+                    const extUserSet = new Set(
+                      (roleRows ?? [])
+                        .filter((u: any) => u.User_Role !== 'admin' && u.User_Role !== 'ti_member')
+                        .map((u: any) => u.User_ID)
+                    );
+                    const extReqSet = new Set(
+                      (reqUsers ?? [])
+                        .filter((r: any) => extUserSet.has(r.Request_Requested_By))
+                        .map((r: any) => r.Request_ID)
+                    );
+                    for (const sr of (srLinks as any[])) {
+                      if (teamReqSet.has(sr.Request_Sprint_Request_ID) && extReqSet.has(sr.Request_Sprint_Request_ID)) {
+                        countMap[sr.Request_Sprint_ID] = (countMap[sr.Request_Sprint_ID] ?? 0) + 1;
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Primer sprint con cupo disponible
+              for (const sp of (futureSprints as any[])) {
+                const cap   = capMap[sp.Sprint_ID] ?? 20; // default cuando no hay registro
+                const count = countMap[sp.Sprint_ID] ?? 0;
+                if (count < cap) {
+                  resolvedSprintId   = sp.Sprint_ID;
+                  autoAssignedSprint = sp;
+                  break;
+                }
+              }
+            }
+          }
+        } catch (_assignErr) { /* no bloquear la creación del ticket */ }
+      }
+      // ── /Auto-asignación ──────────────────────────────────────────────────
+
       const ops = [];
       if (p.equipoIds.length > 0)
         ops.push(supabase.from('TBL_Request_Team').insert(
@@ -502,9 +599,9 @@ async function handleAction(
         ops.push(supabase.from('TBL_Request_Labels').insert(
           p.labelIds.map((lid) => ({ Request_Labels_Request_ID: newId, Request_Labels_Label_ID: lid }))
         ));
-      if (p.sprintId !== null)
+      if (resolvedSprintId !== null)
         ops.push(supabase.from('TBL_Request_Sprint').insert(
-          { Request_Sprint_Request_ID: newId, Request_Sprint_ID: p.sprintId }
+          { Request_Sprint_Request_ID: newId, Request_Sprint_ID: resolvedSprintId }
         ));
       await Promise.all(ops);
 // ── Ejecutar reglas solicitud_creada ──────────────────
@@ -598,7 +695,9 @@ async function handleAction(
         },
       });
 
-      return data;
+      return autoAssignedSprint !== null
+        ? { ...(data as object), _autoAssignedSprint: autoAssignedSprint }
+        : data;
     }
     case 'moveToColumn': {
       const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
@@ -769,6 +868,7 @@ case 'updateRequest': {
     id: string; titulo?: string; descripcion?: string; score?: number;
     progreso?: number; estimatedHours?: number | null; loggedHours?: number | null;
     equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
+    formData?: Record<string, unknown>; // ← nuevo
   };
   const scalarUpdate: Record<string, unknown> = {};
   if (patch.titulo         !== undefined) scalarUpdate['Request_Title']           = patch.titulo;
@@ -776,7 +876,8 @@ case 'updateRequest': {
   if (patch.score          !== undefined) scalarUpdate['Request_Score']           = patch.score;
   if (patch.progreso       !== undefined) scalarUpdate['Request_Progress']        = Math.min(100, Math.max(0, patch.progreso));
   if (patch.estimatedHours !== undefined) scalarUpdate['Request_Estimated_Hours'] = patch.estimatedHours;
-  if (patch.loggedHours    !== undefined) scalarUpdate['Request_Logged_Hours']    = patch.loggedHours;  // ← nuevo
+  if (patch.loggedHours    !== undefined) scalarUpdate['Request_Logged_Hours']    = patch.loggedHours;
+  if (patch.formData       !== undefined) scalarUpdate['Request_Form_Data']       = patch.formData;  
   if (Object.keys(scalarUpdate).length > 0) {
     const { error } = await supabase.from('TBL_Requests').update(scalarUpdate).eq('Request_ID', id);
     if (error) throw new Error(error.message);
@@ -1396,19 +1497,31 @@ case 'preRegisterUser': {
       return data;
     }
 
-    case 'updateUser': {
-      const p = payload as {
-        userId: number; role: 'admin' | 'member';
-        departmentId: number | null; teamId: number | null; isNew: boolean;
-      };
-      const { data, error } = await supabase
-        .from('TBL_Users')
-        .update({
-          User_Role:     p.role,
-          Department_ID: p.departmentId,
-          Team_ID:       p.teamId,
-          Is_New:        p.isNew,
-        })
+case 'updateUser': {
+  const p = payload as {
+    userId: number; role: 'admin' | 'member';
+    departmentId: number | null; teamId: number | null; isNew: boolean;
+  };
+
+  // Leer departamento actual para detectar si realmente cambió
+  const { data: current } = await supabase
+    .from('TBL_Users')
+    .select('Department_ID')
+    .eq('User_ID', p.userId)
+    .single();
+
+  const departmentChanged = current?.Department_ID !== p.departmentId;
+  // Invariante: si cambia de departamento a uno no-nulo → forzar member
+  const effectiveRole = (departmentChanged && p.departmentId !== null) ? 'member' : p.role;
+
+  const { data, error } = await supabase
+    .from('TBL_Users')
+    .update({
+      User_Role:     effectiveRole,
+      Department_ID: p.departmentId,
+      Team_ID:       p.teamId,
+      Is_New:        p.isNew,
+    })
         .eq('User_ID', p.userId)
         .select(`
           User_ID, User_Name, User_Email, User_Role,
@@ -1659,29 +1772,65 @@ case 'fetchTeamsByBoardId': {
 
     // ── Sprints ─────────────────────────────────────────────────
 
-    case 'fetchSprints': {
+case 'fetchSprints': {
       const { data, error } = await supabase
-        .from('TBL_Sprint').select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date')
+        .from('TBL_Sprint')
+        .select(`
+          Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date,
+          capacities:TBL_Sprint_Team_Capacity (
+            Capacity_ID, Board_Team_ID, External_Capacity
+          )
+        `)
         .order('Sprint_Start_Date', { ascending: false });
       if (error) throw new Error(error.message);
       return data;
     }
 
-    case 'createSprint': {
-      const { text, startDate, endDate } = payload as { text: string; startDate: string; endDate: string };
+case 'createSprint': {
+      const { text, startDate, endDate, teamCapacities } = payload as {
+        text: string; startDate: string; endDate: string;
+        teamCapacities?: { teamId: number; capacity: number }[];
+      };
       const { data, error } = await supabase
         .from('TBL_Sprint')
         .insert({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate })
         .select('Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date').single();
       if (error) throw new Error(error.message);
-      return data;
+      const sprint = data as { Sprint_ID: number; Sprint_Text: string; Sprint_Start_Date: string; Sprint_End_Date: string };
+      if (teamCapacities && teamCapacities.length > 0) {
+        await supabase.from('TBL_Sprint_Team_Capacity').insert(
+          teamCapacities.map((tc) => ({
+            Sprint_ID:         sprint.Sprint_ID,
+            Board_Team_ID:     tc.teamId,
+            External_Capacity: tc.capacity,
+          }))
+        );
+      }
+      return {
+        ...sprint,
+        capacities: (teamCapacities ?? []).map((tc) => ({
+          Capacity_ID: null, Board_Team_ID: tc.teamId, External_Capacity: tc.capacity,
+        })),
+      };
     }
-
     case 'updateSprint': {
-      const { id, text, startDate, endDate } = payload as { id: number; text: string; startDate: string; endDate: string };
+      const { id, text, startDate, endDate, teamCapacities } = payload as {
+        id: number; text: string; startDate: string; endDate: string;
+        teamCapacities?: { teamId: number; capacity: number }[];
+      };
       const { error } = await supabase
         .from('TBL_Sprint').update({ Sprint_Text: text, Sprint_Start_Date: startDate, Sprint_End_Date: endDate }).eq('Sprint_ID', id);
       if (error) throw new Error(error.message);
+      if (teamCapacities && teamCapacities.length > 0) {
+        await Promise.all(
+          teamCapacities.map((tc) =>
+            supabase.from('TBL_Sprint_Team_Capacity').upsert(
+              { Sprint_ID: id, Board_Team_ID: tc.teamId, External_Capacity: tc.capacity },
+              { onConflict: 'Sprint_ID,Board_Team_ID' }
+            )
+          )
+        );
+      }
       return { ok: true };
     }
 
@@ -1690,6 +1839,62 @@ case 'fetchTeamsByBoardId': {
       const { error } = await supabase.from('TBL_Sprint').delete().eq('Sprint_ID', id);
       if (error) throw new Error(error.message);
       return { ok: true };
+    }
+
+    case 'triggerSprintStartMoves': {
+      // Disparador manual del auto-move (equivalente al job pg_cron, para el botón admin)
+      const { boardId: trigBoardId } = payload as { boardId?: number };
+      const bId = trigBoardId ?? 1;
+
+      const { data: sinCatCol } = await supabase
+        .from('TBL_Board_Columns').select('Board_Column_ID')
+        .eq('Board_Column_Board_ID', bId).eq('Board_Column_Slug', 'sin_categorizar').maybeSingle();
+
+      // Columna destino: primera columna de workflow (posición 1+, distinta de sin_categorizar)
+      const { data: todoCol } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_ID, Board_Column_Name')
+        .eq('Board_Column_Board_ID', bId)
+        .neq('Board_Column_Slug', 'sin_categorizar')
+        .order('Board_Column_Position', { ascending: true })
+        .limit(1).maybeSingle();
+
+      if (!sinCatCol || !todoCol) throw new Error('triggerSprintStartMoves: columnas origen/destino no encontradas.');
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: startingSprints } = await supabase
+        .from('TBL_Sprint').select('Sprint_ID')
+        .gte('Sprint_Start_Date', `${today}T00:00:00.000Z`)
+        .lte('Sprint_Start_Date', `${today}T23:59:59.999Z`);
+
+      if (!startingSprints || (startingSprints as any[]).length === 0)
+        return { ok: true, moved: 0, message: 'No hay sprints que inicien hoy.' };
+
+      const sprintIds = (startingSprints as any[]).map((s: any) => s.Sprint_ID);
+
+      const { data: sprintLinks } = await supabase
+        .from('TBL_Request_Sprint').select('Request_Sprint_Request_ID')
+        .in('Request_Sprint_ID', sprintIds);
+
+      const reqIds = [...new Set((sprintLinks ?? []).map((l: any) => l.Request_Sprint_Request_ID))];
+      if (reqIds.length === 0) return { ok: true, moved: 0 };
+
+      const { data: toMove } = await supabase
+        .from('TBL_Requests').select('Request_ID')
+        .in('Request_ID', reqIds)
+        .eq('Request_Board_Column_ID', (sinCatCol as any).Board_Column_ID)
+        .is('Request_Finished_At', null);
+
+      if (!toMove || (toMove as any[]).length === 0) return { ok: true, moved: 0 };
+
+      const moveIds = (toMove as any[]).map((r: any) => r.Request_ID);
+      const { error: moveErr } = await supabase
+        .from('TBL_Requests').update({ Request_Board_Column_ID: (todoCol as any).Board_Column_ID })
+        .in('Request_ID', moveIds);
+
+      if (moveErr) throw new Error(moveErr.message);
+      return { ok: true, moved: moveIds.length, destColumn: (todoCol as any).Board_Column_Name };
     }
 
     // ── Assignments ─────────────────────────────────────────────
@@ -2475,7 +2680,7 @@ const { name, code, color, description, icon, isAdminOnly } = payload as {
       const columnIds = (cols as any[]).map((c) => c.Board_Column_ID);
       const { data: configs, error: configsErr } = await supabase
         .from('TBL_Team_Column_Config')
-.select('Config_ID, Column_ID, Is_Visible, Evidence_Required, Evidence_Label, Is_Close_Column, Team_Column_Color, Team_Column_Title_Color')        .eq('Team_ID', teamId)
+.select('Config_ID, Column_ID, Is_Visible, Evidence_Required, Evidence_Label, Is_Close_Column, Is_Stats_Start, Team_Column_Color, Team_Column_Title_Color')        .eq('Team_ID', teamId)
         .in('Column_ID', columnIds.length > 0 ? columnIds : [-1]);
       if (configsErr) throw new Error(configsErr.message);
  
@@ -2495,7 +2700,8 @@ const { name, code, color, description, icon, isAdminOnly } = payload as {
           Is_Visible:            cfg?.Is_Visible         ?? true,
           Evidence_Required:     cfg?.Evidence_Required  ?? false,
           Evidence_Label:        cfg?.Evidence_Label      ?? null,
-          Is_Close_Column:       cfg?.Is_Close_Column     ?? false,
+          Is_Close_Column:         cfg?.Is_Close_Column         ?? false,
+          Is_Stats_Start:          cfg?.Is_Stats_Start           ?? false,
           Team_Column_Color:       cfg?.Team_Column_Color        ?? null,
           Team_Column_Title_Color: cfg?.Team_Column_Title_Color  ?? null,
         };
@@ -2726,6 +2932,118 @@ case 'delete_announcement': {
   if (error) throw new Error(error.message);
   return { success: true };
 }
+case 'setStatsStartColumn': {
+      const { teamId, columnId } = payload as { teamId: number; columnId: number | null };
+
+      // Buscar la fila que actualmente tiene Is_Stats_Start = true
+      const { data: current } = await supabase
+        .from('TBL_Team_Column_Config')
+        .select('Config_ID, Column_ID')
+        .eq('Team_ID', teamId)
+        .eq('Is_Stats_Start', true)
+        .maybeSingle();
+
+      // Si ya estaba marcada esa misma columna → toggle off, salir
+      if (current && columnId !== null && (current as any).Column_ID === columnId) {
+        await supabase
+          .from('TBL_Team_Column_Config')
+          .update({ Is_Stats_Start: false })
+          .eq('Config_ID', (current as any).Config_ID);
+        return { ok: true };
+      }
+
+      // Limpiar la anterior si existe y es distinta
+      if (current) {
+        await supabase
+          .from('TBL_Team_Column_Config')
+          .update({ Is_Stats_Start: false })
+          .eq('Config_ID', (current as any).Config_ID);
+      }
+
+      // Setear la nueva si no es null
+      if (columnId !== null) {
+        const { data: targetRow } = await supabase
+          .from('TBL_Team_Column_Config')
+          .select('Config_ID')
+          .eq('Team_ID', teamId)
+          .eq('Column_ID', columnId)
+          .maybeSingle();
+
+        if (targetRow) {
+          await supabase
+            .from('TBL_Team_Column_Config')
+            .update({ Is_Stats_Start: true })
+            .eq('Config_ID', (targetRow as any).Config_ID);
+        } else {
+          await supabase
+            .from('TBL_Team_Column_Config')
+            .insert({
+              Team_ID:           teamId,
+              Column_ID:         columnId,
+              Is_Visible:        true,
+              Evidence_Required: false,
+              Evidence_Label:    null,
+              Is_Close_Column:   false,
+              Is_Stats_Start:    true,
+            });
+        }
+      }
+      return { ok: true };
+    }
+
+    case 'fetchStatsStartConfig': {
+      const { boardId } = payload as { boardId: number };
+
+      const { data: cols, error: colsErr } = await supabase
+        .from('TBL_Board_Columns')
+        .select('Board_Column_ID, Board_Column_Slug, Board_Column_Position')
+        .eq('Board_Column_Board_ID', boardId)
+        .order('Board_Column_Position', { ascending: true });
+      if (colsErr) throw new Error(colsErr.message);
+
+      const { data: allTeams, error: teamsErr } = await supabase
+        .from('TBL_Board_Teams')
+        .select('Board_Team_ID, Board_Team_Code');
+      if (teamsErr) throw new Error(teamsErr.message);
+
+      const teamIds = (allTeams as any[]).map((t) => t.Board_Team_ID);
+
+      const { data: statsConfigs } = await supabase
+        .from('TBL_Team_Column_Config')
+        .select('Team_ID, Column_ID, Is_Stats_Start')
+        .in('Team_ID', teamIds.length > 0 ? teamIds : [-1])
+        .eq('Is_Stats_Start', true);
+
+      const columnPositions:  Record<string, number> = {};
+      const colIdToPos:       Record<number, number> = {};
+      for (const col of (cols as any[])) {
+        columnPositions[col.Board_Column_Slug] = col.Board_Column_Position;
+        colIdToPos[col.Board_Column_ID]        = col.Board_Column_Position;
+      }
+
+      const statsStartByTeam: Record<string, number> = {};
+      for (const cfg of ((statsConfigs ?? []) as any[])) {
+        const team = (allTeams as any[]).find((t) => t.Board_Team_ID === cfg.Team_ID);
+        if (team) {
+          const pos = colIdToPos[cfg.Column_ID];
+          if (pos !== undefined) statsStartByTeam[team.Board_Team_Code] = pos;
+        }
+      }
+
+      return { columnPositions, statsStartByTeam };
+    }
+
+     case 'updateCriteriaTitle': {
+      const { criteriaId, title } = payload as { criteriaId: number; title: string };
+      const { data, error } = await supabase
+        .from('TBL_Acceptance_Criteria')
+        .update({ Title: title.trim(), Updated_At: new Date().toISOString() })
+        .eq('Criteria_ID', criteriaId)
+        .select('Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At')
+        .single();
+      if (error) throw new Error(error.message);
+      return mapCriteria(data as Record<string, unknown>);
+    }   
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);

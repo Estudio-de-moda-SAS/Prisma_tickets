@@ -3,6 +3,7 @@ import { AddBtn, SmBtn, FieldLabel, ColorPicker} from '../ConfigPanel';
 import {
   useCreateKanbanTeam, useUpdateKanbanTeam,
   useTeamColumnConfig, useUpsertTeamColumnConfig,
+  useSetStatsStartColumn,
   useUpdateBoardColumn, useCreateBoardColumn, useReorderBoardColumn, useReorderBoardTeam,
   type KanbanTeam, type ColumnWithConfig,
 } from '@/features/requests/hooks/useKanbanAdmin';
@@ -394,8 +395,9 @@ function ColumnConfigPanel({ teamId, boardId, teamColor }: {
 }) {
   const { data: columns = [], isLoading } = useTeamColumnConfig(boardId, teamId);
   const upsertConfig = useUpsertTeamColumnConfig(teamId);
-  const updateColumn = useUpdateBoardColumn(boardId);
+  const updateColumn  = useUpdateBoardColumn(boardId);
   const reorderColumn = useReorderBoardColumn(boardId, teamId);
+  const setStatsStart = useSetStatsStartColumn(boardId, teamId);
   const [editColId, setEditColId] = useState<number | null>(null);
 
   if (isLoading) {
@@ -416,12 +418,15 @@ function ColumnConfigPanel({ teamId, boardId, teamColor }: {
 <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>visible</span>
         <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>evidencia</span>
         <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>cierre</span>
+        <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>stats</span>
         <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>editar</span>
         <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.5 }}>orden</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {columns.map((col, idx) =>
+        {(() => {
+          const statsStartSet = columns.some(c => c.Is_Stats_Start);
+          return columns.map((col, idx) =>
           editColId === col.Board_Column_ID ? (
             <ColumnEditForm
               key={col.Board_Column_ID}
@@ -462,12 +467,14 @@ onToggleVisible={(val) => upsertConfig.mutate({
                 evidenceRequired: col.Evidence_Required, evidenceLabel: label || null,
                 isCloseColumn: col.Is_Close_Column,
               })}
+              statsStartSet={statsStartSet}
+              onSetStatsStart={() => setStatsStart.mutate(col.Is_Stats_Start ? null : col.Board_Column_ID)}
               onEdit={() => setEditColId(col.Board_Column_ID)}
               onMoveUp={() => reorderColumn.mutate({ columnId: col.Board_Column_ID, direction: 'up' })}
               onMoveDown={() => reorderColumn.mutate({ columnId: col.Board_Column_ID, direction: 'down' })}
             />
-          )
-        )}
+)          );
+        })()}
       </div>
 
       {columns.length === 0 && (
@@ -478,7 +485,7 @@ onToggleVisible={(val) => upsertConfig.mutate({
 }
 
 /* ── ColumnConfigRow ── */
-function ColumnConfigRow({ col, index, total, teamColor, saving, onToggleVisible, onToggleEvidence, onToggleCloseColumn, onUpdateLabel, onEdit, onMoveUp, onMoveDown }: {
+function ColumnConfigRow({ col, index, total, teamColor, saving, onToggleVisible, onToggleEvidence, onToggleCloseColumn, onUpdateLabel, statsStartSet, onSetStatsStart, onEdit, onMoveUp, onMoveDown }: {
   col:              ColumnWithConfig;
   index:            number;
   total:            number;
@@ -488,6 +495,8 @@ function ColumnConfigRow({ col, index, total, teamColor, saving, onToggleVisible
   onToggleEvidence:    (val: boolean) => void;
   onToggleCloseColumn: (val: boolean) => void;
   onUpdateLabel:       (label: string) => void;
+  statsStartSet:       boolean;
+  onSetStatsStart:     () => void;
   onEdit:              () => void;
   onMoveUp:         () => void;
   onMoveDown:       () => void;
@@ -595,7 +604,30 @@ function ColumnConfigRow({ col, index, total, teamColor, saving, onToggleVisible
             <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
           </svg>
         </button>
-
+{/* Toggle inicio de estadísticas */}
+        <button
+          onClick={onSetStatsStart}
+          disabled={saving}
+          title={col.Is_Stats_Start
+            ? 'Quitar inicio de estadísticas'
+            : statsStartSet
+              ? 'Mover inicio de estadísticas a esta columna'
+              : 'Marcar como inicio de estadísticas (las columnas anteriores no contarán)'}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: 5, cursor: 'pointer', transition: 'all 0.12s',
+            border:     `1px solid ${col.Is_Stats_Start ? 'rgba(0,200,255,0.5)' : 'var(--border-subtle)'}`,
+            background: col.Is_Stats_Start ? 'rgba(0,200,255,0.15)' : 'transparent',
+            color:      col.Is_Stats_Start ? 'var(--accent)' : 'var(--txt-muted)',
+            opacity:    col.Is_Stats_Start ? 1 : statsStartSet ? 0.3 : 1,
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+        </button>
         {/* Editar columna global */}
         <SmBtn color="#a29bfe" onClick={onEdit} title="Editar nombre, color y límite">
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6">

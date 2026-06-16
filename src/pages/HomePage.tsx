@@ -205,7 +205,7 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
 
   return (
     <button onClick={onClick} style={{
-      flex: '1 1 0', minWidth: 0, textAlign: 'left',
+      flexShrink: 0, width: 200,
       background: isActive ? `linear-gradient(145deg, ${c.dot}16 0%, ${c.dot}07 100%)` : 'var(--surface-1)',
       border: `1px solid ${isActive ? c.dot + '55' : 'var(--border)'}`,
       borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
@@ -351,7 +351,107 @@ function flattenTemplateFields(
     }
   }
 }
+/* ══════════════════════════════════════════════════════════════
+   TabsScroller — scroll horizontal con fades y flechas
+   ══════════════════════════════════════════════════════════════ */
+import { useRef, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+function TabsScroller({ children }: { children: React.ReactNode }) {
+  const scrollRef   = useRef<HTMLDivElement>(null);
+  const [canLeft,  setCanLeft]  = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const update = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, [update]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
+  };
+
+  const btnStyle = (visible: boolean, side: 'left' | 'right'): React.CSSProperties => ({
+    position: 'absolute', top: '50%', [side]: 0,
+    transform: 'translateY(-50%)',
+    zIndex: 2,
+    width: 28, height: 28, borderRadius: '50%',
+    background: 'var(--surface-1)',
+    border: '1px solid var(--border)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', color: 'var(--txt-muted)',
+    opacity: visible ? 1 : 0,
+    pointerEvents: visible ? 'auto' : 'none',
+    transition: 'opacity 0.2s, color 0.15s',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+  });
+
+  return (
+    <div style={{ position: 'relative' }}>
+
+      {/* Fade izquierdo */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, zIndex: 1,
+        background: 'linear-gradient(to right, var(--bg) 30%, transparent)',
+        opacity: canLeft ? 1 : 0, transition: 'opacity 0.2s', pointerEvents: 'none',
+      }} />
+
+      {/* Fade derecho */}
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, zIndex: 1,
+        background: 'linear-gradient(to left, var(--bg) 30%, transparent)',
+        opacity: canRight ? 1 : 0, transition: 'opacity 0.2s', pointerEvents: 'none',
+      }} />
+
+      {/* Flecha izquierda */}
+      <button
+        onClick={() => scroll('left')}
+        style={btnStyle(canLeft, 'left')}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+      >
+        <ChevronLeft size={14} />
+      </button>
+
+      {/* Flecha derecha */}
+      <button
+        onClick={() => scroll('right')}
+        style={btnStyle(canRight, 'right')}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+      >
+        <ChevronRight size={14} />
+      </button>
+
+      {/* Contenedor scrollable (sin scrollbar) */}
+      <div
+        ref={scrollRef}
+        style={{
+          display: 'flex', gap: 10,
+          overflowX: 'auto', scrollbarWidth: 'none',
+          padding: '2px 4px',         /* espacio para el box-shadow de los tabs */
+        }}
+        /* webkit */
+        onScroll={update}
+      >
+        <style>{`#tabs-scroll::-webkit-scrollbar{display:none}`}</style>
+        {children}
+      </div>
+    </div>
+  );
+}
 /* ══════════════════════════════════════════════════════════════
    EquipoPanel
    ─────────────────────────────────────────────────────────────
@@ -598,8 +698,8 @@ export function HomePage() {
         </div>
       </div>
       {/* Tabs de equipo */}
-      <div style={{ display: 'flex', gap: 10 }}>
-        {visibleTeams.map((team) => (
+<TabsScroller>
+          {visibleTeams.map((team) => (
           <EquipoTab
             key={team.Board_Team_Code}
             equipo={team.Board_Team_Code}
@@ -612,7 +712,7 @@ export function HomePage() {
             onClick={() => setActiveEquipo(team.Board_Team_Code)}
           />
         ))}
-      </div>
+      </TabsScroller>
 
       {/* Panel principal */}
       <EquipoPanel

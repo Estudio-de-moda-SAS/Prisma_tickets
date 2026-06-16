@@ -12,7 +12,8 @@ import { useSubTeams }               from '@/features/requests/hooks/useSubTeams
 import { useSubTeamMembersGrouped }  from '@/features/requests/hooks/useSubTeamMembers';
 import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStatsData';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
-import { useBoardTeams }   from '@/features/requests/hooks/useBoardMetadata';
+import { useBoardTeams }       from '@/features/requests/hooks/useBoardMetadata';
+import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { config }          from '@/config';
 import '@/styles/stats.css';
 
@@ -126,7 +127,7 @@ function BarChart({ id, data, height = 180 }: { id: string; data: ColStatReal[] 
   return <div style={{ position: 'relative', height }}><canvas ref={canvasRef} id={id} role="img" aria-label="Gráfico de barras" /></div>;
 }
 
-function ScoreDonut({ realizado, total }: { realizado: number; total: number }) {
+function ScoreDonut({ realizado, total, label = 'velocidad' }: { realizado: number; total: number; label?: string }) {
   const pct = total > 0 ? Math.round((realizado / total) * 100) : 0;
   const r = 36, circ = 2 * Math.PI * r, dash = (pct / 100) * circ;
   return (
@@ -137,7 +138,7 @@ function ScoreDonut({ realizado, total }: { realizado: number; total: number }) 
           strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
           strokeDashoffset={circ * 0.25} style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x="44" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--txt)">{pct}%</text>
-        <text x="44" y="54" textAnchor="middle" fontSize="9" fill="var(--txt-muted)">velocity</text>
+        <text x="44" y="54" textAnchor="middle" fontSize="9" fill="var(--txt-muted)">{label}</text>
       </svg>
       <div className="score-donut__labels">
         <div className="score-donut__row"><span className="score-donut__dot" style={{ background: 'var(--accent)' }} /><span>Realizado <strong>{realizado}</strong></span></div>
@@ -147,33 +148,85 @@ function ScoreDonut({ realizado, total }: { realizado: number; total: number }) 
   );
 }
 
-function SprintSelector({ sprints, selectedId, onChange }: { sprints: Sprint[]; selectedId: number | null; onChange: (id: number | null) => void }) {
+function SprintSelector({ sprints, selectedIds, onChange }: {
+  sprints:     Sprint[];
+  selectedIds: number[];
+  onChange:    (ids: number[]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const sel = sprints.find(s => s.Sprint_ID === selectedId);
+
   useEffect(() => {
     if (!open) return;
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
+
+  const toggle = (id: number) => {
+    onChange(selectedIds.includes(id) ? selectedIds.filter(i => i !== id) : [...selectedIds, id]);
+  };
+
+  const label =
+    selectedIds.length === 0
+      ? 'Todos los sprints'
+      : selectedIds.length === 1
+      ? (sprints.find(s => s.Sprint_ID === selectedIds[0])?.Sprint_Text ?? 'Sprint')
+      : `${selectedIds.length} sprints`;
+
   return (
     <div className="sprint-selector" ref={ref}>
       <button className="sprint-selector__btn" onClick={() => setOpen(o => !o)}>
-        <Target size={12} /><span>{sel?.Sprint_Text ?? 'Todos los sprints'}</span>
+        <Target size={12} />
+        <span>{label}</span>
+        {selectedIds.length > 0 && (
+          <button
+            className="sprint-selector__clear-btn"
+            title="Ver todos los sprints"
+            onClick={e => { e.stopPropagation(); onChange([]); }}
+          >
+            <X size={9} />
+          </button>
+        )}
         <ChevronDown size={11} style={{ marginLeft: 'auto', opacity: 0.5 }} />
       </button>
+
       {open && (
         <div className="sprint-selector__menu">
-          <button className={['sprint-selector__item', selectedId === null ? 'sprint-selector__item--active' : ''].join(' ')} onClick={() => { onChange(null); setOpen(false); }}>Todos los sprints</button>
-          {[...sprints].sort((a, b) => a.Sprint_ID - b.Sprint_ID).map(s => (
-            <button key={s.Sprint_ID}
-              className={['sprint-selector__item', selectedId === s.Sprint_ID ? 'sprint-selector__item--active' : ''].join(' ')}
-              onClick={() => { onChange(s.Sprint_ID); setOpen(false); }}>
-              <span>{s.Sprint_Text}</span>
-              <span className="sprint-selector__dates">{fmtDate(new Date(s.Sprint_Start_Date))} → {fmtDate(new Date(s.Sprint_End_Date))}</span>
-            </button>
-          ))}
+          <button
+            className={['sprint-selector__item', selectedIds.length === 0 ? 'sprint-selector__item--active' : ''].join(' ')}
+            onClick={() => onChange([])}
+          >
+            Todos los sprints
+          </button>
+          {[...sprints].sort((a, b) => a.Sprint_ID - b.Sprint_ID).map(s => {
+            const isSelected = selectedIds.includes(s.Sprint_ID);
+            return (
+              <button
+                key={s.Sprint_ID}
+                className={['sprint-selector__item', isSelected ? 'sprint-selector__item--active' : ''].join(' ')}
+                onClick={() => toggle(s.Sprint_ID)}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <span style={{
+                    width: 12, height: 12, borderRadius: 3,
+                    border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                    background: isSelected ? 'var(--accent)' : 'transparent',
+                    flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.15s, border-color 0.15s',
+                  }}>
+                    {isSelected && <Check size={8} style={{ color: 'var(--bg)' }} />}
+                  </span>
+                  {s.Sprint_Text}
+                </span>
+                <span className="sprint-selector__dates">
+                  {fmtDate(new Date(s.Sprint_Start_Date))} → {fmtDate(new Date(s.Sprint_End_Date))}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -340,20 +393,28 @@ function UserFilterDropdown({
 export function StatsPage() {
   const GLOBAL_KEY = 'global';
 
-  const [sprintId,   setSprintId]   = useState<number | null>(null);
+  const [sprintIds,  setSprintIds]  = useState<number[]>([]);
   const [userFilter, setUserFilter] = useState<number | null>(null);
   const [teamTab,    setTeamTab]    = useState<string>(GLOBAL_KEY);
   const autoSelectedTeam = useRef(false);
   const sprintAutoSelected = useRef(false); 
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: boardTeams = [] }  = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: statsStartConfig } = useStatsStartConfig(config.DEFAULT_BOARD_ID);
   const teamColorMap = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Color])), [boardTeams]);
   const teamNameMap  = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Name])),  [boardTeams]);
 
   const isGlobal = teamTab === GLOBAL_KEY;
 
-  const stats = useStatsData(sprintId, boardTeams, userFilter, isGlobal ? null : teamTab);
-
+  const stats = useStatsData(sprintIds, boardTeams, userFilter, isGlobal ? null : teamTab, statsStartConfig ?? undefined);
+const sprintDatesBadge = useMemo(() => {
+    const sel = stats.sprints.filter(s => sprintIds.includes(s.Sprint_ID));
+    if (sel.length === 0) return null;
+    if (sel.length === 1)
+      return `${fmtDate(new Date(sel[0].Sprint_Start_Date))} — ${fmtDate(new Date(sel[0].Sprint_End_Date))}`;
+    const sorted = [...sel].sort((a, b) => a.Sprint_Start_Date.localeCompare(b.Sprint_Start_Date));
+    return `${fmtDate(new Date(sorted[0].Sprint_Start_Date))} — ${fmtDate(new Date(sorted[sorted.length - 1].Sprint_End_Date))}`;
+  }, [stats.sprints, sprintIds]);
 /** Board_Team_ID del tab seleccionado — null en Global */
   const selectedBoardTeamId = useMemo(
     () => isGlobal ? null : (boardTeams.find(t => t.Board_Team_Code === teamTab)?.Board_Team_ID ?? null),
@@ -363,12 +424,13 @@ export function StatsPage() {
 useEffect(() => {
   if (stats.sprints.length > 0 && !sprintAutoSelected.current) {
     sprintAutoSelected.current = true;
-    const now      = new Date();
-    const active   = stats.sprints.find(s =>
-      new Date(s.Sprint_Start_Date) <= now && now <= new Date(s.Sprint_End_Date)
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const active = stats.sprints.find(s =>
+      s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
     );
     const fallback = [...stats.sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0];
-    setSprintId((active ?? fallback).Sprint_ID);
+    setSprintIds([(active ?? fallback).Sprint_ID]);
   }
 }, [stats.sprints]);
 
@@ -395,8 +457,7 @@ useEffect(() => {
   const maxPri    = boardData ? Math.max(...boardData.porPrioridad.map(p => p.value), 1) : 1;
 
 const totalSprint = sp.planeadas + sp.postPlanning;
-const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) * 100) : 0;  const velocity      = sp.puntajePlaneado > 0 ? Math.round((sp.puntajeRealizado / sp.puntajePlaneado)  * 100) : 0;
-  const velocityColor = velocity >= 80 ? 'var(--success)' : velocity >= 50 ? 'var(--warn)' : 'var(--danger)';
+const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) * 100) : 0;
   const teamColor     = isGlobal ? 'var(--accent)' : (teamColorMap[teamTab] ?? 'var(--accent)');
 
   return (
@@ -425,19 +486,14 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
       {/* ═══ Control bar ════════════════════════════════════════ */}
       <div className="stats-control-bar">
         <div className="stats-control-bar__left">
-          <SprintSelector sprints={stats.sprints} selectedId={sprintId} onChange={setSprintId} />
-          {sp.sprint && (
-            <span className="sprint-dates-badge">
-              {fmtDate(new Date(sp.sprint.Sprint_Start_Date))} — {fmtDate(new Date(sp.sprint.Sprint_End_Date))}
-            </span>
-          )}
+          <SprintSelector sprints={stats.sprints} selectedIds={sprintIds} onChange={setSprintIds} />
+          {sprintDatesBadge && <span className="sprint-dates-badge">{sprintDatesBadge}</span>}
           <div className="sprint-progress-pill">
             <div className="sprint-progress-pill__fill" style={{ width: `${pctCompleto}%` }} />
             <span>{pctCompleto}% completado</span>
           </div>
         </div>
         <div className="stats-control-bar__right">
-          <a href="/new" className="stats-quick-link"><Zap size={11} /> Nueva solicitud</a>
           <a href="/"    className="stats-quick-link"><LayoutGrid size={11} /> Board</a>
           <UserFilterDropdown
             boardTeamId={selectedBoardTeamId}
@@ -470,15 +526,27 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
           <div className="stats-mid-grid">
             <div className="stats-panel">
               <div className="stats-panel__header">
-                <span className="stats-panel__title"><Star size={12} /> Puntaje &amp; Velocidad</span>
-                <span className="stats-velocity-badge" style={{ color: velocityColor }}>{velocity}% velocity</span>
+                <span className="stats-panel__title"><Star size={12} /> Puntaje &amp; Cumplimiento</span>
+                <span className="stats-velocity-badge" style={{ color: sp.cumplimiento >= 80 ? 'var(--success)' : sp.cumplimiento >= 50 ? 'var(--warn)' : 'var(--danger)' }}>
+                  {sp.cumplimiento}% cumplimiento
+                </span>
               </div>
               <div className="score-panel">
-                <ScoreDonut realizado={sp.puntajeRealizado} total={sp.puntajePlaneado} />
+                <ScoreDonut realizado={sp.puntajeReal} total={sp.meta} label="cumplimiento" />
                 <div className="score-panel__detail">
-                  <div className="score-detail-row"><span>Pts. total</span><strong>{sp.puntajePlaneado}</strong></div>
+                  <div className="score-detail-row"><span>Pts. planeados</span><strong>{sp.puntajePlaneado}</strong></div>
+                  <div className="score-detail-row"><span>Meta (83.3%)</span><strong>{sp.meta}</strong></div>
                   <div className="score-detail-row"><span>Pts. realizados</span><strong style={{ color: 'var(--accent)' }}>{sp.puntajeRealizado}</strong></div>
-                  
+                  <div className="score-detail-row">
+                    <span>Penalización</span>
+                    <strong style={{ color: 'var(--danger)' }}>
+                      {sp.penalizacion > 0 ? `−${sp.penalizacion}` : '—'}
+                    </strong>
+                  </div>
+                  <div className="score-detail-row" style={{ borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 4 }}>
+                    <span>Pts. reales</span>
+                    <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal}</strong>
+                  </div>
                   <p className="score-detail-note">Puntos: Baja 1 · Media 2 · Alta 4 · Crítica 6</p>
                 </div>
               </div>
@@ -524,8 +592,10 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                   <BarChart id="teamChart" data={gn.porEquipo.map(e => ({ label: (teamNameMap[e.equipo] ?? e.equipo).split(' ')[0], value: e.creadas, color: teamColorMap[e.equipo] ?? '#888888' }))} />
                 </div>
                 <div className="stats-panel">
-                  <div className="stats-panel__header"><span className="stats-panel__title">SLA cumplido por equipo</span></div>
-                  {gn.porEquipo.map(e => <BarRow key={e.equipo} label={(teamNameMap[e.equipo] ?? e.equipo).split(' ')[0]} value={e.sla} max={100} color={teamColorMap[e.equipo] ?? '#888'} />)}
+                  <div className="stats-panel__header"><span className="stats-panel__title">Cumplimiento por equipo</span></div>
+                  {Object.entries(stats.boards).map(([code, bd]) => (
+                    <BarRow key={code} label={(teamNameMap[code] ?? code).split(' ')[0]} value={bd.cumplimiento} max={100} color={teamColorMap[code] ?? '#888'} />
+                  ))}
                 </div>
               </div>
               <div className="stats-comp-grid">
@@ -534,7 +604,7 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                     <div className="stats-comp-card__name">{teamNameMap[e.equipo] ?? e.equipo}</div>
                     <div className="stats-comp-stat"><span>Creadas</span><span>{e.creadas}</span></div>
                     <div className="stats-comp-stat"><span>Resueltas</span><span>{e.resueltas}</span></div>
-                    <div className="stats-comp-stat"><span>SLA</span><span>{e.sla}%</span></div>
+                    <div className="stats-comp-stat"><span>Cumplimiento</span><span>{stats.boards[e.equipo]?.cumplimiento ?? 0}%</span></div>
                     <div className="stats-comp-stat"><span>Críticas</span><span style={{ color: e.criticas > 0 ? 'var(--danger)' : 'var(--success)' }}>{e.criticas}</span></div>
                     <div className="stats-comp-stat"><span>Score</span><span style={{ color: 'var(--accent)' }}>{e.score}</span></div>
                   </div>
@@ -550,7 +620,7 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
               <div className="stats-kpi-grid">
                 <KPICard label="Solicitudes"      value={boardData.creadas}    sub="En este equipo"          trend="neutral" accent={teamColor} />
                 <KPICard label="Resueltas"        value={boardData.resueltas}  sub="Columna Hecho"           trend="up"      accent="var(--success)" />
-                <KPICard label="SLA cumplido"     value={`${boardData.sla}%`}  sub="Con deadline respetado"  trend={boardData.sla > 70 ? 'up' : 'down'} accent="var(--warn)" />
+                <KPICard label="Cumplimiento" value={`${boardData.cumplimiento}%`} sub="Pts. reales vs meta" trend={boardData.cumplimiento >= 80 ? 'up' : boardData.cumplimiento >= 50 ? 'neutral' : 'down'} accent="var(--warn)" />
                 <KPICard label="Críticas activas" value={boardData.criticas}
                   sub={boardData.criticas > 0 ? `${boardData.criticas} sin resolver` : '✓ ninguna'}
                   trend={boardData.criticas > 0 ? 'down' : 'neutral'} accent="var(--danger)" trendGood="down" />

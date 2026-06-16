@@ -41,14 +41,15 @@ export function UserList() {
     })();
   }, []);
 
-  async function handleUpdate(updated: ManagedUser) {
-    setUsers((prev) => prev.map((u) => u.User_ID === updated.User_ID ? updated : u));
-    setEditId(null);
-    qc.invalidateQueries({ queryKey: ['allUsers'] });
-    if (dbUser && updated.User_ID === dbUser.User_ID) {
-      await refreshDbUser();
-    }
+async function handleUpdate(updated: ManagedUser) {
+  setUsers((prev) => prev.map((u) => u.User_ID === updated.User_ID ? updated : u));
+  setEditId(null);
+  qc.invalidateQueries({ queryKey: ['allUsers'] });
+  if (dbUser && updated.User_ID === dbUser.User_ID) {
+    await refreshDbUser();
+    qc.invalidateQueries({ queryKey: ['currentUser'] });
   }
+}
 
   async function handlePreRegister(newUser: ManagedUser) {
     setUsers((prev) => [...prev, newUser]);

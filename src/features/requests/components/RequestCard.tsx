@@ -11,6 +11,7 @@ import {
 import { useTheme } from '@/store/useTheme';
 import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/hooks/useBoardMetadata';
 import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
+import { useLabelsByBoardId }    from '@/features/requests/hooks/useLabels';
 import { config } from '@/config';
 import type { Request } from '../types';
 import type { Notification } from '@/types/commons';
@@ -128,6 +129,20 @@ const IconBranch = () => (
     <circle cx="18" cy="6" r="3"/>
     <circle cx="6" cy="18" r="3"/>
     <path d="M18 9a9 9 0 0 1-9 9"/>
+  </svg>
+);
+
+const IconTag = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
   </svg>
 );
 
@@ -304,7 +319,7 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
   const { data: allTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
-
+  const { data: allLabels    = [] } = useLabelsByBoardId(config.DEFAULT_BOARD_ID);
   const { theme: uiTheme }         = useTheme();
   const isBeingDragged             = isSortableDragging || isDragging;
   const progreso                   = request.progreso ?? 0;
@@ -322,6 +337,9 @@ export function RequestCard({ request, isDragging = false, onClick, unreadNotifi
   const accent       = template.visual.accentColor;
 
   const isSubRequest   = (request.parentId ?? null) !== null;
+  const matchedLabels   = allLabels.filter((l) => request.labelIds.includes(l.Label_ID));
+  const loggedComplete  = request.estimatedHours != null && (request.loggedHours ?? 0) >= request.estimatedHours;
+  const loggedColor     = loggedComplete ? 'var(--success)' : accent;
   const childCount     = request.childCount ?? 0;
   const primerAsignado = request.assignees?.[0] ?? null;
   const isCerrada = !!request.fechaCierre;
@@ -449,6 +467,72 @@ const closureBorderStyle = isCerrada
           <MetaRow icon={<IconSprint />} label="Sprint">
             <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: 'rgba(162,155,254,0.1)', border: '1px solid rgba(162,155,254,0.25)', color: '#a29bfe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>
               {request.sprintName}
+            </span>
+          </MetaRow>
+        )}
+
+{matchedLabels.length > 0 && (
+  <MetaRow icon={<IconTag />} label="Categorías">
+    <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 3, alignItems: 'center', overflow: 'hidden', minWidth: 0 }}>
+      {matchedLabels.slice(0, 1).map((l) => (
+        <span key={l.Label_ID} style={{
+          display:       'inline-flex',
+          alignItems:    'center',
+          gap:           3,
+          fontSize:      9,
+          fontWeight:    700,
+          letterSpacing: 0.3,
+          padding:       '1px 5px',
+          borderRadius:  3,
+          background:    `${l.Label_Color}15`,
+          border:        `1px solid ${l.Label_Color}35`,
+          color:         l.Label_Color,
+          flexShrink:    0,
+          whiteSpace:    'nowrap',
+        }}>
+          <span style={{ fontSize: 10 }}>{l.Label_Icon}</span>
+          {l.Label_Name}
+        </span>
+      ))}
+      {matchedLabels.length > 1 && (
+        <span
+          title={matchedLabels.slice(2).map((l) => l.Label_Name).join(', ')}
+          style={{
+            fontSize:      9,
+            fontWeight:    700,
+            padding:       '1px 5px',
+            borderRadius:  3,
+            background:    'rgba(255,255,255,0.06)',
+            border:        '1px solid var(--border-subtle)',
+            color:         'var(--txt-muted)',
+            flexShrink:    0,
+            whiteSpace:    'nowrap',
+          }}>
+          +{matchedLabels.length - 1}
+        </span>
+      )}
+    </div>
+  </MetaRow>
+)}
+
+        {request.estimatedHours != null && (
+          <MetaRow icon={<IconClock />} label="Estimado">
+            <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt)', letterSpacing: 0.2 }}>
+              {request.estimatedHours}h
+            </span>
+          </MetaRow>
+        )}
+
+{request.loggedHours != null && request.loggedHours > 0 && (
+          <MetaRow icon={<IconClock />} label="Consumido">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, color: loggedColor }}>
+              {loggedComplete && <IconCheck />}
+              {request.loggedHours}h
+              {request.estimatedHours != null && !loggedComplete && (
+                <span style={{ fontSize: 9, fontWeight: 400, color: 'var(--txt-muted)', marginLeft: 2 }}>
+                  / {request.estimatedHours}h
+                </span>
+              )}
             </span>
           </MetaRow>
         )}
