@@ -18,11 +18,18 @@ function LoginAnnouncementStrip() {
         const color  = TYPE_COLOR[a.type] ?? '#00c8ff';
         const border = color + '35';
         return (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 20px', background: 'rgba(13,15,20,0.90)', backdropFilter: 'blur(10px)', borderBottom: `1px solid ${border}` }}>
-            <span style={{ fontSize: 12 }}>{TYPE_ICON[a.type]}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color }}>{a.title}</span>
-            {a.body && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>· {a.body}</span>}
-          </div>
+  <div key={a.id} style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    padding: '9px 20px',
+    background: color + '18',
+    backdropFilter: 'blur(10px)',
+    borderBottom: `1px solid ${border}`,
+    borderLeft: `3px solid ${color}`
+  }}>
+    <span style={{ fontSize: 12 }}>{TYPE_ICON[a.type]}</span>
+    <span style={{ fontSize: 12, fontWeight: 700, color }}>{a.title}</span>
+    {a.body && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>· {a.body}</span>}
+  </div>
         );
       })}
     </div>
