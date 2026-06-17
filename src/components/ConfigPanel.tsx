@@ -24,6 +24,7 @@ import { SprintList } from './ConfigPanelComponents/SprintsConfig';
 import { EmailTemplateList } from './ConfigPanelComponents/EmailsTemplatesConfig';
 import { KanbanSection } from './ConfigPanelComponents/KanbansConfig';
 import { TemplateList } from './ConfigPanelComponents/RequestsTemplates';
+import { AnnouncementsConfig } from './ConfigPanelComponents/AnnouncementsConfig';
 /* ============================================================
 
    Constantes
@@ -44,7 +45,7 @@ const TEAM_CODE_COLORS: Record<string, string> = {
   analisis:   '#7F77DD',
 };
 
-type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org' | 'kanbans';
+type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org' | 'kanbans' | 'announcements';
 
 const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'labels',    label: 'Etiquetas',   icon: '🏷️' },
@@ -53,6 +54,7 @@ const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'kanbans',   label: 'Kanbans',     icon: '🗂️' },
   { key: 'templates', label: 'Templates',   icon: '📋' },  { key: 'users',     label: 'Usuarios',    icon: '👤' },
   { key: 'emails',    label: 'Correos',     icon: '✉️' },
+  { key: 'announcements', label: 'Avisos', icon: '📢' },
   { key: 'org',       label: 'Organización',  icon: '🏢' }, 
 ];
 /* ============================================================
@@ -176,7 +178,7 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
   }
 
   const activeNav = NAV_ITEMS.find((n) => n.key === section)!;
-const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails' && section !== 'org' && section !== 'kanbans';
+const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails' && section !== 'org' && section !== 'kanbans' && section !== 'announcements';
 
   return createPortal(
     <div className="cpanel-backdrop" onClick={handleBackdrop}>
@@ -200,7 +202,7 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
 
             <div className="cpanel__nav-group">
               <span className="cpanel__nav-group-label">Board</span>
-{NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails' && n.key !== 'org').map((item) => (                <button key={item.key} onClick={() => setSection(item.key)}
+{NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails' && n.key !== 'org' && n.key !== 'announcements').map((item) => (                <button key={item.key} onClick={() => setSection(item.key)}
                   className={`cpanel__nav-item${section === item.key ? ' cpanel__nav-item--active' : ''}`}>
                   <span className="cpanel__nav-item-icon">{item.icon}</span>
                   <span>{item.label}</span>
@@ -230,6 +232,11 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                 <span className="cpanel__nav-item-icon">👤</span>
                 <span>Usuarios</span>
               </button>
+              <button onClick={() => setSection('announcements')}
+  className={`cpanel__nav-item${section === 'announcements' ? ' cpanel__nav-item--active' : ''}`}>
+  <span className="cpanel__nav-item-icon">📢</span>
+  <span>Avisos</span>
+</button>
               <button onClick={() => setSection('org')}
   className={`cpanel__nav-item${section === 'org' ? ' cpanel__nav-item--active' : ''}`}>
   <span className="cpanel__nav-item-icon">🏢</span>
@@ -262,6 +269,9 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   {section === 'emails' && (
                     <p className="cpanel__content-subtitle">Templates HTML por evento</p>
                   )}
+                  {section === 'announcements' && (
+  <p className="cpanel__content-subtitle">Avisos activos de la plataforma</p>
+)}
                   {section === 'org' && (
                     <p className="cpanel__content-subtitle">Departamentos y equipos corporativos</p>
                   )}
@@ -329,6 +339,7 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   onUpdateMetadata={(id, d) => updateEmailTemplateMetadata.mutate({ id, ...d })}
                 />
               )}
+                {section === 'announcements' && <AnnouncementsConfig />}
               {section === 'org' && <OrgSection />}
               {section === 'kanbans' && <KanbanSection />}            </div>
           </div>

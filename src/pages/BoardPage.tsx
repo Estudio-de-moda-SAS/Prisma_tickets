@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { KanbanBoard } from '@/features/requests/components/KanbanBoard';
 import { BoardFilters, type FilterDynamicOptions, type TemplateFilterOption, type TemplateFieldOption } from '@/features/requests/components/BoardFilters';
 import { BoardCustomizationTrigger } from '@/features/requests/components/BoardCustomization';
+import { MemberHoursBar } from '@/features/requests/components/MemberHoursBar'
 import { useFilteredBoard } from '@/features/requests/hooks/useFilteredBoard';
 import { config } from '@/config';
 import type { KanbanColumna, Request } from '@/features/requests/types';
@@ -269,11 +270,12 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
-          <BoardCustomizationTrigger />
-          <KanbanZoomControl />
-        </div>
+<div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+  <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
+  <BoardCustomizationTrigger />
+  <KanbanZoomControl />
+  <MemberHoursBar filteredData={filteredData} groupedMembers={groupedMembers} />
+</div>
 
         {config.USE_MOCK && (
           <span style={{ fontSize: 10, color: 'var(--warn)', background: 'rgba(255,165,2,0.08)', border: '1px solid rgba(255,165,2,0.2)', borderRadius: 4, padding: '3px 10px', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 600, flexShrink: 0 }}>

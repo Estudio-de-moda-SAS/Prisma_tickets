@@ -4,10 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown,
   Send, Trash2, Paperclip, Upload, FileText, Image, File,
-  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert,
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useDeleteRequest } from '../hooks/useRequests';
+import { useCreateRequest } from '../hooks/useCreateRequest';
 import { useUpdateRequest } from '../hooks/UseUpdateRequest';
 import { KANBAN_COLUMNAS, PRIORIDADES, COLUMNAS_CIERRE, PRIORIDAD_TO_SCORE } from '../types';
 import type { Request, KanbanColumna, Prioridad, Equipo } from '../types';
@@ -20,7 +21,7 @@ import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/feat
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useChildRequests } from '@/features/requests/hooks/useSubRequest';
-import { useAcceptanceCriteria, useUpdateCriteriaStatus } from '@/features/requests/hooks/useAcceptanceCriteria';
+import { useAcceptanceCriteria, useUpdateCriteriaStatus, useCreateCriteria, useDeleteCriteria, useUpdateCriteriaTitle } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { CreateRequestModal } from './CreateRequestModal';
@@ -237,15 +238,24 @@ function SubRequestsPanel({
 }
 
 /* ─── AcceptanceCriteriaPanel ──────────────────────────────── */
+/* ─── AcceptanceCriteriaPanel ──────────────────────────────── */
 function AcceptanceCriteriaPanel({
   requestId, readOnly, currentUserId,
 }: {
   requestId: string; readOnly: boolean; currentUserId: number | undefined;
 }) {
   const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
-  const { mutate: updateStatus, isPending } = useUpdateCriteriaStatus(requestId);
+  const { mutate: updateStatus, isPending: updatingStatus } = useUpdateCriteriaStatus(requestId);
+  const { mutate: updateTitle,  isPending: updatingTitle  } = useUpdateCriteriaTitle(requestId);
+  const { mutate: deleteCrit,   isPending: deleting       } = useDeleteCriteria(requestId);
+  const { mutate: createCrit,   isPending: creating       } = useCreateCriteria(requestId);
+
   const [reviewNotes,  setReviewNotes]  = useState<Record<number, string>>({});
   const [expandedNote, setExpandedNote] = useState<number | null>(null);
+  const [editingId,    setEditingId]    = useState<number | null>(null);
+  const [editText,     setEditText]     = useState('');
+  const [newTitle,     setNewTitle]     = useState('');
+  const [showNew,      setShowNew]      = useState(false);
 
   const accepted = criteria.filter((c) => c.status === 'accepted').length;
   const rejected = criteria.filter((c) => c.status === 'rejected').length;
@@ -257,6 +267,29 @@ function AcceptanceCriteriaPanel({
     if (status !== 'pending') setExpandedNote(null);
   }
 
+  function handleStartEdit(c: AcceptanceCriteria) {
+    setEditingId(c.criteriaId);
+    setEditText(c.title);
+    setExpandedNote(null);
+    setShowNew(false);
+  }
+
+  function handleSaveEdit(criteriaId: number) {
+    const title = editText.trim();
+    if (!title) return;
+    updateTitle({ criteriaId, title }, { onSuccess: () => setEditingId(null) });
+  }
+
+  function handleDelete(criteriaId: number) {
+    deleteCrit({ criteriaId }, { onSuccess: () => { if (editingId === criteriaId) setEditingId(null); } });
+  }
+
+  function handleCreate() {
+    const title = newTitle.trim();
+    if (!title) return;
+    createCrit({ title }, { onSuccess: () => { setNewTitle(''); setShowNew(false); } });
+  }
+
   const STATUS_COLOR:  Record<string, string> = { pending: 'var(--txt-muted)', accepted: 'var(--success)', rejected: 'var(--danger)' };
   const STATUS_BG:     Record<string, string> = { pending: 'rgba(255,255,255,0.04)', accepted: 'rgba(0,229,160,0.06)', rejected: 'rgba(255,71,87,0.06)' };
   const STATUS_BORDER: Record<string, string> = { pending: 'var(--border-subtle)', accepted: 'rgba(0,229,160,0.25)', rejected: 'rgba(255,71,87,0.25)' };
@@ -266,60 +299,178 @@ function AcceptanceCriteriaPanel({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {total > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <div style={{ flex: 1, height: 4, borderRadius: 3, background: 'var(--bg-surface)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ height: '100%', width: `${Math.round((accepted / total) * 100)}%`, borderRadius: 3, background: rejected > 0 ? 'var(--danger)' : 'var(--success)', transition: 'width 0.3s ease' }} />
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: rejected > 0 ? 'var(--danger)' : accepted === total ? 'var(--success)' : 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>{accepted}/{total}</span>
-        </div>
-      )}
-      {total === 0 && (
+
+      {/* ── Header: barra de progreso + botón Nuevo ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {total > 0 && (
+          <>
+            <div style={{ flex: 1, height: 4, borderRadius: 3, background: 'var(--bg-surface)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ height: '100%', width: `${Math.round((accepted / total) * 100)}%`, borderRadius: 3, background: rejected > 0 ? 'var(--danger)' : 'var(--success)', transition: 'width 0.3s ease' }} />
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: rejected > 0 ? 'var(--danger)' : accepted === total ? 'var(--success)' : 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>{accepted}/{total}</span>
+          </>
+        )}
+        {!readOnly && (
+          <button
+            onClick={() => { setShowNew(true); setEditingId(null); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 5, fontSize: 10, fontWeight: 700, border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.06)', color: 'var(--accent)', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.14)'; e.currentTarget.style.borderColor = 'rgba(0,200,255,0.5)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(0,200,255,0.3)'; }}
+          >
+            <Plus size={9} />Nuevo
+          </button>
+        )}
+      </div>
+
+      {total === 0 && !showNew && (
         <div style={{ padding: '8px 12px', borderRadius: 6, background: 'rgba(255,71,87,0.05)', border: '1px solid rgba(255,71,87,0.2)', fontSize: 11, color: 'var(--danger)' }}>
           Esta solicitud no tiene criterios de aceptación definidos.
         </div>
       )}
-      {criteria.map((c) => (
-        <div key={c.criteriaId} style={{ borderRadius: 8, border: `1px solid ${STATUS_BORDER[c.status]}`, background: STATUS_BG[c.status], overflow: 'hidden', transition: 'all 0.15s' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${STATUS_COLOR[c.status]}15`, border: `1.5px solid ${STATUS_COLOR[c.status]}40` }}>
-              {c.status === 'accepted' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="var(--success)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-              {c.status === 'rejected' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-              {c.status === 'pending' && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--txt-muted)' }} />}
+
+      {/* ── Lista de criterios ── */}
+      {criteria.map((c) => {
+        const isEditing = editingId === c.criteriaId;
+        return (
+          <div key={c.criteriaId} style={{ borderRadius: 8, border: `1px solid ${isEditing ? 'rgba(0,200,255,0.3)' : STATUS_BORDER[c.status]}`, background: isEditing ? 'rgba(0,200,255,0.04)' : STATUS_BG[c.status], overflow: 'hidden', transition: 'all 0.15s' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
+
+              {/* Indicador de estado */}
+              <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${STATUS_COLOR[c.status]}15`, border: `1.5px solid ${STATUS_COLOR[c.status]}40` }}>
+                {c.status === 'accepted' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="var(--success)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                {c.status === 'rejected' && <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="var(--danger)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
+                {c.status === 'pending' && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--txt-muted)' }} />}
+              </div>
+
+              {/* Título o input de edición */}
+              {isEditing ? (
+                <textarea
+                  autoFocus
+                  value={editText}
+                  rows={1}
+                  ref={(el) => {
+                    if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+                  }}
+                  onChange={(e) => {
+                    setEditText(e.target.value);
+                    e.currentTarget.style.height = 'auto';
+                    e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(c.criteriaId); }
+                    if (e.key === 'Escape') setEditingId(null);
+                  }}
+                  style={{ flex: 1, padding: '4px 8px', borderRadius: 5, border: '1px solid rgba(0,200,255,0.35)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)', resize: 'none', overflow: 'hidden', lineHeight: 1.4 }}
+                />
+              ) : (
+                <>
+                  <span style={{ flex: 1, fontSize: 12, color: c.status === 'rejected' ? 'var(--danger)' : c.status === 'accepted' ? 'var(--txt-muted)' : 'var(--txt)', textDecoration: c.status === 'accepted' ? 'line-through' : 'none', lineHeight: 1.4, wordBreak: 'break-word' }}>{c.title}</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: STATUS_COLOR[c.status], background: `${STATUS_COLOR[c.status]}12`, border: `1px solid ${STATUS_COLOR[c.status]}30`, flexShrink: 0, whiteSpace: 'nowrap' }}>{STATUS_LABEL[c.status]}</span>
+                </>
+              )}
+
+              {/* Botones */}
+              {!readOnly && (
+                isEditing ? (
+                  /* Modo edición: Guardar + Eliminar + Cancelar */
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handleSaveEdit(c.criteriaId)}
+                      disabled={updatingTitle || !editText.trim()}
+                      style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,200,255,0.4)', background: 'rgba(0,200,255,0.1)', color: 'var(--accent)', cursor: updatingTitle ? 'not-allowed' : 'pointer', transition: 'all 0.12s' }}
+                      onMouseEnter={(e) => { if (!updatingTitle) e.currentTarget.style.background = 'rgba(0,200,255,0.2)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,200,255,0.1)'; }}
+                    >
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      {updatingTitle ? 'Guardando…' : 'Guardar'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c.criteriaId)}
+                      disabled={deleting}
+                      style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,71,87,0.35)', background: 'rgba(255,71,87,0.08)', color: 'var(--danger)', cursor: deleting ? 'not-allowed' : 'pointer', transition: 'all 0.12s' }}
+                      onMouseEnter={(e) => { if (!deleting) e.currentTarget.style.background = 'rgba(255,71,87,0.18)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.08)'; }}
+                    >
+                      <Trash2 size={9} />{deleting ? '…' : 'Eliminar'}
+                    </button>
+                    <button onClick={() => setEditingId(null)} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 3, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer' }}>×</button>
+                  </div>
+                ) : (
+                  /* Modo normal: Aceptar / Rechazar / Reset + Lápiz */
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0, alignItems: 'center' }}>
+                    {c.status === 'pending' && (
+                      <>
+                        <button onClick={() => handleAction(c, 'accepted')} disabled={updatingStatus} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,229,160,0.4)', background: 'rgba(0,229,160,0.1)', color: 'var(--success)', cursor: 'pointer', transition: 'all 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.1)'; }}>
+                          <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>OK
+                        </button>
+                        <button onClick={() => setExpandedNote((p) => p === c.criteriaId ? null : c.criteriaId)} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,71,87,0.35)', background: expandedNote === c.criteriaId ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.08)', color: 'var(--danger)', cursor: 'pointer', transition: 'all 0.12s' }}>
+                          <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>Rechazar
+                        </button>
+                      </>
+                    )}
+                    {c.status !== 'pending' && (
+                      <button onClick={() => handleAction(c, 'pending')} disabled={updatingStatus} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', flexShrink: 0 }} title="Restablecer a pendiente">↩</button>
+                    )}
+                    {/* Lápiz */}
+                    <button
+                      onClick={() => handleStartEdit(c)}
+                      title="Editar criterio"
+                      style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0 }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,200,255,0.08)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8.5 1.5l2 2L4 10H2V8L8.5 1.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                )
+              )}
             </div>
-            <span style={{ flex: 1, fontSize: 12, color: c.status === 'rejected' ? 'var(--danger)' : c.status === 'accepted' ? 'var(--txt-muted)' : 'var(--txt)', textDecoration: c.status === 'accepted' ? 'line-through' : 'none', lineHeight: 1.4, wordBreak: 'break-word' }}>{c.title}</span>
-            <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, color: STATUS_COLOR[c.status], background: `${STATUS_COLOR[c.status]}12`, border: `1px solid ${STATUS_COLOR[c.status]}30`, flexShrink: 0, whiteSpace: 'nowrap' }}>{STATUS_LABEL[c.status]}</span>
-            {!readOnly && c.status === 'pending' && (
-              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                <button onClick={() => handleAction(c, 'accepted')} disabled={isPending} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,229,160,0.4)', background: 'rgba(0,229,160,0.1)', color: 'var(--success)', cursor: 'pointer', transition: 'all 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.2)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,229,160,0.1)'; }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>OK
-                </button>
-                <button onClick={() => setExpandedNote((p) => p === c.criteriaId ? null : c.criteriaId)} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,71,87,0.35)', background: expandedNote === c.criteriaId ? 'rgba(255,71,87,0.15)' : 'rgba(255,71,87,0.08)', color: 'var(--danger)', cursor: 'pointer', transition: 'all 0.12s' }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>Rechazar
-                </button>
+
+            {/* Input nota de rechazo */}
+            {expandedNote === c.criteriaId && !readOnly && !isEditing && (
+              <div style={{ padding: '0 12px 10px', display: 'flex', gap: 6 }}>
+                <input autoFocus value={reviewNotes[c.criteriaId] ?? ''} onChange={(e) => setReviewNotes((p) => ({ ...p, [c.criteriaId]: e.target.value }))} placeholder="Nota opcional al rechazar…" style={{ flex: 1, padding: '6px 10px', borderRadius: 5, border: '1px solid rgba(255,71,87,0.3)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 11, outline: 'none', fontFamily: 'var(--font-body)' }} />
+                <button onClick={() => handleAction(c, 'rejected')} disabled={updatingStatus} style={{ padding: '6px 12px', borderRadius: 5, border: 'none', background: 'var(--danger)', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Confirmar</button>
               </div>
             )}
-            {!readOnly && c.status !== 'pending' && (
-              <button onClick={() => handleAction(c, 'pending')} disabled={isPending} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', cursor: 'pointer', flexShrink: 0 }} title="Restablecer a pendiente">↩</button>
+            {c.reviewerNotes && c.status !== 'pending' && !isEditing && (
+              <div style={{ padding: '0 12px 10px' }}>
+                <div style={{ padding: '6px 10px', borderRadius: 5, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>"{c.reviewerNotes}"</div>
+              </div>
             )}
           </div>
-          {expandedNote === c.criteriaId && !readOnly && (
-            <div style={{ padding: '0 12px 10px', display: 'flex', gap: 6 }}>
-              <input autoFocus value={reviewNotes[c.criteriaId] ?? ''} onChange={(e) => setReviewNotes((p) => ({ ...p, [c.criteriaId]: e.target.value }))} placeholder="Nota opcional al rechazar…" style={{ flex: 1, padding: '6px 10px', borderRadius: 5, border: '1px solid rgba(255,71,87,0.3)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 11, outline: 'none', fontFamily: 'var(--font-body)' }} />
-              <button onClick={() => handleAction(c, 'rejected')} disabled={isPending} style={{ padding: '6px 12px', borderRadius: 5, border: 'none', background: 'var(--danger)', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Confirmar</button>
-            </div>
-          )}
-          {c.reviewerNotes && c.status !== 'pending' && (
-            <div style={{ padding: '0 12px 10px' }}>
-              <div style={{ padding: '6px 10px', borderRadius: 5, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>"{c.reviewerNotes}"</div>
-            </div>
-          )}
+        );
+      })}
+
+      {/* ── Input nuevo criterio ── */}
+      {showNew && !readOnly && (
+        <div style={{ display: 'flex', gap: 6, padding: '8px 10px', borderRadius: 7, border: '1px dashed rgba(0,200,255,0.35)', background: 'rgba(0,200,255,0.04)' }}>
+          <input
+            autoFocus
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate();
+              if (e.key === 'Escape') { setShowNew(false); setNewTitle(''); }
+            }}
+            placeholder="Título del nuevo criterio…"
+            style={{ flex: 1, padding: '6px 10px', borderRadius: 5, border: '1px solid rgba(0,200,255,0.3)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', fontFamily: 'var(--font-body)' }}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={creating || !newTitle.trim()}
+            style={{ padding: '6px 12px', borderRadius: 5, border: 'none', background: creating || !newTitle.trim() ? 'var(--bg-surface)' : 'var(--accent-2)', color: creating || !newTitle.trim() ? 'var(--txt-muted)' : 'white', fontSize: 11, fontWeight: 700, cursor: creating || !newTitle.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-display)', transition: 'all 0.15s' }}
+          >
+            {creating ? 'Guardando…' : 'Agregar'}
+          </button>
+          <button onClick={() => { setShowNew(false); setNewTitle(''); }} style={{ padding: '6px 8px', borderRadius: 5, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 13, cursor: 'pointer' }}>×</button>
         </div>
-      ))}
+      )}
     </div>
   );
 }
-
 /* ══════════════════════════════════════════════════════════════
    Modal principal
    ══════════════════════════════════════════════════════════════ */
@@ -337,10 +488,13 @@ export function RequestModal({
   const { mutate: uploadAttachment, isPending: uploading } = useUploadAttachment();
   const { mutate: deleteAttachment } = useDeleteAttachment();
   const { mutate: deleteRequest, isPending: deleting } = useDeleteRequest();
+  const { mutate: createRequest, isPending: duplicating }  = useCreateRequest();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [duplicated,         setDuplicated]        = useState(false);
   const { data: currentUser } = useCurrentUser();
-  const overlayRef   = useRef<HTMLDivElement>(null);
-  const commentsEndRef = useRef<HTMLDivElement>(null);
+const overlayRef   = useRef<HTMLDivElement>(null);
+const tituloRef    = useRef<HTMLTextAreaElement>(null);
+const commentsEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const boardId      = config.DEFAULT_BOARD_ID;
   const columnMap    = useColumnMap(boardId);
@@ -380,7 +534,7 @@ const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
 const { data: allUsers    = [] } = useUsers();
 const { data: comments    = [] } = useComments(requestId);  const { data: attachments = [] } = useAttachments(requestId);
   const { data: children    = [] } = useChildRequests(requestId);
-
+  const { data: criteria    = [] } = useAcceptanceCriteria(requestId);
   const { data: parentRequest } = useQuery<Request>({
     queryKey: ['request', request.parentId],
     queryFn:  () => Requests.fetchById(request.parentId!),
@@ -405,11 +559,15 @@ const [showSubRequests,  setShowSubRequests]  = useState(false);  const [columna
   const [labelSearch,      setLabelSearch]      = useState('');
   const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
+const [tituloLocal,      setTituloLocal]      = useState(request.titulo ?? '');
+const [formDataLocal,    setFormDataLocal]    = useState<Record<string, unknown>>(request.formData ?? {});
 const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
 
 const [showTimerWarning, setShowTimerWarning] = useState(false);
+const [saveStatus, setSaveStatus]             = useState<'idle' | 'pending' | 'saving' | 'saved'>('idle');
+const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 // Solo corre al montar (request.id cambia = nuevo modal)
 useEffect(() => {
   const r = request; // usar prop inicial, no freshRequest
@@ -418,12 +576,56 @@ useEffect(() => {
   setSelectedSubIds(r.subTeamIds ?? []);
   setSelectedSprintId(r.sprintId ?? null);
   setAssigneeIds(r.assignees?.map((a) => a.userId) ?? []);
+  setTituloLocal(r.titulo ?? '');
+  setFormDataLocal(r.formData ?? {});
   setColumnaActual(r.columna);
-}, [request.id]); // ← sin freshRequest en deps
+}, [request.id]);
 const timerRunningRef = useRef(false);
+  useEffect(() => {
+    const el = tituloRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }, [request.id]);
   useEffect(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [comments.length]);
+function handleDuplicate() {
+  if (!currentUser || duplicating) return;
+  createRequest(
+    {
+      boardId:              boardId,
+      columnId:             columnMap?.[columnaActual] ?? 1,
+      requestedBy:          currentUser.User_ID,
+      templateId:           (effectiveRequest as any).templateId ?? 0,
+      titulo:               `${effectiveRequest.titulo} (copia)`,
+      descripcion:          effectiveRequest.descripcion ?? '',
+      prioridad:            effectiveRequest.prioridad,
+      equipoIds:            boardTeamId ? [boardTeamId] : [],
+      subTeamIds:           selectedSubIds,
+      labelIds:             selectedLabelIds,
+      sprintId:             selectedSprintId,
+      estimatedHours:       effectiveRequest.estimatedHours ?? null,
+      parentId:             null,
+      requesterTeamId:      (effectiveRequest as any).requesterTeamId ?? null,
+      requesterDepartmentId:(effectiveRequest as any).requesterDepartmentId ?? null,
+      isConfidential:       effectiveRequest.isConfidential ?? false,
+      formData:             formDataLocal,
+      acceptanceCriteria:   criteria.map((c) => c.title),
+      assigneeIds:          assigneeIds,
+    },
+    {
+      onSuccess: (newRequest) => {
+        setDuplicated(true);
+        setTimeout(() => {
+          setDuplicated(false);
+          onOpenRequest?.(newRequest.id);
+        });
+      },
+    },
+  );
+}
+
 function handleDelete() {
-  deleteRequest(requestId, {
+    deleteRequest(requestId, {
     onSuccess: () => {
       setShowDeleteConfirm(false);
       onClose();
@@ -485,8 +687,25 @@ mover(
   }
 
   /* ── Edición ── */
-  function handleToggleLabel(labelId: number) {
-    if (readOnly) return;
+  function debouncedSave(patch: Parameters<typeof update>[0]['patch'], delay = 800) {
+  setSaveStatus('pending');
+  if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+  saveDebounceRef.current = setTimeout(() => {
+    setSaveStatus('saving');
+    update(
+      { id: requestId, patch },
+      {
+        onSuccess: () => {
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        },
+        onError: () => setSaveStatus('idle'),
+      },
+    );
+  }, delay);
+}
+
+function handleToggleLabel(labelId: number) {    if (readOnly) return;
     const next = selectedLabelIds.includes(labelId)
       ? selectedLabelIds.filter((l) => l !== labelId)
       : [...selectedLabelIds, labelId];
@@ -518,8 +737,15 @@ function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAss
 
   update({ id: requestId, patch: { subTeamIds: next } });
 }
-  function handleSprint(sprintId: number | null) {
+
+function handleFormFieldChange(key: string, value: unknown) {
     if (readOnly) return;
+    const next = { ...formDataLocal, [key]: value };
+    setFormDataLocal(next);
+    update({ id: requestId, patch: { formData: next } });
+  }
+
+  function handleSprint(sprintId: number | null) {    if (readOnly) return;
     setSelectedSprintId(sprintId);
     update({ id: requestId, patch: { sprintId } });
     sprintDD.setOpen(false);
@@ -579,10 +805,7 @@ function handleToggleAssignee(userId: number) {
   const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
 const yaHayClosure = !!effectiveRequest.fechaCierre;
 
-  const parts = assignedUsers.map((u) => u.User_Name).join(', ').split(' ');
-  const displayName = parts.length >= 3
-    ? `${parts[0]} ${parts[2]}`
-    : parts.join(' ');
+
   /* ─────────────────────────────────────────────────────────── */
   return (
     <>
@@ -690,7 +913,80 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
               </div>
             )}
 
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+<div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+
+  {/* ── Indicador de autosave ── */}
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 4,
+    fontSize: 10, fontWeight: 600, letterSpacing: 0.3,
+    minWidth: 80, justifyContent: 'flex-end',
+    transition: 'opacity 0.3s',
+    opacity: saveStatus === 'idle' ? 0 : 1,
+    color: saveStatus === 'saved' ? 'var(--success)' : 'var(--txt-muted)',
+    pointerEvents: 'none', userSelect: 'none',
+  }}>
+    {(saveStatus === 'pending' || saveStatus === 'saving') && (
+      <>
+        <svg
+          width="10" height="10" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+          style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }}
+        >
+          <path d="M12 2a10 10 0 0 1 10 10" />
+        </svg>
+        Guardando…
+      </>
+    )}
+    {saveStatus === 'saved' && (
+      <>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Guardado
+      </>
+    )}
+  </div>
+
+  <button
+    onClick={handleDuplicate}
+                disabled={duplicating || !currentUser}
+                title="Duplicar solicitud"
+                style={{
+                  width: 30, height: 30, borderRadius: 6,
+                  border: `1px solid ${duplicated ? 'rgba(0,229,160,0.4)' : 'rgba(0,200,255,0.25)'}`,
+                  color: duplicated ? 'var(--success)' : 'var(--txt-muted)',
+                  background: duplicated ? 'rgba(0,229,160,0.1)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: duplicating ? 'wait' : 'pointer',
+                  transition: 'all 0.15s', opacity: duplicating ? 0.6 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!duplicated) {
+                    e.currentTarget.style.borderColor = 'rgba(0,200,255,0.5)';
+                    e.currentTarget.style.color       = 'var(--accent)';
+                    e.currentTarget.style.background  = 'rgba(0,200,255,0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!duplicated) {
+                    e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)';
+                    e.currentTarget.style.color       = 'var(--txt-muted)';
+                    e.currentTarget.style.background  = 'transparent';
+                  }
+                }}
+              >
+                {duplicating
+                  ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                      style={{ animation: 'spin 0.7s linear infinite' }}>
+                      <path d="M12 2a10 10 0 0 1 10 10" />
+                    </svg>
+                  ) : duplicated
+                  ? <svg width="14" height="14" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  : <Copy size={14} />
+                }
+              </button>
+
               {!readOnly && currentUser?.User_Role === 'admin' && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
@@ -800,10 +1096,30 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 </div>
               )}
 
-              <div>
-                <FieldLabel>Nombre de la solicitud</FieldLabel>
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{effectiveRequest.titulo}</h2>
-              </div>
+              <FieldBlock label="Nombre de la solicitud">
+                {readOnly
+                  ? <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.35, margin: 0 }}>{effectiveRequest.titulo}</h2>
+                  : (
+<textarea
+  ref={tituloRef}
+  value={tituloLocal}
+  onChange={(e) => {
+    const val = e.target.value;
+    setTituloLocal(val);
+    e.currentTarget.style.height = 'auto';
+    e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+    const trimmed = val.trim();
+    if (trimmed && trimmed !== effectiveRequest.titulo)
+      debouncedSave({ titulo: trimmed });
+  }}
+  rows={1}
+  style={{ width: '100%', padding: '10px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 20, fontWeight: 600, lineHeight: 1.35, resize: 'none', outline: 'none', overflow: 'hidden', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+  onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+  onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+/>
+                  )
+                }
+              </FieldBlock>
 
               {effectiveRequest.isConfidential && (
                 <div style={{ display: 'flex', gap: 12, padding: '12px 16px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
@@ -813,24 +1129,30 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
               )}
 
               <FieldBlock label="Descripción">
-                <textarea
-                  value={descripcion}
-                  onChange={(e) => { if (!readOnly) setDescripcion(e.target.value); }}
-                  onBlur={() => { if (!readOnly) update({ id: requestId, patch: { descripcion } }); }}
-                  readOnly={readOnly}
-                  placeholder="Escribe una descripción..."
-                  rows={4}
-                  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }}
-                />
+<textarea
+  value={descripcion}
+  onChange={(e) => {
+    if (readOnly) return;
+    const val = e.target.value;
+    setDescripcion(val);
+    debouncedSave({ descripcion: val });
+  }}
+  onBlur={() => {}}
+  readOnly={readOnly}
+  placeholder="Escribe una descripción..."
+  rows={4}
+  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }}
+/>
               </FieldBlock>
 
 {((effectiveRequest.templateFormSchema?.length ?? 0) > 0 ||
   (effectiveRequest.templateSchemaSnapshot?.length ?? 0) > 0) && (
   <TemplateFormDataPanel
-    formData={effectiveRequest.formData ?? {}}
+    formData={formDataLocal}
     schema={effectiveRequest.templateFormSchema ?? []}
     snapshotSchema={effectiveRequest.templateSchemaSnapshot ?? []}
     accentColor="var(--accent)"
+    onFieldChange={!readOnly ? handleFormFieldChange : undefined}
   />
 )}
               <FieldBlock label="Criterios de aceptación">
@@ -854,18 +1176,22 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
     >
       {assignedUsers.length === 0
         ? <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1 }}>Sin asignar</span>
-        : assignedUsers.map((u) => (
-          <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
-            <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
-            {displayName}
-            {!readOnly && (
-              <span
-                onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
-                style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
-              >×</span>
-            )}
-          </span>
-        ))
+        : assignedUsers.map((u) => {
+            const p = u.User_Name.split(' ');
+            const name = p.length >= 3 ? `${p[0]} ${p[2]}` : u.User_Name;
+            return (
+              <span key={u.User_ID} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u.User_Name)}</span>
+                {name}
+                {!readOnly && (
+                  <span
+                    onMouseDown={(e) => { e.stopPropagation(); handleToggleAssignee(u.User_ID); }}
+                    style={{ marginLeft: 2, cursor: 'pointer', opacity: 0.6, fontSize: 13 }}
+                  >×</span>
+                )}
+              </span>
+            );
+          })
       }
       {!readOnly && <ChevDown size={12} style={{ marginLeft: 'auto', color: 'var(--txt-muted)', flexShrink: 0, transform: assigneeDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
     </button>
@@ -945,37 +1271,39 @@ onToggleAssignee={(userId) => {
                     </button>
 {catDD.open && !readOnly && (
   <DropdownPanel>
-    <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-      <input
-        autoFocus
-        value={labelSearch}
-        onChange={(e) => setLabelSearch(e.target.value)}
-        placeholder="Buscar etiqueta..."
-        style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
-      />
-    </div>
-    {labels.length === 0
-      ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
-      : (() => {
-          const filtered = labels.filter((l) =>
-            l.Label_Name.toLowerCase().includes(labelSearch.toLowerCase())
-          );
-          if (filtered.length === 0) return (
-            <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin resultados.</div>
-          );
-          return filtered.map((label) => {
-            const sel = selectedLabelIds.includes(label.Label_ID);
-            return (
-              <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>
-                {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
-                <span style={{ flex: 1 }}>{label.Label_Name}</span>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
-                {sel && <Checkmark />}
-              </DropdownItem>
+    <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+      <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <input
+          autoFocus
+          value={labelSearch}
+          onChange={(e) => setLabelSearch(e.target.value)}
+          placeholder="Buscar etiqueta..."
+          style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 5, padding: '5px 8px', fontSize: 11, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+        />
+      </div>
+      {labels.length === 0
+        ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin etiquetas para este equipo.</div>
+        : (() => {
+            const filtered = labels.filter((l) =>
+              l.Label_Name.toLowerCase().includes(labelSearch.toLowerCase())
+            ).sort((a, b) => a.Label_Name.localeCompare(b.Label_Name));
+            if (filtered.length === 0) return (
+              <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin resultados.</div>
             );
-          });
-        })()
-    }
+            return filtered.map((label) => {
+              const sel = selectedLabelIds.includes(label.Label_ID);
+              return (
+                <DropdownItem key={label.Label_ID} selected={sel} onClick={() => handleToggleLabel(label.Label_ID)}>
+                  {label.Label_Icon && <span style={{ fontSize: 13 }}>{label.Label_Icon}</span>}
+                  <span style={{ flex: 1 }}>{label.Label_Name}</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: label.Label_Color, flexShrink: 0 }} />
+                  {sel && <Checkmark />}
+                </DropdownItem>
+              );
+            });
+          })()
+        }
+    </div>
   </DropdownPanel>
 )}
                   </div>
@@ -1122,7 +1450,7 @@ onToggleAssignee={(userId) => {
   </FieldBlock>
 )}
 
-{!readOnly && !isCerrada && (
+{!readOnly && (
 <TimerOrInputBlock
   requestId={requestId}
   loggedHours={effectiveRequest.loggedHours}
@@ -1535,18 +1863,21 @@ function CopyLinkButton({ ticketId }: { ticketId: string }) {
   );
 }
 
-function TemplateFormDataPanel({ formData, schema, snapshotSchema }: {
+function TemplateFormDataPanel({ formData, schema, snapshotSchema, onFieldChange }: {
   formData:        Record<string, unknown>;
   schema:          unknown[];
   snapshotSchema?: unknown[];
   accentColor:     string;
+  onFieldChange?:  (key: string, value: unknown) => void;
 }) {
   // ── Tipos internos ──────────────────────────────────────────────────────────
-  type FlatField = {
+type FlatField = {
     key:         string;
     label:       string;
     guards:      { parentKey: string; requiredValue: string }[];
     showInModal: boolean;
+    fieldType?:  string;
+    options?:    string[];
   };
 
     const savedLabels: Record<string, string> = (() => {
@@ -1584,7 +1915,7 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
     if (field.type === 'conditional') {
       // Mostrar el campo condicional en sí solo si showInModal: true
       if (showInModal && field.label) {
-        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal });
+        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal, fieldType: 'conditional' });
       }
       // SIEMPRE explorar la rama activa (independientemente de showInModal del padre)
       // para recolectar hijos que sí sean visibles
@@ -1596,7 +1927,14 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
       result.push(...collectVisibleLevel(activeBranch));
     } else {
       if (showInModal && field.label) {
-        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal });
+        result.push({
+          key:       field.key as string,
+          label:     field.label as string,
+          guards:    [],
+          showInModal,
+          fieldType: field.type as string | undefined,
+          options:   Array.isArray(field.options) ? field.options as string[] : undefined,
+        });
       }
     }
   }
@@ -1654,13 +1992,104 @@ const orphanFields: FlatField[] = Object.keys(formData)
     return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
   }
 
+function renderEditor(key: string, fieldType?: string, options?: string[]): React.ReactNode {
+    // Orphan (sin fieldType) o tipo no soportado → solo lectura
+    if (!fieldType) return renderValue(key);
+
+    const val     = formData[key];
+    const current = val !== undefined && val !== null ? String(val) : '';
+
+    /* ── Condicional → Sí / No ── */
+    if (fieldType === 'conditional') {
+      return (
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['true', 'false'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => onFieldChange!(key, v)}
+              style={{
+                padding: '4px 12px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+                cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)',
+                border: `1px solid ${current === v
+                  ? (v === 'true' ? 'rgba(0,229,160,0.5)' : 'rgba(255,71,87,0.5)')
+                  : 'var(--border-subtle)'}`,
+                background: current === v
+                  ? (v === 'true' ? 'rgba(0,229,160,0.12)' : 'rgba(255,71,87,0.1)')
+                  : 'transparent',
+                color: current === v
+                  ? (v === 'true' ? 'var(--success)' : 'var(--danger)')
+                  : 'var(--txt-muted)',
+              }}
+            >
+              {v === 'true' ? 'Sí' : 'No'}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    /* ── Radio → select con las opciones del schema ── */
+    if (fieldType === 'radio') {
+      if (!options || options.length === 0) return renderValue(key); // sin opciones → solo lectura
+      return (
+        <select
+          value={current}
+          onChange={(e) => onFieldChange!(key, e.target.value)}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+          onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+          style={{
+            width: '100%', padding: '6px 10px', borderRadius: 6,
+            border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)',
+            color: current ? 'var(--txt)' : 'var(--txt-muted)',
+            fontSize: 12, cursor: 'pointer', outline: 'none',
+            fontFamily: 'var(--font-body)', boxSizing: 'border-box',
+            transition: 'border-color 0.15s',
+          }}
+        >
+          {!current && <option value="" disabled>Seleccionar…</option>}
+          {options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      );
+    }
+
+    /* ── Text → input libre ── */
+    if (fieldType === 'text') {
+      return (
+        <input
+          type="text"
+          defaultValue={current}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+            const newVal = e.target.value;
+            if (newVal !== current) onFieldChange!(key, newVal);
+          }}
+          style={{
+            width: '100%', padding: '6px 10px', borderRadius: 6,
+            border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)',
+            color: 'var(--txt)', fontSize: 12, outline: 'none',
+            fontFamily: 'var(--font-body)', boxSizing: 'border-box',
+            transition: 'border-color 0.15s',
+          }}
+        />
+      );
+    }
+
+    /* ── Tipo no reconocido → solo lectura ── */
+    return renderValue(key);
+  }
+
   return (
     <div>
 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-  {entries.map(({ key, label }) => (
+  {entries.map(({ key, label, fieldType, options }) => (
     <div key={key} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', lineHeight: 1.5, paddingTop: 1 }}>{label}</span>
-      <span style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.6, color: 'var(--txt)' }}>{renderValue(key)}</span>
+      <span style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.6, color: 'var(--txt)' }}>
+        {onFieldChange ? renderEditor(key, fieldType, options) : renderValue(key)}
+      </span>
     </div>
   ))}
 </div>
@@ -1751,7 +2180,7 @@ function HorasInput({ value, onChange }: { value: number | null; onChange: (v: n
 }
 
 function DropdownPanel({ children }: { children: React.ReactNode }) {
-  return <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden', minWidth: 180 }}>{children}</div>;
+  return <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflowY: 'auto', maxHeight: 260, minWidth: 180 }}>{children}</div>;
 }
 
 function DropdownItem({ children, selected, onClick }: { children: React.ReactNode; selected: boolean; onClick: () => void }) {

@@ -6,6 +6,8 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useBoardTheme } from '@/store/useBoardTheme';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
+import { AnnouncementBanner } from './AnnouncementBanner';
+import { AnnouncementModal }  from './AnnouncementModal';
 
 const TITULOS: Record<string, string> = {
   '/home':         'Home',
@@ -38,13 +40,14 @@ export function AppLayout() {
         <Sidebar />
         <div className="app-layout__main">
           <Topbar titulo={titulo} />
+          <AnnouncementBanner />
           {/* ← clase condicional */}
           <main className={`app-layout__content${isFullBleed ? ' app-layout__content--full-bleed' : ''}`}>
             <Outlet />
           </main>
         </div>
       </div>
-      <div id="portal-root" />
+      <div id="portal-root" /> <AnnouncementModal />
     </>
   );
 }

@@ -127,3 +127,7 @@ a { text-decoration: none; color: inherit; }
 .kanban:hover {
   scrollbar-color: rgba(124, 106, 247, 0.55) transparent;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
