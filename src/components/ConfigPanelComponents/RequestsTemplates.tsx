@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { TemplateExtraField, FieldType, SimpleField, ConditionalField } from '@/features/requests/templates/types';
 import {
   makeEmptySimpleField,
@@ -7,6 +7,18 @@ import {
 } from '@/features/requests/templates/types';
 import type { BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import { AddBtn, SmBtn, FieldLabel, ColorPicker, EMOJIS } from '../ConfigPanel';
+import { useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/apiClient';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
+import {
+  annotateWithEditIds,
+  stripEditIds,
+  diffRenames,
+  type AnnotatedSchema,
+  type Rename,
+} from '@/features/requests/templates/renameUtils';
+import { TemplateRenameModal } from '@/features/requests/templates/TemplateRenameModal';
 
 /** Tipos disponibles para un campo raíz (incluye condicional) */
 const FIELD_TYPES_FULL: { value: FieldType; label: string; icon: string }[] = [
@@ -42,8 +54,7 @@ export function TemplateList({ templates, teams, onAdd, onUpdate, onDelete }: {
   if (editKey === -1) return <TemplateForm key="form-new" teams={teams} onSave={(d) => { onAdd(d); setEditKey(null); }} onCancel={() => setEditKey(null)} />;
   if (editKey !== null) {
     const t = templates.find((t) => t.Request_Template_ID === editKey);
-    if (t) return <TemplateForm key={`form-edit-${editKey}`} teams={teams} initial={{ name: t.Request_Template_Name, description: t.Request_Template_Description, icon: t.Request_Template_Icon ?? '📋', color: t.Request_Template_Color ?? '#00c8ff', badge: t.Request_Template_Badge ?? t.Request_Template_Name, formSchema: t.Request_Template_Form_Schema ?? [], teamIds: t.Request_Template_Teams ?? [], isActive: t.Request_Template_Is_Active ?? true }} onSave={(d) => { onUpdate(editKey, d); setEditKey(null); }} onCancel={() => setEditKey(null)} />;
-  }
+if (t) return <TemplateForm key={`form-edit-${editKey}`} teams={teams} initialTemplateId={editKey} initial={{ name: t.Request_Template_Name, description: t.Request_Template_Description, icon: t.Request_Template_Icon ?? '📋', color: t.Request_Template_Color ?? '#00c8ff', badge: t.Request_Template_Badge ?? t.Request_Template_Name, formSchema: t.Request_Template_Form_Schema ?? [], teamIds: t.Request_Template_Teams ?? [], isActive: t.Request_Template_Is_Active ?? true }} onSave={(d) => { onUpdate(editKey, d); setEditKey(null); }} onCancel={() => setEditKey(null)} />;  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {templates.length === 0 && <div className="cpanel__empty"><span style={{ fontSize: 28, opacity: 0.4 }}>📋</span><p>No hay templates definidos.</p></div>}
@@ -98,8 +109,9 @@ function normalizeSchema(schema: TemplateExtraField[]): TemplateExtraField[] {
   return (schema ?? []).map(normalizeBranches);
 }
 
-function TemplateForm({ initial, teams, onSave, onCancel }: {
+function TemplateForm({ initial, initialTemplateId, teams, onSave, onCancel }: {
   initial?: TemplateMutationPayload;
+  initialTemplateId?: number;
   teams: { Board_Team_ID: number; Board_Team_Name: string }[];
   onSave: (d: TemplateMutationPayload) => void; onCancel: () => void;
 }) {
@@ -110,18 +122,185 @@ function TemplateForm({ initial, teams, onSave, onCancel }: {
   const [badge,       setBadge]       = useState(initial?.badge       ?? '');
   const [teamIds,     setTeamIds]     = useState<number[]>(initial?.teamIds ?? []);
   const [isActive,    setIsActive]    = useState(initial?.isActive    ?? true);
-  const [fields,      setFields]      = useState<TemplateExtraField[]>(normalizeSchema(initial?.formSchema ?? []));
-  const [tab,         setTab]         = useState<'info' | 'fields'>('info');
+
+  // Anotamos con __editId al cargar (solo memoria)
+  const [fields, setFields] = useState<AnnotatedSchema>(
+    () => annotateWithEditIds(normalizeSchema(initial?.formSchema ?? [])) as AnnotatedSchema,
+  );
+  // Snapshot del schema inicial anotado, para diffear renames
+  const initialAnnotatedRef = useRef<AnnotatedSchema>(fields);
+
+  const [tab, setTab] = useState<'info' | 'fields'>('info');
   const canSave = name.trim().length > 0;
 
-  function handleSave() {
+  // ── Rename flow state ────────────────────────────────
+const [pendingRenames,    setPendingRenames]    = useState<Rename[]>([]);
+  const [pendingPayload,    setPendingPayload]    = useState<TemplateMutationPayload | null>(null);
+  const [renameModalPhase,  setRenameModalPhase]  = useState<'confirm' | 'processing' | 'done' | 'error'>('confirm');
+  const [renameModalOpen,   setRenameModalOpen]   = useState(false);
+  const [requestsCount,     setRequestsCount]     = useState(0);
+  const [progressCurrent,   setProgressCurrent]   = useState(0);
+  const [progressTotal,     setProgressTotal]     = useState(0);
+  const [resultCount,       setResultCount]       = useState(0);
+  const [renameError,       setRenameError]       = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qc          = useQueryClient();
+  const currentUser = useCurrentUser();
+
+  async function handleSave() {
     if (!canSave) return;
-    onSave({ name: name.trim(), description: description.trim(), icon, color, badge: badge.trim() || name.trim(), formSchema: fields, teamIds, isActive });
+
+    const strippedSchema = stripEditIds(fields);
+    const payload: TemplateMutationPayload = {
+      name:        name.trim(),
+      description: description.trim(),
+      icon,
+      color,
+      badge:       badge.trim() || name.trim(),
+      formSchema:  strippedSchema,
+      teamIds,
+      isActive,
+    };
+
+    // Si es nuevo template o no hay ID conocido → flujo normal (sin renames posibles)
+    if (!initialTemplateId) {
+      onSave(payload);
+      return;
+    }
+
+    // Detectar renames
+    const renames = diffRenames(initialAnnotatedRef.current, fields);
+
+    if (renames.length === 0) {
+      onSave(payload);
+      return;
+    }
+
+    // Hay renames → traer impacto y abrir modal de confirmación
+    try {
+      const impact = await apiClient.call<{ requestsCount: number }>(
+        'getTemplateRenameImpact',
+        { templateId: initialTemplateId },
+      );
+      setRequestsCount(impact.requestsCount);
+    } catch {
+      setRequestsCount(0);
+    }
+
+    setPendingRenames(renames);
+    setPendingPayload(payload);
+    setRenameModalPhase('confirm');
+    setRenameModalOpen(true);
   }
 
-  function addField() { setFields((p) => [...p, makeEmptySimpleField(p.length + 1)]); }
+async function handleConfirmRename() {
+    if (!pendingPayload || !initialTemplateId) return;
+    setRenameModalPhase('processing');
+    setRenameError(null);
+    setProgressCurrent(0);
+    setProgressTotal(requestsCount);
+
+    try {
+      const created = await apiClient.call<{ jobId: string | null; requestsTotal: number; ok: true }>(
+        'createTemplateRenameJob',
+        {
+          id:          initialTemplateId,
+          name:        pendingPayload.name,
+          description: pendingPayload.description,
+          icon:        pendingPayload.icon,
+          color:       pendingPayload.color,
+          badge:       pendingPayload.badge,
+          formSchema:  pendingPayload.formSchema,
+          teamIds:     pendingPayload.teamIds,
+          isActive:    pendingPayload.isActive,
+          renames:     pendingRenames,
+          renamedBy:   currentUser?.data?.User_ID ?? null,
+        },
+      );
+
+      setProgressTotal(created.requestsTotal);
+
+      // Si no hay job (no había solicitudes) → done directo
+      if (!created.jobId) {
+        setResultCount(0);
+        setRenameModalPhase('done');
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ['boardMetadata'] }),
+          qc.invalidateQueries({ queryKey: ['templates'] }),
+          qc.invalidateQueries({ queryKey: ['requests'] }),
+        ]);
+        return;
+      }
+
+      // Polling
+      const jobId = created.jobId;
+      const poll = async () => {
+        try {
+          const job = await apiClient.call<{
+            Job_ID: string;
+            Job_Status: 'pending' | 'running' | 'done' | 'failed';
+            Job_Progress_Current: number;
+            Job_Progress_Total:   number;
+            Job_Result: { requestsUpdated: number; renames: Rename[] } | null;
+            Job_Error:  string | null;
+            Job_Updated_At: string;
+          }>('getBackgroundJob', { jobId });
+
+          setProgressCurrent(job.Job_Progress_Current);
+          if (job.Job_Progress_Total > 0) setProgressTotal(job.Job_Progress_Total);
+
+          if (job.Job_Status === 'done') {
+            setResultCount(job.Job_Result?.requestsUpdated ?? job.Job_Progress_Current);
+            setRenameModalPhase('done');
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ['boardMetadata'] }),
+              qc.invalidateQueries({ queryKey: ['templates'] }),
+              qc.invalidateQueries({ queryKey: ['requests'] }),
+            ]);
+            return;
+          }
+
+          if (job.Job_Status === 'failed') {
+            setRenameError(job.Job_Error ?? 'Error desconocido durante el procesamiento.');
+            setRenameModalPhase('error');
+            return;
+          }
+
+          // Watchdog: si lleva >60s sin update, pedir relanzamiento
+          const stale = Date.now() - new Date(job.Job_Updated_At).getTime() > 60_000;
+          if (stale) {
+            await apiClient.call('resumeStalledJob', { jobId }).catch(() => {});
+          }
+
+          pollRef.current = setTimeout(poll, 1500);
+        } catch (err) {
+          setRenameError((err as Error).message);
+          setRenameModalPhase('error');
+        }
+      };
+
+      pollRef.current = setTimeout(poll, 800);
+    } catch (err) {
+      setRenameError((err as Error).message);
+      setRenameModalPhase('error');
+    }
+  }
+  useEffect(() => () => {
+    if (pollRef.current) clearTimeout(pollRef.current);
+  }, []);
+  
+  function handleCloseRenameModal() {
+    setRenameModalOpen(false);
+    if (renameModalPhase === 'done') {
+      onCancel(); // Cierra el editor del template
+    }
+  }
+
+  function addField() {
+    setFields((p) => [...p, { ...annotateWithEditIds([makeEmptySimpleField(p.length + 1)])[0] }]);
+  }
   function updateField(idx: number, patch: Partial<TemplateExtraField>) {
-    setFields((p) => p.map((f, i) => i === idx ? { ...f, ...patch } as TemplateExtraField : f));
+    setFields((p) => p.map((f, i) => i === idx ? ({ ...f, ...patch } as AnnotatedSchema[number]) : f));
   }
   function removeField(idx: number) { setFields((p) => p.filter((_, i) => i !== idx)); }
   function moveField(idx: number, dir: -1 | 1) {
@@ -187,7 +366,7 @@ function TemplateForm({ initial, teams, onSave, onCancel }: {
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 2, paddingBottom: 8 }}>
             {fields.length === 0 && <div className="cpanel__empty"><span style={{ fontSize: 32, opacity: 0.3 }}>🔧</span><p>Sin campos adicionales.</p><p style={{ fontSize: 11 }}>El formulario solo tendrá título y descripción.</p></div>}
             {fields.map((field, idx) => (
-              <FieldEditor key={idx} field={field} index={idx} total={fields.length} accentColor={color} depth={0}
+              <FieldEditor key={field.__editId ?? idx} field={field} index={idx} total={fields.length} accentColor={color} depth={0}
                 onChange={(patch) => updateField(idx, patch)} onRemove={() => removeField(idx)} onMove={(dir) => moveField(idx, dir)} />
             ))}
           </div>
@@ -200,10 +379,25 @@ function TemplateForm({ initial, teams, onSave, onCancel }: {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Modal de confirmación + overlay de procesamiento */}
+      <TemplateRenameModal
+        isOpen={renameModalOpen}
+        renames={pendingRenames}
+        requestsCount={requestsCount}
+        accentColor={color}
+        phase={renameModalPhase}
+        progressCurrent={progressCurrent}
+        progressTotal={progressTotal}
+        resultCount={resultCount}
+        errorMessage={renameError}
+        onConfirm={handleConfirmRename}
+        onCancel={() => setRenameModalOpen(false)}
+        onClose={handleCloseRenameModal}
+      />
+          </div>
   );
 }
-
 /* ============================================================
    FieldEditor — con showInModal y showInCard
    ============================================================ */

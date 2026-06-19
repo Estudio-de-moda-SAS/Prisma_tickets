@@ -8,6 +8,7 @@ import { useBoardTheme } from '@/store/useBoardTheme';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementModal }  from './AnnouncementModal';
+import { VersionUpdateBanner } from './VersionUpdateBanner';
 
 const TITULOS: Record<string, string> = {
   '/home':         'Home',
@@ -48,6 +49,7 @@ export function AppLayout() {
         </div>
       </div>
       <div id="portal-root" /> <AnnouncementModal />
+                <VersionUpdateBanner />  
     </>
   );
 }

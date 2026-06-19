@@ -1012,7 +1012,7 @@ onSuccess: () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 28px 32px', maxWidth: 900, width: '100%', margin: '0 auto' }}>
+    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
 {step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (

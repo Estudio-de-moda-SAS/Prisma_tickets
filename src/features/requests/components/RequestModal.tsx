@@ -20,6 +20,7 @@ import { useComments, useCreateComment, useDeleteComment } from '@/features/requ
 import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/features/requests/hooks/useAttachments';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
+import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { useChildRequests } from '@/features/requests/hooks/useSubRequest';
 import { useAcceptanceCriteria, useUpdateCriteriaStatus, useCreateCriteria, useDeleteCriteria, useUpdateCriteriaTitle } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
@@ -147,7 +148,7 @@ type Props = {
   equipo:            Equipo;
   onClose:           () => void;
   onMove:            (id: string, columna: KanbanColumna) => void;
-  onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
+  onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[], mode?: 'new' | 'reuse' | 'skip', reuseFromClosureId?: number | null) => void;
   onOpenRequest?:    (requestId: string) => void;
   readOnly?:         boolean;
   backLabel?:        string;  
@@ -503,6 +504,36 @@ const commentsEndRef = useRef<HTMLDivElement>(null);
   const boardTeamId  = request.boardTeamId ?? null;
   const isSubRequest = request.parentId !== null;
 
+  /* ── Fuente de verdad: config de columnas del equipo ── */
+  const { data: teamColumns = [] } = useTeamColumnConfig(boardId, boardTeamId);
+
+  const teamColMap = new Map(teamColumns.map((c) => [c.Board_Column_Slug, c]));
+
+  /** Lista que alimenta el dropdown "Mover a": visibles + ordenadas + con
+   *  evidencia dinámica. Si no hay config (boardTeamId null o todavía
+   *  cargando), cae al listado global como fallback seguro. */
+  const columnsForMove: { slug: KanbanColumna; name: string; evidenceRequired: boolean }[] =
+    teamColumns.length > 0
+      ? [...teamColumns]
+          .filter((c) => c.Is_Visible)
+          .sort((a, b) => a.Board_Column_Position - b.Board_Column_Position)
+          .map((c) => ({
+            slug:             c.Board_Column_Slug as KanbanColumna,
+            name:             c.Board_Column_Name,
+            evidenceRequired: c.Evidence_Required,
+          }))
+      : (Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([slug, name]) => ({
+          slug,
+          name,
+          evidenceRequired: COLUMNAS_CIERRE.has(slug),
+        }));
+
+  /** Helpers de presentación — usan config del equipo con fallback a hardcoded */
+  const labelFor      = (slug: KanbanColumna) => teamColMap.get(slug)?.Board_Column_Name ?? KANBAN_COLUMNAS[slug] ?? slug;
+  const colorFor      = (slug: KanbanColumna) => teamColMap.get(slug)?.Team_Column_Color ?? teamColMap.get(slug)?.Board_Column_Color ?? COL_COLOR[slug] ?? 'var(--txt-muted)';
+  const titleColorFor = (slug: KanbanColumna) => teamColMap.get(slug)?.Team_Column_Title_Color ?? colorFor(slug);
+  const requiresEvidenceFor = (slug: KanbanColumna) => teamColMap.get(slug)?.Evidence_Required ?? COLUMNAS_CIERRE.has(slug);
+
   /* Fetch fresco al montar */
   const { data: freshRequest } = useQuery<Request>({
     queryKey: ['request', requestId],
@@ -527,6 +558,7 @@ const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
     : null;
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
+  const [pendingSourceReqEv,  setPendingSourceReqEv]  = useState<boolean>(false);
 
   const { data: subTeams    = [] } = useSubTeams(boardTeamId);
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
@@ -660,25 +692,29 @@ useEffect(() => {
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
     /* Si ya hay closure (evidencia subida al mover a QAS), no pedir de nuevo */
-const yaHayClosure = !!effectiveRequest.fechaCierre;
-    if (COLUMNAS_CIERRE.has(columna) && !yaHayClosure) {
+    const yaHayClosure = !!effectiveRequest.fechaCierre;
+    if (requiresEvidenceFor(columna) && !yaHayClosure) {
+      // ¿La columna de la que viene también requería evidencia?
+      const sourceRequiresEvidence = requiresEvidenceFor(columnaActual);
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
+      setPendingSourceReqEv(sourceRequiresEvidence);
       return;
     }
     setColumnaActual(columna);
-mover(
-  { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
-  { onSuccess: () => onMove(requestId, columna) },
-);
+    mover(
+      { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
+      { onSuccess: () => onMove(requestId, columna) },
+    );
   }
 
-  function handleClosureFromModal(note: string, files: File[]) {
+  function handleClosureFromModal(note: string, files: File[], mode: 'new' | 'reuse' | 'skip', reuseFromClosureId: number | null) {
     if (!pendingClosureCol) return;
     const targetCol = pendingClosureCol;
     setPendingClosureCol(null);
+    setPendingSourceReqEv(false);
     setColumnaActual(targetCol);
-    onMoveWithClosure(requestId, targetCol, note, files);
+    onMoveWithClosure(requestId, targetCol, note, files, mode, reuseFromClosureId);
   }
 
   function handleClientFeedbackSubmitted(targetColumna: 'ready_to_deploy' | 'en_revision_qas') {
@@ -881,8 +917,8 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 <GitFork size={10} />Sub-solicitud
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5,  padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
-              {KANBAN_COLUMNAS[columnaActual]}
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5,  padding: '3px 10px', borderRadius: 4, color: titleColorFor(columnaActual), background: `${colorFor(columnaActual)}15`, border: `1px solid ${colorFor(columnaActual)}35` }}>
+              {labelFor(columnaActual)}
             </span>
 
             {/* Botón DIVIDIR */}
@@ -1468,34 +1504,34 @@ onToggleAssignee={(userId) => {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 12px', borderRadius: 6, width: '100%',
-            border: `1px solid ${moverDD.open ? COL_COLOR[columnaActual] + '60' : COL_COLOR[columnaActual] + '35'}`,
-            background: moverDD.open ? `${COL_COLOR[columnaActual]}18` : `${COL_COLOR[columnaActual]}0d`,
+            border: `1px solid ${moverDD.open ? colorFor(columnaActual) + '60' : colorFor(columnaActual) + '35'}`,
+            background: moverDD.open ? `${colorFor(columnaActual)}18` : `${colorFor(columnaActual)}0d`,
             cursor: 'pointer', transition: 'all 0.15s',
           }}
         >
           <span style={{
             width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-            background: COL_COLOR[columnaActual],
+            background: colorFor(columnaActual),
           }} />
 <span style={{
   flex: 1, fontSize: 12, fontWeight: 700, letterSpacing: 1,
-   color: COL_COLOR[columnaActual],
+   color: titleColorFor(columnaActual),
   textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6,
 }}>
-  {KANBAN_COLUMNAS[columnaActual]}
+  {labelFor(columnaActual)}
   <span style={{
     fontSize: 8, fontWeight: 600, letterSpacing: 0.5,
     padding: '1px 5px', borderRadius: 3,
-    border: `1px solid ${COL_COLOR[columnaActual]}35`,
-    background: `${COL_COLOR[columnaActual]}12`,
-    color: COL_COLOR[columnaActual], opacity: 0.75,
+    border: `1px solid ${colorFor(columnaActual)}35`,
+    background: `${colorFor(columnaActual)}12`,
+    color: titleColorFor(columnaActual), opacity: 0.75,
     textTransform: 'uppercase',
   }}>
     Mover
   </span>
 </span>
           <ChevDown size={12} style={{
-            color: COL_COLOR[columnaActual], opacity: 0.7, flexShrink: 0,
+            color: colorFor(columnaActual), opacity: 0.7, flexShrink: 0,
             transform: moverDD.open ? 'rotate(180deg)' : 'none',
             transition: 'transform 0.15s',
           }} />
@@ -1510,26 +1546,27 @@ onToggleAssignee={(userId) => {
             overflow: 'hidden', minWidth: 180,
           }}>
             <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
+              {columnsForMove.map(({ slug: col, name: label, evidenceRequired }) => {
                 const active    = columnaActual === col;
-                const esCierre  = COLUMNAS_CIERRE.has(col);
-                const showBadge = esCierre && !yaHayClosure;
+                const showBadge = evidenceRequired && !yaHayClosure;
+                const c         = colorFor(col);
+                const tc        = titleColorFor(col);
                 return (
                   <button
                     key={col}
-                    onClick={() => { handleMover(col); if (!COLUMNAS_CIERRE.has(col) || yaHayClosure) moverDD.setOpen(false); }}
+                    onClick={() => { handleMover(col); if (!evidenceRequired || yaHayClosure) moverDD.setOpen(false); }}
                     style={{
                       padding: '5px 11px', borderRadius: 6,
                       fontSize: 11, fontWeight: 700, letterSpacing: 1,
                       transition: 'all 0.12s',
                       display: 'flex', alignItems: 'center', gap: 5,
                       cursor: active ? 'default' : 'pointer',
-                      border: `1px solid ${active ? COL_COLOR[col] + '60' : showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`,
-                      background: active ? `${COL_COLOR[col]}18` : 'transparent',
-                      color: active ? COL_COLOR[col] : showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)',
+                      border: `1px solid ${active ? c + '60' : showBadge ? c + '30' : 'var(--border-subtle)'}`,
+                      background: active ? `${c}18` : 'transparent',
+                      color: active ? tc : showBadge ? tc + 'cc' : 'var(--txt-muted)',
                     }}
-                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '55'; e.currentTarget.style.color = COL_COLOR[col]; e.currentTarget.style.background = `${COL_COLOR[col]}10`; } }}
-                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; } }}
+                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = c + '55'; e.currentTarget.style.color = tc; e.currentTarget.style.background = `${c}10`; } }}
+                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? c + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? tc + 'cc' : 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; } }}
                   >
                     {showBadge && <CheckCircle size={9} />}{label}
                   </button>
@@ -1541,7 +1578,8 @@ onToggleAssignee={(userId) => {
       </div>
 
   </FieldBlock>
-)}            </div>
+)}            
+</div>
 
             {/* Panel derecho */}
             <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1767,12 +1805,14 @@ onToggleAssignee={(userId) => {
       )}
 
       {pendingClosureCol && (
-          <ClosureModal
+        <ClosureModal
           request={effectiveRequest}
           targetColumna={pendingClosureCol}
           targetColumnId={pendingClosureColId}
+          canReuseEvidence={pendingSourceReqEv}
+          previousClosure={effectiveRequest.cierreInfo}
           onConfirm={handleClosureFromModal}
-          onCancel={() => setPendingClosureCol(null)}
+          onCancel={() => { setPendingClosureCol(null); setPendingSourceReqEv(false); }}
           isPending={false}
         />
       )}

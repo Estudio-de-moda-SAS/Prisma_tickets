@@ -8,6 +8,7 @@ import { BoardPage } from "@/pages/BoardPage";
 import { HomePage } from "@/pages/HomePage";
 import { NuevaSolicitudPage } from "@/pages/NewRequestPage";
 import { MisSolicitudesPage } from "@/pages/MyRequestsPage";
+import { ClientRequestsPage } from "@/pages/ClientRequestsPage";
 import { TeamRequestsPage } from "@/pages/TeamRequestsPage";
 import { RequestsPage } from "@/pages/RequestsPage";
 import { StatsPage } from "@/pages/StatsPage";
@@ -157,8 +158,9 @@ export default function App() {
             }
           />
 
-          <Route path="new"         element={<NuevaSolicitudPage />} />
-          <Route path="my-requests" element={<MisSolicitudesPage />} />
+          <Route path="new"            element={<NuevaSolicitudPage />} />
+          <Route path="my-requests"    element={<MisSolicitudesPage />} />
+          <Route path="mis-solicitudes" element={<ClientRequestsPage />} />
 
           <Route path="stats" element={<RequireTI><StatsPage /></RequireTI>} />
 

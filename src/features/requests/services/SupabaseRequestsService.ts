@@ -70,6 +70,7 @@ type RawRequestRow = {
 closure: Array<{
     Closure_ID:      number;
     Closure_Note:    string;
+    Closure_Type:    'new' | 'reuse' | 'skip';
     Attachment_URL:  string | null;
     Attachment_Name: string | null;
     Attachment_Mime: string | null;
@@ -171,6 +172,7 @@ function mapOneClosure(c: NonNullable<RawRequestRow['closure']>[number]): Cierre
     return {
       closureId:      c.Closure_ID,
       closureNote:    c.Closure_Note,
+      closureType:    (c as any).Closure_Type ?? 'new',
       closedAt:       c.Closed_At,
       closedBy: { userId: c.closer?.User_ID ?? 0, userName: c.closer?.User_Name ?? '' },
       attachments:    (c.closure_attachments ?? []).map((a) => ({
@@ -379,66 +381,75 @@ async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     await apiClient.call('deleteRequest', { id });
   }
 
-  async closeRequest(payload: CerrarRequestPayload): Promise<CierreInfo> {
-    const row = await apiClient.call<{
-      Closure_ID:   number;
-      Closure_Note: string;
-      Closed_At:    string;
-      closer: { User_ID: number; User_Name: string } | null;
-    }>('closeRequest', {
-      requestId:      payload.requestId,
-      closedBy:       payload.closedBy,
-      closureNote:    payload.closureNote,
-      targetColumnId: payload.targetColumnId,
-      attachmentUrl:  null,
-      attachmentName: null,
-      attachmentMime: null,
-    });
+async closeRequest(payload: CerrarRequestPayload): Promise<CierreInfo> {
+  const mode = payload.evidenceMode ?? 'new';
 
-    const closureId = row.Closure_ID;
-    const uploadedAttachments: ClosureAttachment[] = [];
+  const row = await apiClient.call<{
+    Closure_ID:   number;
+    Closure_Note: string;
+    Closure_Type: 'new' | 'reuse' | 'skip';
+    Closed_At:    string;
+    closer: { User_ID: number; User_Name: string } | null;
+  }>('closeRequest', {
+    requestId:          payload.requestId,
+    closedBy:           payload.closedBy,
+    closureNote:        payload.closureNote,
+    targetColumnId:     payload.targetColumnId,
+    evidenceMode:       mode,
+    reuseFromClosureId: mode === 'reuse' ? (payload.reuseFromClosureId ?? null) : null,
+    attachmentUrl:      null,
+    attachmentName:     null,
+    attachmentMime:     null,
+  });
 
-    if (payload.attachments.length > 0) {
-      const uploads = await Promise.all(
-        payload.attachments.map(async (file) => {
-          const base64 = await fileToBase64(file);
-          return apiClient.call<RawClosureAttachment>('uploadClosureAttachment', {
-            closureId,
-            requestId: payload.requestId,
-            userId:    payload.closedBy,
-            fileName:  file.name,
-            mimeType:  file.type,
-            sizeBytes: file.size,
-            base64,
-          });
-        }),
-      );
+  const closureId = row.Closure_ID;
+  const uploadedAttachments: ClosureAttachment[] = [];
 
-      for (const u of uploads) {
-        uploadedAttachments.push({
-          attachmentId: u.Closure_Attachment_ID,
-          storagePath:  u.Storage_Path,
-          fileName:     u.File_Name,
-          mimeType:     u.Mime_Type,
-          fileSize:     u.File_Size,
-          createdAt:    u.Created_At,
-          signedUrl:    u.Signed_Url,
+  // Solo subir archivos en modo 'new'
+  if (mode === 'new' && payload.attachments.length > 0) {
+    const uploads = await Promise.all(
+      payload.attachments.map(async (file) => {
+        const base64 = await fileToBase64(file);
+        return apiClient.call<RawClosureAttachment>('uploadClosureAttachment', {
+          closureId,
+          requestId: payload.requestId,
+          userId:    payload.closedBy,
+          fileName:  file.name,
+          mimeType:  file.type,
+          sizeBytes: file.size,
+          base64,
         });
-      }
-    }
+      }),
+    );
 
-    return {
-      closureId,
-      closureNote:    row.Closure_Note,
-      closedAt:       row.Closed_At,
-      closedBy: {
-        userId:   row.closer?.User_ID   ?? payload.closedBy,
-        userName: row.closer?.User_Name ?? '',
-      },
-      attachments:    uploadedAttachments,
-      attachmentUrl:  null,
-      attachmentName: null,
-      attachmentMime: null,
-    };
+    for (const u of uploads) {
+      uploadedAttachments.push({
+        attachmentId: u.Closure_Attachment_ID,
+        storagePath:  u.Storage_Path,
+        fileName:     u.File_Name,
+        mimeType:     u.Mime_Type,
+        fileSize:     u.File_Size,
+        createdAt:    u.Created_At,
+        signedUrl:    u.Signed_Url,
+      });
+    }
   }
+
+  // En modo 'reuse', el clone se hizo en el backend → el refetch traerá los attachments
+
+  return {
+    closureId,
+    closureNote:    row.Closure_Note,
+    closureType:    row.Closure_Type,
+    closedAt:       row.Closed_At,
+    closedBy: {
+      userId:   row.closer?.User_ID   ?? payload.closedBy,
+      userName: row.closer?.User_Name ?? '',
+    },
+    attachments:    uploadedAttachments,
+    attachmentUrl:  null,
+    attachmentName: null,
+    attachmentMime: null,
+  };
+}
 }

@@ -16,6 +16,14 @@ const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const CLIENT_ID    = Deno.env.get('AZURE_CLIENT_ID')!;
 const ENTRA_ISSUER_V2 = `https://login.microsoftonline.com/${TENANT_ID}/v2.0`;
 const ENTRA_ISSUER_V1 = `https://sts.windows.net/${TENANT_ID}/`;
+const INTERNAL_JOB_SECRET = Deno.env.get('INTERNAL_JOB_SECRET') ?? '';
+const SELF_URL            = `${SUPABASE_URL}/functions/v1/api`;
+
+const JOB_CHUNK_SIZE              = 100;  // solicitudes por chunk
+const JOB_MAX_CHUNKS_PER_INVOKE   = 5;    // 500 por invocación → ~30-50s
+
+// @ts-ignore — disponible en Supabase Edge Runtime
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 /*
  * RATE_LIMIT_DAYS: días mínimos entre calificaciones por usuario.
  * 0 = sin límite (comportamiento actual).
@@ -74,7 +82,542 @@ function extractStoragePath(storedValue: string): string {
   if (idx !== -1) return storedValue.slice(idx + marker.length);
   return storedValue;
 }
+/* ── Helpers para rename de keys en templates ───────────── */
 
+function _isConditional(f: unknown): boolean {
+  return !!f && typeof f === 'object' && (f as { type?: string }).type === 'conditional';
+}
+
+function _collectSchemaKeys(schema: unknown[]): string[] {
+  const out: string[] = [];
+  const walk = (arr: unknown[]) => {
+    for (const f of arr ?? []) {
+      if (!f || typeof f !== 'object') continue;
+      const node = f as { key?: string; trueBranch?: unknown[]; falseBranch?: unknown[] };
+      if (node.key) out.push(node.key);
+      if (_isConditional(node)) {
+        walk(node.trueBranch  ?? []);
+        walk(node.falseBranch ?? []);
+      }
+    }
+  };
+  walk(schema);
+  return out;
+}
+
+function _renameKeysInSchema(schema: unknown[], renames: Record<string, string>): unknown[] {
+  return (schema ?? []).map((f) => {
+    if (!f || typeof f !== 'object') return f;
+    const node: Record<string, unknown> = { ...(f as Record<string, unknown>) };
+    if (typeof node['key'] === 'string' && renames[node['key'] as string]) {
+      node['key'] = renames[node['key'] as string];
+    }
+    if (_isConditional(node)) {
+      node['trueBranch']  = _renameKeysInSchema((node['trueBranch']  as unknown[]) ?? [], renames);
+      node['falseBranch'] = _renameKeysInSchema((node['falseBranch'] as unknown[]) ?? [], renames);
+    }
+    return node;
+  });
+}
+/* ── Self-invoke para procesar el siguiente chunk ───────── */
+async function _kickoffJobChunk(jobId: string): Promise<void> {
+  try {
+    await fetch(SELF_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type':            'application/json',
+        'X-Internal-Job-Secret':   INTERNAL_JOB_SECRET,
+      },
+      body: JSON.stringify({
+        action:  '_processBackgroundJobChunk',
+        payload: { jobId },
+      }),
+    });
+  } catch (_e) { /* silent — se reintentará en próximo poll si quedó colgado */ }
+}
+
+/* ── Marca el job como done y escribe auditoría ─────────── */
+async function _finalizeRenameJob(
+  supabase: ReturnType<typeof createServiceClient>,
+  jobId: string,
+  processed: number,
+  payload: { templateId: number; renames: { oldKey: string; newKey: string }[]; renamedBy: number | null },
+): Promise<void> {
+  const auditRows = payload.renames.map((r) => ({
+    Template_ID:       payload.templateId,
+    Old_Key:           r.oldKey,
+    New_Key:           r.newKey,
+    Renamed_By:        payload.renamedBy ?? null,
+    Renamed_At:        new Date().toISOString(),
+    Requests_Affected: processed,
+  }));
+  if (auditRows.length > 0) {
+    await supabase.from('TBL_Template_Field_Renames').insert(auditRows);
+  }
+
+  await supabase.from('TBL_Background_Jobs').update({
+    Job_Status:           'done',
+    Job_Progress_Current: processed,
+    Job_Progress_Total:   processed,
+    Job_Result:           { requestsUpdated: processed, renames: payload.renames },
+    Job_Updated_At:       new Date().toISOString(),
+    Job_Completed_At:     new Date().toISOString(),
+  }).eq('Job_ID', jobId);
+}
+
+/* ── Procesa hasta MAX_CHUNKS_PER_INVOKE; si quedan más, self-invoke ── */
+async function _processTemplateRenameChunk(
+  jobId: string,
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<void> {
+  const { data: jobRow, error: jobErr } = await supabase
+    .from('TBL_Background_Jobs')
+    .select('Job_ID, Job_Type, Job_Status, Job_Payload, Job_Progress_Current, Job_Progress_Total')
+    .eq('Job_ID', jobId)
+    .single();
+  if (jobErr || !jobRow) return;
+
+  const job = jobRow as {
+    Job_ID: string;
+    Job_Type: string;
+    Job_Status: string;
+    Job_Payload: {
+      templateId: number;
+      renames:    { oldKey: string; newKey: string }[];
+      renamedBy:  number | null;
+    };
+    Job_Progress_Current: number;
+    Job_Progress_Total:   number;
+  };
+
+  if (job.Job_Status === 'done' || job.Job_Status === 'failed') return;
+  if (job.Job_Type   !== 'template_field_rename')                return;
+
+  // Marcar como running si era pending
+  if (job.Job_Status === 'pending') {
+    await supabase.from('TBL_Background_Jobs').update({
+      Job_Status:     'running',
+      Job_Updated_At: new Date().toISOString(),
+    }).eq('Job_ID', jobId);
+  }
+
+  const renameMap: Record<string, string> = {};
+  for (const r of job.Job_Payload.renames) renameMap[r.oldKey] = r.newKey;
+
+  let processed = job.Job_Progress_Current;
+
+  try {
+    for (let chunkNum = 0; chunkNum < JOB_MAX_CHUNKS_PER_INVOKE; chunkNum++) {
+      const { data: batch, error: fetchErr } = await supabase
+        .from('TBL_Requests')
+        .select('Request_ID, Request_Form_Data, Request_Template_Schema_Snapshot')
+        .eq('Request_Template_ID', job.Job_Payload.templateId)
+        .order('Request_ID', { ascending: true })
+        .range(processed, processed + JOB_CHUNK_SIZE - 1);
+      if (fetchErr) throw new Error(fetchErr.message);
+
+      if (!batch || batch.length === 0) {
+        await _finalizeRenameJob(supabase, jobId, processed, job.Job_Payload);
+        return;
+      }
+
+      for (const row of batch as Array<{
+        Request_ID: string;
+        Request_Form_Data: unknown;
+        Request_Template_Schema_Snapshot: unknown[] | null;
+      }>) {
+        const newFormData = _renameKeysInFormData(row.Request_Form_Data, renameMap);
+        const newSnapshot = _renameKeysInSchema(row.Request_Template_Schema_Snapshot ?? [], renameMap);
+        const { error: updErr } = await supabase
+          .from('TBL_Requests')
+          .update({
+            Request_Form_Data:                newFormData,
+            Request_Template_Schema_Snapshot: newSnapshot,
+          })
+          .eq('Request_ID', row.Request_ID);
+        if (updErr) throw new Error(updErr.message);
+        processed++;
+      }
+
+      // Persistir progreso después de cada chunk
+      await supabase.from('TBL_Background_Jobs').update({
+        Job_Progress_Current: processed,
+        Job_Updated_At:       new Date().toISOString(),
+      }).eq('Job_ID', jobId);
+
+      // Último batch parcial → terminamos
+      if (batch.length < JOB_CHUNK_SIZE) {
+        await _finalizeRenameJob(supabase, jobId, processed, job.Job_Payload);
+        return;
+      }
+    }
+
+    // Llegamos al techo de chunks por invocación → continuar en otra invocación
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+      EdgeRuntime.waitUntil(_kickoffJobChunk(jobId));
+    } else {
+      _kickoffJobChunk(jobId).catch(() => {});
+    }
+  } catch (err) {
+    await supabase.from('TBL_Background_Jobs').update({
+      Job_Status:       'failed',
+      Job_Error:        (err as Error).message,
+      Job_Updated_At:   new Date().toISOString(),
+      Job_Completed_At: new Date().toISOString(),
+    }).eq('Job_ID', jobId);
+  }
+}
+/* ============================================================
+   EXPORT JOBS (Fase 2) — constantes y helpers
+   ============================================================ */
+
+const MAX_EXPORT_SIZE             = parseInt(Deno.env.get('MAX_EXPORT_SIZE')             ?? '100000', 10);
+const EXPORT_JOB_CHUNK_SIZE       = parseInt(Deno.env.get('EXPORT_JOB_CHUNK_SIZE')       ?? '500',    10);
+const EXPORT_MAX_CHUNKS_PER_INVOKE = parseInt(Deno.env.get('EXPORT_MAX_CHUNKS_PER_INVOKE') ?? '8',     10);
+const EXPORT_BUCKET               = 'exports';
+
+type ExportFilters = {
+  boardId:          number;
+  teamIds?:         number[] | null;
+  sprintIds?:       number[] | null;
+  columnIds?:       number[] | null;
+  requestedByIds?:  number[] | null;
+  assignedToIds?:   number[] | null;
+  priorityScores?:  number[] | null;
+  templateIds?:     number[] | null;
+  labelIds?:        number[] | null;
+  isConfidential?:  boolean | null;
+  dateFrom?:        string | null;
+  dateTo?:          string | null;
+};
+
+/** Resuelve la intersección de IDs candidatos según filtros relacionales */
+async function _resolveExportCandidateIds(
+  supabase: ReturnType<typeof createServiceClient>,
+  filters:  ExportFilters,
+): Promise<string[] | null> {
+  let candidateIds: string[] | null = null;
+  const intersect = (a: string[] | null, b: string[]): string[] => {
+    if (a === null) return b;
+    const setB = new Set(b);
+    return a.filter((id) => setB.has(id));
+  };
+
+  if (filters.teamIds && filters.teamIds.length > 0) {
+    const { data, error } = await supabase
+      .from('TBL_Request_Team')
+      .select('Request_Team_Request_ID')
+      .in('Request_Team_ID', filters.teamIds);
+    if (error) throw new Error(error.message);
+    candidateIds = intersect(candidateIds, [...new Set(((data ?? []) as { Request_Team_Request_ID: string }[]).map((r) => r.Request_Team_Request_ID))]);
+    if (candidateIds.length === 0) return [];
+  }
+
+  if (filters.sprintIds && filters.sprintIds.length > 0) {
+    const { data, error } = await supabase
+      .from('TBL_Request_Sprint')
+      .select('Request_Sprint_Request_ID')
+      .in('Request_Sprint_ID', filters.sprintIds);
+    if (error) throw new Error(error.message);
+    candidateIds = intersect(candidateIds, [...new Set(((data ?? []) as { Request_Sprint_Request_ID: string }[]).map((r) => r.Request_Sprint_Request_ID))]);
+    if (candidateIds.length === 0) return [];
+  }
+
+  if (filters.assignedToIds && filters.assignedToIds.length > 0) {
+    const { data, error } = await supabase
+      .from('TBL_Requests_Assignments')
+      .select('Request_Assignment_ID')
+      .in('Request_Assignment_User_ID', filters.assignedToIds);
+    if (error) throw new Error(error.message);
+    candidateIds = intersect(candidateIds, [...new Set(((data ?? []) as { Request_Assignment_ID: string }[]).map((r) => r.Request_Assignment_ID))]);
+    if (candidateIds.length === 0) return [];
+  }
+
+  if (filters.labelIds && filters.labelIds.length > 0) {
+    const { data, error } = await supabase
+      .from('TBL_Request_Labels')
+      .select('Request_Labels_Request_ID')
+      .in('Request_Labels_Label_ID', filters.labelIds);
+    if (error) throw new Error(error.message);
+    candidateIds = intersect(candidateIds, [...new Set(((data ?? []) as { Request_Labels_Request_ID: string }[]).map((r) => r.Request_Labels_Request_ID))]);
+    if (candidateIds.length === 0) return [];
+  }
+
+  return candidateIds;
+}
+
+/** Aplica filtros directos (columna, prioridad, fechas, etc.) a un query builder */
+function _applyExportDirectFilters<Q extends { eq: (k: string, v: unknown) => Q; in: (k: string, v: unknown[]) => Q; gte: (k: string, v: unknown) => Q; lte: (k: string, v: unknown) => Q }>(
+  query: Q,
+  filters: ExportFilters,
+  candidateIds: string[] | null,
+): Q {
+  let q = query.eq('Request_Board_ID', filters.boardId);
+  if (candidateIds !== null) q = q.in('Request_ID', candidateIds);
+  if (filters.columnIds      && filters.columnIds.length > 0)      q = q.in('Request_Board_Column_ID', filters.columnIds);
+  if (filters.requestedByIds && filters.requestedByIds.length > 0) q = q.in('Request_Requested_By',    filters.requestedByIds);
+  if (filters.priorityScores && filters.priorityScores.length > 0) q = q.in('Request_Score',           filters.priorityScores);
+  if (filters.templateIds    && filters.templateIds.length > 0)    q = q.in('Request_Template_ID',     filters.templateIds);
+  if (filters.isConfidential !== null && filters.isConfidential !== undefined) {
+    q = q.eq('Request_Is_Confidential', filters.isConfidential);
+  }
+  if (filters.dateFrom) q = q.gte('Request_Created_At', filters.dateFrom);
+  if (filters.dateTo)   q = q.lte('Request_Created_At', filters.dateTo);
+  return q;
+}
+
+/** Cuenta cuántos tickets coinciden con los filtros */
+async function _countExportMatches(
+  supabase:    ReturnType<typeof createServiceClient>,
+  filters:     ExportFilters,
+  candidateIds: string[] | null,
+): Promise<number> {
+  if (candidateIds !== null && candidateIds.length === 0) return 0;
+  const base = supabase.from('TBL_Requests').select('Request_ID', { count: 'exact', head: true });
+  const { count, error } = await _applyExportDirectFilters(base, filters, candidateIds);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** Sube un archivo JSON al bucket de exports */
+async function _uploadExportArtifact(
+  supabase:    ReturnType<typeof createServiceClient>,
+  storagePath: string,
+  fileName:    string,
+  jsonObject:  unknown,
+): Promise<void> {
+  const bytes = new TextEncoder().encode(JSON.stringify(jsonObject));
+  const { error } = await supabase.storage
+    .from(EXPORT_BUCKET)
+    .upload(`${storagePath}/${fileName}`, bytes, {
+      contentType: 'application/json',
+      upsert:      true,
+    });
+  if (error) throw new Error(`Storage upload failed (${fileName}): ${error.message}`);
+}
+
+/** Self-invoca el procesamiento del siguiente chunk de export */
+async function _kickoffExportChunk(jobId: string): Promise<void> {
+  try {
+    await fetch(SELF_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type':          'application/json',
+        'X-Internal-Job-Secret': INTERNAL_JOB_SECRET,
+      },
+      body: JSON.stringify({
+        action:  '_processExportJobChunk',
+        payload: { jobId },
+      }),
+    });
+  } catch (_e) { /* silent — el watchdog reintenta si quedó colgado */ }
+}
+
+/** Marca el job como done, sube notificación y actualiza historial */
+async function _finalizeExportJob(
+  supabase:  ReturnType<typeof createServiceClient>,
+  jobId:     string,
+  exportId:  string,
+  userId:    number,
+  totalChunks: number,
+  totalTickets: number,
+  format:    string,
+  fileName:  string,
+  prefix:    string,
+): Promise<void> {
+  const completedAt = new Date().toISOString();
+
+  // 1. Marcar job como done
+  await supabase.from('TBL_Background_Jobs').update({
+    Job_Status:           'done',
+    Job_Progress_Current: totalTickets,
+    Job_Result:           {
+      exportId, totalChunks, totalTickets, storagePrefix: prefix, fileName, format,
+    },
+    Job_Updated_At:       completedAt,
+    Job_Completed_At:     completedAt,
+  }).eq('Job_ID', jobId);
+
+  // 2. Actualizar TBL_Export_History
+  await supabase.from('TBL_Export_History').update({
+    Export_Status:         'done',
+    Export_File_Name:      fileName,
+    Export_Storage_Prefix: prefix,
+    Export_Completed_At:   completedAt,
+  }).eq('Export_ID', exportId);
+
+  // 3. Notificación in-app
+  await insertNotifications(supabase, {
+    userIds:   [userId],
+    type:      'export_ready',
+    title:     'Tu exportación está lista',
+    body:      `Exportación de ${totalTickets} tickets en formato ${format.toUpperCase()} completada. Disponible para descarga por 7 días.`,
+    requestId: null,
+    actorId:   null,
+  });
+}
+
+/** Marca el job como fallido y la entrada de historial */
+async function _failExportJob(
+  supabase: ReturnType<typeof createServiceClient>,
+  jobId:    string,
+  exportId: string,
+  error:    string,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await supabase.from('TBL_Background_Jobs').update({
+    Job_Status:       'failed',
+    Job_Error:        error,
+    Job_Updated_At:   now,
+    Job_Completed_At: now,
+  }).eq('Job_ID', jobId);
+
+  await supabase.from('TBL_Export_History').update({
+    Export_Status:       'failed',
+    Export_Error:        error,
+    Export_Completed_At: now,
+  }).eq('Export_ID', exportId);
+}
+
+/** Procesa N chunks consecutivos del export */
+async function _processExportChunks(
+  jobId:    string,
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<void> {
+  const { data: jobRow, error: jobErr } = await supabase
+    .from('TBL_Background_Jobs')
+    .select('Job_ID, Job_Type, Job_Status, Job_Payload, Job_Progress_Current, Job_Progress_Total')
+    .eq('Job_ID', jobId)
+    .single();
+  if (jobErr || !jobRow) return;
+
+  const job = jobRow as {
+    Job_ID:               string;
+    Job_Type:             string;
+    Job_Status:           string;
+    Job_Payload:          {
+      userId:           number;
+      exportId:         string;
+      filters:          ExportFilters;
+      format:           'xlsx' | 'csv';
+      selectedColumns:  string[];
+      sheetPerTemplate: boolean;
+      storagePrefix:    string;
+      chunksTotal:      number;
+      candidateIds:     string[] | null;  // null = no hubo filtros relacionales
+    };
+    Job_Progress_Current: number;
+    Job_Progress_Total:   number;
+  };
+
+  if (job.Job_Status === 'done' || job.Job_Status === 'failed') return;
+  if (job.Job_Type   !== 'export_requests')                     return;
+
+  if (job.Job_Status === 'pending') {
+    await supabase.from('TBL_Background_Jobs').update({
+      Job_Status:     'running',
+      Job_Updated_At: new Date().toISOString(),
+    }).eq('Job_ID', jobId);
+
+    await supabase.from('TBL_Export_History').update({
+      Export_Status: 'running',
+    }).eq('Export_ID', job.Job_Payload.exportId);
+  }
+
+  let processed = job.Job_Progress_Current;
+  const { filters, candidateIds, storagePrefix, chunksTotal, exportId, userId, format } = job.Job_Payload;
+
+  try {
+    for (let chunkNum = 0; chunkNum < EXPORT_MAX_CHUNKS_PER_INVOKE; chunkNum++) {
+      const chunkIndex = Math.floor(processed / EXPORT_JOB_CHUNK_SIZE);
+      if (chunkIndex >= chunksTotal) break;
+
+      // Query del chunk actual
+      const base = supabase
+        .from('TBL_Requests')
+        .select(BASE_SELECT)
+        .order('Request_Created_At', { ascending: false })
+        .range(processed, processed + EXPORT_JOB_CHUNK_SIZE - 1);
+      const { data: tickets, error: fetchErr } = await _applyExportDirectFilters(base, filters, candidateIds);
+      if (fetchErr) throw new Error(fetchErr.message);
+
+      const enriched = await attachCriteriaSummary((tickets ?? []) as Record<string, unknown>[], supabase);
+
+      const chunkFileName = `chunk_${String(chunkIndex + 1).padStart(4, '0')}.json`;
+      await _uploadExportArtifact(supabase, storagePrefix, chunkFileName, { tickets: enriched });
+
+      processed += enriched.length;
+
+      await supabase.from('TBL_Background_Jobs').update({
+        Job_Progress_Current: processed,
+        Job_Updated_At:       new Date().toISOString(),
+      }).eq('Job_ID', jobId);
+
+      // Si trajimos menos del chunk size, terminamos
+      if (enriched.length < EXPORT_JOB_CHUNK_SIZE) break;
+    }
+
+    // ¿Terminamos?
+    const finalChunkIndex = Math.floor(processed / EXPORT_JOB_CHUNK_SIZE);
+    const isComplete = finalChunkIndex >= chunksTotal || processed >= job.Job_Progress_Total;
+
+    if (isComplete) {
+      // Nombre del archivo final que el frontend va a generar
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[:T-]/g, '');
+      const ext   = format === 'xlsx' ? 'xlsx' : 'zip';
+      const fileName = `PRISMA_export_${stamp}.${ext}`;
+      await _finalizeExportJob(supabase, jobId, exportId, userId, finalChunkIndex, processed, format, fileName, storagePrefix);
+    } else {
+      // Self-invoke el siguiente lote
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+        EdgeRuntime.waitUntil(_kickoffExportChunk(jobId));
+      } else {
+        _kickoffExportChunk(jobId).catch(() => {});
+      }
+    }
+  } catch (err) {
+    await _failExportJob(supabase, jobId, exportId, (err as Error).message);
+  }
+}
+
+/** Elimina todos los artifacts de Storage de un export */
+async function _cleanupExportArtifacts(
+  supabase: ReturnType<typeof createServiceClient>,
+  storagePrefix: string,
+): Promise<void> {
+  try {
+    const { data: files } = await supabase.storage.from(EXPORT_BUCKET).list(storagePrefix);
+    if (files && files.length > 0) {
+      const paths = (files as Array<{ name: string }>).map((f) => `${storagePrefix}/${f.name}`);
+      await supabase.storage.from(EXPORT_BUCKET).remove(paths);
+    }
+  } catch (_e) { /* silent — un cron limpiará si quedó algo */ }
+}
+
+function _renameKeysInFormData(formData: unknown, renames: Record<string, string>): unknown {
+  if (!formData || typeof formData !== 'object' || Array.isArray(formData)) return formData;
+  const src = formData as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(src)) {
+    if (k === '__labels') {
+      // __labels viene como STRING JSON dentro de Form_Data
+      try {
+        const wasString = typeof v === 'string';
+        const labels = wasString ? JSON.parse(v as string) : (v as Record<string, unknown>);
+        const renamed: Record<string, unknown> = {};
+        for (const [lk, lv] of Object.entries(labels ?? {})) {
+          renamed[renames[lk] ?? lk] = lv;
+        }
+        out[k] = wasString ? JSON.stringify(renamed) : renamed;
+      } catch {
+        out[k] = v;
+      }
+      continue;
+    }
+    out[renames[k] ?? k] = v;
+  }
+  return out;
+}
 /* ── Helper: mapear fila DB → AcceptanceCriteria frontend ── */
 function mapCriteria(row: Record<string, unknown>) {
   return {
@@ -168,10 +711,11 @@ const BASE_SELECT = `
     )
   ),
   child_count:TBL_Requests!Request_Parent_ID ( count ),
-  closure:TBL_Request_Closure (
-    Closure_ID,
-    Closure_Note,
-    Attachment_URL,
+closure:TBL_Request_Closure (
+  Closure_ID,
+  Closure_Note,
+  Closure_Type,
+      Attachment_URL,
     Attachment_Name,
     Attachment_Mime,
     Closed_At,
@@ -674,7 +1218,7 @@ async function handleAction(
       const { data, error } = await supabase
         .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
       if (error) throw new Error(error.message);
-
+/*
       // Email al solicitante
       const { data: requesterData } = await supabase
         .from('TBL_Users')
@@ -682,7 +1226,7 @@ async function handleAction(
         .eq('User_ID', p.requestedBy)
         .single();
 
-      await sendEventEmail(supabase, {
+        await sendEventEmail(supabase, {
         eventKey:  'ticket_recibido',
         requestId: newId,
         userIds:   [p.requestedBy],
@@ -693,7 +1237,7 @@ async function handleAction(
           requester_name:     (requesterData as any)?.User_Name ?? '',
           ticket_description: p.descripcion,
         },
-      });
+      });*/
 
       return autoAssignedSprint !== null
         ? { ...(data as object), _autoAssignedSprint: autoAssignedSprint }
@@ -753,8 +1297,10 @@ const [colRes, reqRes] = await Promise.all([
           actorId:   movedBy,
         });
       }
+      
       // Email
       if (movedBy) {
+        /*
         const { data: reqDataMove } = await supabase
           .from('TBL_Requests')
           .select('Request_Title')
@@ -773,7 +1319,7 @@ const [colRes, reqRes] = await Promise.all([
             column_name:  (colData as any)?.Board_Column_Name ?? '',
             actor_name:   '',
           },
-        });
+        });*/
       }
 // ── Ejecutar reglas columna_cambiada ──────────────────
       const movedColName = (colData as any)?.Board_Column_Name ?? '';
@@ -943,90 +1489,120 @@ case 'updateRequest': {
       return data;
     }
 
-    case 'closeRequest': {
-      const p = payload as {
-        requestId: string; closedBy: number; closureNote: string;
-        targetColumnId: number; attachmentUrl: string | null;
-        attachmentName: string | null; attachmentMime: string | null;
-      };
+case 'closeRequest': {
+  const p = payload as {
+    requestId: string; closedBy: number; closureNote: string;
+    targetColumnId: number;
+    evidenceMode?:       'new' | 'reuse' | 'skip';
+    reuseFromClosureId?: number | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentMime?: string | null;
+  };
 
-      // Crear el registro de closure (evidencia)
-      // NOTA: ya NO sella Request_Finished_At aquí — eso ocurre en moveToColumn
-      // cuando la columna destino es hecho (6) o historial (9).
-const { data: closure, error: closureErr } = await supabase
-        .from('TBL_Request_Closure')
-        .upsert({
-          Request_ID:       p.requestId,
-          Closed_By:        p.closedBy,
-          Closure_Note:     p.closureNote,
-          Target_Column_ID: p.targetColumnId,
-          Attachment_URL:   p.attachmentUrl  ?? null,
-          Attachment_Name:  p.attachmentName ?? null,
-          Attachment_Mime:  p.attachmentMime ?? null,
-          Closed_At:        new Date().toISOString(),
-        })
-        .select(`
-          Closure_ID, Closure_Note,
-          Attachment_URL, Attachment_Name, Attachment_Mime, Closed_At,
-          closer:TBL_Users!Closed_By ( User_ID, User_Name )
-        `)
-        .single();
-      if (closureErr) throw new Error(closureErr.message);
+  const mode = p.evidenceMode ?? 'new';
 
-      // Mover la columna — sellar si está marcada como columna de cierre
-      const willClose = await isCloseColumn(supabase, p.targetColumnId, p.requestId);
-      const updateData: Record<string, unknown> = {
-        Request_Board_Column_ID: p.targetColumnId,
-      };
-      if (willClose) {
-        updateData['Request_Finished_At'] = new Date().toISOString();
-        updateData['Request_Progress']    = 100;
-      }
-      const { error: updateErr } = await supabase
-        .from('TBL_Requests')
-        .update(updateData)
-        .eq('Request_ID', p.requestId);
-      if (updateErr) throw new Error(updateErr.message);
+  // 1) Crear el registro de closure
+  const { data: closure, error: closureErr } = await supabase
+    .from('TBL_Request_Closure')
+    .insert({
+      Request_ID:       p.requestId,
+      Closed_By:        p.closedBy,
+      Closure_Note:     p.closureNote,
+      Target_Column_ID: p.targetColumnId,
+      Closure_Type:     mode,
+      Attachment_URL:   p.attachmentUrl  ?? null,
+      Attachment_Name:  p.attachmentName ?? null,
+      Attachment_Mime:  p.attachmentMime ?? null,
+      Closed_At:        new Date().toISOString(),
+    })
+    .select(`
+      Closure_ID, Closure_Note, Closure_Type,
+      Attachment_URL, Attachment_Name, Attachment_Mime, Closed_At,
+      closer:TBL_Users!Closed_By ( User_ID, User_Name )
+    `)
+    .single();
+  if (closureErr) throw new Error(closureErr.message);
 
-      const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
-      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
-        .filter((uid) => uid !== p.closedBy);
-      await insertNotifications(supabase, {
-        userIds:   recipientIds,
-        type:      'closure',
-        title:     `Ticket ${p.requestId} enviado a revisión`,
-        body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
-        requestId: p.requestId,
-        actorId:   p.closedBy,
-      });
-// Obtener datos del ticket para las variables del email
-      const { data: requestData } = await supabase
-        .from('TBL_Requests')
-        .select('Request_Title, Request_Requested_By')
-        .eq('Request_ID', p.requestId)
-        .single();
+  // 2) Si es 'reuse', clonar referencias del closure anterior
+  if (mode === 'reuse' && p.reuseFromClosureId) {
+    const { data: srcAttachments, error: srcErr } = await supabase
+      .from('TBL_Closure_Attachments')
+      .select('Storage_Path, File_Name, Mime_Type, File_Size')
+      .eq('Closure_ID', p.reuseFromClosureId);
+    if (srcErr) throw new Error(srcErr.message);
 
-      const ticketTitle = (requestData as any)?.Request_Title ?? '';
-      const ticketUrl   = `${Deno.env.get('APP_URL') ?? 'https://tusistema.com'}/ticket/${p.requestId}`;
-
-      // Resolver destinatarios del email (mismos que la notificación)
-      const emailRecipients = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
-
-      await sendEventEmail(supabase, {
-        eventKey:  'closeRequest',
-        requestId: p.requestId,
-        userIds:   emailRecipients,
-        vars: {
-          ticket_id:     p.requestId,
-          ticket_title:  ticketTitle,
-          ticket_url:    ticketUrl,
-          actor_name:    '', // se resuelve por User_ID abajo si es necesario
-          closure_notes: p.closureNote,
-        },
-      });
-
-      return closure;
+    if (srcAttachments && srcAttachments.length > 0) {
+      const rows = (srcAttachments as Array<{
+        Storage_Path: string;
+        File_Name:    string;
+        Mime_Type:    string;
+        File_Size:    number;
+      }>).map((a) => ({
+        Closure_ID:   (closure as any).Closure_ID,
+        Storage_Path: a.Storage_Path,
+        File_Name:    a.File_Name,
+        Mime_Type:    a.Mime_Type,
+        File_Size:    a.File_Size,
+        Created_At:   new Date().toISOString(),
+      }));
+      const { error: cloneErr } = await supabase
+        .from('TBL_Closure_Attachments')
+        .insert(rows);
+      if (cloneErr) throw new Error(cloneErr.message);
     }
+  }
+
+  // 3) Mover la columna — sellar si es columna de cierre
+  const willClose = await isCloseColumn(supabase, p.targetColumnId, p.requestId);
+  const updateData: Record<string, unknown> = {
+    Request_Board_Column_ID: p.targetColumnId,
+  };
+  if (willClose) {
+    updateData['Request_Finished_At'] = new Date().toISOString();
+    updateData['Request_Progress']    = 100;
+  }
+  const { error: updateErr } = await supabase
+    .from('TBL_Requests')
+    .update(updateData)
+    .eq('Request_ID', p.requestId);
+  if (updateErr) throw new Error(updateErr.message);
+
+  const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
+  const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
+    .filter((uid) => uid !== p.closedBy);
+  await insertNotifications(supabase, {
+    userIds:   recipientIds,
+    type:      'closure',
+    title:     `Ticket ${p.requestId} enviado a revisión`,
+    body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
+    requestId: p.requestId,
+    actorId:   p.closedBy,
+  });
+/*
+  const { data: requestData } = await supabase
+    .from('TBL_Requests')
+    .select('Request_Title, Request_Requested_By')
+    .eq('Request_ID', p.requestId)
+    .single();
+  const ticketTitle = (requestData as any)?.Request_Title ?? '';
+  const ticketUrl   = `${Deno.env.get('APP_URL') ?? 'https://tusistema.com'}/ticket/${p.requestId}`;
+  const emailRecipients = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])];
+  await sendEventEmail(supabase, {
+    eventKey:  'closeRequest',
+    requestId: p.requestId,
+    userIds:   emailRecipients,
+    vars: {
+      ticket_id:     p.requestId,
+      ticket_title:  ticketTitle,
+      ticket_url:    ticketUrl,
+      actor_name:    '',
+      closure_notes: p.closureNote,
+    },
+  });*/
+
+  return closure;
+}
 
     case 'fetchClosureAttachments': {
       const { closureId } = payload as { closureId: number };
@@ -1183,7 +1759,7 @@ const { data: closure, error: closureErr } = await supabase
         requestId: p.requestId,
         actorId:   p.submittedBy,
       });
-
+/*
 // Email
 const { data: actorData } = await supabase
   .from('TBL_Users')
@@ -1207,7 +1783,7 @@ const { data: actorData } = await supabase
           feedback_status: p.decision === 'approved' ? 'aprobado ✓' : 'rechazado ✗',
           actor_name:      (actorData as any)?.User_Name ?? '',
         },
-      });
+      });*/
       return feedback;
     }
 
@@ -1291,6 +1867,7 @@ const { data: actorData } = await supabase
 
 // Email
       if (requestId && status !== 'pending') {
+        /*
         const { data: reqDataCrit } = await supabase
           .from('TBL_Requests')
           .select('Request_Title')
@@ -1309,7 +1886,7 @@ const { data: actorData } = await supabase
             new_status:     status,
             actor_name:     '',
           },
-        });
+        });*/
       }
       return mapCriteria(data as Record<string, unknown>);
     }
@@ -1934,6 +2511,7 @@ case 'assignRequest': {
       });
     }
   }
+  /*
 // Email
   const { data: reqDataAssign } = await supabase
     .from('TBL_Requests')
@@ -1951,7 +2529,7 @@ case 'assignRequest': {
       assignee_name: '',
       actor_name:    '',
     },
-  });
+  });*/
   return { ok: true };
 }
 
@@ -2005,12 +2583,14 @@ case 'assignRequest': {
           actorId:   userId,
         });
       }
+      /*
       // Email
       const { data: reqDataComment } = await supabase
         .from('TBL_Requests')
         .select('Request_Title')
         .eq('Request_ID', requestId)
         .single();
+
       await sendEventEmail(supabase, {
         eventKey:  'createComment',
         requestId: requestId,
@@ -2022,7 +2602,7 @@ case 'assignRequest': {
           actor_name:      '',
           comment_preview: text.trim().slice(0, 120),
         },
-      });
+      });*/
       return data;
     }
 
@@ -3044,6 +3624,688 @@ case 'setStatsStartColumn': {
       if (error) throw new Error(error.message);
       return mapCriteria(data as Record<string, unknown>);
     }   
+    /* ── Template field rename: impacto previo ────────────── */
+    case 'getTemplateRenameImpact': {
+      const { templateId } = payload as { templateId: number };
+      const { count, error } = await supabase
+        .from('TBL_Requests')
+        .select('Request_ID', { count: 'exact', head: true })
+        .eq('Request_Template_ID', templateId);
+      if (error) throw new Error(error.message);
+      return { requestsCount: count ?? 0 };
+    }
+
+    /* ── Template field rename: aplicar con sincronización ── */
+    case 'updateTemplateWithRenames': {
+      const p = payload as {
+        id: number; name: string; description: string; icon: string; color: string;
+        badge: string; formSchema: unknown[]; teamIds: number[]; isActive: boolean;
+        renames: { oldKey: string; newKey: string }[];
+        renamedBy: number | null;
+      };
+
+      // Validar formato de renames
+      const renameMap: Record<string, string> = {};
+      for (const r of p.renames ?? []) {
+        if (!r.oldKey || !r.newKey) {
+          throw new Error('Rename inválido: oldKey y newKey son requeridos.');
+        }
+        if (!/^[a-z0-9_]+$/.test(r.newKey)) {
+          throw new Error(`Key inválido: "${r.newKey}". Solo se permiten minúsculas, dígitos y guión bajo.`);
+        }
+        if (renameMap[r.oldKey]) {
+          throw new Error(`Rename duplicado para la key origen "${r.oldKey}".`);
+        }
+        renameMap[r.oldKey] = r.newKey;
+      }
+
+      // Validar unicidad de keys en el schema nuevo
+      const allKeys = _collectSchemaKeys(p.formSchema);
+      const seen = new Set<string>();
+      for (const k of allKeys) {
+        if (seen.has(k)) throw new Error(`Key duplicada en el template: "${k}". Cada campo debe tener una key única.`);
+        seen.add(k);
+      }
+
+      // 1) Actualizar el template (idéntico a updateTemplate)
+      const { error: tplErr } = await supabase.from('TBL_Requests_Templates').update({
+        Request_Template_Name:        p.name,
+        Request_Template_Description: p.description,
+        Request_Template_Icon:        p.icon,
+        Request_Template_Color:       p.color,
+        Request_Template_Badge:       p.badge,
+        Request_Template_Form_Schema: p.formSchema,
+        Request_Template_Teams:       p.teamIds,
+        Request_Template_Is_Active:   p.isActive,
+      }).eq('Request_Template_ID', p.id);
+      if (tplErr) throw new Error(tplErr.message);
+
+      // 2) Si no hay renames, terminamos
+      if (Object.keys(renameMap).length === 0) {
+        return { ok: true, requestsUpdated: 0, renames: [] };
+      }
+
+      // 3) Procesar solicitudes en lotes de 100
+      const BATCH_SIZE = 100;
+      let updated = 0;
+      let from    = 0;
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: batch, error: fetchErr } = await supabase
+          .from('TBL_Requests')
+          .select('Request_ID, Request_Form_Data, Request_Template_Schema_Snapshot')
+          .eq('Request_Template_ID', p.id)
+          .order('Request_Created_At', { ascending: true })
+          .range(from, from + BATCH_SIZE - 1);
+        if (fetchErr) throw new Error(fetchErr.message);
+        if (!batch || batch.length === 0) break;
+
+        for (const row of batch as Array<{
+          Request_ID: string;
+          Request_Form_Data: unknown;
+          Request_Template_Schema_Snapshot: unknown[] | null;
+        }>) {
+          const newFormData = _renameKeysInFormData(row.Request_Form_Data, renameMap);
+          const newSnapshot = _renameKeysInSchema(row.Request_Template_Schema_Snapshot ?? [], renameMap);
+
+          const { error: updErr } = await supabase
+            .from('TBL_Requests')
+            .update({
+              Request_Form_Data:                newFormData,
+              Request_Template_Schema_Snapshot: newSnapshot,
+            })
+            .eq('Request_ID', row.Request_ID);
+          if (updErr) throw new Error(updErr.message);
+          updated++;
+        }
+
+        if (batch.length < BATCH_SIZE) break;
+        from += BATCH_SIZE;
+      }
+
+      // 4) Auditoría
+      const auditRows = p.renames.map((r) => ({
+        Template_ID:       p.id,
+        Old_Key:           r.oldKey,
+        New_Key:           r.newKey,
+        Renamed_By:        p.renamedBy ?? null,
+        Renamed_At:        new Date().toISOString(),
+        Requests_Affected: updated,
+      }));
+      await supabase.from('TBL_Template_Field_Renames').insert(auditRows);
+
+      return { ok: true, requestsUpdated: updated, renames: p.renames };
+    }
+
+    /* ── Crear job de rename (reemplaza al sincrónico) ───── */
+    case 'createTemplateRenameJob': {
+      const p = payload as {
+        id: number; name: string; description: string; icon: string; color: string;
+        badge: string; formSchema: unknown[]; teamIds: number[]; isActive: boolean;
+        renames: { oldKey: string; newKey: string }[];
+        renamedBy: number | null;
+      };
+
+      // Validar renames
+      const renameMap: Record<string, string> = {};
+      for (const r of p.renames ?? []) {
+        if (!r.oldKey || !r.newKey) throw new Error('Rename inválido: oldKey y newKey son requeridos.');
+        if (!/^[a-z0-9_]+$/.test(r.newKey)) throw new Error(`Key inválido: "${r.newKey}". Solo se permiten minúsculas, dígitos y guión bajo.`);
+        if (renameMap[r.oldKey]) throw new Error(`Rename duplicado para "${r.oldKey}".`);
+        renameMap[r.oldKey] = r.newKey;
+      }
+      const allKeys = _collectSchemaKeys(p.formSchema);
+      const seen = new Set<string>();
+      for (const k of allKeys) {
+        if (seen.has(k)) throw new Error(`Key duplicada en el template: "${k}".`);
+        seen.add(k);
+      }
+
+      // 1) Actualizar el template
+      const { error: tplErr } = await supabase.from('TBL_Requests_Templates').update({
+        Request_Template_Name:        p.name,
+        Request_Template_Description: p.description,
+        Request_Template_Icon:        p.icon,
+        Request_Template_Color:       p.color,
+        Request_Template_Badge:       p.badge,
+        Request_Template_Form_Schema: p.formSchema,
+        Request_Template_Teams:       p.teamIds,
+        Request_Template_Is_Active:   p.isActive,
+      }).eq('Request_Template_ID', p.id);
+      if (tplErr) throw new Error(tplErr.message);
+
+      // 2) Si no hay renames, no hace falta job
+      if (Object.keys(renameMap).length === 0) {
+        return { jobId: null, requestsTotal: 0, ok: true };
+      }
+
+      // 3) Contar solicitudes a procesar
+      const { count } = await supabase
+        .from('TBL_Requests')
+        .select('Request_ID', { count: 'exact', head: true })
+        .eq('Request_Template_ID', p.id);
+      const total = count ?? 0;
+
+      // 4) Crear el job
+      const { data: jobData, error: jobInsErr } = await supabase
+        .from('TBL_Background_Jobs')
+        .insert({
+          Job_Type:    'template_field_rename',
+          Job_Status:  'pending',
+          Job_Payload: {
+            templateId: p.id,
+            renames:    p.renames,
+            renamedBy:  p.renamedBy,
+          },
+          Job_Progress_Total: total,
+          Job_Created_By:     p.renamedBy,
+        })
+        .select('Job_ID')
+        .single();
+      if (jobInsErr) throw new Error(jobInsErr.message);
+      const jobId = (jobData as { Job_ID: string }).Job_ID;
+
+      // 5) Disparar el primer chunk en background (no esperar)
+      if (total > 0) {
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+          EdgeRuntime.waitUntil(_kickoffJobChunk(jobId));
+        } else {
+          _kickoffJobChunk(jobId).catch(() => {});
+        }
+      } else {
+        // No hay solicitudes → marcar como done directo
+        await _finalizeRenameJob(supabase, jobId, 0, {
+          templateId: p.id,
+          renames:    p.renames,
+          renamedBy:  p.renamedBy,
+        });
+      }
+
+      return { jobId, requestsTotal: total, ok: true };
+    }
+
+    /* ── Polling del job ──────────────────────────────────── */
+    case 'getBackgroundJob': {
+      const { jobId } = payload as { jobId: string };
+      const { data, error } = await supabase
+        .from('TBL_Background_Jobs')
+        .select('Job_ID, Job_Type, Job_Status, Job_Progress_Current, Job_Progress_Total, Job_Result, Job_Error, Job_Created_At, Job_Updated_At, Job_Completed_At')
+        .eq('Job_ID', jobId)
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+/* ════════════════════════════════════════════════════════════
+       EXPORT JOBS (Fase 2)
+       ════════════════════════════════════════════════════════════ */
+
+    case 'createExportJob': {
+      const p = payload as {
+        userId:           number;
+        boardId:          number;
+        filters:          Omit<ExportFilters, 'boardId'>;
+        format:           'xlsx' | 'csv';
+        selectedColumns:  string[];
+        sheetPerTemplate: boolean;
+      };
+
+      const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
+
+      // 1. Resolver intersección de IDs según filtros relacionales
+      const candidateIds = await _resolveExportCandidateIds(supabase, fullFilters);
+
+      // 2. Contar tickets que coinciden
+      const total = await _countExportMatches(supabase, fullFilters, candidateIds);
+
+      if (total === 0) throw new Error('Ningún ticket coincide con los filtros seleccionados.');
+      if (total > MAX_EXPORT_SIZE) {
+        throw new Error(`El export tiene ${total.toLocaleString('es-CO')} tickets, supera el límite máximo de ${MAX_EXPORT_SIZE.toLocaleString('es-CO')}. Ajustá los filtros para reducir el alcance.`);
+      }
+
+      const chunksTotal = Math.ceil(total / EXPORT_JOB_CHUNK_SIZE);
+
+      // 3. Crear job
+      const { data: jobInsert, error: jobErr } = await supabase
+        .from('TBL_Background_Jobs')
+        .insert({
+          Job_Type:           'export_requests',
+          Job_Status:         'pending',
+          Job_Payload:        {}, // se completa después con exportId y storagePrefix
+          Job_Progress_Total: total,
+          Job_Created_By:     p.userId,
+        })
+        .select('Job_ID')
+        .single();
+      if (jobErr) throw new Error(jobErr.message);
+      const jobId = (jobInsert as { Job_ID: string }).Job_ID;
+
+      // 4. Crear entrada en TBL_Export_History
+      const { data: histInsert, error: histErr } = await supabase
+        .from('TBL_Export_History')
+        .insert({
+          Export_Job_ID:        jobId,
+          Export_User_ID:       p.userId,
+          Export_Format:        p.format,
+          Export_Filters:       fullFilters,
+          Export_Columns:       p.selectedColumns,
+          Export_Sheet_Per_Tpl: p.sheetPerTemplate,
+          Export_Total:         total,
+        })
+        .select('Export_ID')
+        .single();
+      if (histErr) throw new Error(histErr.message);
+      const exportId = (histInsert as { Export_ID: string }).Export_ID;
+
+      // 5. Path del storage para este export
+      const storagePrefix = `${p.userId}/${jobId}`;
+
+      // 6. Completar Job_Payload con todo lo necesario para los chunks
+      await supabase.from('TBL_Background_Jobs').update({
+        Job_Payload: {
+          userId:           p.userId,
+          exportId,
+          filters:          fullFilters,
+          format:           p.format,
+          selectedColumns:  p.selectedColumns,
+          sheetPerTemplate: p.sheetPerTemplate,
+          storagePrefix,
+          chunksTotal,
+          candidateIds,
+        },
+      }).eq('Job_ID', jobId);
+
+      // 7. Subir metadata (catálogos) a Storage — se descarga 1 sola vez por el frontend
+      const [teamsRes, columnsRes, templatesRes] = await Promise.all([
+        supabase.from('TBL_Board_Teams')
+          .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Sort_Order')
+          .order('Board_Team_Sort_Order', { ascending: true }),
+        supabase.from('TBL_Board_Columns')
+          .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color')
+          .eq('Board_Column_Board_ID', p.boardId)
+          .order('Board_Column_Position', { ascending: true }),
+        supabase.from('TBL_Requests_Templates')
+          .select('Request_Template_ID, Request_Template_Name, Request_Template_Icon, Request_Template_Color, Request_Template_Form_Schema')
+          .eq('Request_Template_Board_ID', p.boardId)
+          .order('Request_Template_ID', { ascending: true }),
+      ]);
+
+      const meta = {
+        templates:    templatesRes.data ?? [],
+        boardTeams:   teamsRes.data    ?? [],
+        boardColumns: columnsRes.data  ?? [],
+        meta: {
+          totalMatched: total,
+          returned:     total,
+          truncated:    false,
+          maxLimit:     MAX_EXPORT_SIZE,
+          generatedAt:  new Date().toISOString(),
+          chunksTotal,
+        },
+      };
+      await _uploadExportArtifact(supabase, storagePrefix, 'metadata.json', meta);
+
+      // 8. Disparar primer chunk en background
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+        EdgeRuntime.waitUntil(_kickoffExportChunk(jobId));
+      } else {
+        _kickoffExportChunk(jobId).catch(() => {});
+      }
+
+      return { jobId, exportId, total, chunksTotal };
+    }
+
+    case 'getExportArtifactUrls': {
+      const { jobId, userId } = payload as { jobId: string; userId: number };
+
+      const { data: jobRow, error: jobErr } = await supabase
+        .from('TBL_Background_Jobs')
+        .select('Job_Status, Job_Payload, Job_Result, Job_Created_By')
+        .eq('Job_ID', jobId)
+        .single();
+      if (jobErr || !jobRow) throw new Error('Export no encontrado.');
+
+      const job = jobRow as {
+        Job_Status:    string;
+        Job_Payload:   { userId: number; storagePrefix: string; chunksTotal: number; format: string };
+        Job_Result:    { fileName?: string } | null;
+        Job_Created_By: number;
+      };
+
+      // Autorización: solo el creador puede descargar
+      if (job.Job_Created_By !== userId && job.Job_Payload.userId !== userId) {
+        throw new Error('No autorizado para acceder a este export.');
+      }
+      if (job.Job_Status !== 'done') {
+        throw new Error(`El export aún no está listo (estado: ${job.Job_Status}).`);
+      }
+
+      const { storagePrefix, chunksTotal, format } = job.Job_Payload;
+      const fileName = job.Job_Result?.fileName ?? 'export';
+
+      // Signed URLs para metadata + todos los chunks
+      const filesToSign: string[] = [`${storagePrefix}/metadata.json`];
+      for (let i = 1; i <= chunksTotal; i++) {
+        filesToSign.push(`${storagePrefix}/chunk_${String(i).padStart(4, '0')}.json`);
+      }
+
+      const { data: signed, error: signErr } = await supabase.storage
+        .from(EXPORT_BUCKET)
+        .createSignedUrls(filesToSign, 600); // 10 min — tiempo suficiente para que el browser descargue todos
+      if (signErr) throw new Error(signErr.message);
+
+      return {
+        fileName,
+        format,
+        metadataUrl: (signed?.[0] as { signedUrl: string } | undefined)?.signedUrl ?? null,
+        chunkUrls:   (signed ?? []).slice(1).map((s: { signedUrl: string }) => s.signedUrl),
+        chunksTotal,
+      };
+    }
+
+    case 'confirmExportDownloaded': {
+      const { exportId, userId } = payload as { jobId: string; exportId: string; userId: number };
+
+      const { data: histRow } = await supabase
+        .from('TBL_Export_History')
+        .select('Export_User_ID, Export_Download_Count')
+        .eq('Export_ID', exportId)
+        .single();
+      if (!histRow) throw new Error('Entrada de historial no encontrada.');
+      const hist = histRow as { Export_User_ID: number; Export_Download_Count: number };
+      if (hist.Export_User_ID !== userId) throw new Error('No autorizado.');
+
+      // Solo registramos la descarga — los archivos siguen disponibles
+      // hasta que el cron de cleanup (7 días) los elimine, o el usuario
+      // elimine manualmente la entrada del historial.
+      await supabase.from('TBL_Export_History').update({
+        Export_Downloaded_At:  new Date().toISOString(),
+        Export_Download_Count: hist.Export_Download_Count + 1,
+      }).eq('Export_ID', exportId);
+
+      return { ok: true };
+    }
+
+    case 'fetchExportHistory': {
+      const { userId, limit = 20 } = payload as { userId: number; limit?: number };
+      const { data, error } = await supabase
+        .from('TBL_Export_History')
+        .select(`
+          Export_ID, Export_Job_ID, Export_Format, Export_Filters, Export_Columns,
+          Export_Sheet_Per_Tpl, Export_Total, Export_File_Name, Export_Storage_Prefix,
+          Export_Status, Export_Error,
+          Export_Created_At, Export_Completed_At, Export_Downloaded_At,
+          Export_Download_Count, Export_Auto_Delete_At
+        `)
+        .eq('Export_User_ID', userId)
+        .order('Export_Created_At', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    }
+
+    case 'deleteExportHistoryEntry': {
+      const { exportId, userId } = payload as { exportId: string; userId: number };
+      const { data: hist } = await supabase
+        .from('TBL_Export_History')
+        .select('Export_User_ID, Export_Storage_Prefix, Export_Job_ID')
+        .eq('Export_ID', exportId)
+        .single();
+      if (!hist) throw new Error('No encontrado.');
+      const h = hist as { Export_User_ID: number; Export_Storage_Prefix: string | null; Export_Job_ID: string };
+      if (h.Export_User_ID !== userId) throw new Error('No autorizado.');
+
+      if (h.Export_Storage_Prefix) {
+        await _cleanupExportArtifacts(supabase, h.Export_Storage_Prefix);
+      }
+      await supabase.from('TBL_Export_History').delete().eq('Export_ID', exportId);
+      // Job es ON DELETE CASCADE → se borra solo? NO: el FK es de Export_Job_ID → Job_ID con ON DELETE CASCADE,
+      // así que borrar Export NO borra el Job. Borramos el Job manualmente.
+      await supabase.from('TBL_Background_Jobs').delete().eq('Job_ID', h.Export_Job_ID);
+      return { ok: true };
+    }
+
+    case 'repeatExport': {
+      const { exportId, userId } = payload as { exportId: string; userId: number };
+      const { data: hist, error: histErr } = await supabase
+        .from('TBL_Export_History')
+        .select('Export_User_ID, Export_Filters, Export_Format, Export_Columns, Export_Sheet_Per_Tpl')
+        .eq('Export_ID', exportId)
+        .single();
+      if (histErr || !hist) throw new Error('Export original no encontrado.');
+      const h = hist as {
+        Export_User_ID:        number;
+        Export_Filters:        ExportFilters;
+        Export_Format:         'xlsx' | 'csv';
+        Export_Columns:        string[];
+        Export_Sheet_Per_Tpl:  boolean;
+      };
+      if (h.Export_User_ID !== userId) throw new Error('No autorizado.');
+
+      // Re-llama createExportJob recursivamente con los mismos parámetros
+      const { boardId, ...filtersWithoutBoard } = h.Export_Filters;
+      return handleAction('createExportJob', {
+        userId,
+        boardId,
+        filters:          filtersWithoutBoard,
+        format:           h.Export_Format,
+        selectedColumns:  h.Export_Columns,
+        sheetPerTemplate: h.Export_Sheet_Per_Tpl,
+      }, supabase);
+    }
+
+    /* ── Watchdog opcional: relanzar jobs colgados ────────── */
+    case 'resumeStalledJob': {
+      const { jobId } = payload as { jobId: string };
+      const { data: job } = await supabase
+        .from('TBL_Background_Jobs')
+        .select('Job_Status, Job_Updated_At')
+        .eq('Job_ID', jobId)
+        .single();
+      if (!job) throw new Error('Job no encontrado.');
+      if ((job as any).Job_Status === 'done' || (job as any).Job_Status === 'failed') {
+        return { resumed: false, status: (job as any).Job_Status };
+      }
+      // Si lleva más de 60s sin actualizar, relanzamos
+      const lastUpdate = new Date((job as any).Job_Updated_At).getTime();
+      if (Date.now() - lastUpdate > 60_000) {
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+          EdgeRuntime.waitUntil(_kickoffJobChunk(jobId));
+        } else {
+          _kickoffJobChunk(jobId).catch(() => {});
+        }
+        return { resumed: true };
+      }
+      return { resumed: false };
+    }
+
+/* ── Export de tickets para Excel/CSV ─────────────────── */
+    case 'exportRequests': {
+      const p = payload as {
+        boardId:         number;
+        teamIds?:        number[] | null;
+        sprintIds?:      number[] | null;
+        columnIds?:      number[] | null;
+        requestedByIds?: number[] | null;
+        assignedToIds?:  number[] | null;
+        priorityScores?: number[] | null;
+        templateIds?:    number[] | null;
+        labelIds?:       number[] | null;
+        isConfidential?: boolean | null;
+        dateFrom?:       string | null;
+        dateTo?:         string | null;
+        limit?:          number;
+      };
+
+      const MAX_LIMIT = 500;
+      const limit     = Math.min(p.limit ?? MAX_LIMIT, MAX_LIMIT);
+
+      const emptyResponse = async () => {
+        const [teamsRes, columnsRes, templatesRes] = await Promise.all([
+          supabase.from('TBL_Board_Teams')
+            .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Sort_Order')
+            .order('Board_Team_Sort_Order', { ascending: true }),
+          supabase.from('TBL_Board_Columns')
+            .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color')
+            .eq('Board_Column_Board_ID', p.boardId)
+            .order('Board_Column_Position', { ascending: true }),
+          supabase.from('TBL_Requests_Templates')
+            .select('Request_Template_ID, Request_Template_Name, Request_Template_Icon, Request_Template_Color, Request_Template_Form_Schema')
+            .eq('Request_Template_Board_ID', p.boardId)
+            .order('Request_Template_ID', { ascending: true }),
+        ]);
+        return {
+          tickets:      [],
+          templates:    templatesRes.data ?? [],
+          boardTeams:   teamsRes.data    ?? [],
+          boardColumns: columnsRes.data  ?? [],
+          meta: {
+            totalMatched: 0,
+            returned:     0,
+            truncated:    false,
+            maxLimit:     MAX_LIMIT,
+            generatedAt:  new Date().toISOString(),
+          },
+        };
+      };
+
+      // ── Intersección de IDs por filtros relacionales ──
+      let candidateIds: string[] | null = null;
+      const intersect = (a: string[] | null, b: string[]): string[] => {
+        if (a === null) return b;
+        const setB = new Set(b);
+        return a.filter((id) => setB.has(id));
+      };
+
+      if (p.teamIds && p.teamIds.length > 0) {
+        const { data, error } = await supabase
+          .from('TBL_Request_Team')
+          .select('Request_Team_Request_ID')
+          .in('Request_Team_ID', p.teamIds);
+        if (error) throw new Error(error.message);
+        const ids = [...new Set(((data ?? []) as { Request_Team_Request_ID: string }[]).map((r) => r.Request_Team_Request_ID))];
+        candidateIds = intersect(candidateIds, ids);
+        if (candidateIds.length === 0) return emptyResponse();
+      }
+
+      if (p.sprintIds && p.sprintIds.length > 0) {
+        const { data, error } = await supabase
+          .from('TBL_Request_Sprint')
+          .select('Request_Sprint_Request_ID')
+          .in('Request_Sprint_ID', p.sprintIds);
+        if (error) throw new Error(error.message);
+        const ids = [...new Set(((data ?? []) as { Request_Sprint_Request_ID: string }[]).map((r) => r.Request_Sprint_Request_ID))];
+        candidateIds = intersect(candidateIds, ids);
+        if (candidateIds.length === 0) return emptyResponse();
+      }
+
+      if (p.assignedToIds && p.assignedToIds.length > 0) {
+        const { data, error } = await supabase
+          .from('TBL_Requests_Assignments')
+          .select('Request_Assignment_ID')
+          .in('Request_Assignment_User_ID', p.assignedToIds);
+        if (error) throw new Error(error.message);
+        const ids = [...new Set(((data ?? []) as { Request_Assignment_ID: string }[]).map((r) => r.Request_Assignment_ID))];
+        candidateIds = intersect(candidateIds, ids);
+        if (candidateIds.length === 0) return emptyResponse();
+      }
+
+      if (p.labelIds && p.labelIds.length > 0) {
+        const { data, error } = await supabase
+          .from('TBL_Request_Labels')
+          .select('Request_Labels_Request_ID')
+          .in('Request_Labels_Label_ID', p.labelIds);
+        if (error) throw new Error(error.message);
+        const ids = [...new Set(((data ?? []) as { Request_Labels_Request_ID: string }[]).map((r) => r.Request_Labels_Request_ID))];
+        candidateIds = intersect(candidateIds, ids);
+        if (candidateIds.length === 0) return emptyResponse();
+      }
+
+      // ── Query principal con filtros directos ──
+      let countQuery = supabase
+        .from('TBL_Requests')
+        .select('Request_ID', { count: 'exact', head: true })
+        .eq('Request_Board_ID', p.boardId);
+
+      let dataQuery = supabase
+        .from('TBL_Requests')
+        .select(BASE_SELECT)
+        .eq('Request_Board_ID', p.boardId);
+
+      if (candidateIds !== null) {
+        countQuery = countQuery.in('Request_ID', candidateIds);
+        dataQuery  = dataQuery.in('Request_ID',  candidateIds);
+      }
+      if (p.columnIds && p.columnIds.length > 0) {
+        countQuery = countQuery.in('Request_Board_Column_ID', p.columnIds);
+        dataQuery  = dataQuery.in('Request_Board_Column_ID',  p.columnIds);
+      }
+      if (p.requestedByIds && p.requestedByIds.length > 0) {
+        countQuery = countQuery.in('Request_Requested_By', p.requestedByIds);
+        dataQuery  = dataQuery.in('Request_Requested_By',  p.requestedByIds);
+      }
+      if (p.priorityScores && p.priorityScores.length > 0) {
+        countQuery = countQuery.in('Request_Score', p.priorityScores);
+        dataQuery  = dataQuery.in('Request_Score',  p.priorityScores);
+      }
+      if (p.templateIds && p.templateIds.length > 0) {
+        countQuery = countQuery.in('Request_Template_ID', p.templateIds);
+        dataQuery  = dataQuery.in('Request_Template_ID',  p.templateIds);
+      }
+      if (p.isConfidential !== null && p.isConfidential !== undefined) {
+        countQuery = countQuery.eq('Request_Is_Confidential', p.isConfidential);
+        dataQuery  = dataQuery.eq('Request_Is_Confidential',  p.isConfidential);
+      }
+      if (p.dateFrom) {
+        countQuery = countQuery.gte('Request_Created_At', p.dateFrom);
+        dataQuery  = dataQuery.gte('Request_Created_At',  p.dateFrom);
+      }
+      if (p.dateTo) {
+        countQuery = countQuery.lte('Request_Created_At', p.dateTo);
+        dataQuery  = dataQuery.lte('Request_Created_At',  p.dateTo);
+      }
+
+      dataQuery = dataQuery
+        .order('Request_Created_At', { ascending: false })
+        .limit(limit);
+
+      const [countRes, dataRes] = await Promise.all([countQuery, dataQuery]);
+      if (countRes.error) throw new Error(countRes.error.message);
+      if (dataRes.error)  throw new Error(dataRes.error.message);
+
+      const tickets      = (dataRes.data ?? []) as Record<string, unknown>[];
+      const totalMatched = countRes.count ?? tickets.length;
+      const truncated    = totalMatched > tickets.length;
+
+      // ── Catálogos para el cliente (resumen + dinamicos) ──
+      const [teamsRes, columnsRes, templatesRes] = await Promise.all([
+        supabase.from('TBL_Board_Teams')
+          .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Sort_Order')
+          .order('Board_Team_Sort_Order', { ascending: true }),
+        supabase.from('TBL_Board_Columns')
+          .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color')
+          .eq('Board_Column_Board_ID', p.boardId)
+          .order('Board_Column_Position', { ascending: true }),
+        supabase.from('TBL_Requests_Templates')
+          .select('Request_Template_ID, Request_Template_Name, Request_Template_Icon, Request_Template_Color, Request_Template_Form_Schema')
+          .eq('Request_Template_Board_ID', p.boardId)
+          .order('Request_Template_ID', { ascending: true }),
+      ]);
+
+      return {
+        tickets,
+        templates:    templatesRes.data ?? [],
+        boardTeams:   teamsRes.data    ?? [],
+        boardColumns: columnsRes.data  ?? [],
+        meta: {
+          totalMatched,
+          returned:     tickets.length,
+          truncated,
+          maxLimit:     MAX_LIMIT,
+          generatedAt:  new Date().toISOString(),
+        },
+      };
+    }
 
     default:
       throw new Error(`[API] Acción desconocida: ${action}`);
@@ -3054,19 +4316,54 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== 'POST')    return errorResponse('Método no permitido', 405);
 
-  // 1. Parsear body primero — necesario para saber qué action es
   let body: { action: string; payload: Record<string, unknown> };
   try { body = await req.json(); } catch { return errorResponse('Body inválido', 400); }
   if (!body.action) return errorResponse('Campo "action" requerido', 400);
 
-  // 2. Bypass público — sin Azure JWT, solo announcements de login
+  // ── Bypass público (announcements de login) ───────────────
   if (body.action === 'get_public_announcements') {
     const supabase = createServiceClient();
     const result   = await getPublicAnnouncements(supabase);
     return corsResponse({ data: result });
   }
 
-  // 3. Auth requerida para todo lo demás
+  // ── Bypass interno: procesamiento de chunks de jobs ───────
+  if (body.action === '_processBackgroundJobChunk') {
+    const internalSecret = req.headers.get('X-Internal-Job-Secret') ?? '';
+    if (!INTERNAL_JOB_SECRET || internalSecret !== INTERNAL_JOB_SECRET) {
+      return errorResponse('No autorizado (internal)', 401);
+    }
+    const supabase = createServiceClient();
+    const { jobId } = (body.payload ?? {}) as { jobId: string };
+    if (!jobId) return errorResponse('jobId requerido', 400);
+
+    // Procesar en background, devolver la respuesta inmediatamente
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+      EdgeRuntime.waitUntil(_processTemplateRenameChunk(jobId, supabase));
+    } else {
+      _processTemplateRenameChunk(jobId, supabase).catch(() => {});
+    }
+    return corsResponse({ data: { accepted: true } });
+  }
+  // ── Bypass interno: procesamiento de chunks de export ─────
+  if (body.action === '_processExportJobChunk') {
+    const internalSecret = req.headers.get('X-Internal-Job-Secret') ?? '';
+    if (!INTERNAL_JOB_SECRET || internalSecret !== INTERNAL_JOB_SECRET) {
+      return errorResponse('No autorizado (internal)', 401);
+    }
+    const supabase = createServiceClient();
+    const { jobId } = (body.payload ?? {}) as { jobId: string };
+    if (!jobId) return errorResponse('jobId requerido', 400);
+
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+      EdgeRuntime.waitUntil(_processExportChunks(jobId, supabase));
+    } else {
+      _processExportChunks(jobId, supabase).catch(() => {});
+    }
+    return corsResponse({ data: { accepted: true } });
+  }
+
+  // ── Auth normal Azure ─────────────────────────────────────
   const authHeader = req.headers.get('Authorization') ?? '';
   const token      = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return errorResponse('Token de autorización requerido', 401);
@@ -3076,7 +4373,6 @@ Deno.serve(async (req: Request) => {
     return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
   }
 
-  // 4. Acción protegida
   const supabase = createServiceClient();
   try {
     const result = await handleAction(body.action, body.payload ?? {}, supabase);
