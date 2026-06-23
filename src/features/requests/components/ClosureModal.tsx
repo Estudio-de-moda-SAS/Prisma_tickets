@@ -1,7 +1,7 @@
 // src/features/requests/components/ClosureModal.tsx
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Upload, FileText, Image, File, CheckCircle, AlertCircle, Paperclip } from 'lucide-react';
-import type { KanbanColumna, Request } from '../types';
+import { X, Upload, FileText, Image, File, CheckCircle, AlertCircle, Paperclip, Recycle, Ban } from 'lucide-react';
+import type { KanbanColumna, Request, CierreInfo } from '../types';
 
 const MAX_FILES = 5;
 const MAX_IMAGE_SIZE_MB = 2;
@@ -21,6 +21,8 @@ const COL_LABEL: Record<string, string> = {
   hecho:           'Hecho',
   historial:       'Historial',
 };
+
+export type EvidenceMode = 'new' | 'reuse' | 'skip';
 
 function fmtBytes(bytes: number) {
   if (bytes < 1024)        return `${bytes} B`;
@@ -63,21 +65,26 @@ async function maybeCompressImage(file: File): Promise<File> {
 }
 
 type Props = {
-  request:        Request;
-  targetColumna:  KanbanColumna;
-  targetColumnId: number;
-  onConfirm:      (note: string, attachments: File[]) => void;
-  onCancel:       () => void;
-  isPending:      boolean;
+  request:           Request;
+  targetColumna:     KanbanColumna;
+  targetColumnId:    number;
+  canReuseEvidence?: boolean;
+  previousClosure?:  CierreInfo | null;
+  onConfirm:         (note: string, attachments: File[], mode: EvidenceMode, reuseFromClosureId: number | null) => void;
+  onCancel:          () => void;
+  isPending:         boolean;
 };
 
 export function ClosureModal({
   request,
   targetColumna,
+  canReuseEvidence = false,
+  previousClosure = null,
   onConfirm,
   onCancel,
   isPending,
 }: Props) {
+  const [mode,        setMode]        = useState<EvidenceMode>('new');
   const [note,        setNote]        = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [compressing, setCompressing] = useState(false);
@@ -90,6 +97,7 @@ export function ClosureModal({
   const accentColor = COL_COLOR[targetColumna] ?? 'var(--accent)';
   const colLabel    = COL_LABEL[targetColumna] ?? targetColumna;
   const canAddMore  = attachments.length < MAX_FILES;
+  const hasReusable = canReuseEvidence && previousClosure && (previousClosure.attachments?.length ?? 0) > 0;
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -118,7 +126,7 @@ export function ClosureModal({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    if (isPending) return;
+    if (isPending || mode !== 'new') return;
     void addFiles(Array.from(e.dataTransfer.files));
   }
 
@@ -130,12 +138,14 @@ export function ClosureModal({
   function handleSubmit() {
     const trimmed = note.trim();
     if (!trimmed) {
-      setError('La nota de cierre es obligatoria.');
+      setError('La nota es obligatoria en todos los casos.');
       textareaRef.current?.focus();
       return;
     }
     setError('');
-    onConfirm(trimmed, attachments);
+    const filesForBackend = mode === 'new' ? attachments : [];
+    const reuseId         = mode === 'reuse' ? (previousClosure?.closureId ?? null) : null;
+    onConfirm(trimmed, filesForBackend, mode, reuseId);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -152,7 +162,7 @@ export function ClosureModal({
       style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}
     >
       <div style={{
-        width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto',
+        width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto',
         background: 'var(--bg-panel)', border: `1px solid ${accentColor}40`,
         borderRadius: 14, position: 'relative', boxShadow: `0 0 60px ${accentColor}18`,
       }}>
@@ -179,7 +189,44 @@ export function ClosureModal({
         </div>
 
         {/* Cuerpo */}
-        <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Selector de modo (solo si se viene de una columna con evidencia) */}
+          {canReuseEvidence && (
+            <div>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>
+                Tipo de evidencia
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: hasReusable ? '1fr 1fr 1fr' : '1fr 1fr', gap: 6 }}>
+                <ModeButton
+                  active={mode === 'new'}
+                  onClick={() => setMode('new')}
+                  accent={accentColor}
+                  icon={<Upload size={13} />}
+                  title="Subir nueva"
+                  subtitle="Adjuntar archivos"
+                />
+                {hasReusable && (
+                  <ModeButton
+                    active={mode === 'reuse'}
+                    onClick={() => setMode('reuse')}
+                    accent={accentColor}
+                    icon={<Recycle size={13} />}
+                    title="Reutilizar"
+                    subtitle={`${previousClosure!.attachments.length} archivo(s)`}
+                  />
+                )}
+                <ModeButton
+                  active={mode === 'skip'}
+                  onClick={() => setMode('skip')}
+                  accent={accentColor}
+                  icon={<Ban size={13} />}
+                  title="No adjuntar"
+                  subtitle="Solo nota"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Nota */}
           <div>
@@ -192,10 +239,14 @@ export function ClosureModal({
               onChange={(e) => { setNote(e.target.value); if (error) setError(''); }}
               onKeyDown={handleKeyDown}
               disabled={isPending}
-              placeholder="Describe qué se hizo, qué se entregó, o cualquier detalle relevante… (Ctrl+Enter para confirmar)"
+              placeholder={
+                mode === 'reuse' ? 'Ej: Reutilizo la evidencia de QAS, el entregable no cambió…' :
+                mode === 'skip'  ? 'Ej: Cliente solicitó pasar a deploy sin nueva revisión…' :
+                                   'Describí qué se hizo, qué se entregó, o cualquier detalle relevante… (Ctrl+Enter para confirmar)'
+              }
               rows={4}
               style={{
-                width: '100%', minHeight: 110, padding: '10px 13px', borderRadius: 8,
+                width: '100%', minHeight: 100, padding: '10px 13px', borderRadius: 8,
                 border: `1px solid ${error ? 'var(--danger)' : 'var(--border-subtle)'}`,
                 background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 13, lineHeight: 1.6,
                 resize: 'vertical', outline: 'none', fontFamily: 'var(--font-body)',
@@ -212,84 +263,123 @@ export function ClosureModal({
             )}
           </div>
 
-          {/* Adjuntos */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
-                Evidencias adjuntas{' '}
-                <span style={{ fontSize: 9, fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>(opcional · máx. {MAX_FILES})</span>
+          {/* Preview de evidencia reutilizada */}
+          {mode === 'reuse' && previousClosure && (
+            <div>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>
+                Evidencia que se reutilizará
               </label>
-              {attachments.length > 0 && (
-                <span style={{ fontSize: 10, fontWeight: 700, color: accentColor }}>{attachments.length}/{MAX_FILES}</span>
-              )}
-            </div>
-
-            {attachments.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                {attachments.map((file, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: `${accentColor}08`, border: `1px solid ${accentColor}25` }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {previousClosure.attachments.map((a) => (
+                  <div key={a.attachmentId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: `${accentColor}08`, border: `1px solid ${accentColor}25` }}>
                     <div style={{ width: 30, height: 30, borderRadius: 6, flexShrink: 0, background: `${accentColor}12`, border: `1px solid ${accentColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor }}>
-                      <FileIcon mime={file.type} />
+                      <FileIcon mime={a.mimeType} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
-                      <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>{fmtBytes(file.size)} · {file.type || 'archivo'}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.fileName}</div>
+                      <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>{fmtBytes(a.fileSize)} · {a.mimeType || 'archivo'}</div>
                     </div>
-                    {!isPending && (
-                      <button onClick={() => removeFile(idx)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0, borderRadius: 4 }}
-                        onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
-                        <X size={12} />
-                      </button>
-                    )}
+                    <Recycle size={12} style={{ color: accentColor, opacity: 0.7, flexShrink: 0 }} />
                   </div>
                 ))}
               </div>
-            )}
+              <div style={{ marginTop: 8, fontSize: 10, color: 'var(--txt-muted)', display: 'flex', alignItems: 'center', gap: 5, opacity: 0.75 }}>
+                <Recycle size={10} />
+                Se creará un registro nuevo en la línea de tiempo que referencia estos archivos.
+              </div>
+            </div>
+          )}
 
-            {canAddMore && (
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                onClick={() => !isPending && !compressing && fileRef.current?.click()}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: attachments.length > 0 ? '12px 16px' : '20px 16px', borderRadius: 8,
-                  border: `1.5px dashed ${dragOver ? accentColor : 'var(--border-subtle)'}`,
-                  background: dragOver ? `${accentColor}06` : 'transparent',
-                  cursor: isPending || compressing ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
-                }}
-              >
-                {compressing
-                  ? <><Paperclip size={16} style={{ color: accentColor }} /><span style={{ fontSize: 11, color: accentColor }}>Comprimiendo imagen…</span></>
-                  : <>
-                      <Upload size={attachments.length > 0 ? 14 : 18} style={{ color: dragOver ? accentColor : 'var(--txt-muted)' }} />
-                      <span style={{ fontSize: 11, color: dragOver ? accentColor : 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.5 }}>
-                        {attachments.length > 0
-                          ? <>Agregar más · <span style={{ color: accentColor, fontWeight: 600 }}>quedan {MAX_FILES - attachments.length} slots</span></>
-                          : <>Arrastra archivos o <span style={{ color: accentColor, fontWeight: 600 }}>haz clic</span> para adjuntar evidencia</>
-                        }
-                      </span>
-                      {attachments.length === 0 && (
-                        <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.6 }}>
-                          Imágenes (se comprimen auto), PDF, documentos · máx. {MAX_FILES} archivos
-                        </span>
+          {/* Banner "no adjuntar" */}
+          {mode === 'skip' && (
+            <div style={{ display: 'flex', gap: 10, padding: '10px 12px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.25)' }}>
+              <Ban size={14} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 11, color: '#fdcb6e', lineHeight: 1.5 }}>
+                Este movimiento quedará registrado sin archivos adjuntos. Solo la nota servirá como evidencia.
+              </span>
+            </div>
+          )}
+
+          {/* Adjuntos (solo en modo 'new') */}
+          {mode === 'new' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
+                  Evidencias adjuntas{' '}
+                  <span style={{ fontSize: 9, fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>(opcional · máx. {MAX_FILES})</span>
+                </label>
+                {attachments.length > 0 && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: accentColor }}>{attachments.length}/{MAX_FILES}</span>
+                )}
+              </div>
+
+              {attachments.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                  {attachments.map((file, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: `${accentColor}08`, border: `1px solid ${accentColor}25` }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 6, flexShrink: 0, background: `${accentColor}12`, border: `1px solid ${accentColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accentColor }}>
+                        <FileIcon mime={file.type} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                        <div style={{ fontSize: 9, color: 'var(--txt-muted)', marginTop: 1 }}>{fmtBytes(file.size)} · {file.type || 'archivo'}</div>
+                      </div>
+                      {!isPending && (
+                        <button onClick={() => removeFile(idx)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 4, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0, borderRadius: 4 }}
+                          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                          <X size={12} />
+                        </button>
                       )}
-                    </>
-                }
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {!canAddMore && (
-              <div style={{ fontSize: 10, color: 'var(--txt-muted)', textAlign: 'center', padding: '6px 0', opacity: 0.7 }}>
-                Límite de {MAX_FILES} evidencias alcanzado
-              </div>
-            )}
+              {canAddMore && (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => !isPending && !compressing && fileRef.current?.click()}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: attachments.length > 0 ? '12px 16px' : '20px 16px', borderRadius: 8,
+                    border: `1.5px dashed ${dragOver ? accentColor : 'var(--border-subtle)'}`,
+                    background: dragOver ? `${accentColor}06` : 'transparent',
+                    cursor: isPending || compressing ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
+                  }}
+                >
+                  {compressing
+                    ? <><Paperclip size={16} style={{ color: accentColor }} /><span style={{ fontSize: 11, color: accentColor }}>Comprimiendo imagen…</span></>
+                    : <>
+                        <Upload size={attachments.length > 0 ? 14 : 18} style={{ color: dragOver ? accentColor : 'var(--txt-muted)' }} />
+                        <span style={{ fontSize: 11, color: dragOver ? accentColor : 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                          {attachments.length > 0
+                            ? <>Agregar más · <span style={{ color: accentColor, fontWeight: 600 }}>quedan {MAX_FILES - attachments.length} slots</span></>
+                            : <>Arrastrá archivos o <span style={{ color: accentColor, fontWeight: 600 }}>hacé clic</span> para adjuntar evidencia</>
+                          }
+                        </span>
+                        {attachments.length === 0 && (
+                          <span style={{ fontSize: 9, color: 'var(--txt-muted)', opacity: 0.6 }}>
+                            Imágenes (se comprimen auto), PDF, documentos · máx. {MAX_FILES} archivos
+                          </span>
+                        )}
+                      </>
+                  }
+                </div>
+              )}
 
-            <input ref={fileRef} type="file" multiple style={{ display: 'none' }} onChange={handleFileInput} />
-          </div>
+              {!canAddMore && (
+                <div style={{ fontSize: 10, color: 'var(--txt-muted)', textAlign: 'center', padding: '6px 0', opacity: 0.7 }}>
+                  Límite de {MAX_FILES} evidencias alcanzado
+                </div>
+              )}
+
+              <input ref={fileRef} type="file" multiple style={{ display: 'none' }} onChange={handleFileInput} />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -315,5 +405,31 @@ export function ClosureModal({
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Botón de modo ── */
+function ModeButton({ active, onClick, accent, icon, title, subtitle }: {
+  active: boolean; onClick: () => void; accent: string;
+  icon: React.ReactNode; title: string; subtitle: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3,
+        padding: '8px 10px', borderRadius: 7, cursor: 'pointer', transition: 'all 0.12s',
+        border: `1px solid ${active ? `${accent}55` : 'var(--border-subtle)'}`,
+        background: active ? `${accent}10` : 'transparent',
+        color: active ? accent : 'var(--txt-muted)',
+        textAlign: 'left',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        {icon}
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3 }}>{title}</span>
+      </div>
+      <span style={{ fontSize: 9, opacity: 0.8 }}>{subtitle}</span>
+    </button>
   );
 }

@@ -75,6 +75,7 @@ export function useCloseRequest(equipo: Equipo) {
             cierreInfo: {
               closureId:      0,
               closureNote:    payload.closureNote,
+              closureType:    payload.evidenceMode ?? 'new',
               attachments:    [],
               attachmentUrl:  null,
               attachmentName: null,

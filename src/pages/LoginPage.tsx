@@ -28,7 +28,7 @@ function LoginAnnouncementStrip() {
   }}>
     <span style={{ fontSize: 12 }}>{TYPE_ICON[a.type]}</span>
     <span style={{ fontSize: 12, fontWeight: 700, color }}>{a.title}</span>
-    {a.body && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>· {a.body}</span>}
+    {a.body && <span style={{ fontSize: 12 }}>· {a.body}</span>}
   </div>
         );
       })}

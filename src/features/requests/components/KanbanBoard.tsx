@@ -10,7 +10,7 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { CreateRequestModal } from './CreateRequestModal';
@@ -38,21 +38,25 @@ const COLUMN_ID_FALLBACK: Record<string, number> = {
 };
 
 type PendingClosure = {
-  card:           Request;
-  targetColumna:  string;
-  targetColumnId: number;
+  card:                    Request;
+  targetColumna:           string;
+  targetColumnId:          number;
+  sourceRequiresEvidence:  boolean;
+  previousClosure:         Request['cierreInfo'] | null;
 };
 
 type Props = {
-  board:          BoardData;
-  equipo:         Equipo;
-  columnConfig:   ColumnWithConfig[];
-  onMove:         (id: string, columna: string, movedBy?: number) => void;
-  extraRequest?:  Request | null;
-  onModalId?:     (id: string | null) => void;
+  board:           BoardData;
+  equipo:          Equipo;
+  columnConfig:    ColumnWithConfig[];
+  onMove:          (id: string, columna: string, movedBy?: number) => void;
+  extraRequest?:   Request | null;
+  onModalId?:      (id: string | null) => void;
+  /** Disparador externo: al cambiar la referencia, abre el modal del ticket indicado */
+  openTicketSignal?: { id: string; nonce: number } | null;
 };
 
-export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest, onModalId }: Props) {
+export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest, onModalId, openTicketSignal }: Props) {
   const [activeCard,     setActiveCard]     = useState<Request | null>(null);
   const [overColumn,     setOverColumn]     = useState<string | null>(null);
   const [modalId,        setModalId]        = useState<string | null>(null);
@@ -159,6 +163,17 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
+  /* ── Apertura externa del modal (desde búsqueda) ── */
+  useEffect(() => {
+    if (!openTicketSignal) return;
+    setModalId(openTicketSignal.id);
+    setParentModalId(null);
+    onModalId?.(openTicketSignal.id);
+    history.replaceState(null, '', `/board/${equipo}/ticket/${openTicketSignal.id}`);
+    (unreadByRequestId.get(openTicketSignal.id) ?? []).forEach((n) => markRead(n.notificationId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTicketSignal]);
+
   const modalCardFromBoard = modalId
     ? (Object.values(board).flat().find((r) => r.id === modalId) ?? extraRequest ?? null)
     : null;
@@ -232,10 +247,13 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
     const necesitaEvidencia = evidenceSlugs.has(targetCol) && !yaHayClosure;
 
     if (necesitaEvidencia) {
+      const sourceRequiresEvidence = evidenceSlugs.has(currentCol);
       setPendingClosure({
         card,
-        targetColumna:  targetCol,
-        targetColumnId: columnIdMap[targetCol] ?? COLUMN_ID_FALLBACK[targetCol] ?? 0,
+        targetColumna:          targetCol,
+        targetColumnId:         columnIdMap[targetCol] ?? COLUMN_ID_FALLBACK[targetCol] ?? 0,
+        sourceRequiresEvidence,
+        previousClosure:        sourceRequiresEvidence ? (card.cierreInfo ?? null) : null,
       });
       return;
     }
@@ -246,7 +264,7 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
   /* ============================================================
      Cierre con evidencia
      ============================================================ */
-  function handleClosureConfirm(note: string, attachments: File[]) {
+  function handleClosureConfirm(note: string, attachments: File[], mode: 'new' | 'reuse' | 'skip', reuseFromClosureId: number | null) {
     if (!pendingClosure || !currentUser) return;
     closeRequest(
       {
@@ -255,6 +273,8 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
         closureNote:    note,
         targetColumnId: pendingClosure.targetColumnId,
         attachments,
+        evidenceMode:       mode,
+        reuseFromClosureId,
       },
       {
         onSuccess: () => setPendingClosure(null),
@@ -263,7 +283,11 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
     );
   }
 
-  function handleModalMoveWithClosure(id: string, columna: string, note: string, attachments: File[]) {
+  function handleModalMoveWithClosure(
+    id: string, columna: string, note: string, attachments: File[],
+    mode: 'new' | 'reuse' | 'skip' = 'new',
+    reuseFromClosureId: number | null = null,
+  ) {
     if (!currentUser) return;
     closeRequest(
       {
@@ -272,6 +296,8 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
         closureNote:    note,
         targetColumnId: columnIdMap[columna] ?? COLUMN_ID_FALLBACK[columna] ?? 0,
         attachments,
+        evidenceMode:       mode,
+        reuseFromClosureId,
       },
       {
         onSuccess: () => setPendingClosure(null),
@@ -332,11 +358,13 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
         </DragOverlay>
       </DndContext>
 
-      {pendingClosure && (
+{pendingClosure && (
         <ClosureModal
           request={pendingClosure.card}
-          targetColumna={pendingClosure.targetColumna}
+          targetColumna={pendingClosure.targetColumna as any}
           targetColumnId={pendingClosure.targetColumnId}
+          canReuseEvidence={pendingClosure.sourceRequiresEvidence}
+          previousClosure={pendingClosure.previousClosure}
           onConfirm={handleClosureConfirm}
           onCancel={() => setPendingClosure(null)}
           isPending={isClosing}

@@ -106,7 +106,7 @@ export function MisSolicitudesPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 960 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <p style={{ fontSize: 12, color: 'var(--txt-muted)' }}>

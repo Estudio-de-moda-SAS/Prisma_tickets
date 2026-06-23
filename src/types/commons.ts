@@ -63,7 +63,8 @@ export type NotificationType =
   | 'closure'
   | 'criteria_reviewed'
   | 'sub_request_created'
-  | 'mention';
+  | 'mention'
+  | 'export_ready';
 
 export type Notification = {
   notificationId: number;

@@ -130,6 +130,22 @@ function handleEquipo(key: string) {
             </NavLink>
           )}
 
+          {/* ── MIS SOLICITUDES (usuarios regulares) ── */}
+          {isRegularUser && (
+            <NavLink
+              to="/mis-solicitudes"
+              title={sidebarAbierto ? undefined : 'Mis Solicitudes'}
+              className={({ isActive }) =>
+                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <ClipboardList size={16} />
+              {sidebarAbierto && <span>Mis Solicitudes</span>}
+            </NavLink>
+          )}
+
+
+
           {/* ── EQUIPOS ── */}
           {showBoard && equiposVisibles.length > 0 && (
             <>
