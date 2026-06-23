@@ -25,6 +25,7 @@ import { EmailTemplateList } from './ConfigPanelComponents/EmailsTemplatesConfig
 import { KanbanSection } from './ConfigPanelComponents/KanbansConfig';
 import { TemplateList } from './ConfigPanelComponents/RequestsTemplates';
 import { AnnouncementsConfig } from './ConfigPanelComponents/AnnouncementsConfig';
+import { ExportsConfig } from './ConfigPanelComponents/ExportsConfig';
 /* ============================================================
 
    Constantes
@@ -45,16 +46,17 @@ const TEAM_CODE_COLORS: Record<string, string> = {
   analisis:   '#7F77DD',
 };
 
-type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org' | 'kanbans' | 'announcements';
+type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org' | 'kanbans' | 'announcements' | 'exports';
 
 const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
   { key: 'labels',    label: 'Etiquetas',   icon: '🏷️' },
   { key: 'subteams',  label: 'Sub-equipos', icon: '👥' },
   { key: 'sprints',   label: 'Sprints',     icon: '⚡' },
   { key: 'kanbans',   label: 'Kanbans',     icon: '🗂️' },
-  { key: 'templates', label: 'Templates',   icon: '📋' },  { key: 'users',     label: 'Usuarios',    icon: '👤' },
+  { key: 'templates', label: 'Plantillas',   icon: '📋' },  { key: 'users',     label: 'Usuarios',    icon: '👤' },
   { key: 'emails',    label: 'Correos',     icon: '✉️' },
   { key: 'announcements', label: 'Avisos', icon: '📢' },
+  { key: 'exports',   label: 'Exportar',    icon: '📤' },
   { key: 'org',       label: 'Organización',  icon: '🏢' }, 
 ];
 /* ============================================================
@@ -114,9 +116,29 @@ const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
    ============================================================ */
 export function ConfigPanelTrigger({ collapsed }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [initialSection,  setInitialSection]  = useState<Section | undefined>(undefined);
+  const [initialExpTab,   setInitialExpTab]   = useState<'new' | 'history' | undefined>(undefined);
+
+  // Permite abrir el panel desde otros componentes (ej: NotificationBell)
+  useEffect(() => {
+    const handler = () => {
+      setInitialSection('exports');
+      setInitialExpTab('history');
+      setOpen(true);
+    };
+    window.addEventListener('prisma:open-exports-history', handler);
+    return () => window.removeEventListener('prisma:open-exports-history', handler);
+  }, []);
+
+  const openFromButton = () => {
+    setInitialSection(undefined);
+    setInitialExpTab(undefined);
+    setOpen(true);
+  };
+
   return (
     <>
-      <button onClick={() => setOpen(true)} title="Configuración del board"
+      <button onClick={openFromButton} title="Configuración del board"
         className={`cpop-trigger${open ? ' cpop-trigger--open' : ''}`}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="8" cy="8" r="2.5"/>
@@ -124,7 +146,13 @@ export function ConfigPanelTrigger({ collapsed }: { collapsed?: boolean }) {
         </svg>
         {!collapsed && <span style={{ fontSize: 11, fontWeight: 600, marginLeft: 4 }}>Config</span>}
       </button>
-      {open && <ConfigPanel onClose={() => setOpen(false)} />}
+      {open && (
+        <ConfigPanel
+          onClose={() => setOpen(false)}
+          initialSection={initialSection}
+          initialExportsTab={initialExpTab}
+        />
+      )}
     </>
   );
 }
@@ -132,8 +160,16 @@ export function ConfigPanelTrigger({ collapsed }: { collapsed?: boolean }) {
 /* ============================================================
    Panel principal
    ============================================================ */
-function ConfigPanel({ onClose }: { onClose: () => void }) {
-  const [section, setSection] = useState<Section>('labels');
+function ConfigPanel({
+  onClose,
+  initialSection,
+  initialExportsTab,
+}: {
+  onClose:            () => void;
+  initialSection?:    Section;
+  initialExportsTab?: 'new' | 'history';
+}) {
+  const [section, setSection] = useState<Section>(initialSection ?? 'labels');
   const panelRef = useRef<HTMLDivElement>(null);
   const { equipoActivo } = useBoardStore();
   const [localEquipo, setLocalEquipo] = useState<string>(equipoActivo);
@@ -178,7 +214,7 @@ function ConfigPanel({ onClose }: { onClose: () => void }) {
   }
 
   const activeNav = NAV_ITEMS.find((n) => n.key === section)!;
-const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails' && section !== 'org' && section !== 'kanbans' && section !== 'announcements';
+const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section !== 'templates' && section !== 'emails' && section !== 'org' && section !== 'kanbans' && section !== 'announcements' && section !== 'exports';
 
   return createPortal(
     <div className="cpanel-backdrop" onClick={handleBackdrop}>
@@ -219,7 +255,7 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
               <button onClick={() => setSection('templates')}
                 className={`cpanel__nav-item${section === 'templates' ? ' cpanel__nav-item--active' : ''}`}>
                 <span className="cpanel__nav-item-icon">📋</span>
-                <span>Templates</span>
+                <span>Plantillas</span>
                 <span className="cpanel__nav-badge">{templates.length}</span>
               </button>
               <button onClick={() => setSection('emails')}
@@ -236,6 +272,11 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
   className={`cpanel__nav-item${section === 'announcements' ? ' cpanel__nav-item--active' : ''}`}>
   <span className="cpanel__nav-item-icon">📢</span>
   <span>Avisos</span>
+</button>
+              <button onClick={() => setSection('exports')}
+  className={`cpanel__nav-item${section === 'exports' ? ' cpanel__nav-item--active' : ''}`}>
+  <span className="cpanel__nav-item-icon">📤</span>
+  <span>Exportar</span>
 </button>
               <button onClick={() => setSection('org')}
   className={`cpanel__nav-item${section === 'org' ? ' cpanel__nav-item--active' : ''}`}>
@@ -277,6 +318,9 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   )}
                   {section === 'kanbans' && (
                     <p className="cpanel__content-subtitle">Equipos del board · columnas · evidencia</p>
+                  )}
+                  {section === 'exports' && (
+                    <p className="cpanel__content-subtitle">Generar Excel o CSV con los tickets del board</p>
                   )}
                   </div>
               </div>
@@ -341,7 +385,9 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
               )}
                 {section === 'announcements' && <AnnouncementsConfig />}
               {section === 'org' && <OrgSection />}
-              {section === 'kanbans' && <KanbanSection />}            </div>
+              {section === 'kanbans' && <KanbanSection />}
+              {section === 'exports' && <ExportsConfig initialTab={initialExportsTab} />}
+            </div>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ const TYPE_ICON: Record<string, string> = {
   criteria_reviewed:   '🔍',
   sub_request_created: '🔗',
   mention:             '@',
+  export_ready:        '📤',
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -26,6 +27,7 @@ const TYPE_COLOR: Record<string, string> = {
   criteria_reviewed:   '#fbbf24',
   sub_request_created: '#f472b6',
   mention:             'var(--accent)',
+  export_ready:        '#38bdf8',
 };
 
 type Props = { userId: number | null };
@@ -117,14 +119,21 @@ const NotificationPanel = forwardRef<HTMLDivElement, PanelProps>(
     const navigate  = useNavigate();
     const hasUnread = notifications.some((n) => !n.isRead);
 
-    const handleClick = (n: Notification) => {
+const handleClick = (n: Notification) => {
       if (!n.isRead) onMarkRead(n.notificationId);
+
+      // Notificaciones de export → abrir ConfigPanel en pestaña Historial
+      if (n.type === 'export_ready') {
+        window.dispatchEvent(new CustomEvent('prisma:open-exports-history'));
+        onClose();
+        return;
+      }
+
       if (n.requestId) {
         navigate(`/ticket/${n.requestId}`);
         onClose();
       }
     };
-
     return (
       <div
         ref={ref}

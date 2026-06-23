@@ -20,6 +20,7 @@ import { useComments, useCreateComment, useDeleteComment } from '@/features/requ
 import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/features/requests/hooks/useAttachments';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
+import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { useChildRequests } from '@/features/requests/hooks/useSubRequest';
 import { useAcceptanceCriteria, useUpdateCriteriaStatus, useCreateCriteria, useDeleteCriteria, useUpdateCriteriaTitle } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
@@ -32,6 +33,7 @@ import type { AcceptanceCriteria } from '@/types/commons';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
+import { useTimerStore } from '@/store/timerStore';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
@@ -89,45 +91,6 @@ function fmtHours(h: number): string {
   return `${hrs}h ${mins}m`;
 }
 
-function useTimer(requestId: string) {
-  const key   = `timer:${requestId}`;
-  const saved = (() => {
-    try { return JSON.parse(sessionStorage.getItem(key) ?? '{}'); }
-    catch { return {}; }
-  })();
-
-  const [seconds,   setSeconds]   = useState<number>(saved.seconds ?? 0);
-  const [running,   setRunning]   = useState(false);
-  const [completed, setCompleted] = useState<boolean>(saved.completed ?? false);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (running) {
-      ref.current = setInterval(() => setSeconds((s) => {
-        const n = s + 1;
-        sessionStorage.setItem(key, JSON.stringify({ seconds: n, completed }));
-        return n;
-      }), 1000);
-    } else if (ref.current) {
-      clearInterval(ref.current);
-    }
-    return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running, completed, key]);
-
-  const fmt = (s: number) =>
-    [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
-      .map((v) => String(v).padStart(2, '0')).join(':');
-
-  return {
-    seconds, running, completed, fmt,
-    toggle:   () => { if (!completed) setRunning((r) => !r); },
-    complete: () => {
-      setRunning(false); setCompleted(true);
-      sessionStorage.setItem(key, JSON.stringify({ seconds, completed: true }));
-    },
-  };
-}
-
 function useDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -147,7 +110,7 @@ type Props = {
   equipo:            Equipo;
   onClose:           () => void;
   onMove:            (id: string, columna: KanbanColumna) => void;
-  onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[]) => void;
+  onMoveWithClosure: (id: string, columna: KanbanColumna, note: string, attachments: File[], mode?: 'new' | 'reuse' | 'skip', reuseFromClosureId?: number | null) => void;
   onOpenRequest?:    (requestId: string) => void;
   readOnly?:         boolean;
   backLabel?:        string;  
@@ -503,6 +466,36 @@ const commentsEndRef = useRef<HTMLDivElement>(null);
   const boardTeamId  = request.boardTeamId ?? null;
   const isSubRequest = request.parentId !== null;
 
+  /* ── Fuente de verdad: config de columnas del equipo ── */
+  const { data: teamColumns = [] } = useTeamColumnConfig(boardId, boardTeamId);
+
+  const teamColMap = new Map(teamColumns.map((c) => [c.Board_Column_Slug, c]));
+
+  /** Lista que alimenta el dropdown "Mover a": visibles + ordenadas + con
+   *  evidencia dinámica. Si no hay config (boardTeamId null o todavía
+   *  cargando), cae al listado global como fallback seguro. */
+  const columnsForMove: { slug: KanbanColumna; name: string; evidenceRequired: boolean }[] =
+    teamColumns.length > 0
+      ? [...teamColumns]
+          .filter((c) => c.Is_Visible)
+          .sort((a, b) => a.Board_Column_Position - b.Board_Column_Position)
+          .map((c) => ({
+            slug:             c.Board_Column_Slug as KanbanColumna,
+            name:             c.Board_Column_Name,
+            evidenceRequired: c.Evidence_Required,
+          }))
+      : (Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([slug, name]) => ({
+          slug,
+          name,
+          evidenceRequired: COLUMNAS_CIERRE.has(slug),
+        }));
+
+  /** Helpers de presentación — usan config del equipo con fallback a hardcoded */
+  const labelFor      = (slug: KanbanColumna) => teamColMap.get(slug)?.Board_Column_Name ?? KANBAN_COLUMNAS[slug] ?? slug;
+  const colorFor      = (slug: KanbanColumna) => teamColMap.get(slug)?.Team_Column_Color ?? teamColMap.get(slug)?.Board_Column_Color ?? COL_COLOR[slug] ?? 'var(--txt-muted)';
+  const titleColorFor = (slug: KanbanColumna) => teamColMap.get(slug)?.Team_Column_Title_Color ?? colorFor(slug);
+  const requiresEvidenceFor = (slug: KanbanColumna) => teamColMap.get(slug)?.Evidence_Required ?? COLUMNAS_CIERRE.has(slug);
+
   /* Fetch fresco al montar */
   const { data: freshRequest } = useQuery<Request>({
     queryKey: ['request', requestId],
@@ -527,6 +520,7 @@ const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
     : null;
   const [pendingClosureCol,   setPendingClosureCol]   = useState<KanbanColumna | null>(null);
   const [pendingClosureColId, setPendingClosureColId] = useState<number>(0);
+  const [pendingSourceReqEv,  setPendingSourceReqEv]  = useState<boolean>(false);
 
   const { data: subTeams    = [] } = useSubTeams(boardTeamId);
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
@@ -565,7 +559,6 @@ const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
 
-const [showTimerWarning, setShowTimerWarning] = useState(false);
 const [saveStatus, setSaveStatus]             = useState<'idle' | 'pending' | 'saving' | 'saved'>('idle');
 const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 // Solo corre al montar (request.id cambia = nuevo modal)
@@ -580,7 +573,7 @@ useEffect(() => {
   setFormDataLocal(r.formData ?? {});
   setColumnaActual(r.columna);
 }, [request.id]);
-const timerRunningRef = useRef(false);
+
   useEffect(() => {
     const el = tituloRef.current;
     if (!el) return;
@@ -635,22 +628,12 @@ function handleDelete() {
 }
 
 function handleClose() {
-    if (timerRunningRef.current) {
-    setShowTimerWarning(true);
-    return;
-  }
   onClose();
 }
 
 useEffect(() => {
   const fn = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      if (timerRunningRef.current) {
-        setShowTimerWarning(true);
-      } else {
-        onClose();
-      }
-    }
+    if (e.key === 'Escape') onClose();
   };
   window.addEventListener('keydown', fn);
   return () => window.removeEventListener('keydown', fn);
@@ -660,25 +643,29 @@ useEffect(() => {
   function handleMover(columna: KanbanColumna) {
     if (readOnly || columnaActual === columna) return;
     /* Si ya hay closure (evidencia subida al mover a QAS), no pedir de nuevo */
-const yaHayClosure = !!effectiveRequest.fechaCierre;
-    if (COLUMNAS_CIERRE.has(columna) && !yaHayClosure) {
+    const yaHayClosure = !!effectiveRequest.fechaCierre;
+    if (requiresEvidenceFor(columna) && !yaHayClosure) {
+      // ¿La columna de la que viene también requería evidencia?
+      const sourceRequiresEvidence = requiresEvidenceFor(columnaActual);
       setPendingClosureCol(columna);
       setPendingClosureColId(columnMap?.[columna] ?? 0);
+      setPendingSourceReqEv(sourceRequiresEvidence);
       return;
     }
     setColumnaActual(columna);
-mover(
-  { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
-  { onSuccess: () => onMove(requestId, columna) },
-);
+    mover(
+      { id: requestId, columna, columnId: columnMap?.[columna], movedBy: currentUser?.User_ID },
+      { onSuccess: () => onMove(requestId, columna) },
+    );
   }
 
-  function handleClosureFromModal(note: string, files: File[]) {
+  function handleClosureFromModal(note: string, files: File[], mode: 'new' | 'reuse' | 'skip', reuseFromClosureId: number | null) {
     if (!pendingClosureCol) return;
     const targetCol = pendingClosureCol;
     setPendingClosureCol(null);
+    setPendingSourceReqEv(false);
     setColumnaActual(targetCol);
-    onMoveWithClosure(requestId, targetCol, note, files);
+    onMoveWithClosure(requestId, targetCol, note, files, mode, reuseFromClosureId);
   }
 
   function handleClientFeedbackSubmitted(targetColumna: 'ready_to_deploy' | 'en_revision_qas') {
@@ -881,8 +868,8 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 <GitFork size={10} />Sub-solicitud
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5,  padding: '3px 10px', borderRadius: 4, color: COL_COLOR[columnaActual], background: `${COL_COLOR[columnaActual]}15`, border: `1px solid ${COL_COLOR[columnaActual]}35` }}>
-              {KANBAN_COLUMNAS[columnaActual]}
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5,  padding: '3px 10px', borderRadius: 4, color: titleColorFor(columnaActual), background: `${colorFor(columnaActual)}15`, border: `1px solid ${colorFor(columnaActual)}35` }}>
+              {labelFor(columnaActual)}
             </span>
 
             {/* Botón DIVIDIR */}
@@ -1453,9 +1440,10 @@ onToggleAssignee={(userId) => {
 {!readOnly && (
 <TimerOrInputBlock
   requestId={requestId}
+  titulo={effectiveRequest.titulo}
+  equipo={equipo}
   loggedHours={effectiveRequest.loggedHours}
   onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
-  onRunningChange={(running) => { timerRunningRef.current = running; }}
 />
 )}
 
@@ -1468,34 +1456,34 @@ onToggleAssignee={(userId) => {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 12px', borderRadius: 6, width: '100%',
-            border: `1px solid ${moverDD.open ? COL_COLOR[columnaActual] + '60' : COL_COLOR[columnaActual] + '35'}`,
-            background: moverDD.open ? `${COL_COLOR[columnaActual]}18` : `${COL_COLOR[columnaActual]}0d`,
+            border: `1px solid ${moverDD.open ? colorFor(columnaActual) + '60' : colorFor(columnaActual) + '35'}`,
+            background: moverDD.open ? `${colorFor(columnaActual)}18` : `${colorFor(columnaActual)}0d`,
             cursor: 'pointer', transition: 'all 0.15s',
           }}
         >
           <span style={{
             width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-            background: COL_COLOR[columnaActual],
+            background: colorFor(columnaActual),
           }} />
 <span style={{
   flex: 1, fontSize: 12, fontWeight: 700, letterSpacing: 1,
-   color: COL_COLOR[columnaActual],
+   color: titleColorFor(columnaActual),
   textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6,
 }}>
-  {KANBAN_COLUMNAS[columnaActual]}
+  {labelFor(columnaActual)}
   <span style={{
     fontSize: 8, fontWeight: 600, letterSpacing: 0.5,
     padding: '1px 5px', borderRadius: 3,
-    border: `1px solid ${COL_COLOR[columnaActual]}35`,
-    background: `${COL_COLOR[columnaActual]}12`,
-    color: COL_COLOR[columnaActual], opacity: 0.75,
+    border: `1px solid ${colorFor(columnaActual)}35`,
+    background: `${colorFor(columnaActual)}12`,
+    color: titleColorFor(columnaActual), opacity: 0.75,
     textTransform: 'uppercase',
   }}>
     Mover
   </span>
 </span>
           <ChevDown size={12} style={{
-            color: COL_COLOR[columnaActual], opacity: 0.7, flexShrink: 0,
+            color: colorFor(columnaActual), opacity: 0.7, flexShrink: 0,
             transform: moverDD.open ? 'rotate(180deg)' : 'none',
             transition: 'transform 0.15s',
           }} />
@@ -1510,26 +1498,27 @@ onToggleAssignee={(userId) => {
             overflow: 'hidden', minWidth: 180,
           }}>
             <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {(Object.entries(KANBAN_COLUMNAS) as [KanbanColumna, string][]).map(([col, label]) => {
+              {columnsForMove.map(({ slug: col, name: label, evidenceRequired }) => {
                 const active    = columnaActual === col;
-                const esCierre  = COLUMNAS_CIERRE.has(col);
-                const showBadge = esCierre && !yaHayClosure;
+                const showBadge = evidenceRequired && !yaHayClosure;
+                const c         = colorFor(col);
+                const tc        = titleColorFor(col);
                 return (
                   <button
                     key={col}
-                    onClick={() => { handleMover(col); if (!COLUMNAS_CIERRE.has(col) || yaHayClosure) moverDD.setOpen(false); }}
+                    onClick={() => { handleMover(col); if (!evidenceRequired || yaHayClosure) moverDD.setOpen(false); }}
                     style={{
                       padding: '5px 11px', borderRadius: 6,
                       fontSize: 11, fontWeight: 700, letterSpacing: 1,
                       transition: 'all 0.12s',
                       display: 'flex', alignItems: 'center', gap: 5,
                       cursor: active ? 'default' : 'pointer',
-                      border: `1px solid ${active ? COL_COLOR[col] + '60' : showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'}`,
-                      background: active ? `${COL_COLOR[col]}18` : 'transparent',
-                      color: active ? COL_COLOR[col] : showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)',
+                      border: `1px solid ${active ? c + '60' : showBadge ? c + '30' : 'var(--border-subtle)'}`,
+                      background: active ? `${c}18` : 'transparent',
+                      color: active ? tc : showBadge ? tc + 'cc' : 'var(--txt-muted)',
                     }}
-                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = COL_COLOR[col] + '55'; e.currentTarget.style.color = COL_COLOR[col]; e.currentTarget.style.background = `${COL_COLOR[col]}10`; } }}
-                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? COL_COLOR[col] + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? COL_COLOR[col] + 'cc' : 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; } }}
+                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.borderColor = c + '55'; e.currentTarget.style.color = tc; e.currentTarget.style.background = `${c}10`; } }}
+                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.borderColor = showBadge ? c + '30' : 'var(--border-subtle)'; e.currentTarget.style.color = showBadge ? tc + 'cc' : 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; } }}
                   >
                     {showBadge && <CheckCircle size={9} />}{label}
                   </button>
@@ -1541,7 +1530,8 @@ onToggleAssignee={(userId) => {
       </div>
 
   </FieldBlock>
-)}            </div>
+)}            
+</div>
 
             {/* Panel derecho */}
             <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1632,78 +1622,6 @@ onToggleAssignee={(userId) => {
           </div>
         </div>
       </div>
-{showTimerWarning && (
-    <div style={{
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 200,
-  }}>
-    <div style={{
-      background: 'var(--bg-panel)', border: '1px solid rgba(255,71,87,0.3)',
-      borderRadius: 12, padding: '24px 28px', width: 360, display: 'flex',
-      flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Barra superior */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg, transparent, var(--danger), transparent)' }} />
-
-      {/* Icono + título */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-          background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Clock size={17} style={{ color: 'var(--danger)' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>
-            Cronómetro activo
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
-            El tiempo no guardado se perderá
-          </div>
-        </div>
-      </div>
-
-      {/* Cuerpo */}
-      <p style={{ margin: 0, fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
-        El cronómetro sigue corriendo. Si cierras ahora, el tiempo acumulado desde el último guardado <strong style={{ color: 'var(--txt)' }}>no se registrará</strong> en la solicitud.
-      </p>
-
-      {/* Botones */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button
-          onClick={() => setShowTimerWarning(false)}
-          style={{
-            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-            border: '1px solid var(--border-subtle)', background: 'transparent',
-            color: 'var(--txt-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--txt)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
-        >
-          Volver
-        </button>
-        <button
-          onClick={() => { setShowTimerWarning(false); onClose(); }}
-          style={{
-            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-            border: '1px solid rgba(255,71,87,0.4)', background: 'rgba(255,71,87,0.12)',
-            color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.22)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.12)'; }}
-        >
-          Cerrar de todas formas
-        </button>
-      </div>
-    </div>
-  </div>
-)}
       {showDeleteConfirm && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)',
@@ -1767,12 +1685,14 @@ onToggleAssignee={(userId) => {
       )}
 
       {pendingClosureCol && (
-          <ClosureModal
+        <ClosureModal
           request={effectiveRequest}
           targetColumna={pendingClosureCol}
           targetColumnId={pendingClosureColId}
+          canReuseEvidence={pendingSourceReqEv}
+          previousClosure={effectiveRequest.cierreInfo}
           onConfirm={handleClosureFromModal}
-          onCancel={() => setPendingClosureCol(null)}
+          onCancel={() => { setPendingClosureCol(null); setPendingSourceReqEv(false); }}
           isPending={false}
         />
       )}
@@ -2221,27 +2141,56 @@ function PersonChip({ name, teamName}: { name: string; teamName?: string | null;
 
 /* ─── TimerOrInputBlock ─────────────────────────────────── */
 function TimerOrInputBlock({
-  requestId, loggedHours, onSave, onRunningChange,
+  requestId, titulo, equipo, loggedHours, onSave,
 }: {
-  requestId:        string;
-  loggedHours:      number | null;
-  onSave:           (val: number | null) => void;
-  onRunningChange?: (running: boolean) => void;
+  requestId:   string;
+  titulo:      string;
+  equipo:      Equipo;
+  loggedHours: number | null;
+  onSave:      (val: number | null) => void;
 }) {
   const [mode, setMode] = useState<'timer' | 'input'>('timer');
-  const timer = useTimer(requestId);
 
-  // Notificar al padre cuando cambia running
+  const entry      = useTimerStore((s) => s.entries[requestId]);
+  const start      = useTimerStore((s) => s.start);
+  const pause      = useTimerStore((s) => s.pause);
+  const resetTimer = useTimerStore((s) => s.reset);
+  const surface    = useTimerStore((s) => s.surface);
+
+  // Al abrir un ticket que ya tiene cronómetro (p. ej. ocultado con la X),
+  // el widget flotante reaparece mostrando su progreso.
   useEffect(() => {
-    onRunningChange?.(timer.running);
-  }, [timer.running]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (entry) surface(requestId);
+  }, [requestId]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  const running = !!entry?.startedAt;
 
-  function handleComplete() {
-    timer.complete();
-    onRunningChange?.(false);
-    const totalHours = parseFloat((timer.seconds / 3600).toFixed(4));
-    const combined   = (loggedHours ?? 0) + totalHours;
-    onSave(parseFloat(combined.toFixed(4)));
+  // tick solo para refrescar la UI; el valor real se deriva de timestamps
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => force((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const elapsedMs = (entry?.accumulatedMs ?? 0) + (entry?.startedAt ? Date.now() - entry.startedAt : 0);
+  const seconds   = Math.floor(elapsedMs / 1000);
+
+  const fmt = (s: number) =>
+    [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
+      .map((v) => String(v).padStart(2, '0')).join(':');
+
+  function handleToggle() {
+    if (running) pause(requestId);
+    else start(requestId, { titulo, equipo });
+  }
+
+  function handleSave() {
+    const totalHours = parseFloat((seconds / 3600).toFixed(4));
+    if (totalHours <= 0) { resetTimer(requestId); return; }
+    const combined = parseFloat(((loggedHours ?? 0) + totalHours).toFixed(4));
+    onSave(combined);
+    resetTimer(requestId);
   }
 
   return (
@@ -2286,25 +2235,23 @@ function TimerOrInputBlock({
       {mode === 'timer' && (
         <div style={{
           background: 'var(--bg-surface)',
-          border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`,
+          border: `1px solid ${running ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`,
           borderRadius: 8, padding: '14px 16px',
           display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s',
         }}>
-          <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>
-            {timer.fmt(timer.seconds)}
+          <Clock size={16} style={{ color: running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: running ? 'var(--accent)' : 'var(--txt)' }}>
+            {fmt(seconds)}
           </span>
-          {timer.completed && (
-            <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Guardado</span>
+          {!running && seconds > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>En pausa</span>
           )}
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            {!timer.completed && (
-              <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
-                {timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}
-              </button>
-            )}
-            {!timer.running && timer.seconds > 0 && !timer.completed && (
-              <button onClick={handleComplete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+            <button onClick={handleToggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+              {running ? 'Pausar' : seconds > 0 ? 'Reanudar' : 'Iniciar'}
+            </button>
+            {seconds > 0 && (
+              <button onClick={handleSave} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
                 Guardar
               </button>
             )}

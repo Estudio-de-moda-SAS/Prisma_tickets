@@ -74,7 +74,8 @@ export function SatisfactionModal({ onClose }: Props) {
         ) : (
           <div className="feedback-modal__body">
             <p className="feedback-modal__sub">
-              ¿Cómo calificarías tu experiencia con PRISMA Tickets?
+              ¿Cómo calificarías tu experiencia con PRISMA Tickets?<br></br>
+              Tu opinion nos importa! asi que tus sinceros comentarios son bienvenidos.
             </p>
 
             {/* Estrellas */}

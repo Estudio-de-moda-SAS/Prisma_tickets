@@ -178,21 +178,26 @@ function SprintSelector({ sprints, selectedIds, onChange }: {
 
   return (
     <div className="sprint-selector" ref={ref}>
-      <button className="sprint-selector__btn" onClick={() => setOpen(o => !o)}>
+<button className="sprint-selector__btn" onClick={() => setOpen(o => !o)}>
         <Target size={12} />
         <span>{label}</span>
         {selectedIds.length > 0 && (
-          <button
+          <span
+            role="button"
+            tabIndex={0}
             className="sprint-selector__clear-btn"
             title="Ver todos los sprints"
             onClick={e => { e.stopPropagation(); onChange([]); }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); onChange([]); }
+            }}
           >
             <X size={9} />
-          </button>
+          </span>
         )}
         <ChevronDown size={11} style={{ marginLeft: 'auto', opacity: 0.5 }} />
       </button>
-
+      
       {open && (
         <div className="sprint-selector__menu">
           <button

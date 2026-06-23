@@ -10,6 +10,7 @@ import {
 } from '../hooks/useCustomizationStyles';
 import { useTheme } from '@/store/useTheme';
 import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/hooks/useBoardMetadata';
+import { useSearchStore, matchesSearchQuery } from '@/store/searchStore';
 import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useLabelsByBoardId }    from '@/features/requests/hooks/useLabels';
 import { config } from '@/config';
@@ -318,6 +319,12 @@ const orphanFields: FlatCardField[] = Object.keys(formData)
 export function RequestCard({ request, isDragging = false, onClick, unreadNotifications = [] }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: request.id });
 
+  // ── Atenuado por búsqueda activa ─────────────────────────────────────────
+  const searchQuery = useSearchStore((s) => s.query);
+  const isDimmedBySearch =
+    searchQuery.trim().length > 0 &&
+    !matchesSearchQuery({ id: request.id, titulo: request.titulo }, searchQuery);
+
   const { data: allTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
   const { data: allLabels    = [] } = useLabelsByBoardId(config.DEFAULT_BOARD_ID);
   const { theme: uiTheme }         = useTheme();
@@ -370,7 +377,7 @@ const closureBorderStyle = isCerrada
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
-        transition,
+        transition: [transition, 'opacity 0.18s ease', 'filter 0.18s ease'].filter(Boolean).join(', '),
         ...cardStyle,
         ...({ '--priority-color': priorityColor } as React.CSSProperties),
         ...(isSubRequest
@@ -382,6 +389,9 @@ const closureBorderStyle = isCerrada
               : {}),
         ...(hasActivity && !isBeingDragged
           ? { outline: '1px solid rgba(167,139,250,0.35)' }
+          : {}),
+        ...(isDimmedBySearch && !isBeingDragged
+          ? { opacity: 0.22, filter: 'grayscale(0.55)' }
           : {}),
       }}
       className={[cardClasses, isBeingDragged ? 'request-card--dragging' : ''].filter(Boolean).join(' ')}

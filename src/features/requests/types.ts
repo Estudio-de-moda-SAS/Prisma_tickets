@@ -109,19 +109,16 @@ export type ClosureAttachment = {
    Cierre
    ============================================================ */
 export type CierreInfo = {
-  closureId:   number;
-  closureNote: string;
-  closedAt:    string;
-  closedBy: {
-    userId:   number;
-    userName: string;
-  };
-  attachments: ClosureAttachment[];
+  closureId:      number;
+  closureNote:    string;
+  closureType?:   'new' | 'reuse' | 'skip';   // ← NUEVO
+  closedAt:       string;
+  closedBy: { userId: number; userName: string };
+  attachments:    ClosureAttachment[];
   attachmentUrl:  string | null;
   attachmentName: string | null;
   attachmentMime: string | null;
 };
-
 /* ============================================================
    Feedback del cliente (Cliente Review)
    ============================================================ */
@@ -307,11 +304,13 @@ export type ActualizarRequestPayload = {
 };
 
 export type CerrarRequestPayload = {
-  requestId:      string;
-  closedBy:       number;
-  closureNote:    string;
-  targetColumnId: number;
-  attachments:    File[];
+  requestId:           string;
+  closedBy:            number;
+  closureNote:         string;
+  targetColumnId:      number;
+  attachments:         File[];
+  evidenceMode?:       'new' | 'reuse' | 'skip';
+  reuseFromClosureId?: number | null;
 };
 
 export type SubmitClientFeedbackPayload = {

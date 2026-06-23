@@ -11,6 +11,21 @@ function fmtColombia(iso: string) {
     timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
+function ClosureTypeBadge({ type }: { type?: 'new' | 'reuse' | 'skip' }) {
+  if (!type || type === 'new') return null;
+  const config = type === 'reuse'
+    ? { label: 'Reutilizada', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.3)' }
+    : { label: 'Sin evidencia', color: '#fdcb6e', bg: 'rgba(253,203,110,0.1)', border: 'rgba(253,203,110,0.3)' };
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+      padding: '2px 6px', borderRadius: 3, flexShrink: 0,
+      color: config.color, background: config.bg, border: `1px solid ${config.border}`,
+    }}>
+      {config.label}
+    </span>
+  );
+}
 
 /* ─── CierreBanner ─────────────────────────────────────────── */
 export function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['cierreInfo']> }) {
@@ -25,6 +40,7 @@ export function CierreBanner({ cierreInfo }: { cierreInfo: NonNullable<Request['
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 14px', borderBottom: '1px solid rgba(0,229,160,0.15)', background: 'rgba(0,229,160,0.06)' }}>
         <CheckCircle size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--success)', flex: 1 }}>Evidencia de avance</span>
+        <ClosureTypeBadge type={cierreInfo.closureType} />
         <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtColombia(cierreInfo.closedAt)}</span>
       </div>
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -75,6 +91,7 @@ export function CierreBannerCompact({ cierreInfo }: { cierreInfo: NonNullable<Re
           {initials(cierreInfo.closedBy.userName || 'U')}
         </div>
         <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500, flex: 1 }}>{cierreInfo.closedBy.userName}</span>
+        <ClosureTypeBadge type={cierreInfo.closureType} />
         <span style={{ fontSize: 10, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtColombia(cierreInfo.closedAt)}</span>
       </div>
       <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -218,4 +235,5 @@ export function FeedbackTimeline({ historial }: { historial: ClientFeedback[] })
       })}
     </div>
   );
+  
 }

@@ -192,6 +192,9 @@ function SprintBanner() {
 /* ══════════════════════════════════════════════════════════════
    EquipoTab
    ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   EquipoTab
+   ══════════════════════════════════════════════════════════════ */
 function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, isAdminOnly, onClick }: {
   equipo: string; teamColor: string; teamIcon: string; description: string;
   label: string; isActive: boolean; isAdminOnly?: boolean; onClick: () => void;
@@ -217,21 +220,28 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
     >
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isActive ? 3 : 2, background: isActive ? `linear-gradient(90deg, ${c.dot}, ${c.dot}88)` : `linear-gradient(90deg, ${c.dot}00, ${c.dot}35, ${c.dot}00)`, transition: 'height 0.2s' }} />
       {isActive && <div style={{ position: 'absolute', top: -40, right: -20, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${c.dot}20 0%, transparent 70%)`, pointerEvents: 'none' }} />}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+      {/* ── Header con altura fija ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, height: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: isActive ? c.dot + '22' : c.dot + '14', border: `1px solid ${c.dot + (isActive ? '40' : '25')}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
             <Icon size={14} style={{ color: c.dot }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? c.dot : 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', transition: 'color 0.2s' }}>{label}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? c.dot : 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', transition: 'color 0.2s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }} title={label}>{label}</span>
           {isAdminOnly && (
             <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757', letterSpacing: '0.5px', flexShrink: 0 }}>🔒 Admin</span>
           )}
         </div>
         {isActive && <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.dot, boxShadow: `0 0 8px ${c.dot}`, flexShrink: 0 }} />}
       </div>
-      <p style={{ margin: '0 0 12px', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 33 }}>
-        {description}
-      </p>
+
+      {/* ── Descripción con wrapper de altura fija ── */}
+      <div style={{ height: 33, overflow: 'hidden', margin: '0 0 12px', textAlign: 'left' }}>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {description}
+        </p>
+      </div>
+
       <div style={{ display: 'flex', paddingTop: 10, borderTop: `1px solid ${isActive ? c.dot + '20' : 'rgba(255,255,255,0.05)'}`, transition: 'border-color 0.2s' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 20, fontWeight: 700, color: c.dot, lineHeight: 1, fontFamily: 'var(--font-display)' }}>{active}</span>
@@ -246,7 +256,6 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
     </button>
   );
 }
-
 /* ══════════════════════════════════════════════════════════════
    TicketRow
    ══════════════════════════════════════════════════════════════ */
@@ -668,7 +677,7 @@ export function HomePage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '4px 0 48px', maxWidth: 1060, margin: '0 auto', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '4px 30px 48px', margin: '0 auto', width: '100%' }}>
 
       {/* Encabezado */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

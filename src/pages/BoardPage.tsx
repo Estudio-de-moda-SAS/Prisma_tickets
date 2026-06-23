@@ -15,6 +15,7 @@ import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useQuery } from '@tanstack/react-query';
 import { KanbanBoard } from '@/features/requests/components/KanbanBoard';
 import { BoardFilters, type FilterDynamicOptions, type TemplateFilterOption, type TemplateFieldOption } from '@/features/requests/components/BoardFilters';
+import { BoardSearch } from '@/features/requests/components/BoardSearch';
 import { BoardCustomizationTrigger } from '@/features/requests/components/BoardCustomization';
 import { MemberHoursBar } from '@/features/requests/components/MemberHoursBar'
 import { useFilteredBoard } from '@/features/requests/hooks/useFilteredBoard';
@@ -177,7 +178,8 @@ export function BoardPage() {
   const columnMap                    = useColumnMap(config.DEFAULT_BOARD_ID);
   const { Requests }                 = useGraphServices();
 
-  const [externalModalId, setExternalModalId] = useState<string | null>(null);
+  const [externalModalId,   setExternalModalId]   = useState<string | null>(null);
+  const [openTicketSignal,  setOpenTicketSignal]  = useState<{ id: string; nonce: number } | null>(null);
 
   const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const boardTeamId = useMemo(() => {
@@ -271,6 +273,11 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+  <BoardSearch
+    board={filteredData ?? {}}
+    equipo={equipoActivo}
+    onSelectTicket={(id) => setOpenTicketSignal({ id, nonce: Date.now() })}
+  />
   <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
   <BoardCustomizationTrigger />
   <KanbanZoomControl />
@@ -300,6 +307,7 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
           onMove={handleMove}
           extraRequest={externalRequest ?? null}
           onModalId={handleModalId}
+          openTicketSignal={openTicketSignal}
         />
       )}
     </div>
