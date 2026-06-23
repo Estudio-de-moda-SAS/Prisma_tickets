@@ -33,6 +33,7 @@ import type { AcceptanceCriteria } from '@/types/commons';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
+import { useTimerStore } from '@/store/timerStore';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
@@ -88,45 +89,6 @@ function fmtHours(h: number): string {
   const mins = Math.round((h % 1) * 60);
   if (mins === 0) return `${hrs}h`;
   return `${hrs}h ${mins}m`;
-}
-
-function useTimer(requestId: string) {
-  const key   = `timer:${requestId}`;
-  const saved = (() => {
-    try { return JSON.parse(sessionStorage.getItem(key) ?? '{}'); }
-    catch { return {}; }
-  })();
-
-  const [seconds,   setSeconds]   = useState<number>(saved.seconds ?? 0);
-  const [running,   setRunning]   = useState(false);
-  const [completed, setCompleted] = useState<boolean>(saved.completed ?? false);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (running) {
-      ref.current = setInterval(() => setSeconds((s) => {
-        const n = s + 1;
-        sessionStorage.setItem(key, JSON.stringify({ seconds: n, completed }));
-        return n;
-      }), 1000);
-    } else if (ref.current) {
-      clearInterval(ref.current);
-    }
-    return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running, completed, key]);
-
-  const fmt = (s: number) =>
-    [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
-      .map((v) => String(v).padStart(2, '0')).join(':');
-
-  return {
-    seconds, running, completed, fmt,
-    toggle:   () => { if (!completed) setRunning((r) => !r); },
-    complete: () => {
-      setRunning(false); setCompleted(true);
-      sessionStorage.setItem(key, JSON.stringify({ seconds, completed: true }));
-    },
-  };
 }
 
 function useDropdown() {
@@ -597,7 +559,6 @@ const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
 const assignedUsers  = allUsers.filter((u) => assigneeIds.includes(u.User_ID));
 
-const [showTimerWarning, setShowTimerWarning] = useState(false);
 const [saveStatus, setSaveStatus]             = useState<'idle' | 'pending' | 'saving' | 'saved'>('idle');
 const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 // Solo corre al montar (request.id cambia = nuevo modal)
@@ -612,7 +573,7 @@ useEffect(() => {
   setFormDataLocal(r.formData ?? {});
   setColumnaActual(r.columna);
 }, [request.id]);
-const timerRunningRef = useRef(false);
+
   useEffect(() => {
     const el = tituloRef.current;
     if (!el) return;
@@ -667,22 +628,12 @@ function handleDelete() {
 }
 
 function handleClose() {
-    if (timerRunningRef.current) {
-    setShowTimerWarning(true);
-    return;
-  }
   onClose();
 }
 
 useEffect(() => {
   const fn = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      if (timerRunningRef.current) {
-        setShowTimerWarning(true);
-      } else {
-        onClose();
-      }
-    }
+    if (e.key === 'Escape') onClose();
   };
   window.addEventListener('keydown', fn);
   return () => window.removeEventListener('keydown', fn);
@@ -1489,9 +1440,10 @@ onToggleAssignee={(userId) => {
 {!readOnly && (
 <TimerOrInputBlock
   requestId={requestId}
+  titulo={effectiveRequest.titulo}
+  equipo={equipo}
   loggedHours={effectiveRequest.loggedHours}
   onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
-  onRunningChange={(running) => { timerRunningRef.current = running; }}
 />
 )}
 
@@ -1670,78 +1622,6 @@ onToggleAssignee={(userId) => {
           </div>
         </div>
       </div>
-{showTimerWarning && (
-    <div style={{
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 200,
-  }}>
-    <div style={{
-      background: 'var(--bg-panel)', border: '1px solid rgba(255,71,87,0.3)',
-      borderRadius: 12, padding: '24px 28px', width: 360, display: 'flex',
-      flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Barra superior */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg, transparent, var(--danger), transparent)' }} />
-
-      {/* Icono + título */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-          background: 'rgba(255,71,87,0.12)', border: '1px solid rgba(255,71,87,0.3)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Clock size={17} style={{ color: 'var(--danger)' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)' }}>
-            Cronómetro activo
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
-            El tiempo no guardado se perderá
-          </div>
-        </div>
-      </div>
-
-      {/* Cuerpo */}
-      <p style={{ margin: 0, fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65 }}>
-        El cronómetro sigue corriendo. Si cierras ahora, el tiempo acumulado desde el último guardado <strong style={{ color: 'var(--txt)' }}>no se registrará</strong> en la solicitud.
-      </p>
-
-      {/* Botones */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button
-          onClick={() => setShowTimerWarning(false)}
-          style={{
-            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-            border: '1px solid var(--border-subtle)', background: 'transparent',
-            color: 'var(--txt-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; e.currentTarget.style.color = 'var(--txt)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
-        >
-          Volver
-        </button>
-        <button
-          onClick={() => { setShowTimerWarning(false); onClose(); }}
-          style={{
-            padding: '7px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-            border: '1px solid rgba(255,71,87,0.4)', background: 'rgba(255,71,87,0.12)',
-            color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.22)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,71,87,0.12)'; }}
-        >
-          Cerrar de todas formas
-        </button>
-      </div>
-    </div>
-  </div>
-)}
       {showDeleteConfirm && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)',
@@ -2261,27 +2141,56 @@ function PersonChip({ name, teamName}: { name: string; teamName?: string | null;
 
 /* ─── TimerOrInputBlock ─────────────────────────────────── */
 function TimerOrInputBlock({
-  requestId, loggedHours, onSave, onRunningChange,
+  requestId, titulo, equipo, loggedHours, onSave,
 }: {
-  requestId:        string;
-  loggedHours:      number | null;
-  onSave:           (val: number | null) => void;
-  onRunningChange?: (running: boolean) => void;
+  requestId:   string;
+  titulo:      string;
+  equipo:      Equipo;
+  loggedHours: number | null;
+  onSave:      (val: number | null) => void;
 }) {
   const [mode, setMode] = useState<'timer' | 'input'>('timer');
-  const timer = useTimer(requestId);
 
-  // Notificar al padre cuando cambia running
+  const entry      = useTimerStore((s) => s.entries[requestId]);
+  const start      = useTimerStore((s) => s.start);
+  const pause      = useTimerStore((s) => s.pause);
+  const resetTimer = useTimerStore((s) => s.reset);
+  const surface    = useTimerStore((s) => s.surface);
+
+  // Al abrir un ticket que ya tiene cronómetro (p. ej. ocultado con la X),
+  // el widget flotante reaparece mostrando su progreso.
   useEffect(() => {
-    onRunningChange?.(timer.running);
-  }, [timer.running]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (entry) surface(requestId);
+  }, [requestId]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  const running = !!entry?.startedAt;
 
-  function handleComplete() {
-    timer.complete();
-    onRunningChange?.(false);
-    const totalHours = parseFloat((timer.seconds / 3600).toFixed(4));
-    const combined   = (loggedHours ?? 0) + totalHours;
-    onSave(parseFloat(combined.toFixed(4)));
+  // tick solo para refrescar la UI; el valor real se deriva de timestamps
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => force((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const elapsedMs = (entry?.accumulatedMs ?? 0) + (entry?.startedAt ? Date.now() - entry.startedAt : 0);
+  const seconds   = Math.floor(elapsedMs / 1000);
+
+  const fmt = (s: number) =>
+    [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
+      .map((v) => String(v).padStart(2, '0')).join(':');
+
+  function handleToggle() {
+    if (running) pause(requestId);
+    else start(requestId, { titulo, equipo });
+  }
+
+  function handleSave() {
+    const totalHours = parseFloat((seconds / 3600).toFixed(4));
+    if (totalHours <= 0) { resetTimer(requestId); return; }
+    const combined = parseFloat(((loggedHours ?? 0) + totalHours).toFixed(4));
+    onSave(combined);
+    resetTimer(requestId);
   }
 
   return (
@@ -2326,25 +2235,23 @@ function TimerOrInputBlock({
       {mode === 'timer' && (
         <div style={{
           background: 'var(--bg-surface)',
-          border: `1px solid ${timer.running ? 'rgba(0,200,255,0.3)' : timer.completed ? 'rgba(0,229,160,0.3)' : 'var(--border-subtle)'}`,
+          border: `1px solid ${running ? 'rgba(0,200,255,0.3)' : 'var(--border-subtle)'}`,
           borderRadius: 8, padding: '14px 16px',
           display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.2s',
         }}>
-          <Clock size={16} style={{ color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: timer.completed ? 'var(--success)' : timer.running ? 'var(--accent)' : 'var(--txt)' }}>
-            {timer.fmt(timer.seconds)}
+          <Clock size={16} style={{ color: running ? 'var(--accent)' : 'var(--txt-muted)', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 600, letterSpacing: 2, minWidth: 90, color: running ? 'var(--accent)' : 'var(--txt)' }}>
+            {fmt(seconds)}
           </span>
-          {timer.completed && (
-            <span style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>Guardado</span>
+          {!running && seconds > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 }}>En pausa</span>
           )}
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            {!timer.completed && (
-              <button onClick={timer.toggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: timer.running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: timer.running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
-                {timer.running ? 'Pausar' : timer.seconds > 0 ? 'Reanudar' : 'Iniciar'}
-              </button>
-            )}
-            {!timer.running && timer.seconds > 0 && !timer.completed && (
-              <button onClick={handleComplete} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+            <button onClick={handleToggle} style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: running ? 'rgba(255,71,87,0.15)' : 'rgba(0,200,255,0.15)', color: running ? 'var(--danger)' : 'var(--accent)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
+              {running ? 'Pausar' : seconds > 0 ? 'Reanudar' : 'Iniciar'}
+            </button>
+            {seconds > 0 && (
+              <button onClick={handleSave} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'rgba(0,229,160,0.15)', color: 'var(--success)', fontFamily: 'var(--font-display)', letterSpacing: 0.5 }}>
                 Guardar
               </button>
             )}

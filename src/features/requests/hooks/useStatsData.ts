@@ -121,6 +121,7 @@ const AVATAR_GRADIENTS = [
 ];
 /** Columnas que cuentan como resueltas en todas las métricas */
 const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
+const PENALIZATION_EXEMPT_COLUMNS = new Set(['icebox']);
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -154,15 +155,17 @@ function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId
   }
   if (refIdx === -1) return 0;
 
-  return requests
-    .filter(r => !DONE_COLUMNS.has(r.columna) && r.sprintId != null)
+return requests
+    .filter(r => !DONE_COLUMNS.has(r.columna) && !PENALIZATION_EXEMPT_COLUMNS.has(r.columna) && r.sprintId != null)
     .reduce((acc, r) => {
       const reqIdx = sorted.findIndex(s => s.Sprint_ID === r.sprintId);
       if (reqIdx === -1) return acc;
-      if (refIdx - reqIdx >= 2) return acc + 2 * (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0);
+      if (refIdx - reqIdx >= 2) {
+        //console.log('[PENALIZA]', r.id, '| columna:', JSON.stringify(r.columna), '| sprintId:', r.sprintId, '| score:', PRIORIDAD_TO_SCORE[r.prioridad]);
+        return acc + 2 * (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0);
+      }
       return acc;
-    }, 0);
-}
+    }, 0);}
 /* ─── calcGeneral ─────────────────────────────────────────── */
 function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: StatsConfig): GeneralStatsReal {
   const activeRequests = statsConfig

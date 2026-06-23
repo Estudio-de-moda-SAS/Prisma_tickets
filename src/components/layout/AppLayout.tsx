@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementModal }  from './AnnouncementModal';
 import { VersionUpdateBanner } from './VersionUpdateBanner';
+import { FloatingTimer } from './FloatingTimer';
 
 const TITULOS: Record<string, string> = {
   '/home':         'Home',
@@ -24,7 +25,6 @@ export function AppLayout() {
   const navigate     = useNavigate();
   const titulo       = TITULOS[pathname] ?? 'Prisma Tickets';
 
-  // ← nueva línea
   const isFullBleed = /^\/tasks\//.test(pathname);
 
   const { data: currentUser, isLoading } = useCurrentUser();
@@ -42,14 +42,14 @@ export function AppLayout() {
         <div className="app-layout__main">
           <Topbar titulo={titulo} />
           <AnnouncementBanner />
-          {/* ← clase condicional */}
           <main className={`app-layout__content${isFullBleed ? ' app-layout__content--full-bleed' : ''}`}>
             <Outlet />
           </main>
         </div>
       </div>
       <div id="portal-root" /> <AnnouncementModal />
-                <VersionUpdateBanner />  
+      <VersionUpdateBanner />
+      <FloatingTimer />
     </>
   );
 }
