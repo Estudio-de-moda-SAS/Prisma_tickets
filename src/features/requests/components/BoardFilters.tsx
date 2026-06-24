@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, type RefObject } from 'react';
+import { useRef, useEffect, useCallback, useState, useMemo, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { SlidersHorizontal, Plus, X, Trash2 } from 'lucide-react';
 import {
@@ -48,7 +48,7 @@ export type FilterDynamicOptions = {
     subTeamColor: string;
     members:      { value: string; label: string; email: string }[];
   }[];
-  sprint?:     { value: string; label: string }[];
+  sprint?:     { value: string; label: string; year: number | null; startDate: string | null; endDate: string | null }[];
   categoria?:  { value: string; label: string }[];
   /** Plantillas del board con sus campos ya tipados */
   templates?:  TemplateFilterOption[];
@@ -123,6 +123,17 @@ function needsValue(operator: FilterOperator): boolean {
 function isNumericField(field: FilterField): boolean {
   return field === 'progreso' || field === 'horas_estimadas';
 }
+const SPRINT_NO_YEAR = '__no_year__';
+
+function sprintFilterDotColor(startDate: string | null, endDate: string | null): string {
+  if (!startDate || !endDate) return '#7f77dd'; // histórico
+  const now   = new Date();
+  const start = new Date(startDate);
+  const end   = new Date(endDate);
+  if (now >= start && now <= end) return '#00e5a0'; // activo
+  if (now > end) return '#b2bec3';                  // pasado
+  return '#fdcb6e';                                 // futuro
+}
 
 /* ============================================================
    Chip de filtro activo
@@ -152,13 +163,17 @@ function ActiveChip({
       ].filter(Boolean).join(' / ')
     : FIELD_LABELS[condition.field];
 
-  const valLabel = (() => {
+const valLabel = (() => {
     if (!showVal) return '';
     if (condition.operator === 'entre') return `${condition.value} – ${condition.value2 ?? '?'}`;
+    // Sprint puede traer varios valores separados por '|'
+    if (condition.field === 'sprint' && condition.value.includes('|')) {
+      const parts = condition.value.split('|').map((v) => v.trim()).filter(Boolean);
+      return `${parts.length} sprints`;
+    }
     if (options.length) return options.find((o) => o.value === condition.value)?.label ?? condition.value;
     return condition.value;
   })();
-
   return (
     <div
       className="filter-chip"
@@ -360,7 +375,8 @@ function AssigneeFilterPicker({
 
 /* ============================================================
    ConditionRow
-   ============================================================ */function ConditionRow({
+   ============================================================ */
+  function ConditionRow({
   boardId,
   condition,
   index,
@@ -400,6 +416,7 @@ function AssigneeFilterPicker({
 
   const showVal    = needsValue(condition.operator);
   const isNumeric  = isNumericField(condition.field);
+
   const isBetween  = condition.operator === 'entre';
   const dotColor   = CATEGORY_COLORS[FIELD_CATEGORY[condition.field]].dot;
 
@@ -603,6 +620,12 @@ function AssigneeFilterPicker({
               flat={dynamicOptions.assignee ?? []}
               onChange={(val) => updateCondition(boardId, condition.id, { value: val })}
             />
+          ) : condition.field === 'sprint' ? (
+            <SprintFilterPicker
+              value={condition.value}
+              options={dynamicOptions.sprint ?? []}
+              onChange={(val) => updateCondition(boardId, condition.id, { value: val })}
+            />
           ) : hasOptions ? (
             <select
               className="filter-select filter-select--value"
@@ -652,7 +675,190 @@ function AssigneeFilterPicker({
     </div>
   );
 }
+/* ============================================================
+   SprintFilterPicker — multi-select agrupado por año
+   ============================================================ */
+function SprintFilterPicker({
+  value, options, onChange,
+}: {
+  value:    string;
+  options:  { value: string; label: string; year: number | null; startDate: string | null; endDate: string | null }[];
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos,  setPos]  = useState({ top: 0, left: 0, width: 240 });
+  const triggerRef      = useRef<HTMLButtonElement>(null);
+  const dropRef         = useRef<HTMLDivElement>(null);
 
+  // Valores seleccionados (lista). El value se guarda como "A|B|C".
+  const selectedValues = useMemo(
+    () => value.split('|').map((v) => v.trim()).filter(Boolean),
+    [value],
+  );
+
+  // Años disponibles (desc), con los sin-año al final
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    let hasNoYear = false;
+    for (const o of options) {
+      if (o.year !== null) set.add(o.year);
+      else hasNoYear = true;
+    }
+    const arr: (number | typeof SPRINT_NO_YEAR)[] = [...set].sort((a, b) => b - a);
+    if (hasNoYear) arr.push(SPRINT_NO_YEAR);
+    return arr;
+  }, [options]);
+
+  const currentYear = new Date().getFullYear();
+  const firstSelectedYear = options.find((o) => selectedValues.includes(o.value))?.year ?? null;
+  const [selectedYear, setSelectedYear] = useState<number | typeof SPRINT_NO_YEAR>(() => {
+    if (firstSelectedYear !== null) return firstSelectedYear;
+    if (years.includes(currentYear)) return currentYear;
+    return years[0] ?? currentYear;
+  });
+
+  useEffect(() => {
+    if (firstSelectedYear !== null && firstSelectedYear !== selectedYear) setSelectedYear(firstSelectedYear);
+  }, [firstSelectedYear]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const optionsDelAnyo = options
+    .filter((o) =>
+      selectedYear === SPRINT_NO_YEAR ? o.year === null : o.year === selectedYear,
+    )
+    .sort((a, b) => {
+      const rank = (o: typeof a): number => {
+        if (!o.startDate || !o.endDate) return 2;
+        const now = new Date();
+        const end = new Date(o.endDate);
+        return now > end ? 1 : 0;
+      };
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra !== rb) return ra - rb;
+      if (ra === 2) {
+        const na = a.label.match(/#\s*(\d+)/);
+        const nb = b.label.match(/#\s*(\d+)/);
+        if (na && nb) return Number(na[1]) - Number(nb[1]);
+        return 0;
+      }
+      return a.startDate!.localeCompare(b.startDate!);
+    });
+
+  // Label del trigger
+  const triggerLabel = (() => {
+    if (selectedValues.length === 0) return null;
+    if (selectedValues.length === 1) {
+      return options.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0];
+    }
+    return `${selectedValues.length} sprints`;
+  })();
+
+  useEffect(() => {
+    if (!open) return;
+    function out(e: MouseEvent) {
+      if (triggerRef.current?.contains(e.target as Node) || dropRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', out);
+    return () => document.removeEventListener('mousedown', out);
+  }, [open]);
+
+  function openPicker() {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left, width: Math.max(240, r.width) });
+    }
+    setOpen((o) => !o);
+  }
+
+  function toggle(val: string) {
+    const next = selectedValues.includes(val)
+      ? selectedValues.filter((v) => v !== val)
+      : [...selectedValues, val];
+    onChange(next.join('|'));
+  }
+
+  return (
+    <div className="filter-assignee-wrap">
+      <button ref={triggerRef} className="filter-assignee-trigger" onClick={openPicker}>
+        {triggerLabel
+          ? <span className="filter-assignee-trigger__name">{triggerLabel}</span>
+          : <span className="filter-assignee-trigger__placeholder">Seleccionar…</span>}
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"
+          style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--txt-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        </svg>
+      </button>
+
+      {open && createPortal(
+        <div ref={dropRef} className="filter-assignee-drop" style={{ top: pos.top, left: pos.left, width: pos.width }}>
+          {/* Selector de año */}
+          {years.length > 1 && (
+            <div style={{ display: 'flex', gap: 4, padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap' }}>
+              {years.map((yr: number | typeof SPRINT_NO_YEAR) => {
+                const isSel = selectedYear === yr;
+                const label = yr === SPRINT_NO_YEAR ? 'Histórico' : String(yr);
+                return (
+                  <button key={String(yr)} onMouseDown={(e) => { e.stopPropagation(); setSelectedYear(yr); }}
+                    style={{
+                      padding: '3px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                      fontWeight: isSel ? 700 : 400,
+                      border: `1px solid ${isSel ? 'var(--accent)' : 'var(--border-subtle)'}`,
+                      background: isSel ? 'rgba(0,200,255,0.1)' : 'transparent',
+                      color: isSel ? 'var(--accent)' : 'var(--txt-muted)',
+                      transition: 'all 0.12s',
+                    }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Limpiar selección */}
+          {selectedValues.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
+                {selectedValues.length} seleccionado{selectedValues.length !== 1 ? 's' : ''}
+              </span>
+              <button onMouseDown={(e) => { e.stopPropagation(); onChange(''); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--txt-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                <X size={10} /> Limpiar
+              </button>
+            </div>
+          )}
+
+          <div className="filter-assignee-list">
+            {optionsDelAnyo.length === 0
+              ? <div className="filter-assignee-empty">Sin sprints.</div>
+              : optionsDelAnyo.map((o) => {
+                  const sel = selectedValues.includes(o.value);
+                  return (
+                    <div key={o.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`}
+                      onMouseDown={(e) => { e.stopPropagation(); toggle(o.value); }}>
+                      <span style={{
+                        width: 13, height: 13, borderRadius: 3, flexShrink: 0, marginRight: 8,
+                        border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--border)'}`,
+                        background: sel ? 'var(--accent)' : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {sel && <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4.2L3 5.7L6.5 2.2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </span>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: sprintFilterDotColor(o.startDate, o.endDate), flexShrink: 0, marginRight: 8 }} />
+                      <div className="filter-ag-item__info">
+                        <div className="filter-ag-item__name">{o.label}</div>
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
+        </div>,
+        document.getElementById('portal-root') ?? document.body,
+      )}
+    </div>
+  );
+}
 /* ============================================================
    FilterPanelContent
    ============================================================ */

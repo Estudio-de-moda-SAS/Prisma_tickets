@@ -20,10 +20,21 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
-  createKanbanTeam: async (payload, { supabase }) => {
+createKanbanTeam: async (payload, { supabase }) => {
     const { name, code, color, description, icon, isAdminOnly } = payload as {
       name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
     };
+
+    // Siguiente posición: max actual + 1 (los nuevos van al final)
+    const { data: maxRow, error: maxErr } = await supabase
+      .from('TBL_Board_Teams')
+      .select('Board_Team_Sort_Order')
+      .order('Board_Team_Sort_Order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (maxErr) throw new Error(maxErr.message);
+    const nextOrder = (maxRow?.Board_Team_Sort_Order ?? 0) + 1;
+
     const { data, error } = await supabase
       .from('TBL_Board_Teams')
       .insert({
@@ -33,13 +44,14 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
         Board_Team_Description:    description?.trim() || null,
         Board_Team_Icon:           icon ?? '🗂️',
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
+        Board_Team_Sort_Order:     nextOrder,
       })
       .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Is_Admin_Only')
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
-
+  
   updateKanbanTeam: async (payload, { supabase }) => {
     const { id, name, code, description, color, icon, isAdminOnly } = payload as {
       id: number; name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
@@ -59,30 +71,38 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
-  reorderBoardTeam: async (payload, { supabase }) => {
+reorderBoardTeam: async (payload, { supabase }) => {
     const { teamId, direction } = payload as { teamId: number; direction: 'up' | 'down' };
 
+    // Orden determinista: Sort_Order y, ante empates, ID
     const { data: teams, error: teamsErr } = await supabase
       .from('TBL_Board_Teams')
       .select('Board_Team_ID, Board_Team_Sort_Order')
-      .order('Board_Team_Sort_Order', { ascending: true });
+      .order('Board_Team_Sort_Order', { ascending: true })
+      .order('Board_Team_ID', { ascending: true });
     if (teamsErr) throw new Error(teamsErr.message);
 
-    const sorted = teams as { Board_Team_ID: number; Board_Team_Sort_Order: number }[];
+    const sorted = [...(teams as { Board_Team_ID: number; Board_Team_Sort_Order: number }[])];
     const idx = sorted.findIndex((t) => t.Board_Team_ID === teamId);
     if (idx === -1) return { ok: true };
 
     const si = direction === 'up' ? idx - 1 : idx + 1;
     if (si < 0 || si >= sorted.length) return { ok: true };
 
-    const posA = sorted[idx].Board_Team_Sort_Order;
-    const posB = sorted[si].Board_Team_Sort_Order;
-    const idB  = sorted[si].Board_Team_ID;
+    // Intercambio de posiciones en el array
+    [sorted[idx], sorted[si]] = [sorted[si], sorted[idx]];
 
-    await Promise.all([
-      supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: posB }).eq('Board_Team_ID', teamId),
-      supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: posA }).eq('Board_Team_ID', idB),
-    ]);
+    // Renormalización: reescribe 1..N en todas las filas que cambiaron
+    await Promise.all(
+      sorted.map((t, i) =>
+        t.Board_Team_Sort_Order === i + 1
+          ? Promise.resolve()
+          : supabase
+              .from('TBL_Board_Teams')
+              .update({ Board_Team_Sort_Order: i + 1 })
+              .eq('Board_Team_ID', t.Board_Team_ID)
+      )
+    );
     return { ok: true };
   },
 };

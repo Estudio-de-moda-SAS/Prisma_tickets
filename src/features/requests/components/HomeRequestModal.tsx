@@ -39,8 +39,11 @@ function fmtColombia(iso: string) {
     .toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function fmtD(iso: string) {
-  const [y, m, d] = iso.split('T')[0].split('-');
+function fmtD(iso: string | null) {
+  if (!iso) return '—';
+  const parts = iso.split('T')[0].split('-');
+  if (parts.length < 3) return '—';
+  const [y, m, d] = parts;
   return `${d}/${m}/${y.slice(2)}`;
 }
 
@@ -61,7 +64,8 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map((n) => n[0] ?? '').join('').toUpperCase();
 }
 
-function sprintDotColor(sp: { Sprint_Start_Date: string; Sprint_End_Date: string }) {
+function sprintDotColor(sp: { Sprint_Start_Date: string | null; Sprint_End_Date: string | null }) {
+  if (!sp.Sprint_Start_Date || !sp.Sprint_End_Date) return '#7f77dd'; // histórico
   const now = new Date();
   if (now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date)) return '#00e5a0';
   if (now > new Date(sp.Sprint_End_Date)) return '#b2bec3';
@@ -454,7 +458,10 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
                     <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--txt)' }}>
                       <span style={{ width: 7, height: 7, borderRadius: '50%', background: sprintDotColor(selectedSprint), flexShrink: 0, display: 'inline-block' }} />
                       {selectedSprint.Sprint_Text}
-                      <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(selectedSprint.Sprint_Start_Date)} → {fmtD(selectedSprint.Sprint_End_Date)}</span>
+                      {selectedSprint.Sprint_Start_Date && selectedSprint.Sprint_End_Date
+                        ? <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(selectedSprint.Sprint_Start_Date)} → {fmtD(selectedSprint.Sprint_End_Date)}</span>
+                        : <span style={{ fontSize: 9, color: '#7f77dd', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>Histórico</span>
+                      }
                     </span>
                   ) : 'Sin sprint'}
                 </FieldValue>

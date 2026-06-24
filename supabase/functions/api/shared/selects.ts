@@ -16,6 +16,8 @@ export const BASE_SELECT = `
   Request_Finished_At,
   Request_Requester_Team_ID,
   Request_Is_Confidential,
+  Request_Is_Legacy,
+  Request_Legacy_Requester,
   Request_Form_Data,
   Request_Template_Schema_Snapshot,
   template_schema:TBL_Requests_Templates!Request_Template_ID (

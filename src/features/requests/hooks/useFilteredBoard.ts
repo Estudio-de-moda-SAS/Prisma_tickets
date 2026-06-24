@@ -129,8 +129,21 @@ function evaluate(request: Request, cond: FilterCondition): boolean {
     case 'esta_vacio':    return empty;
     case 'no_esta_vacio': return !empty;
 
-    case 'es':    return values.includes(condVal);
-    case 'no_es': return !values.includes(condVal);
+    case 'es': {
+      // Sprint soporta multi-valor separado por '|'
+      if (cond.field === 'sprint') {
+        const wanted = condVal.split('|').map((v) => v.trim()).filter(Boolean);
+        return wanted.some((w) => values.includes(w));
+      }
+      return values.includes(condVal);
+    }
+    case 'no_es': {
+      if (cond.field === 'sprint') {
+        const wanted = condVal.split('|').map((v) => v.trim()).filter(Boolean);
+        return !wanted.some((w) => values.includes(w));
+      }
+      return !values.includes(condVal);
+    }
 
     case 'contiene':    return values.some((v) => v.includes(condVal));
     case 'no_contiene': return values.every((v) => !v.includes(condVal));

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown,
   Send, Trash2, Paperclip, Upload, FileText, Image, File,
-  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, Users
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useDeleteRequest } from '../hooks/useRequests';
@@ -1148,11 +1148,14 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 <FieldBlock label="Solicitante">
-  <PersonChip
-    name={effectiveRequest.solicitante}
-    teamName={effectiveRequest.requesterTeamName}
-    color="var(--accent-2)"
-  />
+  {effectiveRequest.isLegacy && !effectiveRequest.solicitante
+    ? <TeamChip teamName={effectiveRequest.legacyRequester ?? 'Equipo no especificado'} />
+    : <PersonChip
+        name={effectiveRequest.solicitante}
+        teamName={effectiveRequest.requesterTeamName}
+        color="var(--accent-2)"
+      />
+  }
 </FieldBlock>
 
 <FieldBlock label="Resolutor">
@@ -1305,27 +1308,40 @@ onToggleAssignee={(userId) => {
                       }
                       {!readOnly && <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />}
                     </button>
-                    {sprintDD.open && !readOnly && (
-                      <DropdownPanel>
-                        {sprints.length === 0
-                          ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
-                          : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
-                            const sel = selectedSprintId === sp.Sprint_ID;
-                            const now = new Date();
-                            const dotColor = now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date) ? '#00e5a0' : now > new Date(sp.Sprint_End_Date) ? '#b2bec3' : '#fdcb6e';
-                            const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                            return (
-                              <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}>
-                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                                <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
-                                <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>
-                                {sel && <Checkmark />}
-                              </DropdownItem>
-                            );
-                          })
-                        }
-                      </DropdownPanel>
-                    )}
+{sprintDD.open && !readOnly && (() => {
+                      const now = new Date();
+                      const selectables = sprints
+                        .filter((sp) => {
+                          // Solo activos o futuros: requieren ambas fechas válidas
+                          if (!sp.Sprint_Start_Date || !sp.Sprint_End_Date) return false;
+                          const end = new Date(sp.Sprint_End_Date);
+                          if (Number.isNaN(end.getTime())) return false;
+                          return now <= end; // futuro o en curso (descarta pasados)
+                        })
+                        .sort((a, b) => new Date(a.Sprint_Start_Date!).getTime() - new Date(b.Sprint_Start_Date!).getTime());
+
+                      return (
+                        <DropdownPanel>
+                          {selectables.length === 0
+                            ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints activos ni futuros.</div>
+                            : selectables.map((sp) => {
+                                const sel      = selectedSprintId === sp.Sprint_ID;
+                                const now2     = new Date();
+                                const dotColor = now2 >= new Date(sp.Sprint_Start_Date!) && now2 <= new Date(sp.Sprint_End_Date!) ? '#00e5a0' : '#fdcb6e';
+                                const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
+                                return (
+                                  <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => handleSprint(sel ? null : sp.Sprint_ID)}>
+                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                                    <span style={{ flex: 1 }}>{sp.Sprint_Text}</span>
+                                    <span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date!)} → {fmtD(sp.Sprint_End_Date!)}</span>
+                                    {sel && <Checkmark />}
+                                  </DropdownItem>
+                                );
+                              })
+                          }
+                        </DropdownPanel>
+                      );
+                    })()}
                   </div>
                 </FieldBlock>
 
@@ -2269,6 +2285,19 @@ function TimerOrInputBlock({
           <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>horas totales consumidas</span>
         </div>
       )}
+    </div>
+  );
+}
+function TeamChip({ teamName }: { teamName: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #6b7280, #9ca3af)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Users size={11} color="white" />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</span>
+        <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 0.5, fontWeight: 600, textTransform: 'uppercase' }}>Solicitud migrada</span>
+      </div>
     </div>
   );
 }

@@ -171,3 +171,12 @@ export function useDeleteSprint() {
     },
   });
 }
+/** Año de un sprint: de la fecha si existe, o del patrón (YYYY) del nombre. */
+export function sprintYear(s: { Sprint_Start_Date: string | null; Sprint_Text: string }): number | null {
+  if (s.Sprint_Start_Date) {
+    const y = Number(s.Sprint_Start_Date.slice(0, 4));
+    if (!Number.isNaN(y)) return y;
+  }
+  const m = s.Sprint_Text.match(/\((\d{4})\)/);
+  return m ? Number(m[1]) : null;
+}
