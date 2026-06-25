@@ -192,7 +192,8 @@ function TemplateFormDataPanel({
     if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
     if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
     if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
-    return <span style={{ color: 'var(--txt)' }}>{String(val)}</span>;
+    // Respetar saltos de línea (campos textarea, datos migrados multilínea)
+    return <span style={{ color: 'var(--txt)', whiteSpace: 'pre-wrap' }}>{String(val)}</span>;
   }
 
   return (
