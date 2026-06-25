@@ -232,6 +232,9 @@ export type Request = {
   // ── Confidencialidad ───────────────────────────────────────
   isConfidential: boolean;
 
+  // ── Legacy (solicitudes migradas) ──────────────────────────
+  isLegacy:        boolean;
+  legacyRequester: string | null;
   // ── Campos extra del template ──────────────────────────────
   extraFields:        RequestExtraFields | null;
   formData:           Record<string, unknown>;

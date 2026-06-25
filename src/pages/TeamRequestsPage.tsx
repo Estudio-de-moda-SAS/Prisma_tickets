@@ -60,14 +60,18 @@ type SprintFilterItem = number | 'sin_sprint';
 type OpenDropdown   = 'sprint' | 'assignees' | 'subteams' | 'labels' | null;
 
 function sprintDotColor(sp: Sprint) {
+  if (!sp.Sprint_Start_Date || !sp.Sprint_End_Date) return '#7f77dd'; // histórico
   const now = new Date();
   if (now >= new Date(sp.Sprint_Start_Date) && now <= new Date(sp.Sprint_End_Date)) return '#00e5a0';
   if (now > new Date(sp.Sprint_End_Date)) return '#b2bec3';
   return '#fdcb6e';
 }
 
-function fmtD(iso: string) {
-  const [y, m, d] = iso.split('T')[0].split('-');
+function fmtD(iso: string | null) {
+  if (!iso) return '—';
+  const parts = iso.split('T')[0].split('-');
+  if (parts.length < 3) return '—';
+  const [y, m, d] = parts;
   return `${d}/${m}/${y.slice(2)}`;
 }
 
@@ -138,6 +142,7 @@ export function TeamRequestsPage() {
   const sprintActivo = useMemo(() => {
     const now = new Date();
     return sprints.find((s) =>
+      s.Sprint_Start_Date && s.Sprint_End_Date &&
       now >= new Date(s.Sprint_Start_Date) && now <= new Date(s.Sprint_End_Date)
     ) ?? null;
   }, [sprints]);
@@ -651,7 +656,11 @@ function SprintDropdown({
             )}
 
             {[...sprints]
-              .sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime())
+              .sort((a, b) => {
+                const ta = a.Sprint_Start_Date ? new Date(a.Sprint_Start_Date).getTime() : -Infinity;
+                const tb = b.Sprint_Start_Date ? new Date(b.Sprint_Start_Date).getTime() : -Infinity;
+                return tb - ta;
+              })
               .map((sp) => {
                 const active = filtroSprints.includes(sp.Sprint_ID);
                 const dot    = sprintDotColor(sp);

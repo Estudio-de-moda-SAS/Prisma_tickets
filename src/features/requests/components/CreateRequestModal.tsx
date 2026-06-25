@@ -1143,18 +1143,31 @@ onToggleAssignee={(userId) => {
                       {selectedSprint ? <><SprintDot sprint={selectedSprint} /><span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, textAlign: 'left' }}>{selectedSprint.Sprint_Text}</span></> : <span style={{ fontSize: 12, color: 'var(--txt-muted)', flex: 1, textAlign: 'left' }}>Sin sprint</span>}
                       <ChevDown size={12} style={{ color: 'var(--txt-muted)', flexShrink: 0, transform: sprintDD.open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                     </button>
-                    {sprintDD.open && (
-                      <PortalPanel rect={sprintDD.rect}>
-                        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
-                          {sprints.length === 0 ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints.</div>
-                            : [...sprints].sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime()).map((sp) => {
-                                const sel  = selectedSprintId === sp.Sprint_ID;
-                                const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
-                                return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
-                              })}
-                        </div>
-                      </PortalPanel>
-                    )}
+{sprintDD.open && (() => {
+                      const now = new Date();
+                      const selectables = sprints
+                        .filter((sp) => {
+                          if (!sp.Sprint_Start_Date || !sp.Sprint_End_Date) return false;
+                          const end = new Date(sp.Sprint_End_Date);
+                          if (Number.isNaN(end.getTime())) return false;
+                          return now <= end; // activos o futuros, descarta pasados e históricos
+                        })
+                        .sort((a, b) => new Date(a.Sprint_Start_Date).getTime() - new Date(b.Sprint_Start_Date).getTime());
+
+                      return (
+                        <PortalPanel rect={sprintDD.rect}>
+                          <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                            {selectables.length === 0
+                              ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>No hay sprints activos ni futuros.</div>
+                              : selectables.map((sp) => {
+                                  const sel  = selectedSprintId === sp.Sprint_ID;
+                                  const fmtD = (iso: string) => { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}/${y.slice(2)}`; };
+                                  return <DropdownItem key={sp.Sprint_ID} selected={sel} onClick={() => { setSelectedSprintId(sel ? null : sp.Sprint_ID); sprintDD.close(); }}><SprintDot sprint={sp} /><span style={{ flex: 1 }}>{sp.Sprint_Text}</span><span style={{ fontSize: 10, color: 'var(--txt-muted)', fontFamily: 'monospace' }}>{fmtD(sp.Sprint_Start_Date)} → {fmtD(sp.Sprint_End_Date)}</span>{sel && <Checkmark />}</DropdownItem>;
+                                })}
+                          </div>
+                        </PortalPanel>
+                      );
+                    })()}
                   </div>
                 </FieldBlock>
 

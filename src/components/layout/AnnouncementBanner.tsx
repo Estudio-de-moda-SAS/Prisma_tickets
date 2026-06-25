@@ -37,7 +37,7 @@ export function AnnouncementBanner() {
                 {a.title}
               </span>
               {a.body && (
-                <span style={{ fontSize: 12, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 640 }}>
+                <span style={{ fontSize: 12, color: 'var(--txt-muted)', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 640 }}>
                   {a.body}
                 </span>
               )}

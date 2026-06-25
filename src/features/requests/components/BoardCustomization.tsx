@@ -1,434 +1,33 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  useCustomizationStore,
-  BOARD_THEMES,
-  COLUMN_DEFAULTS,
-  getColumnConfig,
-  type BoardTheme,
-  type CardDensity,
-  type GroupBy,
-  type SortBy,
-} from '@/store/customizationStore';
-import { useBoardStore } from '@/store/boardStore';
-import { KANBAN_COLUMNAS, COLUMNAS_BOARD } from '@/features/requests/types';
-import type { KanbanColumna } from '@/features/requests/types';
+import { useCustomizationStore } from '@/store/customizationStore';
 
 /* ============================================================
-   Utilidades de color
+   Tipos
    ============================================================ */
-function hexToHsv(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const d = max - min;
-  let h = 0;
-  if (d !== 0) {
-    if (max === r)      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else                h = ((r - g) / d + 4) / 6;
-  }
-  return [h * 360, max === 0 ? 0 : d / max, max];
-}
-
-function hsvToHex(h: number, s: number, v: number): string {
-  h = h / 360;
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
-  let r = 0, g = 0, b = 0;
-  switch (i % 6) {
-    case 0: r = v; g = t; b = p; break;
-    case 1: r = q; g = v; b = p; break;
-    case 2: r = p; g = v; b = t; break;
-    case 3: r = p; g = q; b = v; break;
-    case 4: r = t; g = p; b = v; break;
-    case 5: r = v; g = p; b = q; break;
-  }
-  return '#' + [r, g, b].map((x) =>
-    Math.round(x * 255).toString(16).padStart(2, '0')
-  ).join('');
-}
-
-function isValidHex(hex: string) {
-  return /^#[0-9a-fA-F]{6}$/.test(hex);
-}
-
-/* ============================================================
-   ColorPicker
-   ============================================================ */
-type ColorPickerProps = { value: string; onChange: (hex: string) => void; onClose: () => void };
-
-function ColorPicker({ value, onChange, onClose }: ColorPickerProps) {
-  const safeHex       = isValidHex(value) ? value : '#00c8ff';
-  const [h, s, v]     = hexToHsv(safeHex);
-  const [hue, setHue] = useState(h);
-  const [sat, setSat] = useState(s);
-  const [val, setVal] = useState(v);
-
-  const hex = hsvToHex(hue, sat, val);
-  const [hexInput, setHexInput] = useState(safeHex);
-
-  const gradRef  = useRef<HTMLDivElement>(null);
-  const hueRef   = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setHexInput(hex);
-    onChange(hex);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hex]);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [onClose]);
-
-  const handleGradientDrag = useCallback((e: React.MouseEvent | MouseEvent) => {
-    if (!gradRef.current) return;
-    const rect = gradRef.current.getBoundingClientRect();
-    setSat(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
-    setVal(1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)));
-  }, []);
-
-  function onGradMouseDown(e: React.MouseEvent) {
-    handleGradientDrag(e);
-    const onMove = (ev: MouseEvent) => handleGradientDrag(ev);
-    const onUp   = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  }
-
-  const handleHueDrag = useCallback((e: React.MouseEvent | MouseEvent) => {
-    if (!hueRef.current) return;
-    const rect = hueRef.current.getBoundingClientRect();
-    setHue(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 360);
-  }, []);
-
-  function onHueMouseDown(e: React.MouseEvent) {
-    handleHueDrag(e);
-    const onMove = (ev: MouseEvent) => handleHueDrag(ev);
-    const onUp   = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  }
-
-  function handleHexInput(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value;
-    setHexInput(raw);
-    const full = raw.startsWith('#') ? raw : '#' + raw;
-    if (isValidHex(full)) {
-      const [nh, ns, nv] = hexToHsv(full);
-      setHue(nh); setSat(ns); setVal(nv);
-    }
-  }
-
-  const pureHue = hsvToHex(hue, 1, 1);
-  const presets = ['#ff4757','#ff6b35','#ffa502','#ffdd59','#00e5a0','#00c8ff','#a78bfa','#ff6b81','#5a6a8a','#ffffff'];
-
-  return (
-    <div ref={panelRef} className="cp-colorpicker">
-      <div ref={gradRef} className="cp-colorpicker__grad"
-        style={{ background: `linear-gradient(to right, #fff, ${pureHue})` }}
-        onMouseDown={onGradMouseDown}>
-        <div className="cp-colorpicker__grad-dark" />
-        <div className="cp-colorpicker__thumb" style={{ left: `${sat * 100}%`, top: `${(1 - val) * 100}%` }} />
-      </div>
-      <div className="cp-colorpicker__controls">
-        <div ref={hueRef} className="cp-colorpicker__hue" onMouseDown={onHueMouseDown}>
-          <div className="cp-colorpicker__hue-thumb" style={{ left: `${(hue / 360) * 100}%` }} />
-        </div>
-        <div className="cp-colorpicker__preview" style={{ background: hex }} />
-      </div>
-      <div className="cp-colorpicker__hex-row">
-        <span className="cp-colorpicker__hex-label">HEX</span>
-        <input className="cp-colorpicker__hex-input" value={hexInput} onChange={handleHexInput} maxLength={7} spellCheck={false} />
-      </div>
-      <div className="cp-colorpicker__presets">
-        {presets.map((c) => (
-          <button key={c} className="cp-colorpicker__preset"
-            style={{ background: c, outline: hex === c ? `2px solid ${c}` : undefined }}
-            onClick={() => { const [nh, ns, nv] = hexToHsv(c); setHue(nh); setSat(ns); setVal(nv); }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   ColorField
-   ============================================================ */
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (hex: string) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="cp-colorfield">
-      <div className="cp-colorfield__trigger" onClick={() => setOpen((o) => !o)}>
-        <span className="cp-colorfield__swatch" style={{ background: value }} />
-        <span className="cp-colorfield__label">{label}</span>
-        <span className="cp-colorfield__hex">{value}</span>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-          style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s', marginLeft: 2, flexShrink: 0 }}>
-          <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      </div>
-      {open && <ColorPicker value={value} onChange={onChange} onClose={() => setOpen(false)} />}
-    </div>
-  );
-}
-
-/* ============================================================
-   Iconos de sección
-   ============================================================ */
-const SECTION_ICONS = {
-  vista: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-  cards: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="1" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="1" y="8" width="12" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-  columns: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="2" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="5.5" y="2" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="10" y="2" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-};
-
-/* ============================================================
-   Constantes de opciones
-   ============================================================ */
-const EMOJI_OPTIONS = ['', '🔥', '⚡', '🎯', '📦', '🚀', '✅', '❄️', '📋', '⚙️', '🎨', '💡'];
-
-const DENSITY_OPTIONS: { value: CardDensity; label: string; desc: string }[] = [
-  { value: 'compact',  label: 'Compacto',  desc: 'Solo título'        },
-  { value: 'normal',   label: 'Normal',    desc: 'Campos principales' },
-  { value: 'expanded', label: 'Expandido', desc: 'Todo visible'       },
-];
-
-const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
-  { value: 'none',      label: 'Sin agrupar' },
-  { value: 'prioridad', label: 'Prioridad'   },
-  { value: 'asignado',  label: 'Asignado'    },
-];
-
-const SORT_BY_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: 'manual',              label: 'Manual'      },
-  { value: 'prioridad',           label: 'Prioridad'   },
-  { value: 'fecha_creacion',      label: 'Fecha'       },
-  { value: 'fecha_actualizacion', label: 'Actualizado' },
-];
-
-/* ============================================================
-   Sección: Vista
-   (tema global + agrupación + ordenamiento + layout)
-   ============================================================ */
-function VistaSection() {
-  const {
-    getCustomization,
-    setTheme,
-    setGroupBy,
-    setSortBy,
-  } = useCustomizationStore();
-  const { equipoActivo } = useBoardStore();
-  const customization    = getCustomization(equipoActivo);
-
-  return (
-    <div className="cp-section">
-      {/* Tema */}
-      <p className="cp-section__label">
-        Tema de color
-        <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 4 }}>global</span>
-      </p>
-      <div className="cp-theme-grid">
-        {(Object.entries(BOARD_THEMES) as [BoardTheme, typeof BOARD_THEMES[BoardTheme]][]).map(([key, t]) => (
-          <button
-            key={key}
-            className={`cp-theme-card ${customization.theme === key ? 'cp-theme-card--active' : ''}`}
-            onClick={() => setTheme(key)}
-            title={t.label}
-          >
-            <span className="cp-theme-card__preview">
-              {t.preview.map((c, i) => <span key={i} style={{ background: c }} />)}
-            </span>
-            <span className="cp-theme-card__name">{t.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="cp-section-divider" />
-
-      {/* Agrupación */}
-      <p className="cp-section__label">Agrupación</p>
-      <div className="cp-radio-group">
-        {GROUP_BY_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`cp-radio-btn ${customization.groupBy === opt.value ? 'cp-radio-btn--active' : ''}`}
-            onClick={() => setGroupBy(equipoActivo, opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Ordenar por */}
-      <p className="cp-section__label" style={{ marginTop: 14 }}>Ordenar por</p>
-      <div className="cp-radio-group">
-        {SORT_BY_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`cp-radio-btn ${customization.sortBy === opt.value ? 'cp-radio-btn--active' : ''}`}
-            onClick={() => setSortBy(equipoActivo, opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-    </div>
-  );
-}
-
-/* ============================================================
-   Sección: Tarjetas
-   ============================================================ */
-function CardsSection({ boardId }: { boardId: string }) {
-  const { getCustomization, updateCard } = useCustomizationStore();
-  const card = getCustomization(boardId).card;
-
-  type ToggleKey = 'showDesc' | 'showPriority' | 'showAvatars' | 'showCategory' | 'showProgress' | 'showDate' | 'roundedCorner';
-
-  const toggles: { key: ToggleKey; label: string }[] = [
-    { key: 'showDesc',      label: 'Descripción'          },
-    { key: 'showPriority',  label: 'Prioridad'            },
-    { key: 'showAvatars',   label: 'Asignados'            },
-    { key: 'showCategory',  label: 'Categoría'            },
-    { key: 'showProgress',  label: 'Barra de progreso'    },
-    { key: 'showDate',      label: 'Fecha creación'       },
-    { key: 'roundedCorner', label: 'Esquinas redondeadas' },
-  ];
-
-  return (
-    <div className="cp-section">
-      <p className="cp-section__label">Densidad</p>
-      <div className="cp-density-grid">
-        {DENSITY_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`cp-density-btn ${card.density === opt.value ? 'cp-density-btn--active' : ''}`}
-            onClick={() => updateCard(boardId, { density: opt.value })}
-          >
-            <span className="cp-density-btn__name">{opt.label}</span>
-            <span className="cp-density-btn__desc">{opt.desc}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="cp-section-divider" />
-
-      <p className="cp-section__label">Campos visibles</p>
-      {toggles.map(({ key, label }) => (
-        <div key={key} className="cp-toggle-row">
-          <span className="cp-toggle-row__label">{label}</span>
-          <button
-            className={`cp-toggle ${card[key] ? 'cp-toggle--on' : ''}`}
-            onClick={() => updateCard(boardId, { [key]: !card[key] })}
-          >
-            <span className="cp-toggle__thumb" />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ============================================================
-   Sección: Columnas
-   ============================================================ */
-function ColumnsSection({ boardId }: { boardId: string }) {
-  const { getCustomization, updateColumn, resetColumn } = useCustomizationStore();
-  const customization = getCustomization(boardId);
-  const allCols: KanbanColumna[] = ['sin_categorizar', ...COLUMNAS_BOARD];
-
-  return (
-    <div className="cp-section">
-      {allCols.map((col) => {
-        const cfg        = getColumnConfig(col, customization.columns);
-        const def        = COLUMN_DEFAULTS[col];
-        const isModified =
-          cfg.headerColor !== def.headerColor ||
-          cfg.hidden      !== def.hidden      ||
-          cfg.emoji       !== def.emoji;
-
-        return (
-          <div key={col} className="cp-col-row">
-            <div className="cp-col-row__head">
-              <span className="cp-col-row__dot" style={{ background: cfg.headerColor }} />
-              <span className="cp-col-row__name">{KANBAN_COLUMNAS[col]}</span>
-              {isModified && (
-                <button className="cp-col-row__reset" onClick={() => resetColumn(boardId, col)}>↺</button>
-              )}
-              <button
-                className={`cp-toggle cp-toggle--sm ${cfg.hidden ? '' : 'cp-toggle--on'}`}
-                onClick={() => updateColumn(boardId, col, { hidden: !cfg.hidden })}
-                style={{ marginLeft: 'auto' }}
-              >
-                <span className="cp-toggle__thumb" />
-              </button>
-            </div>
-
-            {!cfg.hidden && (
-              <div className="cp-col-row__body">
-                <ColorField
-                  label="Color título"
-                  value={cfg.headerColor}
-                  onChange={(c) => updateColumn(boardId, col, { headerColor: c })}
-                />
-                <div className="cp-field">
-                  <label className="cp-field__label">Icono</label>
-                  <div className="cp-emoji-grid">
-                    {EMOJI_OPTIONS.map((em) => (
-                      <button
-                        key={em || 'none'}
-                        className={`cp-emoji-btn ${cfg.emoji === em ? 'cp-emoji-btn--active' : ''}`}
-                        onClick={() => updateColumn(boardId, col, { emoji: em })}
-                      >
-                        {em || '—'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+export type HoursColumn = { slug: string; name: string; color: string };
 
 /* ============================================================
    Panel principal
+   Por ahora solo expone: ¿qué columnas suman horas en la barra
+   de miembros? (default: To Do + En progreso)
    ============================================================ */
-export function BoardCustomizationPanel({ anchor }: { anchor: { top: number; left: number } }) {
-  const { isPanelOpen, closePanel, activeSection, setActiveSection, resetAll } =
-    useCustomizationStore();
-  const { equipoActivo } = useBoardStore();
+export function BoardCustomizationPanel({
+  anchor,
+  boardId,
+  columns,
+}: {
+  anchor:  { top: number; left: number };
+  boardId: string;
+  columns: HoursColumn[];
+}) {
+  const {
+    isPanelOpen,
+    closePanel,
+    getHoursColumns,
+    toggleHoursColumn,
+    resetHoursColumns,
+  } = useCustomizationStore();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -451,6 +50,9 @@ export function BoardCustomizationPanel({ anchor }: { anchor: { top: number; lef
 
   if (!isPanelOpen) return null;
 
+  const availableSlugs = columns.map((c) => c.slug);
+  const counted        = new Set(getHoursColumns(boardId, availableSlugs));
+
   return createPortal(
     <div
       className="cp-panel"
@@ -468,41 +70,74 @@ export function BoardCustomizationPanel({ anchor }: { anchor: { top: number; lef
         </button>
       </div>
 
-      <div className="cp-tabs">
-        {(['vista', 'cards', 'columns'] as const).map((s) => (
-          <button
-            key={s}
-            className={`cp-tab ${activeSection === s ? 'cp-tab--active' : ''}`}
-            onClick={() => setActiveSection(s)}
-          >
-            {SECTION_ICONS[s]}
-            {s === 'vista' ? 'Vista' : s === 'cards' ? 'Tarjetas' : 'Columnas'}
-          </button>
-        ))}
-      </div>
-
       <div className="cp-panel__body">
-        {activeSection === 'vista'   && <VistaSection />}
-        {activeSection === 'cards'   && <CardsSection   boardId={equipoActivo} />}
-        {activeSection === 'columns' && <ColumnsSection boardId={equipoActivo} />}
+        <div className="cp-section">
+          <p className="cp-section__label">
+            Columnas que suman horas
+            <span style={{ fontSize: 9, opacity: 0.5, marginLeft: 4 }}>por equipo</span>
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--txt-dim)', margin: '0 0 12px', lineHeight: 1.4 }}>
+            Las horas de cada persona se suman solo desde las columnas activas.
+            Por defecto: <b>To Do</b> y <b>En progreso</b>.
+          </p>
+
+          {columns.length === 0 && (
+            <p style={{ fontSize: 11, color: 'var(--txt-dim)', fontStyle: 'italic' }}>
+              Cargando columnas…
+            </p>
+          )}
+
+          {columns.map((col) => {
+            const on = counted.has(col.slug);
+            return (
+              <div key={col.slug} className="cp-toggle-row">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span style={{
+                    width: 9, height: 9, borderRadius: '50%',
+                    background: col.color, flexShrink: 0,
+                  }} />
+                  <span
+                    className="cp-toggle-row__label"
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {col.name}
+                  </span>
+                </span>
+                <button
+                  className={`cp-toggle ${on ? 'cp-toggle--on' : ''}`}
+                  onClick={() => toggleHoursColumn(boardId, col.slug)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <span className="cp-toggle__thumb" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="cp-panel__footer">
-        <button className="cp-panel__reset-btn" onClick={() => resetAll(equipoActivo)}>
-          Restablecer todo
+        <button className="cp-panel__reset-btn" onClick={() => resetHoursColumns(boardId)}>
+          Restablecer (To Do + En progreso)
         </button>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
 /* ============================================================
    Trigger
    ============================================================ */
-export function BoardCustomizationTrigger() {
+export function BoardCustomizationTrigger({
+  boardId,
+  columns,
+}: {
+  boardId: string;
+  columns: HoursColumn[];
+}) {
   const { isPanelOpen, openPanel, closePanel } = useCustomizationStore();
-  const btnRef  = useRef<HTMLButtonElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState({ top: 108, left: 280 });
 
   function handleClick() {
@@ -531,7 +166,7 @@ export function BoardCustomizationTrigger() {
         </svg>
         Personalizar
       </button>
-      <BoardCustomizationPanel anchor={anchor} />
+      <BoardCustomizationPanel anchor={anchor} boardId={boardId} columns={columns} />
     </>
   );
 }
