@@ -239,8 +239,9 @@ export function useReorderBoardTeam() {
     mutationFn: (d: { teamId: number; direction: 'up' | 'down' }) =>
       apiClient.call('reorderBoardTeam', d),
 
-    onMutate: async (d) => {
+onMutate: async (d) => {
       await qc.cancelQueries({ queryKey: ['boardTeams'] });
+      const snapshots = qc.getQueriesData<KanbanTeam[]>({ queryKey: ['boardTeams'], exact: false });
       qc.setQueriesData<KanbanTeam[]>(
         { queryKey: ['boardTeams'], exact: false },
         (prev) => {
@@ -254,10 +255,11 @@ export function useReorderBoardTeam() {
           return arr;
         },
       );
+      return { snapshots };
     },
 
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['boardTeams'] });
+    onError: (_e, _v, ctx) => {
+      ctx?.snapshots?.forEach(([key, data]) => qc.setQueryData(key, data));
     },
   });
 }

@@ -62,6 +62,15 @@ function fmtDate(s: string | null | undefined) {
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/** Año de un sprint: de la fecha si existe, o del patrón (YYYY) del nombre. */
+function sprintYear(s: { Sprint_Start_Date: string | null; Sprint_Text: string | null }): number | null {
+  if (s.Sprint_Start_Date) {
+    const y = Number(s.Sprint_Start_Date.slice(0, 4));
+    if (!Number.isNaN(y)) return y;
+  }
+  const m = (s.Sprint_Text ?? '').match(/\((\d{4})\)/);
+  return m ? Number(m[1]) : null;
+}
 const SCORE_POINTS: Record<number, number> = { 1: 1, 2: 2, 4: 4, 6: 6 };
 function scoreToPoints(score: number | null | undefined): number {
   return SCORE_POINTS[score ?? 0] ?? 0;
@@ -143,8 +152,10 @@ function matchCondition(row: TaskRow, cond: FilterCondition, subTeamMemberMap: M
         .filter(Boolean);
       if (operator === 'esta_vacio')    return texts.length === 0;
       if (operator === 'no_esta_vacio') return texts.length > 0;
-      if (operator === 'es')    return texts.includes(value);
-      if (operator === 'no_es') return !texts.includes(value);
+      // Multi-valor: el board guarda los sprints como "A|B|C"
+      const wanted = value.split('|').map(v => v.trim()).filter(Boolean);
+      if (operator === 'es')    return wanted.some(w => texts.includes(w));
+      if (operator === 'no_es') return !wanted.some(w => texts.includes(w));
       return true;
     }
     case 'equipo': {
@@ -695,7 +706,13 @@ assignee: users.map(u => ({ value: u.User_Name, label: u.User_Name })),      ass
           })),
         })),
       etiqueta:  Array.from(labelMap, ([_id, name]) => ({ value: name, label: name })),
-      sprint:    allSprints.filter(s => !!s.Sprint_Text).map(s => ({ value: s.Sprint_Text!, label: s.Sprint_Text! })),
+      sprint:    allSprints.filter(s => !!s.Sprint_Text).map(s => ({
+        value:     s.Sprint_Text!,
+        label:     s.Sprint_Text!,
+        year:      sprintYear(s),
+        startDate: s.Sprint_Start_Date,
+        endDate:   s.Sprint_End_Date,
+      })),
       subequipo: groupedMembers
         .filter(g => !g.isLoading)
         .map(g => ({ value: g.subTeam.Sub_Team_Name, label: g.subTeam.Sub_Team_Name })),

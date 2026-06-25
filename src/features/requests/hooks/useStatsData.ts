@@ -149,8 +149,9 @@ function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId
   } else {
     const today = new Date().toISOString().slice(0, 10);
     const active = sorted.find(s =>
+      s.Sprint_Start_Date && s.Sprint_End_Date &&
       s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
-    ) ?? [...sorted].reverse().find(s => s.Sprint_Start_Date.slice(0, 10) <= today) ?? sorted[sorted.length - 1];
+    ) ?? [...sorted].reverse().find(s => s.Sprint_Start_Date && s.Sprint_Start_Date.slice(0, 10) <= today) ?? sorted[sorted.length - 1];
     refIdx = sorted.findIndex(s => s.Sprint_ID === active.Sprint_ID);
   }
   if (refIdx === -1) return 0;
@@ -313,11 +314,13 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
 // DESPUÉS
 const planeadas = activeInSprint.filter(r => {
   const sp = sprintMap.get(r.sprintId!);
-  return sp ? r.fechaApertura.slice(0, 10) <= sp.Sprint_Start_Date.slice(0, 10) : false;
+  if (!sp || !sp.Sprint_Start_Date) return false; // histórico sin fecha → no clasifica como planeada
+  return r.fechaApertura.slice(0, 10) <= sp.Sprint_Start_Date.slice(0, 10);
 });
 const postPlan = activeInSprint.filter(r => {
   const sp = sprintMap.get(r.sprintId!);
-  return sp ? r.fechaApertura.slice(0, 10) > sp.Sprint_Start_Date.slice(0, 10) : false;
+  if (!sp || !sp.Sprint_Start_Date) return false; // histórico sin fecha → no clasifica como post-planning
+  return r.fechaApertura.slice(0, 10) > sp.Sprint_Start_Date.slice(0, 10);
 });
   const activas     = activeInSprint.filter(r => r.columna === 'en_progreso');
   const completadas = activeInSprint.filter(r =>
@@ -325,9 +328,13 @@ const postPlan = activeInSprint.filter(r => {
   );
 
   /* planeadasMes/cerradasMes: mes del sprint más antiguo seleccionado */
-  const earliest = sprints.reduce((a, b) => a.Sprint_Start_Date < b.Sprint_Start_Date ? a : b);
-  const sy = new Date(earliest.Sprint_Start_Date).getFullYear();
-  const sm = new Date(earliest.Sprint_Start_Date).getMonth();
+  // Solo sprints con fecha para calcular el mes de referencia
+  const datedSprints = sprints.filter(s => s.Sprint_Start_Date);
+  const earliest = datedSprints.length > 0
+    ? datedSprints.reduce((a, b) => a.Sprint_Start_Date! < b.Sprint_Start_Date! ? a : b)
+    : null;
+  const sy = earliest ? new Date(earliest.Sprint_Start_Date!).getFullYear() : null;
+  const sm = earliest ? new Date(earliest.Sprint_Start_Date!).getMonth() : null;
   const isSM = (iso: string | null) => {
     if (!iso) return false;
     const d = new Date(iso);

@@ -48,6 +48,7 @@ export type BoardCustomization = {
   priorityColors: PriorityColors; // mantenido para compat de tipo — usePriorityColor ya no lo lee
   groupBy:        GroupBy;
   sortBy:         SortBy;
+  hoursColumns?:  string[]; // slugs que suman horas en MemberHoursBar (undefined → default)
 };
 
 /* ============================================================
@@ -59,6 +60,8 @@ export const PRIORITY_DEFAULTS: PriorityColors = {
   alta:    '#ffa502',
   critica: '#ff4757',
 };
+/** Columnas que suman horas por defecto cuando un board no tiene config propia */
+export const HOURS_COLUMNS_DEFAULT: string[] = ['todo', 'en_progreso'];
 
 export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
   sin_categorizar: { headerColor: '#5a6a8a', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 240 },
@@ -274,6 +277,11 @@ type CustomizationState = {
   resetColumn:    (boardId: string, col: KanbanColumna) => void;
   updateCard:     (boardId: string, patch: Partial<CardCustomization>) => void;
   resetAll:       (boardId: string) => void;
+
+  /* ── Horas (MemberHoursBar) ── */
+  getHoursColumns:   (boardId: string, availableSlugs: string[]) => string[];
+  toggleHoursColumn: (boardId: string, slug: string) => void;
+  resetHoursColumns: (boardId: string) => void;
 };
 
 export const useCustomizationStore = create<CustomizationState>()(
@@ -311,7 +319,29 @@ export const useCustomizationStore = create<CustomizationState>()(
 
       setSortBy: (boardId, sortBy) =>
         set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ sortBy })) })),
+/* ── Horas (MemberHoursBar) ── */
+      getHoursColumns: (boardId, availableSlugs) => {
+        const raw  = get().byBoard[boardId]?.hoursColumns;
+        const base = raw ?? HOURS_COLUMNS_DEFAULT;
+        // Intersecta con las columnas reales del board → ignora slugs obsoletos
+        return base.filter((slug) => availableSlugs.includes(slug));
+      },
 
+      toggleHoursColumn: (boardId, slug) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, (prev) => {
+            const current = prev.hoursColumns ?? [...HOURS_COLUMNS_DEFAULT];
+            const next = current.includes(slug)
+              ? current.filter((x) => x !== slug)
+              : [...current, slug];
+            return { hoursColumns: next };
+          }),
+        })),
+
+      resetHoursColumns: (boardId) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, () => ({ hoursColumns: undefined })),
+        })),
       updateColumn: (boardId, col, patch) =>
         set((s) => ({
           byBoard: patchBoard(s.byBoard, boardId, (prev) => ({

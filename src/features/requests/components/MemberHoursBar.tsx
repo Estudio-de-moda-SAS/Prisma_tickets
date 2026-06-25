@@ -1,6 +1,7 @@
 // src/features/requests/components/MemberHoursBar.tsx
 import { useMemo, useState } from 'react';
 import type { BoardData } from '../types';
+import { useCustomizationStore } from '@/store/customizationStore';
 
 /* ============================================================
    Tipos locales
@@ -183,13 +184,28 @@ function MemberChip({ stat }: { stat: MemberStat }) {
 interface Props {
   filteredData:   BoardData | undefined;
   groupedMembers: SubTeamGroup[];
+  /** Slug del equipo activo — clave de customización */
+  boardId:        string;
+  /** Slugs reales y visibles del board (para intersectar y mostrar opciones) */
+  availableSlugs: string[];
 }
 
-export function MemberHoursBar({ filteredData, groupedMembers }: Props) {
+export function MemberHoursBar({ filteredData, groupedMembers, boardId, availableSlugs }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const { getHoursColumns } = useCustomizationStore();
+
+  // Fallback a las keys del board durante la carga de columnConfig
+  const availableForCount = availableSlugs.length > 0
+    ? availableSlugs
+    : Object.keys(filteredData ?? {});
+
+  const countedSlugs = getHoursColumns(boardId, availableForCount);
+  const countedKey   = countedSlugs.join('|'); // dep estable para el memo
 
   const memberStats = useMemo((): MemberStat[] => {
     if (!filteredData) return [];
+
+    const counted = countedKey ? new Set(countedKey.split('|')) : new Set<string>();
 
     // Lookup opcional: userName → subTeam (para nombre de subequipo en tooltip)
     const memberSubTeam = new Map<string, { name: string; color: string }>();
@@ -205,10 +221,10 @@ export function MemberHoursBar({ filteredData, groupedMembers }: Props) {
       }
     }
 
-    // Acumular horas por asignado directamente del board filtrado
+    // Acumular horas por asignado SOLO de las columnas marcadas
     const acc = new Map<string, { est: number; log: number; count: number }>();
-    for (const requests of Object.values(filteredData)) {
-      for (const req of requests) {
+    for (const slug of counted) {
+      for (const req of filteredData[slug] ?? []) {
         for (const assignee of req.assignees ?? []) {
           const cur = acc.get(assignee.userName) ?? { est: 0, log: 0, count: 0 };
           cur.est   += req.estimatedHours ?? 0;
@@ -237,7 +253,7 @@ subTeamColor: colorForName(userName),
         };
       })
       .sort((a, b) => b.estimatedHours - a.estimatedHours || b.requestCount - a.requestCount);
-  }, [filteredData, groupedMembers]);
+  }, [filteredData, groupedMembers, countedKey]);
 
   if (memberStats.length === 0) return null;
 

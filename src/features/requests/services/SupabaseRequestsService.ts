@@ -45,6 +45,8 @@ type RawRequestRow = {
   Request_Requester_Team_ID:           number | null;
   requester_department: { Department_Name: string } | null;
   Request_Is_Confidential:             boolean | null;
+  Request_Is_Legacy:                   boolean | null;
+  Request_Legacy_Requester:            string | null;
   Request_Form_Data:                   Record<string, unknown> | null;
   // snapshot guardado al crear el ticket — fuente de verdad para filtros
   Request_Template_Schema_Snapshot:    unknown[] | null;
@@ -149,6 +151,9 @@ function mapRowToRequest(row: RawRequestRow): Request {
   if (row.crm_extra) extraFields = { templateType: 'crm', storeName: row.crm_extra.Request_CRM_Example_Store_Name };
 
   const solicitante = row.requester?.User_Name ?? '';
+  const isLegacy        = row.Request_Is_Legacy ?? false;
+  const legacyRequester = row.Request_Legacy_Requester ?? null;
+
 const requesterTeamName =
   row.requester_team?.Team_Name ??
   row.requester_department?.Department_Name ??
@@ -235,6 +240,8 @@ function mapOneClosure(c: NonNullable<RawRequestRow['closure']>[number]): Cierre
     cierreInfo,
     cierreHistorial: cierreHistorial.length > 0 ? cierreHistorial : undefined,
     isConfidential:  row.Request_Is_Confidential ?? false,
+    isLegacy,
+    legacyRequester,
     clientFeedback:  undefined,
   };
 }

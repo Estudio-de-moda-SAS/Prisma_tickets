@@ -7,15 +7,26 @@ import { AddBtn, SmBtn, FieldLabel, FormActions } from '../ConfigPanel';
 import { apiClient } from '@/lib/apiClient';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmtDate = (iso: string) => {
+const fmtDate = (iso: string | null | undefined) => {
+  if (!iso) return '—';
   const clean = iso.split('T')[0];
   const [y, m, d] = clean.split('-');
+  if (!y || !m || !d) return '—';
   return `${d}/${m}/${y.slice(2)}`;
 };
 
-type SprintStatus = 'activo' | 'futuro' | 'pasado';
+type SprintStatus = 'activo' | 'futuro' | 'pasado' | 'historico';
+
+/** true solo si ambas fechas existen y son parseables. */
+function hasValidDates(sp: Sprint): boolean {
+  if (!sp.Sprint_Start_Date || !sp.Sprint_End_Date) return false;
+  const s = new Date(sp.Sprint_Start_Date).getTime();
+  const e = new Date(sp.Sprint_End_Date).getTime();
+  return !Number.isNaN(s) && !Number.isNaN(e);
+}
 
 function getStatus(sp: Sprint): SprintStatus {
+  if (!hasValidDates(sp)) return 'historico';   // sprints migrados sin fechas
   const now   = Date.now();
   const start = new Date(sp.Sprint_Start_Date).getTime();
   const end   = new Date(sp.Sprint_End_Date).getTime();
@@ -25,9 +36,10 @@ function getStatus(sp: Sprint): SprintStatus {
 }
 
 const STATUS_COLOR: Record<SprintStatus, string> = {
-  activo: '#00e5a0',
-  futuro: '#fdcb6e',
-  pasado: '#636e72',
+  activo:    '#00e5a0',
+  futuro:    '#fdcb6e',
+  pasado:    '#636e72',
+  historico: '#7f77dd',
 };
 
 // ── SprintRow ─────────────────────────────────────────────────────────────────
@@ -301,6 +313,7 @@ export function SprintList({
   const [editId,     setEditId]     = useState<number | null>(null);
   const [showNew,    setShowNew]    = useState(false);
   const [showOthers, setShowOthers] = useState(false);
+  const [showHistoric, setShowHistoric] = useState(false);
 
   // Teams fetched here — React Query deduplicates, no extra network call
   const { data: allTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
@@ -327,14 +340,18 @@ const handleActivateSprints = async () => {
   const currentYear                     = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
+const statusOrder: Record<string, number> = { activo: 0, futuro: 1, pasado: 2, historico: 3 };
+
+  // Sprints con fecha válida vs. históricos (sin fecha)
+  const datedSprints     = sprints.filter(hasValidDates);
+  const historicSprints  = sprints.filter((sp) => !hasValidDates(sp));
+
   const allYears = [
-    ...new Set(sprints.map((sp) => new Date(sp.Sprint_Start_Date).getFullYear())),
+    ...new Set(datedSprints.map((sp) => new Date(sp.Sprint_Start_Date).getFullYear())),
   ].sort((a, b) => b - a);
   if (!allYears.includes(currentYear)) allYears.unshift(currentYear);
 
-  // Sprints for selected year, sorted: activo → futuro → pasado
-  const statusOrder: Record<string, number> = { activo: 0, futuro: 1, pasado: 2 };
-  const yearSprints = sprints
+  const yearSprints = datedSprints
     .filter((sp) => new Date(sp.Sprint_Start_Date).getFullYear() === selectedYear)
     .sort((a, b) => {
       const diff = statusOrder[getStatus(a)] - statusOrder[getStatus(b)];
@@ -342,7 +359,7 @@ const handleActivateSprints = async () => {
       return new Date(a.Sprint_Start_Date).getTime() - new Date(b.Sprint_Start_Date).getTime();
     });
 
-  const otherSprints = sprints
+  const otherSprints = datedSprints
     .filter((sp) => new Date(sp.Sprint_Start_Date).getFullYear() !== selectedYear)
     .sort((a, b) => new Date(b.Sprint_Start_Date).getTime() - new Date(a.Sprint_Start_Date).getTime());
 
@@ -470,7 +487,7 @@ const handleActivateSprints = async () => {
         <AddBtn label="Nuevo sprint" onClick={handleNewOpen} />
       )}
 
-      {/* Other years — collapsible */}
+{/* Other years — collapsible */}
       {otherSprints.length > 0 && (
         <div style={{ marginTop: 10 }}>
           <button
@@ -509,7 +526,46 @@ const handleActivateSprints = async () => {
           )}
         </div>
       )}
+
+      {/* Histórico — sprints migrados sin fechas */}
+      {historicSprints.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            onClick={() => setShowHistoric((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              width: '100%', padding: '4px 0',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 2,
+              textTransform: 'uppercase', color: 'var(--txt-muted)',
+              opacity: 0.5, flexShrink: 0,
+            }}>
+              Histórico ({historicSprints.length})
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            <svg
+              width="9" height="9" viewBox="0 0 9 9" fill="none"
+              stroke="var(--txt-muted)" strokeWidth="1.6" strokeLinecap="round"
+              style={{
+                flexShrink: 0, opacity: 0.4,
+                transform:  showHistoric ? 'rotate(180deg)' : undefined,
+                transition: 'transform 0.18s',
+              }}
+            >
+              <path d="M1 3l3.5 3.5L8 3"/>
+            </svg>
+          </button>
+
+          {showHistoric && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+              {historicSprints.map(renderRow)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-

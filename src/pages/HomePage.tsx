@@ -21,7 +21,7 @@ import type { TemplateFilterOption, TemplateFieldOption } from '@/features/reque
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField } from '@/features/requests/templates/types';
 import { HomeAnnouncementsSection } from '@/components/layout/AnnouncementBanner';
-
+import { sprintYear } from '@/features/requests/hooks/useSprints';
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
    ══════════════════════════════════════════════════════════════ */
@@ -32,6 +32,7 @@ const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
   alta:    '#EF9F27',
   critica: '#E05C5C',
 };
+
 const COLUMNA_LABEL: Record<string, string> = {
   sin_categorizar: 'Sin categorizar', icebox: 'Icebox',    backlog: 'Backlog',
   todo:            'To Do',           en_progreso: 'En Progreso',
@@ -202,7 +203,7 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
   const c    = teamColors(teamColor);
   const Icon = getTeamIcon(teamIcon);
   const { data: board } = useBoardEquipo(equipo);
-  const all    = board ? boardToFlat(board) : [];
+  const all    = (board ? boardToFlat(board) : []).filter((r) => r.columna !== 'historial');
   const active = all.filter((r) => !DONE_COLUMNS.has(r.columna)).length;
   const done   = all.filter((r) =>  DONE_COLUMNS.has(r.columna)).length;
 
@@ -532,8 +533,11 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
       label: s.Sub_Team_Name,
     })),
     sprint: sprints.map((s) => ({
-      value: s.Sprint_Text,
-      label: s.Sprint_Text,
+      value:     s.Sprint_Text,
+      label:     s.Sprint_Text,
+      year:      sprintYear(s),
+      startDate: s.Sprint_Start_Date,
+      endDate:   s.Sprint_End_Date,
     })),
     etiqueta: labels.map((l) => ({
       value: l.Label_Name,
@@ -547,7 +551,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
   const [search, setSearch] = useState('');
 
   const allRequests = useMemo(
-    () => (filteredBoard ? boardToFlat(filteredBoard) : []),
+    () => (filteredBoard ? boardToFlat(filteredBoard).filter((r) => r.columna !== 'historial') : []),
     [filteredBoard],
   );
   const visible = useMemo(() => {
@@ -560,7 +564,7 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
     );
   }, [allRequests, search]);
 
-  const totalRaw   = rawBoard ? boardToFlat(rawBoard).length : 0;
+  const totalRaw   = rawBoard ? boardToFlat(rawBoard).filter((r) => r.columna !== 'historial').length : 0;
   const isFiltered = visible.length !== totalRaw;
 
   return (

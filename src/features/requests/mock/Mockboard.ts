@@ -37,6 +37,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-002',
@@ -72,6 +74,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   icebox: [
@@ -109,6 +113,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-009',
@@ -144,6 +150,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   backlog: [
@@ -181,6 +189,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-005',
@@ -216,6 +226,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-010',
@@ -251,6 +263,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   todo: [
@@ -288,6 +302,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-011',
@@ -323,6 +339,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   en_progreso: [
@@ -360,6 +378,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-012',
@@ -395,6 +415,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   en_revision_qas: [],
@@ -435,6 +457,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
     {
       id: 'mock-013',
@@ -470,6 +494,8 @@ export const MOCK_BOARD: BoardData = {
       requesterTeamName: null,
       loggedHours: null,
       templateSchemaSnapshot: [],
+      isLegacy: false,
+      legacyRequester : null
     },
   ],
   historial: [],

@@ -26,6 +26,7 @@ import { isConditionalField } from '@/features/requests/templates/types';
 import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
+import { sprintYear } from '@/features/requests/hooks/useSprints';
 
 /** Fallback estático — mismos IDs que la BD, por si columnMap no cargó aún */
 const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
@@ -187,7 +188,19 @@ export function BoardPage() {
     return team?.Board_Team_ID ?? null;
   }, [boardTeams, equipoActivo]);
   const { data: columnConfig = [] } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
-
+// Columnas reales, visibles y ordenadas — para el panel y el conteo de horas
+  const boardColumns = useMemo(
+    () =>
+      (columnConfig ?? [])
+        .filter((c) => c.Is_Visible)
+        .sort((a, b) => a.Board_Column_Position - b.Board_Column_Position)
+        .map((c) => ({
+          slug:  c.Board_Column_Slug,
+          name:  c.Board_Column_Name,
+          color: c.Team_Column_Color ?? c.Board_Column_Color,
+        })),
+    [columnConfig],
+  );
   const { data: users     = [] } = useUsers();
 const { data: subTeams  = [] } = useSubTeams(boardTeamId);
 const groupedMembers            = useSubTeamMembersGrouped(subTeams);
@@ -248,7 +261,7 @@ const { data: sprints   = [] } = useSprints();
         })),
       })),
     subequipo: subTeams.map((s) => ({ value: s.Sub_Team_Name, label: s.Sub_Team_Name })),
-    sprint:    sprints.map((s) => ({ value: s.Sprint_Text, label: s.Sprint_Text })),
+    sprint:    sprints.map((s) => ({ value: s.Sprint_Text, label: s.Sprint_Text, year: sprintYear(s), startDate: s.Sprint_Start_Date, endDate: s.Sprint_End_Date })),
     etiqueta:  labels.map((l) => ({ value: l.Label_Name, label: l.Label_Name })),
     templates: templateOptions,
   }), [users, groupedMembers, subTeams, sprints, labels, templateOptions]);
@@ -279,9 +292,14 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     onSelectTicket={(id) => setOpenTicketSignal({ id, nonce: Date.now() })}
   />
   <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
-  <BoardCustomizationTrigger />
+  <BoardCustomizationTrigger boardId={equipoActivo} columns={boardColumns} />
   <KanbanZoomControl />
-  <MemberHoursBar filteredData={filteredData} groupedMembers={groupedMembers} />
+  <MemberHoursBar
+    filteredData={filteredData}
+    groupedMembers={groupedMembers}
+    boardId={equipoActivo}
+    availableSlugs={boardColumns.map((c) => c.slug)}
+  />
 </div>
 
         {config.USE_MOCK && (

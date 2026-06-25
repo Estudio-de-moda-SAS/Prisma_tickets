@@ -44,7 +44,22 @@ const AVATAR_GRADIENTS = [
 const avatarBg = (id: number)   => AVATAR_GRADIENTS[id % AVATAR_GRADIENTS.length];
 const fmtInits = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
 const fmtDate  = (d: Date)      => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(d);
-
+/** Extrae el año de un sprint: de la fecha si existe, o del patrón (YYYY) del nombre. */
+function getSprintYear(s: Sprint): number | null {
+  if (s.Sprint_Start_Date) {
+    const y = Number(s.Sprint_Start_Date.slice(0, 4));
+    if (!Number.isNaN(y)) return y;
+  }
+  // Histórico sin fecha → buscar (YYYY) en el texto
+  const m = s.Sprint_Text.match(/\((\d{4})\)/);
+  if (m) return Number(m[1]);
+  return null;
+}
+/** Extrae el número de sprint del texto: "Sprint #5 (2025)" → 5. Null si no hay patrón. */
+function getSprintNumber(s: Sprint): number | null {
+  const m = s.Sprint_Text.match(/#\s*(\d+)/);
+  return m ? Number(m[1]) : null;
+}
 /* ════════════════════════════════════════════════════════════
    Átomos UI
 ════════════════════════════════════════════════════════════ */
@@ -148,10 +163,13 @@ function ScoreDonut({ realizado, total, label = 'velocidad' }: { realizado: numb
   );
 }
 
-function SprintSelector({ sprints, selectedIds, onChange }: {
-  sprints:     Sprint[];
-  selectedIds: number[];
-  onChange:    (ids: number[]) => void;
+function SprintSelector({ sprints, selectedIds, onChange, selectedYear, onYearChange, availableYears }: {
+  sprints:        Sprint[];
+  selectedIds:    number[];
+  onChange:       (ids: number[]) => void;
+  selectedYear:   number;
+  onYearChange:   (year: number) => void;
+  availableYears: number[];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -169,6 +187,9 @@ function SprintSelector({ sprints, selectedIds, onChange }: {
     onChange(selectedIds.includes(id) ? selectedIds.filter(i => i !== id) : [...selectedIds, id]);
   };
 
+  // Solo sprints del año seleccionado
+  const sprintsDelAnyo = sprints.filter(s => getSprintYear(s) === selectedYear);
+
   const label =
     selectedIds.length === 0
       ? 'Todos los sprints'
@@ -178,7 +199,7 @@ function SprintSelector({ sprints, selectedIds, onChange }: {
 
   return (
     <div className="sprint-selector" ref={ref}>
-<button className="sprint-selector__btn" onClick={() => setOpen(o => !o)}>
+      <button className="sprint-selector__btn" onClick={() => setOpen(o => !o)}>
         <Target size={12} />
         <span>{label}</span>
         {selectedIds.length > 0 && (
@@ -197,41 +218,84 @@ function SprintSelector({ sprints, selectedIds, onChange }: {
         )}
         <ChevronDown size={11} style={{ marginLeft: 'auto', opacity: 0.5 }} />
       </button>
-      
+
       {open && (
         <div className="sprint-selector__menu">
+          {/* Selector de año */}
+          {availableYears.length > 1 && (
+            <div style={{ display: 'flex', gap: 4, padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap' }}>
+              {availableYears.map(yr => (
+                <button
+                  key={yr}
+                  onClick={() => onYearChange(yr)}
+                  style={{
+                    padding: '3px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                    fontWeight: selectedYear === yr ? 700 : 400,
+                    border: `1px solid ${selectedYear === yr ? 'var(--accent)' : 'var(--border-subtle)'}`,
+                    background: selectedYear === yr ? 'rgba(0,200,255,0.1)' : 'transparent',
+                    color: selectedYear === yr ? 'var(--accent)' : 'var(--txt-muted)',
+                    transition: 'all 0.12s',
+                  }}
+                >
+                  {yr}
+                </button>
+              ))}
+            </div>
+          )}
+
           <button
             className={['sprint-selector__item', selectedIds.length === 0 ? 'sprint-selector__item--active' : ''].join(' ')}
             onClick={() => onChange([])}
           >
             Todos los sprints
           </button>
-          {[...sprints].sort((a, b) => a.Sprint_ID - b.Sprint_ID).map(s => {
-            const isSelected = selectedIds.includes(s.Sprint_ID);
-            return (
-              <button
-                key={s.Sprint_ID}
-                className={['sprint-selector__item', isSelected ? 'sprint-selector__item--active' : ''].join(' ')}
-                onClick={() => toggle(s.Sprint_ID)}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <span style={{
-                    width: 12, height: 12, borderRadius: 3,
-                    border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
-                    background: isSelected ? 'var(--accent)' : 'transparent',
-                    flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.15s, border-color 0.15s',
-                  }}>
-                    {isSelected && <Check size={8} style={{ color: 'var(--bg)' }} />}
-                  </span>
-                  {s.Sprint_Text}
-                </span>
-                <span className="sprint-selector__dates">
-                  {fmtDate(new Date(s.Sprint_Start_Date))} → {fmtDate(new Date(s.Sprint_End_Date))}
-                </span>
-              </button>
-            );
-          })}
+
+          {sprintsDelAnyo.length === 0
+            ? <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>Sin sprints en {selectedYear}.</div>
+: [...sprintsDelAnyo].sort((a, b) => {
+                const aHasDates = !!a.Sprint_Start_Date && !!a.Sprint_End_Date;
+                const bHasDates = !!b.Sprint_Start_Date && !!b.Sprint_End_Date;
+                // 1) Los que tienen fecha van arriba; los históricos siempre abajo
+                if (aHasDates !== bHasDates) return aHasDates ? -1 : 1;
+                // 2) Ambos con fecha → cronológico
+                if (aHasDates && bHasDates) {
+                  return a.Sprint_Start_Date!.localeCompare(b.Sprint_Start_Date!);
+                }
+                // 3) Ambos históricos → por número de sprint del nombre
+                const na = getSprintNumber(a);
+                const nb = getSprintNumber(b);
+                if (na !== null && nb !== null) return na - nb;
+                return a.Sprint_ID - b.Sprint_ID; // último recurso
+              }).map(s => {                const isSelected = selectedIds.includes(s.Sprint_ID);
+                const hasDates   = !!s.Sprint_Start_Date && !!s.Sprint_End_Date;
+                return (
+                  <button
+                    key={s.Sprint_ID}
+                    className={['sprint-selector__item', isSelected ? 'sprint-selector__item--active' : ''].join(' ')}
+                    onClick={() => toggle(s.Sprint_ID)}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                      <span style={{
+                        width: 12, height: 12, borderRadius: 3,
+                        border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                        background: isSelected ? 'var(--accent)' : 'transparent',
+                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'background 0.15s, border-color 0.15s',
+                      }}>
+                        {isSelected && <Check size={8} style={{ color: 'var(--bg)' }} />}
+                      </span>
+                      {s.Sprint_Text}
+                    </span>
+                    <span className="sprint-selector__dates">
+                      {hasDates
+                        ? <>{fmtDate(new Date(s.Sprint_Start_Date!))} → {fmtDate(new Date(s.Sprint_End_Date!))}</>
+                        : <span style={{ color: '#7f77dd', fontWeight: 700 }}>Histórico</span>
+                      }
+                    </span>
+                  </button>
+                );
+              })
+          }
         </div>
       )}
     </div>
@@ -401,6 +465,7 @@ export function StatsPage() {
   const [sprintIds,  setSprintIds]  = useState<number[]>([]);
   const [userFilter, setUserFilter] = useState<number | null>(null);
   const [teamTab,    setTeamTab]    = useState<string>(GLOBAL_KEY);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const autoSelectedTeam = useRef(false);
   const sprintAutoSelected = useRef(false); 
 
@@ -412,13 +477,24 @@ export function StatsPage() {
   const isGlobal = teamTab === GLOBAL_KEY;
 
   const stats = useStatsData(sprintIds, boardTeams, userFilter, isGlobal ? null : teamTab, statsStartConfig ?? undefined);
+  // Años disponibles entre todos los sprints (fecha o nombre)
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    for (const s of stats.sprints) {
+      const y = getSprintYear(s);
+      if (y !== null) years.add(y);
+    }
+    const current = new Date().getFullYear();
+    years.add(current); // siempre incluir el año actual
+    return [...years].sort((a, b) => b - a);
+  }, [stats.sprints]);
 const sprintDatesBadge = useMemo(() => {
-    const sel = stats.sprints.filter(s => sprintIds.includes(s.Sprint_ID));
+    const sel = stats.sprints.filter(s => sprintIds.includes(s.Sprint_ID) && s.Sprint_Start_Date && s.Sprint_End_Date);
     if (sel.length === 0) return null;
     if (sel.length === 1)
-      return `${fmtDate(new Date(sel[0].Sprint_Start_Date))} — ${fmtDate(new Date(sel[0].Sprint_End_Date))}`;
-    const sorted = [...sel].sort((a, b) => a.Sprint_Start_Date.localeCompare(b.Sprint_Start_Date));
-    return `${fmtDate(new Date(sorted[0].Sprint_Start_Date))} — ${fmtDate(new Date(sorted[sorted.length - 1].Sprint_End_Date))}`;
+      return `${fmtDate(new Date(sel[0].Sprint_Start_Date!))} — ${fmtDate(new Date(sel[0].Sprint_End_Date!))}`;
+    const sorted = [...sel].sort((a, b) => a.Sprint_Start_Date!.localeCompare(b.Sprint_Start_Date!));
+    return `${fmtDate(new Date(sorted[0].Sprint_Start_Date!))} — ${fmtDate(new Date(sorted[sorted.length - 1].Sprint_End_Date!))}`;
   }, [stats.sprints, sprintIds]);
 /** Board_Team_ID del tab seleccionado — null en Global */
   const selectedBoardTeamId = useMemo(
@@ -431,11 +507,17 @@ useEffect(() => {
     sprintAutoSelected.current = true;
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const active = stats.sprints.find(s =>
+    const dated = stats.sprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
+    const active = dated.find(s =>
       s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
     );
-    const fallback = [...stats.sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0];
-    setSprintIds([(active ?? fallback).Sprint_ID]);
+    const fallback = [...dated].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0];
+    const chosen = active ?? fallback;
+    if (chosen) {
+      setSprintIds([chosen.Sprint_ID]);
+      const y = getSprintYear(chosen);
+      if (y !== null) setSelectedYear(y); // alinear el año al sprint auto-seleccionado
+    }
   }
 }, [stats.sprints]);
 
@@ -491,7 +573,14 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
       {/* ═══ Control bar ════════════════════════════════════════ */}
       <div className="stats-control-bar">
         <div className="stats-control-bar__left">
-          <SprintSelector sprints={stats.sprints} selectedIds={sprintIds} onChange={setSprintIds} />
+          <SprintSelector
+            sprints={stats.sprints}
+            selectedIds={sprintIds}
+            onChange={setSprintIds}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            availableYears={availableYears}
+          />
           {sprintDatesBadge && <span className="sprint-dates-badge">{sprintDatesBadge}</span>}
           <div className="sprint-progress-pill">
             <div className="sprint-progress-pill__fill" style={{ width: `${pctCompleto}%` }} />

@@ -451,12 +451,15 @@ const closureBorderStyle = isCerrada
       <div style={{ height: 1, background: 'var(--border-subtle)', margin: '4px 0 10px' }} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-<MetaRow icon={<IconUser />} label="Solicitante">
-  <AvatarChip
-    name={request.solicitante}
-    color="linear-gradient(135deg,#0055cc,#00c8ff)"
-    team={request.requesterTeamName}
-  />
+<MetaRow icon={request.isLegacy && !request.solicitante ? <IconUsers /> : <IconUser />} label="Solicitante">
+  {request.isLegacy && !request.solicitante
+    ? <TeamChipCard teamName={request.legacyRequester ?? 'Equipo no especificado'} />
+    : <AvatarChip
+        name={request.solicitante}
+        color="linear-gradient(135deg,#0055cc,#00c8ff)"
+        team={request.requesterTeamName}
+      />
+  }
 </MetaRow>
         {primerAsignado && (
           <MetaRow icon={<IconUsers />} label="Asignado">
@@ -579,6 +582,24 @@ const closureBorderStyle = isCerrada
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function TeamChipCard({ teamName }: { teamName: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#6b7280,#9ca3af)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+        <span style={{ fontSize: 11, color: 'var(--txt)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
+          {teamName}
+        </span>
+        <span style={{ fontSize: 9, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120, lineHeight: 1.3 }}>
+          Migrada
+        </span>
+      </div>
     </div>
   );
 }
