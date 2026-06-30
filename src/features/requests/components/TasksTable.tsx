@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useTasksData, type TaskRow } from '../hooks/useTasksData';
 import { useAcceptanceCriteria } from '../hooks/useAcceptanceCriteria';
-import { BoardFilters, type FilterDynamicOptions } from './BoardFilters';
+import { BoardFilters, type FilterDynamicOptions, type TemplateFilterOption, type TemplateFieldOption } from './BoardFilters';
 import {
   useFilterStore,
   type FilterCondition,
@@ -20,6 +20,11 @@ import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMe
 import { useSprints }               from '@/features/requests/hooks/useSprints';
 import { useUsers }                 from '@/features/requests/hooks/useUsers';
 import { config }                   from '@/config';
+import { useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
+import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField } from '@/features/requests/templates/types';
+
+
 // Referencia estable para evitar re-renders cuando no hay condiciones
 const EMPTY_CONDITIONS: FilterCondition[] = [];
 // ─── Priority ─────────────────────────────────────────────────────────────────
@@ -96,6 +101,40 @@ function flattenTaskListFields(schema: unknown[]): Array<{ key: string; label: s
   }
   return result;
 }
+function flattenTemplateFields(
+  fields: TemplateExtraField[],
+  seen:   Set<string>,
+  result: TemplateFieldOption[],
+): void {
+  for (const f of fields) {
+    if (isConditionalField(f)) {
+      const cf = f as ConditionalField;
+      if (cf.key && cf.label?.trim() && !seen.has(cf.key)) {
+        seen.add(cf.key);
+        result.push({ key: cf.key, label: cf.label, fieldType: 'boolean' });
+      }
+      flattenTemplateFields(cf.trueBranch,  seen, result);
+      flattenTemplateFields(cf.falseBranch, seen, result);
+    } else {
+      if (!f.key || f.key === '__labels') continue;
+      if (seen.has(f.key)) continue;
+      if (!f.label?.trim()) continue;
+      seen.add(f.key);
+
+      let fieldType: TemplateFieldOption['fieldType'];
+      if (f.type === 'select' || f.type === 'radio') fieldType = 'select_radio';
+      else if (f.type === 'checkbox')                fieldType = 'boolean';
+      else                                           fieldType = 'text';
+
+      result.push({
+        key:     f.key,
+        label:   f.label,
+        fieldType,
+        options: (f.type === 'select' || f.type === 'radio') ? (f.options ?? []) : undefined,
+      });
+    }
+  }
+}
 
 function fmtFieldValue(value: unknown): string | null {
   if (value === null || value === undefined || value === '') return null;
@@ -130,12 +169,14 @@ function matchCondition(row: TaskRow, cond: FilterCondition, subTeamMemberMap: M
       if (operator === 'no_es') return slug !== value;
       return true;
     }
-    case 'assignee': {
+case 'assignee': {
       const names = row.assignments.map(a => a.assignee.User_Name.toLowerCase());
       if (operator === 'esta_vacio')    return names.length === 0;
       if (operator === 'no_esta_vacio') return names.length > 0;
-      if (operator === 'es')    return names.includes(value.toLowerCase());
-      if (operator === 'no_es') return !names.includes(value.toLowerCase());
+      // Multi-valor: el picker guarda los resolutores como "A|B|C"
+      const wanted = value.split('|').map(v => v.trim().toLowerCase()).filter(Boolean);
+      if (operator === 'es')    return wanted.some(w => names.includes(w));
+      if (operator === 'no_es') return !wanted.some(w => names.includes(w));
       return true;
     }
     case 'etiqueta': {
@@ -218,10 +259,11 @@ function applyTaskFilters(
   conjunction:      FilterConjunction,
   subTeamMemberMap: Map<string, number[]>,
 ): TaskRow[] {
-  const active = conditions.filter(
+const active = conditions.filter(
     c =>
       c.operator === 'esta_vacio' ||
       c.operator === 'no_esta_vacio' ||
+      (c.field === 'template_field' && !!c.templateFieldKey) ||
       c.value.trim() !== '',
   );
   if (!active.length) return rows;
@@ -657,6 +699,32 @@ const taskListFields = useMemo(() => {
   });
   return result;
 }, [data]);
+
+const { data: boardTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
+
+  const templateOptions = useMemo((): TemplateFilterOption[] => {
+    return boardTemplates
+      .filter((t) => {
+        if (!t.Request_Template_Is_Active) return false;
+        if (!t.Request_Template_Teams || t.Request_Template_Teams.length === 0) return true;
+        if (boardTeamId === null) return true;
+        return t.Request_Template_Teams.includes(boardTeamId);
+      })
+      .map((t) => {
+        const seen:   Set<string>           = new Set();
+        const fields: TemplateFieldOption[] = [];
+        flattenTemplateFields(t.Request_Template_Form_Schema as TemplateExtraField[], seen, fields);
+        return {
+          id:     t.Request_Template_ID,
+          label:  t.Request_Template_Name,
+          icon:   t.Request_Template_Icon ?? '📋',
+          color:  t.Request_Template_Color ?? undefined,
+          fields,
+        };
+      })
+      .filter((t) => t.fields.length > 0);
+  }, [boardTemplates, boardTeamId]);  
+
   // Namespace propio para filtros, separado de los boards kanban
   const boardId     = `${teamCode}`;
   const conditions  = useFilterStore(s => s.byBoard[boardId]?.conditions  ?? EMPTY_CONDITIONS);
@@ -713,16 +781,18 @@ assignee: users.map(u => ({ value: u.User_Name, label: u.User_Name })),      ass
         startDate: s.Sprint_Start_Date,
         endDate:   s.Sprint_End_Date,
       })),
-      subequipo: groupedMembers
+subequipo: groupedMembers
         .filter(g => !g.isLoading)
         .map(g => ({ value: g.subTeam.Sub_Team_Name, label: g.subTeam.Sub_Team_Name })),
+      templates: templateOptions,
     };
-  }, [data, groupedMembers, allSprints])
-
+  }, [data, groupedMembers, allSprints, templateOptions]);
+  
   // ── Paso 1: aplicar condiciones del filterStore
   const afterFilters = useMemo(
     () => applyTaskFilters(data, conditions, conjunction, subTeamMemberMap),
     [data, conditions, conjunction, subTeamMemberMap],
+    
   );
 
   // ── Paso 2: búsqueda de texto encima del resultado filtrado

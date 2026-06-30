@@ -57,8 +57,7 @@ function formatCell(col: ExportColumn, t: ExportTicket): string {
   }
 }
 
-function ticketsToCsv(tickets: ExportTicket[], cols: ExportColumn[]): string {
-  const header = cols.map((c) => escapeCell(c.label)).join(',');
+export function ticketsToCsv(tickets: ExportTicket[], cols: ExportColumn[]): string {  const header = cols.map((c) => escapeCell(c.label)).join(',');
   const rows   = tickets.map((t) =>
     cols.map((c) => escapeCell(formatCell(c, t))).join(','),
   );
@@ -72,8 +71,7 @@ function emptyTeamCsv(cols: ExportColumn[]): string {
   return BOM + [header, messageRow].join('\r\n');
 }
 
-function buildSummaryCsv(dataset: ExportDataset, config: ExportConfig): string {
-  const lines: string[] = [];
+export function buildSummaryCsv(dataset: ExportDataset, config: ExportConfig): string {  const lines: string[] = [];
   lines.push('PRISMA — Exportación de tickets');
   lines.push('');
   lines.push(['Fecha de generación', new Date(dataset.meta.generatedAt).toLocaleString('es-CO', { timeZone: 'America/Bogota' })].map(escapeCell).join(','));

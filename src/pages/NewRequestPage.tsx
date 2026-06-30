@@ -742,11 +742,33 @@ if (r) {
 
       {error && <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(255,71,87,0.08)', border: '1px solid rgba(255,71,87,0.25)', color: 'var(--danger)', fontSize: 12 }}>{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4 }}>
+<div style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 20,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 12,
+        marginTop: 8,
+        marginLeft: -50,
+        marginRight: -50,
+        marginBottom: -32,
+        padding: '14px 50px',
+        background: 'var(--bg-panel)',
+        borderTop: `1px solid ${accent}25`,
+      }}>
         <button type="button" onClick={onBack} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
-        <button type="submit" disabled={isPending || !isReady} style={{ padding: '9px 24px', borderRadius: 6, border: 'none', background: (isPending || !isReady) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${accent === '#00c8ff' ? 'var(--accent-2)' : accent + 'cc'}, ${accent})`, color: (isPending || !isReady) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || !isReady) ? 0.55 : 1, cursor: (isPending || !isReady) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s' }}>
-          {isPending ? 'Creando...' : '→ Crear Solicitud'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {!isReady && !isPending && (
+            <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 0.3, opacity: 0.8, maxWidth: 220, textAlign: 'right', lineHeight: 1.4 }}>
+              Completá el asunto y al menos un criterio de aceptación.
+            </span>
+          )}
+          <button type="submit" disabled={isPending || !isReady} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || !isReady) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${accent === '#00c8ff' ? 'var(--accent-2)' : accent + 'cc'}, ${accent})`, color: (isPending || !isReady) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || !isReady) ? 0.55 : 1, cursor: (isPending || !isReady) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s' }}>
+            {isPending ? 'Creando...' : '→ Crear Solicitud'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -754,11 +776,17 @@ if (r) {
 
 function SuccessScreen({
   onHome,
+  onCreateAnother,
+  currentTeamName,
   assignedSprint,
 }: {
   onHome: () => void;
+  onCreateAnother: (scope: 'same' | 'other') => void;
+  currentTeamName?: string | null;
   assignedSprint: { Sprint_Text: string; Sprint_Start_Date: string; Sprint_End_Date: string } | null;
 }) {
+  const [choosing, setChoosing] = useState(false);
+
   const fmt = (iso: string) => {
     const clean = iso.includes('T') ? iso : `${iso}T00:00:00`;
     const d = new Date(clean);
@@ -792,16 +820,16 @@ function SuccessScreen({
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
                 {assignedSprint.Sprint_Text}
               </div>
-{assignedSprint.Sprint_Start_Date && assignedSprint.Sprint_End_Date && (
-  <>
-    <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
-      {fmt(assignedSprint.Sprint_Start_Date)} → {fmt(assignedSprint.Sprint_End_Date)}
-    </div>
-    <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 6, lineHeight: 1.5, opacity: 0.8 }}>
-      El equipo puede entregarte cualquier dia entre la fecha del sprint.
-    </div>
-  </>
-)}
+              {assignedSprint.Sprint_Start_Date && assignedSprint.Sprint_End_Date && (
+                <>
+                  <div style={{ fontSize: 11, color: 'var(--txt-muted)', marginTop: 2 }}>
+                    {fmt(assignedSprint.Sprint_Start_Date)} → {fmt(assignedSprint.Sprint_End_Date)}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 6, lineHeight: 1.5, opacity: 0.8 }}>
+                    El equipo puede entregarte cualquier dia entre la fecha del sprint.
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -822,12 +850,68 @@ function SuccessScreen({
         )}
       </div>
 
-      <button type="button" onClick={onHome} style={{ marginTop: 4, padding: '12px 36px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', color: 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: 'pointer' }}>
-        ← Volver al inicio
-      </button>
+      {/* Acciones */}
+      <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {!choosing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setChoosing(true)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '13px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', color: 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: 'pointer' }}
+            >
+              <Plus size={15} /> Crear otra solicitud
+            </button>
+            <button
+              type="button"
+              onClick={onHome}
+              style={{ padding: '12px 28px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.15s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--txt)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; }}
+            >
+              ← Volver al inicio
+            </button>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '18px 18px 14px', borderRadius: 12, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>
+              ¿A qué equipo va la nueva solicitud?
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => onCreateAnother('same')}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '15px 12px', borderRadius: 9, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--bg-surface)', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,200,255,0.06)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}
+              >
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt)' }}>Mismo equipo</span>
+                <span style={{ fontSize: 10, color: 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.3 }}>{currentTeamName ?? 'Continuar aquí'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onCreateAnother('other')}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '15px 12px', borderRadius: 9, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--bg-surface)', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--txt-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}
+              >
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt)' }}>Otro equipo</span>
+                <span style={{ fontSize: 10, color: 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.3 }}>Elegir desde el inicio</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setChoosing(false)}
+              style={{ alignSelf: 'center', background: 'none', border: 'none', color: 'var(--txt-muted)', fontSize: 11, letterSpacing: 0.5, cursor: 'pointer', opacity: 0.7, padding: '2px 6px' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
 export function NuevaSolicitudPage() {
   const navigate     = useNavigate();
   const qc           = useQueryClient();
@@ -1003,14 +1087,46 @@ onSuccess: () => {
 
   const isReady = !!currentUser && !!columnMap && !!selectedTemplateId && acceptanceCriteria.length > 0;
 
+function resetForCreateAnother(keepTeam: boolean) {
+    setTitulo('');
+    setDescripcion('');
+    setPrioridad('media');
+    setSelectedLabelIds([]);
+    setExtraValues({});
+    setPendingFiles([]);
+    setAcceptanceCriteria([]);
+    setIsConfidential(false);
+    setSubmitAttempted(false);
+    setError(null);
+    setAssignedSprint(null);
+    setSubmitted(false);
+    if (keepTeam && selectedTeamId !== null) {
+      setSelectedTemplateId(null);
+      goToTemplate();
+    } else {
+      setSelectedTeamId(null);
+      setSelectedTemplateId(null);
+      setStep('equipo');
+    }
+  }
+
   if (submitted) {
+    const currentTeamName =
+      selectedTeamId !== null
+        ? visibleTeams.find((t) => t.Board_Team_ID === selectedTeamId)?.Board_Team_Name ?? null
+        : null;
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: '0 28px 32px' }}>
-        <SuccessScreen onHome={() => navigate('/home')} assignedSprint={assignedSprint} />
+        <SuccessScreen
+          onHome={() => navigate('/home')}
+          onCreateAnother={(scope) => resetForCreateAnother(scope === 'same')}
+          currentTeamName={currentTeamName}
+          assignedSprint={assignedSprint}
+        />
       </div>
     );
   }
-
+  
   return (
     <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />

@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 import { MOCK_BOARD } from '../mock/Mockboard';
 import type { Equipo, BoardData, KanbanColumna, Request } from '../types';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 /* ============================================================
    Query keys
@@ -171,5 +172,75 @@ export function useDeleteRequest() {
       queryClient.removeQueries({ queryKey: ['request', id] });
       queryClient.invalidateQueries({ queryKey: requestKeys.all });
     },
+  });
+}
+
+export function useHistorialCount(equipo: Equipo) {
+  return useQuery<{ total: number }>({
+    queryKey: [...ALL, 'historial-count', equipo],
+    queryFn:  () => apiClient.call<{ total: number }>('fetchTeamHistorialCount', {
+      boardId:  config.DEFAULT_BOARD_ID,
+      teamCode: equipo,
+    }),
+    enabled:         !config.USE_MOCK,
+    staleTime:       30_000,
+    refetchInterval: 30_000,
+  });
+}
+
+const HISTORIAL_PAGE_SIZE = 50; // mantener en sync con HISTORIAL_INITIAL_LIMIT del Edge Function
+
+export function useHistorialLoadMore(equipo: Equipo, baseHistorial: Request[]) {
+  const { Requests } = useGraphServices();
+  const [extra,     setExtra]     = useState<Request[]>([]);
+  const [exhausted, setExhausted] = useState(false);
+  const [loading,   setLoading]   = useState(false);
+
+  // Resetea las páginas extra al cambiar de equipo
+  useEffect(() => { setExtra([]); setExhausted(false); }, [equipo]);
+
+  const historial = useMemo(() => {
+    if (extra.length === 0) return baseHistorial;
+    const seen = new Set(baseHistorial.map((r) => r.id));
+    return [...baseHistorial, ...extra.filter((r) => !seen.has(r.id))];
+  }, [baseHistorial, extra]);
+
+  const hasMore = !exhausted && baseHistorial.length >= HISTORIAL_PAGE_SIZE;
+
+  const loadMore = useCallback(async () => {
+    if (loading || exhausted || config.USE_MOCK) return;
+    const last = historial[historial.length - 1];
+    if (!last) return;
+    setLoading(true);
+    try {
+      const page = await Requests.fetchTeamHistorialPage(equipo, {
+        createdAt: last.fechaApertura,
+        id:        last.id,
+      });
+      if (page.length < HISTORIAL_PAGE_SIZE) setExhausted(true);
+      setExtra((prev) => [...prev, ...page]);
+    } finally {
+      setLoading(false);
+    }
+  }, [historial, equipo, loading, exhausted, Requests]);
+
+  return { historial, loadMore, hasMore, loading };
+}
+
+export function useSearchRequests(equipo: Equipo, query: string) {
+  const { Requests } = useGraphServices();
+  const [debounced, setDebounced] = useState(query);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  return useQuery<Request[]>({
+    queryKey: [...ALL, 'search', equipo, debounced],
+    queryFn:  () => Requests.searchRequests(equipo, debounced),
+    enabled:  !config.USE_MOCK && debounced.trim().length >= 2,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev, // evita parpadeo entre tecleos
   });
 }

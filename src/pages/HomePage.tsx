@@ -22,6 +22,8 @@ import type { TemplateExtraField, ConditionalField } from '@/features/requests/t
 import { isConditionalField } from '@/features/requests/templates/types';
 import { HomeAnnouncementsSection } from '@/components/layout/AnnouncementBanner';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
+import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
    ══════════════════════════════════════════════════════════════ */
@@ -303,7 +305,9 @@ function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
           <Clock size={8} />{pastSprint.Sprint_Text}
         </span>
       )}
-      <span style={{ width: 110, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
+      <span style={{ width: 110, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  {r.isLegacy && !r.solicitante ? (r.legacyRequester ?? 'Equipo no especificado') : r.solicitante}
+</span>
       <div style={{ width: 80, display: 'flex', justifyContent: 'center' }}>
         <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: PRIORIDAD_COLOR[r.prioridad] + '18', color: PRIORIDAD_COLOR[r.prioridad], border: `1px solid ${PRIORIDAD_COLOR[r.prioridad]}35` }}>
           {r.prioridad.charAt(0).toUpperCase() + r.prioridad.slice(1)}
@@ -333,28 +337,20 @@ function flattenTemplateFields(
       }
       flattenTemplateFields(cf.trueBranch,  seen, result);
       flattenTemplateFields(cf.falseBranch, seen, result);
-    } else {
+} else {
       if (!f.key || f.key === '__labels') continue;
       if (seen.has(f.key)) continue;
+      if (!f.label?.trim()) continue;
       seen.add(f.key);
 
-      const label = f.label?.trim()
-        ? f.label
-        : f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-
-      // Determinar fieldType
       let fieldType: TemplateFieldOption['fieldType'];
-      if (f.type === 'select' || f.type === 'radio') {
-        fieldType = 'select_radio';
-      } else if (f.type === 'checkbox') {
-        fieldType = 'boolean';
-      } else {
-        fieldType = 'text';
-      }
+      if (f.type === 'select' || f.type === 'radio') fieldType = 'select_radio';
+      else if (f.type === 'checkbox')                fieldType = 'boolean';
+      else                                           fieldType = 'text';
 
       result.push({
-        key:      f.key,
-        label,
+        key:     f.key,
+        label:   f.label,
         fieldType,
         options: (f.type === 'select' || f.type === 'radio') ? (f.options ?? []) : undefined,
       });
@@ -493,7 +489,7 @@ function EquipoPanel({ equipo, teamColor, label, activeSprint, onRowClick }: {
   const { data: labels    = [] } = useLabelsByTeamId(config.DEFAULT_BOARD_ID, boardTeamId);
   // ← NUEVO: templates del board
   const { data: templates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
-
+const groupedMembers = useSubTeamMembersGrouped(subTeams);
   // Construir lista de plantillas con sus campos tipados (igual que BoardPage)
 const templateOptions = useMemo((): TemplateFilterOption[] => {
   return templates
@@ -524,10 +520,19 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
     .filter((t) => t.fields.length > 0);
 }, [templates, boardTeamId]); // ← agregar boardTeamId a las deps
   const dynamicOptions = useMemo((): FilterDynamicOptions => ({
-    assignee: users.map((u) => ({
-      value: u.User_Name,
-      label: u.User_Name,
-    })),
+assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
+    assigneeGrouped: groupedMembers
+      .filter((g) => !g.isLoading)
+      .map((g) => ({
+        subTeamId:    String(g.subTeam.Sub_Team_ID),
+        subTeamName:  g.subTeam.Sub_Team_Name,
+        subTeamColor: g.subTeam.Sub_Team_Color,
+        members:      g.members.map((m) => ({
+          value: m.User_Name,
+          label: m.User_Name,
+          email: m.User_Email,
+        })),
+      })),
     subequipo: subTeams.map((s) => ({
       value: s.Sub_Team_Name,
       label: s.Sub_Team_Name,
@@ -543,9 +548,10 @@ const templateOptions = useMemo((): TemplateFilterOption[] => {
       value: l.Label_Name,
       label: l.Label_Name,
     })),
+    
     // ← NUEVO
     templates: templateOptions,
-  }), [users, subTeams, sprints, labels, templateOptions]);
+}), [users, groupedMembers, subTeams, sprints, labels, templateOptions]);
 
   const filteredBoard  = useFilteredBoard(boardId, rawBoard);
   const [search, setSearch] = useState('');

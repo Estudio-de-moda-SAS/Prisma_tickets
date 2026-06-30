@@ -129,22 +129,22 @@ function evaluate(request: Request, cond: FilterCondition): boolean {
     case 'esta_vacio':    return empty;
     case 'no_esta_vacio': return !empty;
 
-    case 'es': {
-      // Sprint soporta multi-valor separado por '|'
-      if (cond.field === 'sprint') {
+case 'es': {
+      // Sprint y assignee soportan multi-valor separado por '|'
+      if (cond.field === 'sprint' || cond.field === 'assignee') {
         const wanted = condVal.split('|').map((v) => v.trim()).filter(Boolean);
         return wanted.some((w) => values.includes(w));
       }
       return values.includes(condVal);
     }
     case 'no_es': {
-      if (cond.field === 'sprint') {
+      if (cond.field === 'sprint' || cond.field === 'assignee') {
         const wanted = condVal.split('|').map((v) => v.trim()).filter(Boolean);
         return !wanted.some((w) => values.includes(w));
       }
       return !values.includes(condVal);
     }
-
+    
     case 'contiene':    return values.some((v) => v.includes(condVal));
     case 'no_contiene': return values.every((v) => !v.includes(condVal));
 

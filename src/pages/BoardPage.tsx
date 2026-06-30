@@ -2,7 +2,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
-import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
+import { useBoardEquipo, useHistorialLoadMore } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -27,7 +27,6 @@ import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
-
 /** Fallback estático — mismos IDs que la BD, por si columnMap no cargó aún */
 const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
   sin_categorizar:  1,
@@ -41,6 +40,8 @@ const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
   hecho:            6,
   historial:        9,
 };
+
+const EMPTY_REQUESTS: Request[] = [];
 
 function flattenTemplateFields(
   fields: TemplateExtraField[],
@@ -63,13 +64,9 @@ function flattenTemplateFields(
       seen.add(f.key);
 
       let fieldType: TemplateFieldOption['fieldType'];
-      if (f.type === 'select' || f.type === 'radio') {
-        fieldType = 'select_radio';
-      } else if (f.type === 'checkbox') {
-        fieldType = 'boolean';
-      } else {
-        fieldType = 'text';
-      }
+      if (f.type === 'select' || f.type === 'radio') fieldType = 'select_radio';
+      else if (f.type === 'checkbox')                fieldType = 'boolean';
+      else                                           fieldType = 'text';
 
       result.push({
         key:     f.key,
@@ -80,7 +77,6 @@ function flattenTemplateFields(
     }
   }
 }
-
 /* ============================================================
    Control de zoom del Kanban
    ============================================================ */
@@ -182,12 +178,11 @@ export function BoardPage() {
   const [externalModalId,   setExternalModalId]   = useState<string | null>(null);
   const [openTicketSignal,  setOpenTicketSignal]  = useState<{ id: string; nonce: number } | null>(null);
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
-  const boardTeamId = useMemo(() => {
+const { data: boardTeams = [], isLoading: teamsLoading } = useBoardTeams(config.DEFAULT_BOARD_ID);  const boardTeamId = useMemo(() => {
     const team = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
     return team?.Board_Team_ID ?? null;
   }, [boardTeams, equipoActivo]);
-  const { data: columnConfig = [] } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
+const { data: columnConfig = [], isPending: columnConfigPending } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
 // Columnas reales, visibles y ordenadas — para el panel y el conteo de horas
   const boardColumns = useMemo(
     () =>
@@ -206,7 +201,6 @@ const { data: subTeams  = [] } = useSubTeams(boardTeamId);
 const groupedMembers            = useSubTeamMembersGrouped(subTeams);
 const { data: sprints   = [] } = useSprints();
   const { data: labels    = [] } = useLabelsByTeamId(config.DEFAULT_BOARD_ID, boardTeamId);
-  const { data: templates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
 
   const { data: externalRequest } = useQuery<Request>({
     queryKey: ['request', externalModalId],
@@ -219,8 +213,10 @@ const { data: sprints   = [] } = useSprints();
     retry: 1,
   });
 
+const { data: boardTemplates = [] } = useBoardTemplates(config.DEFAULT_BOARD_ID);
+
   const templateOptions = useMemo((): TemplateFilterOption[] => {
-    return templates
+    return boardTemplates
       .filter((t) => {
         if (!t.Request_Template_Is_Active) return false;
         if (!t.Request_Template_Teams || t.Request_Template_Teams.length === 0) return true;
@@ -230,11 +226,7 @@ const { data: sprints   = [] } = useSprints();
       .map((t) => {
         const seen:   Set<string>           = new Set();
         const fields: TemplateFieldOption[] = [];
-        flattenTemplateFields(
-          t.Request_Template_Form_Schema as TemplateExtraField[],
-          seen,
-          fields,
-        );
+        flattenTemplateFields(t.Request_Template_Form_Schema as TemplateExtraField[], seen, fields);
         return {
           id:     t.Request_Template_ID,
           label:  t.Request_Template_Name,
@@ -244,8 +236,8 @@ const { data: sprints   = [] } = useSprints();
         };
       })
       .filter((t) => t.fields.length > 0);
-  }, [templates, boardTeamId]);
-
+  }, [boardTemplates, boardTeamId]);
+    
   const dynamicOptions = useMemo((): FilterDynamicOptions => ({
     assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
     assigneeGrouped: groupedMembers
@@ -267,7 +259,25 @@ const { data: sprints   = [] } = useSprints();
   }), [users, groupedMembers, subTeams, sprints, labels, templateOptions]);
   
 
-  const filteredData = useFilteredBoard(equipoActivo, data);
+const {
+    historial: mergedHistorial,
+    loadMore:  loadMoreHistorial,
+    hasMore:   historialHasMore,
+    loading:   historialLoading,
+  } = useHistorialLoadMore(equipoActivo, data?.historial ?? EMPTY_REQUESTS);
+
+  const dataWithHistorial = useMemo(
+    () => (data ? { ...data, historial: mergedHistorial } : data),
+    [data, mergedHistorial],
+  );
+
+  const filteredData = useFilteredBoard(equipoActivo, dataWithHistorial);
+  /* La estructura del kanban (equipos + config de columnas) carga aparte de los
+     requests. Mantenemos el skeleton hasta que esté lista para no pintar el board
+     con columnas por defecto y que luego "salte" a la estructura administrada. */
+  const structureLoading =
+    teamsLoading ||
+    (boardTeamId !== null && columnConfigPending);
 
 function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     const columnId = columnMap?.[columna] ?? COLUMN_ID_FALLBACK[columna];
@@ -309,7 +319,9 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
         )}
       </div>
 
-      {isLoading && !data && <KanbanSkeleton columns={10} style={{ flex: 1 }} />}
+{((isLoading && !data) || structureLoading) && (
+        <KanbanSkeleton columns={boardColumns.length || 10} style={{ flex: 1 }} />
+      )}
 
       {isError && !config.USE_MOCK && (
         <p style={{ color: 'var(--danger)', fontSize: 12 }}>
@@ -317,8 +329,8 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
         </p>
       )}
 
-      {filteredData && (
-        <KanbanBoard
+{filteredData && !structureLoading && (
+<KanbanBoard
           board={filteredData}
           equipo={equipoActivo}
           columnConfig={columnConfig}
@@ -326,8 +338,11 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
           extraRequest={externalRequest ?? null}
           onModalId={handleModalId}
           openTicketSignal={openTicketSignal}
+          onLoadMoreHistorial={loadMoreHistorial}
+          historialHasMore={historialHasMore}
+          historialLoading={historialLoading}
         />
-      )}
+        )}
     </div>
   );
 }
