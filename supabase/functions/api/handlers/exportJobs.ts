@@ -5,7 +5,7 @@ import { MAX_EXPORT_SIZE, EXPORT_JOB_CHUNK_SIZE, EXPORT_BUCKET } from '../config
 import { BASE_SELECT } from '../shared/selects.ts';
 import {
   _resolveExportCandidateIds, _countExportMatches, _uploadExportArtifact,
-  _kickoffExportChunk, _cleanupExportArtifacts,
+  _kickoffExportChunk, _cleanupExportArtifacts, _resolveOrderedExportIds,
 // @ts-ignore
 } from '../jobs/exportJob.ts';
 
@@ -20,11 +20,20 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
       sheetPerTemplate: boolean;
     };
 
-    const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
+const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
 
-    const candidateIds = await _resolveExportCandidateIds(supabase, fullFilters);
+    const relationalIds = await _resolveExportCandidateIds(supabase, fullFilters);
 
-    const total = await _countExportMatches(supabase, fullFilters, candidateIds);
+    // Con filtros relacionales: resolvemos la lista final ordenada + filtrada
+    // (chunkeada, URL-safe). Sin ellos: count directo.
+    let orderedIds: string[] | null = null;
+    let total: number;
+    if (relationalIds !== null) {
+      orderedIds = await _resolveOrderedExportIds(supabase, fullFilters, relationalIds);
+      total = orderedIds.length;
+    } else {
+      total = await _countExportMatches(supabase, fullFilters, null);
+    }
 
     if (total === 0) throw new Error('Ningún ticket coincide con los filtros seleccionados.');
     if (total > MAX_EXPORT_SIZE) {
@@ -65,6 +74,14 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
 
     const storagePrefix = `${p.userId}/${jobId}`;
 
+// El array de IDs va a Storage (no al payload) para mantener la fila del job
+    // liviana y evitar reescrituras de ~1.6MB en cada update de progreso.
+    let candidateIdsPath: string | null = null;
+    if (orderedIds !== null) {
+      candidateIdsPath = `${storagePrefix}/candidate_ids.json`;
+      await _uploadExportArtifact(supabase, storagePrefix, 'candidate_ids.json', { ids: orderedIds });
+    }
+
     await supabase.from('TBL_Background_Jobs').update({
       Job_Payload: {
         userId:           p.userId,
@@ -75,10 +92,11 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
         sheetPerTemplate: p.sheetPerTemplate,
         storagePrefix,
         chunksTotal,
-        candidateIds,
+        candidateIdsPath,
+        candidateCount:   orderedIds?.length ?? null,
       },
     }).eq('Job_ID', jobId);
-
+    
     const [teamsRes, columnsRes, templatesRes] = await Promise.all([
       supabase.from('TBL_Board_Teams')
         .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Sort_Order')
@@ -248,7 +266,7 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
     });
   },
 
-  exportRequests: async (payload, { supabase }) => {
+exportRequests: async (payload, { supabase }) => {
     const p = payload as {
       boardId:         number;
       teamIds?:        number[] | null;
@@ -267,6 +285,20 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
 
     const MAX_LIMIT = 500;
     const limit     = Math.min(p.limit ?? MAX_LIMIT, MAX_LIMIT);
+
+    // Tamaño de lote para el .in('Request_ID', ...). Mantiene la URL chica.
+    const ID_CHUNK = 150;
+    const chunk = <T,>(arr: T[], size: number): T[][] => {
+      const out: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+      return out;
+    };
+    const parseTs = (v: unknown): number => {
+      const s = String(v ?? '');
+      if (!s) return 0;
+      const t = new Date(s.endsWith('Z') ? s : `${s}Z`).getTime();
+      return Number.isNaN(t) ? 0 : t;
+    };
 
     const emptyResponse = async () => {
       const [teamsRes, columnsRes, templatesRes] = await Promise.all([
@@ -348,60 +380,74 @@ export const exportJobHandlers: Record<string, ActionHandler> = {
       if (candidateIds.length === 0) return emptyResponse();
     }
 
-    let countQuery = supabase
-      .from('TBL_Requests')
-      .select('Request_ID', { count: 'exact', head: true })
-      .eq('Request_Board_ID', p.boardId);
+    // Factory: arma una query fresca con TODOS los filtros escalares (sin el .in de Request_ID).
+    // deno-lint-ignore no-explicit-any
+    const buildQuery = (select: string, opts: { count?: boolean }): any => {
+      let q = opts.count
+        ? supabase.from('TBL_Requests').select(select, { count: 'exact', head: true })
+        : supabase.from('TBL_Requests').select(select);
+      q = q.eq('Request_Board_ID', p.boardId);
+      if (p.columnIds && p.columnIds.length > 0)           q = q.in('Request_Board_Column_ID', p.columnIds);
+      if (p.requestedByIds && p.requestedByIds.length > 0) q = q.in('Request_Requested_By', p.requestedByIds);
+      if (p.priorityScores && p.priorityScores.length > 0) q = q.in('Request_Score', p.priorityScores);
+      if (p.templateIds && p.templateIds.length > 0)       q = q.in('Request_Template_ID', p.templateIds);
+      if (p.isConfidential !== null && p.isConfidential !== undefined) q = q.eq('Request_Is_Confidential', p.isConfidential);
+      if (p.dateFrom) q = q.gte('Request_Created_At', p.dateFrom);
+      if (p.dateTo)   q = q.lte('Request_Created_At', p.dateTo);
+      return q;
+    };
 
-    let dataQuery = supabase
-      .from('TBL_Requests')
-      .select(BASE_SELECT)
-      .eq('Request_Board_ID', p.boardId);
-
-    if (candidateIds !== null) {
-      countQuery = countQuery.in('Request_ID', candidateIds);
-      dataQuery  = dataQuery.in('Request_ID',  candidateIds);
-    }
-    if (p.columnIds && p.columnIds.length > 0) {
-      countQuery = countQuery.in('Request_Board_Column_ID', p.columnIds);
-      dataQuery  = dataQuery.in('Request_Board_Column_ID',  p.columnIds);
-    }
-    if (p.requestedByIds && p.requestedByIds.length > 0) {
-      countQuery = countQuery.in('Request_Requested_By', p.requestedByIds);
-      dataQuery  = dataQuery.in('Request_Requested_By',  p.requestedByIds);
-    }
-    if (p.priorityScores && p.priorityScores.length > 0) {
-      countQuery = countQuery.in('Request_Score', p.priorityScores);
-      dataQuery  = dataQuery.in('Request_Score',  p.priorityScores);
-    }
-    if (p.templateIds && p.templateIds.length > 0) {
-      countQuery = countQuery.in('Request_Template_ID', p.templateIds);
-      dataQuery  = dataQuery.in('Request_Template_ID',  p.templateIds);
-    }
-    if (p.isConfidential !== null && p.isConfidential !== undefined) {
-      countQuery = countQuery.eq('Request_Is_Confidential', p.isConfidential);
-      dataQuery  = dataQuery.eq('Request_Is_Confidential',  p.isConfidential);
-    }
-    if (p.dateFrom) {
-      countQuery = countQuery.gte('Request_Created_At', p.dateFrom);
-      dataQuery  = dataQuery.gte('Request_Created_At',  p.dateFrom);
-    }
-    if (p.dateTo) {
-      countQuery = countQuery.lte('Request_Created_At', p.dateTo);
-      dataQuery  = dataQuery.lte('Request_Created_At',  p.dateTo);
+    // ── COUNT (chunkeado si hay candidateIds) ────────────────────
+    let totalMatched = 0;
+    if (candidateIds === null) {
+      const res = await buildQuery('Request_ID', { count: true });
+      if (res.error) throw new Error(res.error.message);
+      totalMatched = res.count ?? 0;
+    } else {
+      for (const batch of chunk(candidateIds, ID_CHUNK)) {
+        const res = await buildQuery('Request_ID', { count: true }).in('Request_ID', batch);
+        if (res.error) throw new Error(res.error.message);
+        totalMatched += res.count ?? 0; // lotes disjuntos → suma sin doble conteo
+      }
     }
 
-    dataQuery = dataQuery
-      .order('Request_Created_At', { ascending: false })
-      .limit(limit);
+    // ── DATA ─────────────────────────────────────────────────────
+    let tickets: Record<string, unknown>[] = [];
 
-    const [countRes, dataRes] = await Promise.all([countQuery, dataQuery]);
-    if (countRes.error) throw new Error(countRes.error.message);
-    if (dataRes.error)  throw new Error(dataRes.error.message);
+    if (candidateIds === null) {
+      const res = await buildQuery(BASE_SELECT, {})
+        .order('Request_Created_At', { ascending: false })
+        .limit(limit);
+      if (res.error) throw new Error(res.error.message);
+      tickets = (res.data ?? []) as Record<string, unknown>[];
+    } else {
+      // Fase 1: scan liviano por lote → top-N IDs por fecha (URL chica, sin joins).
+      const light: { id: string; ts: number }[] = [];
+      for (const batch of chunk(candidateIds, ID_CHUNK)) {
+        const res = await buildQuery('Request_ID, Request_Created_At', {})
+          .in('Request_ID', batch)
+          .order('Request_Created_At', { ascending: false })
+          .limit(limit);
+        if (res.error) throw new Error(res.error.message);
+        for (const r of (res.data ?? []) as { Request_ID: string; Request_Created_At: string | null }[]) {
+          light.push({ id: r.Request_ID, ts: parseTs(r.Request_Created_At) });
+        }
+      }
+      light.sort((a, b) => b.ts - a.ts);
+      const topIds = light.slice(0, limit).map((r) => r.id);
 
-    const tickets      = (dataRes.data ?? []) as Record<string, unknown>[];
-    const totalMatched = countRes.count ?? tickets.length;
-    const truncated    = totalMatched > tickets.length;
+      // Fase 2: BASE_SELECT pesado SOLO para esos pocos IDs (chunkeado por las dudas).
+      const collected: Record<string, unknown>[] = [];
+      for (const batch of chunk(topIds, ID_CHUNK)) {
+        const res = await buildQuery(BASE_SELECT, {}).in('Request_ID', batch);
+        if (res.error) throw new Error(res.error.message);
+        collected.push(...((res.data ?? []) as Record<string, unknown>[]));
+      }
+      collected.sort((a, b) => parseTs(b.Request_Created_At) - parseTs(a.Request_Created_At));
+      tickets = collected;
+    }
+
+    const truncated = totalMatched > tickets.length;
 
     const [teamsRes, columnsRes, templatesRes] = await Promise.all([
       supabase.from('TBL_Board_Teams')

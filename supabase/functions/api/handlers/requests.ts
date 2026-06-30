@@ -1,12 +1,15 @@
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
-import { BASE_SELECT } from '../shared/selects.ts';
+import { BASE_SELECT, BASE_SELECT_LIGHT } from '../shared/selects.ts';
 // @ts-ignore
 import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { getRequestParticipants, isCloseColumn } from '../shared/requests.ts';
+
+const HISTORIAL_COLUMN_ID     = 9;
+const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
 
 export const requestHandlers: Record<string, ActionHandler> = {
   fetchAllByBoard: async (payload, { supabase }) => {
@@ -19,7 +22,7 @@ export const requestHandlers: Record<string, ActionHandler> = {
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
 
-  fetchByTeamCode: async (payload, { supabase }) => {
+fetchByTeamCode: async (payload, { supabase }) => {
     const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
     const { data: teamData, error: teamErr } = await supabase
       .from('TBL_Board_Teams').select('Board_Team_ID')
@@ -31,12 +34,31 @@ export const requestHandlers: Record<string, ActionHandler> = {
     if (linksErr) throw new Error(linksErr.message);
     const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
     if (ids.length === 0) return [];
-    const { data, error } = await supabase
-      .from('TBL_Requests').select(BASE_SELECT)
-      .in('Request_ID', ids).eq('Request_Board_ID', boardId)
+
+    // Columnas activas — completas (su tamaño está acotado por flujo)
+    const activePromise = supabase
+      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+      .in('Request_ID', ids)
+      .eq('Request_Board_ID', boardId)
+      .neq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
       .order('Request_Created_At', { ascending: false });
-    if (error) throw new Error(error.message);
-    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+
+    // Historial — solo los más recientes (el resto se busca on-demand)
+    const historialPromise = supabase
+      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+      .in('Request_ID', ids)
+      .eq('Request_Board_ID', boardId)
+.eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+      .order('Request_Created_At', { ascending: false })
+      .order('Request_ID',         { ascending: false })
+      .limit(HISTORIAL_INITIAL_LIMIT);
+
+    const [activeRes, historialRes] = await Promise.all([activePromise, historialPromise]);
+    if (activeRes.error)    throw new Error(activeRes.error.message);
+    if (historialRes.error) throw new Error(historialRes.error.message);
+
+    const combined = [...(activeRes.data ?? []), ...(historialRes.data ?? [])];
+    return attachCriteriaSummary(combined as Record<string, unknown>[], supabase);
   },
 
   fetchByRequestedBy: async (payload, { supabase }) => {
@@ -531,4 +553,85 @@ export const requestHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
+
+  fetchTeamHistorialCount: async (payload, { supabase }) => {
+    const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
+    const { data: teamData, error: teamErr } = await supabase
+      .from('TBL_Board_Teams').select('Board_Team_ID')
+      .eq('Board_Team_Code', teamCode).single();
+    if (teamErr) throw new Error(teamErr.message);
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Request_Team').select('Request_Team_Request_ID')
+      .eq('Request_Team_ID', teamData.Board_Team_ID);
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
+    if (ids.length === 0) return { total: 0 };
+    const { count, error } = await supabase
+      .from('TBL_Requests')
+      .select('Request_ID', { count: 'exact', head: true })
+      .in('Request_ID', ids)
+      .eq('Request_Board_ID', boardId)
+      .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID);
+    if (error) throw new Error(error.message);
+    return { total: count ?? 0 };
+  },
+
+  fetchTeamHistorialPage: async (payload, { supabase }) => {
+    const { boardId, teamCode, cursorCreatedAt, cursorId } = payload as {
+      boardId: number; teamCode: string; cursorCreatedAt: string; cursorId: string;
+    };
+    const { data: teamData, error: teamErr } = await supabase
+      .from('TBL_Board_Teams').select('Board_Team_ID')
+      .eq('Board_Team_Code', teamCode).single();
+    if (teamErr) throw new Error(teamErr.message);
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Request_Team').select('Request_Team_Request_ID')
+      .eq('Request_Team_ID', teamData.Board_Team_ID);
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+      .in('Request_ID', ids)
+      .eq('Request_Board_ID', boardId)
+      .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+      .or(`Request_Created_At.lt.${cursorCreatedAt},and(Request_Created_At.eq.${cursorCreatedAt},Request_ID.lt.${cursorId})`)
+      .order('Request_Created_At', { ascending: false })
+      .order('Request_ID',         { ascending: false })
+      .limit(HISTORIAL_INITIAL_LIMIT);
+    if (error) throw new Error(error.message);
+    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+  },
+
+  searchRequests: async (payload, { supabase }) => {
+    const { boardId, teamCode, query } = payload as {
+      boardId: number; teamCode: string; query: string;
+    };
+    const q = (query ?? '').trim();
+    if (q.length < 2) return [];
+
+    const { data: teamData, error: teamErr } = await supabase
+      .from('TBL_Board_Teams').select('Board_Team_ID')
+      .eq('Board_Team_Code', teamCode).single();
+    if (teamErr) throw new Error(teamErr.message);
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Request_Team').select('Request_Team_Request_ID')
+      .eq('Request_Team_ID', teamData.Board_Team_ID);
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
+    if (ids.length === 0) return [];
+
+    const escaped = q.replace(/[%_,()]/g, (m) => `\\${m}`);
+    const { data, error } = await supabase
+      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+      .in('Request_ID', ids)
+      .eq('Request_Board_ID', boardId)
+      .or(`Request_Title.ilike.%${escaped}%,Request_ID.ilike.%${escaped}%`)
+      .order('Request_Created_At', { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+  },
 };
+

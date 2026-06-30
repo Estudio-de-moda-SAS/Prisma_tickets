@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import type { BoardData, Request } from '../types';
 import { useSearchStore } from '@/store/searchStore';
-
+import { useSearchRequests } from '../hooks/useRequests';
 /* ============================================================
    Helpers
    ============================================================ */
@@ -96,19 +96,17 @@ export function BoardSearch({
   const allRequests = useMemo(() => Object.values(board).flat(), [board]);
 
   // Filtra resultados
+const { data: searchData = [], isFetching: searchLoading } = useSearchRequests(equipo, query);
+
   const results = useMemo(() => {
     const q = query.trim();
     if (!q) return [];
     const nq = normalize(q);
-    const matches: { req: Request; matchType: 'id' | 'title' }[] = [];
-    for (const req of allRequests) {
-      const idMatch    = normalize(req.id).includes(nq);
-      const titleMatch = normalize(req.titulo).includes(nq);
-      if (idMatch)         matches.push({ req, matchType: 'id' });
-      else if (titleMatch) matches.push({ req, matchType: 'title' });
-    }
-    return matches.slice(0, 30);
-  }, [allRequests, query]);
+    return searchData.map((req) => {
+      const idMatch = normalize(req.id).includes(nq);
+      return { req, matchType: (idMatch ? 'id' : 'title') as 'id' | 'title' };
+    });
+  }, [searchData, query]);
 
   // Tickets recientes (resueltos contra board actual)
   const recentRequests = useMemo(() => {
@@ -334,12 +332,14 @@ export function BoardSearch({
           )}
 
           {/* Con query → resultados */}
-          {query.trim() && results.length === 0 && (
+{query.trim() && results.length === 0 && (
             <div style={{ padding: '24px 14px', textAlign: 'center', color: 'var(--txt-muted)', fontSize: 11 }}>
-              Sin resultados para <span style={{ color: 'var(--txt)' }}>"{query}"</span>
+              {searchLoading
+                ? 'Buscando…'
+                : <>Sin resultados para <span style={{ color: 'var(--txt)' }}>"{query}"</span></>}
             </div>
           )}
-
+          
           {query.trim() && results.length > 0 && (
             <>
               <div style={{

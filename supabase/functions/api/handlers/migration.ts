@@ -155,6 +155,7 @@ export const migrationHandlers: Record<string, ActionHandler> = {
       sprintId:        number | null;   // sprint ya resuelto
       assigneeIds:     number[];        // usuarios ya resueltos ("Asignada")
       note:            string | null;   // "Notas" → comentario del user 17
+      formData?:       Record<string, unknown>; // datos extra (template Migraciones)
     };
 
     // ── 1. Idempotencia: ¿ya se migró esta fila? ─────────────
@@ -200,7 +201,7 @@ export const migrationHandlers: Record<string, ActionHandler> = {
         Request_Estimated_Hours:          p.estimatedHours ?? null,
         Request_Logged_Hours:             p.loggedHours ?? null,
         Request_Is_Confidential:          p.isConfidential ?? false,
-        Request_Form_Data:                {},
+        Request_Form_Data:                p.formData ?? {},
         Request_Template_Schema_Snapshot: schemaSnapshot,
         Request_Parent_ID:                null,
         Request_Requester_Team_ID:        null,
