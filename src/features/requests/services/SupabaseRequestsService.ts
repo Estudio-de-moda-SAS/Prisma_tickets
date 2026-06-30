@@ -364,7 +364,28 @@ export class SupabaseRequestsService {
 async moveToColumn({ id, columnId, movedBy }: MoverRequestPayload): Promise<void> {
   await apiClient.call('moveToColumn', { id, columnId, movedBy });
 }
+async fetchTeamHistorialPage(
+    teamCode: string,
+    cursor: { createdAt: string; id: string },
+  ): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchTeamHistorialPage', {
+      boardId:         this.boardId,
+      teamCode,
+      cursorCreatedAt: cursor.createdAt,
+      cursorId:        cursor.id,
+    });
+    return rows.map(mapRowToRequest);
+  }
 
+  async searchRequests(teamCode: string, query: string): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('searchRequests', {
+      boardId: this.boardId,
+      teamCode,
+      query,
+    });
+    return rows.map(mapRowToRequest);
+  }
+  
 async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
   await apiClient.call('updateRequest', {
     id,

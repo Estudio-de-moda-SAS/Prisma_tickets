@@ -491,3 +491,188 @@ font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
   transition: opacity 0.15s;
 }
 .sprint-selector__clear-btn:hover { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════
+   Skeleton loader — Dashboard de estadísticas
+════════════════════════════════════════════════════════════ */
+.stats-skeleton {
+  --sk-base: var(--bg-surface);
+  --sk-glow: color-mix(in srgb, var(--accent) 14%, var(--bg-surface));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+[data-theme="light"] .stats-skeleton {
+  --sk-glow: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+}
+
+@keyframes stats-sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Base shimmer para todo placeholder */
+.stats-skeleton .sk {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--sk-base) 0%, var(--sk-glow) 50%, var(--sk-base) 100%);
+  background-size: 200% 100%;
+  animation: stats-sk-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Variante tintada: para acentos de color (acepta --sk-tint) */
+.stats-skeleton .sk--tint {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sk-tint) 22%, var(--bg-surface)) 0%,
+    color-mix(in srgb, var(--sk-tint) 55%, var(--bg-surface)) 50%,
+    color-mix(in srgb, var(--sk-tint) 22%, var(--bg-surface)) 100%
+  );
+  background-size: 200% 100%;
+  animation: stats-sk-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Contenedores (estructura, sin shimmer) */
+.stats-sk-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* ── Divider ── */
+.stats-sk-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.stats-sk-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ── Líneas ── */
+.sk-line   { height: 10px; width: 100%; }
+.sk-pill   { width: 150px; height: 14px; border-radius: 7px; }
+.sk-line--xxs   { width: 40%;  height: 8px; }
+.sk-line--xs    { width: 55%;  height: 9px; }
+.sk-line--sm    { width: 70%;  }
+.sk-line--val   { width: 45px; height: 20px; }
+.sk-line--num   { width: 60%;  height: 22px; margin-top: 2px; }
+.sk-line--title { width: 160px; height: 12px; }
+.sk-line--row   { width: 100%; height: 11px; }
+.sk-line--label { width: 30%; flex-shrink: 0; }
+
+/* ── Tarjetas de sprint ── */
+.stats-sk-scard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sk-icon { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; }
+.stats-sk-stack { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+
+/* Íconos de sprint tintados con los colores reales del dashboard */
+.scard-grid .stats-sk-scard:nth-child(1) .sk-icon { --sk-tint: #378ADD; }
+.scard-grid .stats-sk-scard:nth-child(2) .sk-icon { --sk-tint: #00c8ff; }
+.scard-grid .stats-sk-scard:nth-child(3) .sk-icon { --sk-tint: #1D9E75; }
+.scard-grid .stats-sk-scard:nth-child(4) .sk-icon { --sk-tint: #EF9F27; }
+.scard-grid .stats-sk-scard:nth-child(5) .sk-icon { --sk-tint: #ff4757; }
+.stats-sk-scard .sk-icon {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sk-tint, var(--accent)) 22%, var(--bg-surface)) 0%,
+    color-mix(in srgb, var(--sk-tint, var(--accent)) 55%, var(--bg-surface)) 50%,
+    color-mix(in srgb, var(--sk-tint, var(--accent)) 22%, var(--bg-surface)) 100%
+  );
+  background-size: 200% 100%;
+  animation: stats-sk-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Cabeceras de panel ── */
+.stats-sk-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.sk-badge { width: 90px; height: 18px; border-radius: 9px; }
+
+/* ── Donut ── */
+.stats-sk-donut-row { display: flex; gap: 20px; align-items: center; }
+.sk-donut {
+  width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+  /* Anillo tintado en cian — espejo del ScoreDonut real */
+  background:
+    conic-gradient(
+      color-mix(in srgb, var(--accent) 45%, var(--bg-surface)) 0deg,
+      color-mix(in srgb, var(--accent) 18%, var(--bg-surface)) 220deg,
+      color-mix(in srgb, var(--accent) 45%, var(--bg-surface)) 360deg
+    );
+  -webkit-mask: radial-gradient(circle, transparent 28px, #000 30px);
+          mask: radial-gradient(circle, transparent 28px, #000 30px);
+  animation: stats-sk-spin 1.6s linear infinite;
+}
+@keyframes stats-sk-spin { to { transform: rotate(360deg); } }
+.stats-sk-stack--detail { gap: 11px; }
+
+/* ── Mes ── */
+.stats-sk-month-row { display: flex; align-items: center; gap: 16px; padding: 8px 0; }
+.stats-sk-month {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.sk-num { width: 48px; height: 32px; border-radius: 8px; }
+.stats-sk-month .sk-num:first-child { --sk-tint: var(--accent); }
+.stats-sk-month-divider { width: 1px; height: 48px; background: var(--border-subtle); }
+
+/* ── KPIs ── */
+.stats-sk-kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.stats-sk-kpi .sk-accent {
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 0;
+}
+/* Barra de acento de cada KPI con su color real */
+.stats-kpi-grid .stats-sk-kpi:nth-child(1) .sk-accent { --sk-tint: var(--accent); }
+.stats-kpi-grid .stats-sk-kpi:nth-child(2) .sk-accent { --sk-tint: var(--success); }
+.stats-kpi-grid .stats-sk-kpi:nth-child(3) .sk-accent { --sk-tint: var(--warn); }
+.stats-kpi-grid .stats-sk-kpi:nth-child(4) .sk-accent { --sk-tint: var(--info); }
+.stats-sk-kpi .sk-accent {
+  background: var(--sk-tint, var(--accent));
+  opacity: 0.65;
+  animation: stats-sk-pulse 1.4s ease-in-out infinite;
+}
+@keyframes stats-sk-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+
+/* ── Gráfico de barras vertical ── */
+.stats-sk-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 180px;
+  padding-top: 8px;
+}
+.sk-bar {
+  flex: 1; border-radius: 5px 5px 0 0;
+  --sk-tint: var(--accent);
+}
+
+/* ── Barras horizontales ── */
+.stats-sk-rows { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+.stats-sk-bar-row { display: flex; align-items: center; gap: 12px; }
+.sk-track { flex: 1; height: 12px; border-radius: 6px; --sk-tint: var(--accent); }

@@ -26,9 +26,11 @@ import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useCloseRequest } from '../hooks/useCloseRequest';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useNotifications } from '../hooks/useNotifications';
+import { useHistorialCount } from '../hooks/useRequests';
 import { useBoardStore } from '@/store/boardStore';
 import { config } from '@/config';
 import type { Notification } from '@/types/commons';
+
 
 /* ── Fallback estático para cuando columnConfig aún no cargó ── */
 const COLUMN_ID_FALLBACK: Record<string, number> = {
@@ -53,11 +55,14 @@ type Props = {
   extraRequest?:   Request | null;
   onModalId?:      (id: string | null) => void;
   /** Disparador externo: al cambiar la referencia, abre el modal del ticket indicado */
-  openTicketSignal?: { id: string; nonce: number } | null;
+openTicketSignal?: { id: string; nonce: number } | null;
+  onLoadMoreHistorial?: () => void;
+  historialHasMore?:    boolean;
+  historialLoading?:    boolean;
 };
 
-export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest, onModalId, openTicketSignal }: Props) {
-  const [activeCard,     setActiveCard]     = useState<Request | null>(null);
+
+export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest, onModalId, openTicketSignal, onLoadMoreHistorial, historialHasMore, historialLoading }: Props) {  const [activeCard,     setActiveCard]     = useState<Request | null>(null);
   const [overColumn,     setOverColumn]     = useState<string | null>(null);
   const [modalId,        setModalId]        = useState<string | null>(null);
   const [parentModalId,  setParentModalId]  = useState<string | null>(null);
@@ -78,7 +83,7 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
   );
   const { mutate: closeRequest, isPending: isClosing } = useCloseRequest(equipo);
   const { notifications, markRead } = useNotifications(currentUser?.User_ID ?? null);
-
+const { data: historialCount } = useHistorialCount(equipo);
   /* ============================================================
      Estructuras dinámicas derivadas de columnConfig
      ============================================================ */
@@ -334,20 +339,25 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
           }}
           {...scrollHandlers}
         >
-          {renderSlugs.map((col) => (
+{renderSlugs.map((col) => (
             <KanbanColumn
               key={col}
               id={col}
               titulo={columnLabels[col] ?? col}
               color={columnColors[col]}
               titleColor={columnTitleColors[col]}
-              requests={board[col] ?? []}              isOver={overColumn === col}
+              requests={board[col] ?? []}
+              totalCount={col === 'historial' ? historialCount?.total : undefined}
+              isOver={overColumn === col}
               onCardClick={(card) => setModal(card.id)}
               onAddClick={(col) => setCreateModalOpen(col)}
               unreadByRequestId={unreadByRequestId}
+              onLoadMore={col === 'historial' ? onLoadMoreHistorial : undefined}
+              hasMore={col === 'historial' ? historialHasMore : undefined}
+              isLoadingMore={col === 'historial' ? historialLoading : undefined}
             />
           ))}
-        </div>
+          </div>
 
         <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
           {activeCard && (

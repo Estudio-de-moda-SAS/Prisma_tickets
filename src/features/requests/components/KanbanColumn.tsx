@@ -6,6 +6,7 @@ import { useCustomizationStore } from '@/store/customizationStore';
 import { RequestCard } from './RequestCard';
 import type { KanbanColumna, Request } from '../types';
 import type { Notification } from '@/types/commons';
+import { useRef, useEffect } from 'react';
 
 type Props = {
   id:                  string;
@@ -13,10 +14,14 @@ type Props = {
   color?:              string;
   titleColor?:         string;
   requests:            Request[];
+totalCount?:         number;
   isOver:              boolean;
   onCardClick:         (card: Request) => void;
   onAddClick:          (columna: string) => void;
   unreadByRequestId?:  Map<string, Notification[]>;
+  onLoadMore?:         () => void;
+  hasMore?:            boolean;
+  isLoadingMore?:      boolean;  
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
@@ -41,8 +46,22 @@ function formatHours(totalHours: number): string {
   return `${m}m`;
 }
 
-export function KanbanColumn({ id, titulo, color, titleColor, requests, isOver, onCardClick, onAddClick, unreadByRequestId }: Props) {
-  const { setNodeRef } = useDroppable({ id });
+export function KanbanColumn({ id, titulo, color, titleColor, requests, totalCount, isOver, onCardClick, onAddClick, unreadByRequestId, onLoadMore, hasMore, isLoadingMore }: Props) {
+const { setNodeRef } = useDroppable({ id });
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!onLoadMore || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isLoadingMore) onLoadMore();
+      },
+      { root: el.closest('.kanban__col-body'), threshold: 0.1 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onLoadMore, hasMore, isLoadingMore]);  
   const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
   const { getCustomization } = useCustomizationStore();
 
@@ -96,7 +115,9 @@ const isEnProgreso  = id === 'en_progreso';
             )}
             {titulo}
           </span>
-          <span className="kanban__col-count">{requests.length}</span>
+          <span className="kanban__col-count">
+            {requests.length}{totalCount != null ? ` / ${totalCount}` : ''}
+          </span>
 
           {/* Contador de horas estimadas — solo en To do */}
 {showHours && (
@@ -197,9 +218,40 @@ const isEnProgreso  = id === 'en_progreso';
           ))}
         </SortableContext>
 
-        {requests.length === 0 && (
+{requests.length === 0 && (
           <div className="kanban__col-empty">
             <span>Sin solicitudes</span>
+          </div>
+        )}
+
+        {onLoadMore && (
+          <div ref={sentinelRef} style={{ padding: '6px 2px' }}>
+            {hasMore ? (
+              <button
+                type="button"
+                onClick={onLoadMore}
+                disabled={isLoadingMore}
+                style={{
+                  width: '100%',
+                  height: 28,
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 6,
+                  color: isLoadingMore ? 'var(--txt-dim)' : 'var(--txt-muted)',
+                  cursor: isLoadingMore ? 'default' : 'pointer',
+                  fontSize: 10,
+                  fontFamily: 'var(--font-display)',
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {isLoadingMore ? 'Cargando…' : 'Cargar más'}
+              </button>
+            ) : requests.length > 0 ? (
+              <div style={{ textAlign: 'center', fontSize: 9, color: 'var(--txt-dim)', padding: 4, letterSpacing: 0.5 }}>
+                Fin del historial
+              </div>
+            ) : null}
           </div>
         )}
       </div>

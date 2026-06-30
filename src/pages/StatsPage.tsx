@@ -16,6 +16,7 @@ import { useBoardTeams }       from '@/features/requests/hooks/useBoardMetadata'
 import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { config }          from '@/config';
 import '@/styles/stats.css';
+import { StatsSkeleton } from '@/features/requests/components/StatsSkeleton';
 
 /* ─── Chart.js ─────────────────────────────────────────────── */
 type ChartInstance = { destroy: () => void };
@@ -598,7 +599,7 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
       </div>
 
       {/* ═══ Estados ════════════════════════════════════════════ */}
-      {stats.isLoading && <div className="stats-loading"><div className="stats-loading__spinner" /><span>Cargando estadísticas…</span></div>}
+      {stats.isLoading && <StatsSkeleton />}
       {stats.isError   && <div className="stats-error"><AlertTriangle size={16} /><span>Error al cargar los datos.</span></div>}
 
       {/* ═══ Dashboard ══════════════════════════════════════════ */}

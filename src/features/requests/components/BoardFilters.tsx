@@ -104,6 +104,29 @@ function getOptionsForTemplateField(tf: TemplateFieldOption | undefined): { valu
   return [];
 }
 
+/* ============================================================
+   Codificación de campos de plantilla como opciones del
+   selector principal — permite elegir "Plantilla › Campo"
+   en un solo paso, sin sub-selectores.
+   ============================================================ */
+const TF_FIELD_PREFIX = 'tf::';
+const TF_UNSET        = '__tf_unset__';
+
+function encodeTemplateFieldValue(templateId: number, key: string): string {
+  return `${TF_FIELD_PREFIX}${templateId}::${key}`;
+}
+
+function decodeTemplateFieldValue(raw: string): { templateId: number; key: string } | null {
+  if (!raw.startsWith(TF_FIELD_PREFIX)) return null;
+  const rest = raw.slice(TF_FIELD_PREFIX.length);
+  const sep  = rest.indexOf('::');
+  if (sep < 0) return null;
+  const templateId = Number(rest.slice(0, sep));
+  const key        = rest.slice(sep + 2);
+  if (!Number.isFinite(templateId) || !key) return null;
+  return { templateId, key };
+}
+
 function getOptions(
   field: FilterField,
   dynamic: FilterDynamicOptions,
@@ -208,12 +231,12 @@ function pickerInitials(name: string) {
 }
 
 function AssigneeGroupBlock({
-  group, filtered, selected, onSelect,
+  group, filtered, selectedValues, onToggle,
 }: {
-  group:    AssigneeGroupData;
-  filtered: AssigneeGroupData['members'];
-  selected: string;
-  onSelect: (val: string) => void;
+  group:          AssigneeGroupData;
+  filtered:       AssigneeGroupData['members'];
+  selectedValues: string[];
+  onToggle:       (val: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   if (!filtered.length) return null;
@@ -228,9 +251,9 @@ function AssigneeGroupBlock({
         </svg>
       </div>
       {!collapsed && filtered.map((m) => {
-        const sel = m.value === selected;
+        const sel = selectedValues.includes(m.value);
         return (
-          <div key={m.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); onSelect(m.value); }}>
+          <div key={m.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); onToggle(m.value); }}>
             <div className="filter-ag-item__av" style={sel ? { background: group.subTeamColor } : undefined}>
               {pickerInitials(m.label)}
             </div>
@@ -264,15 +287,24 @@ function AssigneeFilterPicker({
   const triggerRef          = useRef<HTMLButtonElement>(null);
   const dropRef             = useRef<HTMLDivElement>(null);
 
-  const selectedLabel = flat.find((o) => o.value === value)?.label ?? '';
+  // Valores seleccionados. Se guardan como "A|B|C".
+  const selectedValues = useMemo(
+    () => value.split('|').map((v) => v.trim()).filter(Boolean),
+    [value],
+  );
+
+  const triggerLabel = (() => {
+    if (selectedValues.length === 0) return null;
+    if (selectedValues.length === 1) {
+      return flat.find((o) => o.value === selectedValues[0])?.label ?? selectedValues[0];
+    }
+    return `${selectedValues.length} resolutores`;
+  })();
 
   useEffect(() => {
     if (!open) return;
     function out(e: MouseEvent) {
-      if (
-        triggerRef.current?.contains(e.target as Node) ||
-        dropRef.current?.contains(e.target as Node)
-      ) return;
+      if (triggerRef.current?.contains(e.target as Node) || dropRef.current?.contains(e.target as Node)) return;
       setOpen(false);
       setSearch('');
     }
@@ -289,14 +321,14 @@ function AssigneeFilterPicker({
     setSearch('');
   }
 
-  function handleSelect(val: string) {
-    onChange(val === value ? '' : val);
-    setOpen(false);
-    setSearch('');
+  function toggle(val: string) {
+    const next = selectedValues.includes(val)
+      ? selectedValues.filter((v) => v !== val)
+      : [...selectedValues, val];
+    onChange(next.join('|'));
   }
 
   const hasGroups = (groups?.length ?? 0) > 0;
-
   const noResults = hasGroups && groups!.every((g) =>
     g.members.filter(
       (m) => !search ||
@@ -308,11 +340,15 @@ function AssigneeFilterPicker({
   return (
     <div className="filter-assignee-wrap">
       <button ref={triggerRef} className="filter-assignee-trigger" onClick={openPicker}>
-        {value && selectedLabel ? (
-          <>
-            <div className="filter-assignee-trigger__av">{pickerInitials(selectedLabel)}</div>
-            <span className="filter-assignee-trigger__name">{selectedLabel}</span>
-          </>
+        {triggerLabel ? (
+          selectedValues.length === 1 ? (
+            <>
+              <div className="filter-assignee-trigger__av">{pickerInitials(triggerLabel)}</div>
+              <span className="filter-assignee-trigger__name">{triggerLabel}</span>
+            </>
+          ) : (
+            <span className="filter-assignee-trigger__name">{triggerLabel}</span>
+          )
         ) : (
           <span className="filter-assignee-trigger__placeholder">Seleccionar…</span>
         )}
@@ -333,6 +369,20 @@ function AssigneeFilterPicker({
               placeholder="Buscar usuario…"
             />
           </div>
+
+          {/* Limpiar selección */}
+          {selectedValues.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>
+                {selectedValues.length} seleccionado{selectedValues.length !== 1 ? 's' : ''}
+              </span>
+              <button onMouseDown={(e) => { e.stopPropagation(); onChange(''); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: 'var(--txt-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                <X size={10} /> Limpiar
+              </button>
+            </div>
+          )}
+
           <div className="filter-assignee-list">
             {hasGroups
               ? groups!.map((g) => (
@@ -344,25 +394,28 @@ function AssigneeFilterPicker({
                         m.label.toLowerCase().includes(search.toLowerCase()) ||
                         m.email.toLowerCase().includes(search.toLowerCase()),
                     )}
-                    selected={value}
-                    onSelect={handleSelect}
+                    selectedValues={selectedValues}
+                    onToggle={toggle}
                   />
                 ))
               : flat
                   .filter((o) => !search || o.label.toLowerCase().includes(search.toLowerCase()))
-                  .map((o) => (
-                    <div key={o.value} className={`filter-ag-item${o.value === value ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); handleSelect(o.value); }}>
-                      <div className="filter-ag-item__av">{pickerInitials(o.label)}</div>
-                      <div className="filter-ag-item__info">
-                        <div className="filter-ag-item__name">{o.label}</div>
+                  .map((o) => {
+                    const sel = selectedValues.includes(o.value);
+                    return (
+                      <div key={o.value} className={`filter-ag-item${sel ? ' filter-ag-item--sel' : ''}`} onMouseDown={(e) => { e.stopPropagation(); toggle(o.value); }}>
+                        <div className="filter-ag-item__av">{pickerInitials(o.label)}</div>
+                        <div className="filter-ag-item__info">
+                          <div className="filter-ag-item__name">{o.label}</div>
+                        </div>
+                        {sel && (
+                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                            <path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
                       </div>
-                      {o.value === value && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="var(--accent)" strokeWidth="2" style={{ flexShrink: 0 }}>
-                          <path d="M1.5 5.5l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
             }
             {noResults && <div className="filter-assignee-empty">Sin resultados</div>}
           </div>
@@ -372,11 +425,10 @@ function AssigneeFilterPicker({
     </div>
   );
 }
-
 /* ============================================================
    ConditionRow
    ============================================================ */
-  function ConditionRow({
+function ConditionRow({
   boardId,
   condition,
   index,
@@ -394,47 +446,70 @@ function AssigneeFilterPicker({
   const isTemplateField = condition.field === 'template_field';
   const templates       = dynamicOptions.templates ?? [];
 
-  // Template seleccionado actualmente
   const selectedTpl = isTemplateField
     ? getTemplateById(condition.templateId, templates)
     : undefined;
-
-  // Campo de template seleccionado actualmente
   const selectedTf = isTemplateField
     ? getTemplateFieldByKey(condition.templateFieldKey, selectedTpl)
     : undefined;
 
-  // Estados huérfanos
-  const isOrphanTemplate = isTemplateField && !!condition.templateId && !selectedTpl;
-  const isOrphanField    = isTemplateField && !!condition.templateFieldKey && !!selectedTpl && !selectedTf;
+  // Condición de plantilla totalmente resuelta (tiene plantilla + campo)
+  const tfResolved = isTemplateField && condition.templateId != null && !!condition.templateFieldKey;
+
+  // Plantilla/campo guardados que ya no existen en las opciones actuales
+  const isOrphanTf = tfResolved && (!selectedTpl || !selectedTf);
+  // Condición de plantilla heredada que quedó a medias (sin campo)
+  const isUnsetTf  = isTemplateField && !tfResolved;
 
   // El valor guardado ya no existe en las opciones actuales del campo
-  const tfOptions    = getOptionsForTemplateField(selectedTf);
-  const isOrphanVal  = isTemplateField && selectedTf && needsValue(condition.operator) &&
+  const tfOptions   = getOptionsForTemplateField(selectedTf);
+  const isOrphanVal = isTemplateField && selectedTf && needsValue(condition.operator) &&
     tfOptions.length > 0 && condition.value !== '' &&
     !tfOptions.find((o) => o.value === condition.value);
 
-  const showVal    = needsValue(condition.operator);
-  const isNumeric  = isNumericField(condition.field);
+  const showVal   = needsValue(condition.operator);
+  const isNumeric = isNumericField(condition.field);
+  const isBetween = condition.operator === 'entre';
+  const dotColor  = CATEGORY_COLORS[FIELD_CATEGORY[condition.field]].dot;
 
-  const isBetween  = condition.operator === 'entre';
-  const dotColor   = CATEGORY_COLORS[FIELD_CATEGORY[condition.field]].dot;
-
-  // Operadores disponibles: para template_field dependen del fieldType del campo elegido
   const availOps = isTemplateField
     ? getOperatorsForTemplateField(selectedTf)
     : FIELD_OPERATORS[condition.field];
 
-  // Opciones de valor
   const options    = getOptions(condition.field, dynamicOptions, selectedTf);
   const hasOptions = options.length > 0;
 
-  // Paso 3 (operador) visible solo si template_field tiene templateId + templateFieldKey
-  const showOperator = !isTemplateField || (!!condition.templateId && !!condition.templateFieldKey);
-  // Paso 4 (valor) visible solo si además el operador requiere valor
+  // Operador/valor visibles solo cuando la condición de plantilla está resuelta
+  const showOperator = !isTemplateField || tfResolved;
   const showValue    = showOperator && showVal;
 
-  function handleFieldChange(field: FilterField) {
+  // Valor actual del <select> principal
+  const fieldSelectValue = isTemplateField
+    ? (tfResolved ? encodeTemplateFieldValue(condition.templateId!, condition.templateFieldKey!) : TF_UNSET)
+    : condition.field;
+
+  const regularFields = (Object.keys(FIELD_LABELS) as FilterField[]).filter((f) => f !== 'template_field');
+
+  function handleFieldChange(raw: string) {
+    if (raw === TF_UNSET) return; // opción de aviso, no-op
+
+    const decoded = decodeTemplateFieldValue(raw);
+    if (decoded) {
+      const tpl = getTemplateById(decoded.templateId, templates);
+      const tf  = getTemplateFieldByKey(decoded.key, tpl);
+      const op  = tf ? getOperatorsForTemplateField(tf)[0] : FIELD_OPERATORS['template_field'][0];
+      updateCondition(boardId, condition.id, {
+        field:            'template_field',
+        templateId:       decoded.templateId,
+        templateFieldKey: decoded.key,
+        operator:         op,
+        value:            '',
+        value2:           undefined,
+      });
+      return;
+    }
+
+    const field = raw as FilterField;
     updateCondition(boardId, condition.id, {
       field,
       operator:         FIELD_OPERATORS[field][0],
@@ -442,33 +517,6 @@ function AssigneeFilterPicker({
       value2:           undefined,
       templateId:       undefined,
       templateFieldKey: undefined,
-    });
-  }
-
-  function handleTemplateChange(idStr: string) {
-    const id = idStr ? Number(idStr) : undefined;
-    const tpl = id ? getTemplateById(id, templates) : undefined;
-    const defaultOp = tpl?.fields[0]
-      ? getOperatorsForTemplateField(tpl.fields[0])[0]
-      : 'contiene';
-    updateCondition(boardId, condition.id, {
-      templateId:       id,
-      templateFieldKey: undefined,
-      operator:         defaultOp,
-      value:            '',
-      value2:           undefined,
-    });
-  }
-
-  function handleTemplateFieldKeyChange(key: string) {
-    const tpl = getTemplateById(condition.templateId, templates);
-    const tf  = getTemplateFieldByKey(key, tpl);
-    const newOp = tf ? getOperatorsForTemplateField(tf)[0] : 'contiene';
-    updateCondition(boardId, condition.id, {
-      templateFieldKey: key || undefined,
-      operator:         newOp,
-      value:            '',
-      value2:           undefined,
     });
   }
 
@@ -494,84 +542,47 @@ function AssigneeFilterPicker({
       {/* Dot de categoría */}
       <div className="filter-row__cat-dot" style={{ background: dotColor }} />
 
-      {/* Campo principal */}
+      {/* Campo principal — incluye campos de plantilla en un solo paso */}
       <div className="filter-select-wrap">
         <select
           className="filter-select filter-select--field"
-          value={condition.field}
-          onChange={(e) => handleFieldChange(e.target.value as FilterField)}
+          value={fieldSelectValue}
+          onChange={(e) => handleFieldChange(e.target.value)}
+          style={(isOrphanTf || isUnsetTf) ? { color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' } : undefined}
         >
-          {(Object.keys(FIELD_LABELS) as FilterField[]).map((f) => (
+          {/* Campos estándar */}
+          {regularFields.map((f) => (
             <option key={f} value={f}>{FIELD_LABELS[f]}</option>
+          ))}
+
+          {/* Aviso: plantilla/campo eliminado (mantiene visible la selección rota) */}
+          {isOrphanTf && (
+            <option value={fieldSelectValue} style={{ color: 'var(--warn)' }}>
+              ⚠ {selectedTpl?.label ?? 'Plantilla eliminada'} / {selectedTf?.label ?? condition.templateFieldKey ?? 'Campo eliminado'}
+            </option>
+          )}
+
+          {/* Aviso: condición de plantilla heredada sin configurar */}
+          {isUnsetTf && (
+            <option value={TF_UNSET} style={{ color: 'var(--warn)' }}>
+              ⚠ Plantilla sin configurar
+            </option>
+          )}
+
+          {/* Campos de cada plantilla del board, agrupados */}
+          {templates.map((t) => (
+            <optgroup key={t.id} label={`${t.icon ?? '📋'} ${t.label}`}>
+              {t.fields.map((tf) => (
+                <option key={`${t.id}-${tf.key}`} value={encodeTemplateFieldValue(t.id, tf.key)}>
+                  {tf.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
 
-      {/* Paso 1 — selector de plantilla */}
-      {isTemplateField && (
-        <div className="filter-select-wrap">
-          {isOrphanTemplate ? (
-            <select
-              className="filter-select filter-select--subfield"
-              value={String(condition.templateId ?? '')}
-              onChange={(e) => handleTemplateChange(e.target.value)}
-              style={{ color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' }}
-            >
-              <option value={String(condition.templateId ?? '')} disabled>
-                ⚠ Plantilla eliminada
-              </option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.icon ?? '📋'} {t.label}</option>
-              ))}
-            </select>
-          ) : (
-            <select
-              className="filter-select filter-select--subfield"
-              value={String(condition.templateId ?? '')}
-              onChange={(e) => handleTemplateChange(e.target.value)}
-            >
-              <option value="">Seleccionar plantilla…</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.icon ?? '📋'} {t.label}</option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Paso 2 — selector de campo (solo si hay plantilla elegida) */}
-      {isTemplateField && condition.templateId && (
-        <div className="filter-select-wrap">
-          {isOrphanField ? (
-            <select
-              className="filter-select filter-select--subfield"
-              value={condition.templateFieldKey ?? ''}
-              onChange={(e) => handleTemplateFieldKeyChange(e.target.value)}
-              style={{ color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' }}
-            >
-              <option value={condition.templateFieldKey ?? ''} disabled>
-                ⚠ Campo eliminado
-              </option>
-              {(selectedTpl?.fields ?? []).map((tf) => (
-                <option key={tf.key} value={tf.key}>{tf.label}</option>
-              ))}
-            </select>
-          ) : (
-            <select
-              className="filter-select filter-select--subfield"
-              value={condition.templateFieldKey ?? ''}
-              onChange={(e) => handleTemplateFieldKeyChange(e.target.value)}
-            >
-              <option value="">Seleccionar campo…</option>
-              {(selectedTpl?.fields ?? []).map((tf) => (
-                <option key={tf.key} value={tf.key}>{tf.label}</option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Paso 3 — operador */}
+      {/* Operador */}
       {showOperator && (
         <div className="filter-select-wrap">
           <select
@@ -592,7 +603,7 @@ function AssigneeFilterPicker({
         </div>
       )}
 
-      {/* Paso 4 — valor */}
+      {/* Valor */}
       {showValue && (
         <div className="filter-value-wrap">
           {isBetween ? (
@@ -633,7 +644,6 @@ function AssigneeFilterPicker({
               onChange={(e) => updateCondition(boardId, condition.id, { value: e.target.value })}
               style={isOrphanVal ? { color: 'var(--warn)', borderColor: 'rgba(251,146,60,0.4)' } : undefined}
             >
-              {/* Valor huérfano: la opción ya no existe en el template actualizado */}
               {isOrphanVal && (
                 <option value={condition.value} style={{ color: 'var(--warn)' }}>
                   ⚠ {condition.value}

@@ -1,7 +1,7 @@
 // src/features/requests/components/HomeRequestModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ShieldAlert, Send, Trash2 } from 'lucide-react';
+import { X, ShieldAlert, Send, Trash2, Users } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
 import { useSprints } from '@/features/requests/hooks/useSprints';
@@ -424,13 +424,17 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 <FieldBlock label="Solicitante">
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
-    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(request.solicitante)}</div>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{request.solicitante}</span>
-      {request.requesterTeamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 0.5, fontWeight: 600 }}>{request.requesterTeamName}</span>}
+  {request.isLegacy && !request.solicitante ? (
+    <TeamChip teamName={request.legacyRequester ?? 'Equipo no especificado'} />
+  ) : (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #0055cc, #00c8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(request.solicitante)}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2 }}>{request.solicitante}</span>
+        {request.requesterTeamName && <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 0.5, fontWeight: 600 }}>{request.requesterTeamName}</span>}
+      </div>
     </div>
-  </div>
+  )}
 </FieldBlock>
               <FieldBlock label="Resolutor(es)">
                 <FieldValue muted={request.assignees.length === 0}>
@@ -596,5 +600,18 @@ function CopyLinkButton({ ticketId }: { ticketId: string }) {
       }
       {copied ? 'Copiado' : 'Copiar link'}
     </button>
+  );
+}
+function TeamChip({ teamName }: { teamName: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', minHeight: 32, borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', boxSizing: 'border-box' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #6b7280, #9ca3af)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Users size={11} color="white" />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 12, color: 'var(--txt)', fontWeight: 600, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teamName}</span>
+        <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: 0.5, fontWeight: 600, textTransform: 'uppercase' }}>Solicitud migrada</span>
+      </div>
+    </div>
   );
 }

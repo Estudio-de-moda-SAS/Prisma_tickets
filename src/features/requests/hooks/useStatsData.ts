@@ -5,8 +5,7 @@
 import { useMemo } from 'react';
 import { useBoardCompleto }    from '@/features/requests/hooks/useRequests';
 import { useSprints }          from '@/features/requests/hooks/useSprints';
-import { PRIORIDAD_TO_SCORE }  from '@/features/requests/types';
-import type { Request, KanbanColumna, RequestAssignee } from '@/features/requests/types';
+import { PRIORIDAD_TO_SCORE } from '@/features/requests/types';import type { Request, KanbanColumna, RequestAssignee } from '@/features/requests/types';
 import type { BoardTeam }      from '@/features/requests/hooks/useBoardMetadata';
 import type { Sprint }         from '@/features/requests/hooks/useSprints';
 
@@ -122,6 +121,9 @@ const AVATAR_GRADIENTS = [
 /** Columnas que cuentan como resueltas en todas las métricas */
 const DONE_COLUMNS = new Set(['ready_to_deploy', 'hecho', 'historial']);
 const PENALIZATION_EXEMPT_COLUMNS = new Set(['icebox']);
+/** Sprints de atraso a partir de los cuales una solicitud abierta se penaliza.
+ *  2 = penaliza al llevar 2 o más sprints de atraso. Cambiar a 3 para "estrictamente más de dos". */
+const SPRINT_LAG = 2;
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -136,10 +138,20 @@ function isThisMonth(iso: string | null) {
   const d = new Date(iso), now = new Date();
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
 }
+/** Orden cronológico unificado: por número de sprint del texto ("#11" → 11);
+ *  respaldo por fecha o ID. Esto evita que los históricos sin fecha se
+ *  desfasen al medir distancia entre sprints. */
+function sprintOrder(s: Sprint): number {
+  const m = s.Sprint_Text.match(/#\s*(\d+)/);
+  if (m) return Number(m[1]);
+  if (s.Sprint_Start_Date) return new Date(s.Sprint_Start_Date).getTime() / 86_400_000;
+  return s.Sprint_ID;
+}
 /* ─── calcPenalizacion ────────────────────────────────────── */
-/** Doble de puntos de solicitudes sin resolver que llevan ≥2 sprints de atraso */
+/** Doble de puntos de solicitudes sin resolver que llevan ≥ SPRINT_LAG sprints de atraso
+ *  respecto al sprint de referencia (el seleccionado más reciente, o el activo hoy). */
 function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId: number | null = null): number {
-  const sorted = [...allSprints].sort((a, b) => a.Sprint_ID - b.Sprint_ID);
+  const sorted = [...allSprints].sort((a, b) => sprintOrder(a) - sprintOrder(b));
   if (sorted.length === 0) return 0;
 
   // Referencia = sprint indicado; si no, sprint activo hoy; si no hay activo, el más reciente iniciado
@@ -156,21 +168,23 @@ function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId
   }
   if (refIdx === -1) return 0;
 
-return requests
+  return requests
     .filter(r => !DONE_COLUMNS.has(r.columna) && !PENALIZATION_EXEMPT_COLUMNS.has(r.columna) && r.sprintId != null)
     .reduce((acc, r) => {
       const reqIdx = sorted.findIndex(s => s.Sprint_ID === r.sprintId);
       if (reqIdx === -1) return acc;
-      if (refIdx - reqIdx >= 2) {
-        //console.log('[PENALIZA]', r.id, '| columna:', JSON.stringify(r.columna), '| sprintId:', r.sprintId, '| score:', PRIORIDAD_TO_SCORE[r.prioridad]);
+      if (refIdx - reqIdx >= SPRINT_LAG) {
         return acc + 2 * (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0);
       }
       return acc;
-    }, 0);}
+    }, 0);
+}
 /* ─── calcGeneral ─────────────────────────────────────────── */
 function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: StatsConfig): GeneralStatsReal {
+  // Las columnas done SIEMPRE cuentan (ya pasaron cualquier columna de inicio de stats),
+  // sin importar minPos. Esto evita que históricos en "historial" caigan a 0.
   const activeRequests = statsConfig
-    ? requests.filter(r => r.equipo.some(eq => {
+    ? requests.filter(r => DONE_COLUMNS.has(r.columna) || r.equipo.some(eq => {
         const minPos = statsConfig.statsStartByTeam[eq];
         if (minPos === undefined) return true;
         return (statsConfig.columnPositions[r.columna] ?? 0) >= minPos;
@@ -191,7 +205,7 @@ function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: Stat
     const minPos = statsConfig?.statsStartByTeam[eq];
     const mine   = requests.filter(r =>
       r.equipo.includes(eq) &&
-      (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
+      (DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
     );
     const done    = mine.filter(r => DONE_COLUMNS.has(r.columna));
     const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
@@ -205,23 +219,24 @@ function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: Stat
 /* ─── calcBoard ───────────────────────────────────────────── */
 function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfig, allSprints: Sprint[] = [], selectedSprints: Sprint[] = []): BoardStatsReal {
   const minPos = statsConfig?.statsStartByTeam[equipo];
-const allMine = requests.filter(r => r.equipo.includes(equipo)); // sin filtro de posición
+  // Predicado de conteo: las columnas done siempre entran (bypass de minPos).
+  const countable = (r: Request) =>
+    DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
 
-const mine = requests.filter(r =>
-  r.equipo.includes(equipo) &&
-  (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
-);
+  const allMine = requests.filter(r => r.equipo.includes(equipo)); // sin filtro de posición
+  const mine    = requests.filter(r => r.equipo.includes(equipo) && countable(r));
+
   const done     = mine.filter(r => DONE_COLUMNS.has(r.columna));
   const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
 
   // ── Métricas de sprint por equipo ──────────────────────────
-const sprintSet        = new Set(selectedSprints.map(s => s.Sprint_ID));
-const allMineInSprint  = selectedSprints.length > 0          // ← nuevo
-  ? allMine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
-  : allMine;
-const mineForScore     = selectedSprints.length > 0
-  ? mine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
-  : mine;
+  const sprintSet        = new Set(selectedSprints.map(s => s.Sprint_ID));
+  const allMineInSprint  = selectedSprints.length > 0
+    ? allMine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
+    : allMine;
+  const mineForScore     = selectedSprints.length > 0
+    ? mine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
+    : mine;
   const puntajePlaneado  = mineForScore.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
   const puntajeRealizado = mineForScore.filter(r => DONE_COLUMNS.has(r.columna))
     .reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
@@ -236,11 +251,11 @@ const mineForScore     = selectedSprints.length > 0
     'sin_categorizar','icebox','backlog','todo',
     'en_progreso','en_revision_qas','ready_to_deploy','hecho',
   ];
-const porColumna: ColStatReal[] = colOrder.map(col => ({
-  label: COL_META[col].label,
-  value: allMineInSprint.filter(r => r.columna === col).length, // ← allMineInSprint
-  color: COL_META[col].color,
-}));
+  const porColumna: ColStatReal[] = colOrder.map(col => ({
+    label: COL_META[col].label,
+    value: allMineInSprint.filter(r => r.columna === col).length,
+    color: COL_META[col].color,
+  }));
   const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
     label: p.label,
     value: mine.filter(r => r.prioridad === p.key).length,
@@ -276,12 +291,13 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
     return vals.length > 0 ? Math.min(...vals) : undefined;
   })();
 
-  const isActive = (r: Request) =>
-    minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
+  // Las columnas done SIEMPRE cuentan (bypass de minPos). Arregla históricos en "historial".
+  const isCountable = (r: Request) =>
+    DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
 
   /* ── Sin filtro de sprint → todos los activos ── */
   if (sprints.length === 0) {
-    const active           = requests.filter(isActive);
+    const active           = requests.filter(isCountable);
     const puntajePlaneado  = score(active);
     const puntajeRealizado = score(active.filter(r => DONE_COLUMNS.has(r.columna)));
     const meta             = Math.round(puntajePlaneado * 0.83334);
@@ -309,26 +325,26 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
   const sprintIdSet = new Set(sprints.map(s => s.Sprint_ID));
 
   const inSprint       = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sprintId));
-  const activeInSprint = inSprint.filter(isActive);
+  const activeInSprint = inSprint.filter(isCountable);
   const bloqueadas     = inSprint.filter(r => r.columna === 'icebox');
-// DESPUÉS
-const planeadas = activeInSprint.filter(r => {
-  const sp = sprintMap.get(r.sprintId!);
-  if (!sp || !sp.Sprint_Start_Date) return false; // histórico sin fecha → no clasifica como planeada
-  return r.fechaApertura.slice(0, 10) <= sp.Sprint_Start_Date.slice(0, 10);
-});
-const postPlan = activeInSprint.filter(r => {
-  const sp = sprintMap.get(r.sprintId!);
-  if (!sp || !sp.Sprint_Start_Date) return false; // histórico sin fecha → no clasifica como post-planning
-  return r.fechaApertura.slice(0, 10) > sp.Sprint_Start_Date.slice(0, 10);
-});
+
+  // Histórico sin fecha → no se puede distinguir planeada/post-planning, todas cuentan como planeadas.
+  const planeadas = activeInSprint.filter(r => {
+    const sp = sprintMap.get(r.sprintId!);
+    if (!sp || !sp.Sprint_Start_Date) return true;
+    return r.fechaApertura.slice(0, 10) <= sp.Sprint_Start_Date.slice(0, 10);
+  });
+  const postPlan = activeInSprint.filter(r => {
+    const sp = sprintMap.get(r.sprintId!);
+    if (!sp || !sp.Sprint_Start_Date) return false;
+    return r.fechaApertura.slice(0, 10) > sp.Sprint_Start_Date.slice(0, 10);
+  });
   const activas     = activeInSprint.filter(r => r.columna === 'en_progreso');
   const completadas = activeInSprint.filter(r =>
     r.columna === 'ready_to_deploy' || r.columna === 'hecho' || r.columna === 'historial'
   );
 
   /* planeadasMes/cerradasMes: mes del sprint más antiguo seleccionado */
-  // Solo sprints con fecha para calcular el mes de referencia
   const datedSprints = sprints.filter(s => s.Sprint_Start_Date);
   const earliest = datedSprints.length > 0
     ? datedSprints.reduce((a, b) => a.Sprint_Start_Date! < b.Sprint_Start_Date! ? a : b)
@@ -344,11 +360,10 @@ const postPlan = activeInSprint.filter(r => {
   const puntajePlaneado  = score(activeInSprint);
   const puntajeRealizado = score(completadas);
   const meta             = Math.round(puntajePlaneado * 0.83334);
-  // refSprintId = el sprint seleccionado más reciente
   const refSprintId      = sprints.length > 0
     ? [...sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
     : null;
-  const penalizacion     = calcPenalizacion(requests.filter(isActive), allSprints, refSprintId);
+  const penalizacion     = calcPenalizacion(requests.filter(isCountable), allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
   const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
@@ -360,9 +375,9 @@ const postPlan = activeInSprint.filter(r => {
     bloqueadas:   bloqueadas.length,
     postPlanning: postPlan.length,
     puntajePlaneado, puntajeRealizado, puntajePostPlanning: 0,
-    planeadasMes: requests.filter(r => isActive(r) && isSM(r.fechaApertura)).length,
+    planeadasMes: requests.filter(r => isCountable(r) && isSM(r.fechaApertura)).length,
     cerradasMes:  requests.filter(r =>
-      DONE_COLUMNS.has(r.columna) && isActive(r) && isSM(r.fechaCierre ?? r.fechaApertura)
+      DONE_COLUMNS.has(r.columna) && isCountable(r) && isSM(r.fechaCierre ?? r.fechaApertura)
     ).length,
     meta, penalizacion, puntajeReal, cumplimiento,
   };
@@ -407,7 +422,6 @@ export function useStatsData(
 
   const sprints: Sprint[] = sprintsQuery.data ?? [];
 
-// DESPUÉS
   const selectedSprints = useMemo(
     () => sprints.filter(s => selectedSprintIds.includes(s.Sprint_ID)),
     [sprints, selectedSprintIds],
@@ -433,7 +447,7 @@ export function useStatsData(
     [filteredRequests, teams, statsConfig],
   );
 
-const boards = useMemo(
+  const boards = useMemo(
     () => Object.fromEntries(teams.map(t => [t.Board_Team_Code, calcBoard(filteredRequests, t.Board_Team_Code, statsConfig, sprints, selectedSprints)])) as Record<string, BoardStatsReal>,
     [filteredRequests, teams, statsConfig, sprints, selectedSprints],
   );
