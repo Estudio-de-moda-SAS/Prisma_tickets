@@ -2,7 +2,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
-import { useBoardEquipo, useHistorialLoadMore } from '@/features/requests/hooks/useRequests';
+import { useSearchStore } from '@/store/searchStore';
+import { useBoardEquipo, useHistorialLoadMore, useSearchRequests } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -20,7 +21,7 @@ import { BoardCustomizationTrigger } from '@/features/requests/components/BoardC
 import { MemberHoursBar } from '@/features/requests/components/MemberHoursBar'
 import { useFilteredBoard } from '@/features/requests/hooks/useFilteredBoard';
 import { config } from '@/config';
-import type { KanbanColumna, Request } from '@/features/requests/types';
+import type { KanbanColumna, Request, BoardData } from '@/features/requests/types';
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField } from '@/features/requests/templates/types';
 import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
@@ -272,6 +273,40 @@ const {
   );
 
   const filteredData = useFilteredBoard(equipoActivo, dataWithHistorial);
+
+  /* ── Búsqueda global: materializa resultados que no están cargados
+     (p.ej. históricos fuera de la página actual) al tope de su columna,
+     solo mientras hay un query activo. Al limpiar, desaparecen. ── */
+  const searchQuery = useSearchStore((s) => s.query);
+  const { data: searchResults = [] } = useSearchRequests(equipoActivo, searchQuery);
+
+  const boardWithSearch = useMemo(() => {
+    if (!filteredData) return filteredData;
+    const q = searchQuery.trim();
+    if (!q || searchResults.length === 0) return filteredData;
+
+    // IDs ya presentes en cualquier columna del board
+    const presentIds = new Set<string>();
+    for (const col of Object.values(filteredData)) {
+      for (const r of col) presentIds.add(r.id);
+    }
+
+    // Agrupa los resultados faltantes por su columna real
+    const toInject = new Map<string, Request[]>();
+    for (const req of searchResults) {
+      if (presentIds.has(req.id) || !req.columna) continue;
+      if (!toInject.has(req.columna)) toInject.set(req.columna, []);
+      toInject.get(req.columna)!.push(req);
+    }
+
+    if (toInject.size === 0) return filteredData;
+
+    const next: BoardData = { ...filteredData };
+    for (const [col, reqs] of toInject) {
+      next[col] = [...reqs, ...(next[col] ?? [])];
+    }
+    return next;
+  }, [filteredData, searchResults, searchQuery]);
   /* La estructura del kanban (equipos + config de columnas) carga aparte de los
      requests. Mantenemos el skeleton hasta que esté lista para no pintar el board
      con columnas por defecto y que luego "salte" a la estructura administrada. */
@@ -329,9 +364,9 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
         </p>
       )}
 
-{filteredData && !structureLoading && (
+{boardWithSearch && !structureLoading && (
 <KanbanBoard
-          board={filteredData}
+          board={boardWithSearch}
           equipo={equipoActivo}
           columnConfig={columnConfig}
           onMove={handleMove}

@@ -7,7 +7,8 @@ import { attachCriteriaSummary } from '../shared/criteria.ts';
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { getRequestParticipants, isCloseColumn } from '../shared/requests.ts';
-
+// @ts-ignore
+import { sendEventEmail } from '../email/send.ts';
 const HISTORIAL_COLUMN_ID     = 9;
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
 
@@ -133,18 +134,22 @@ fetchByTeamCode: async (payload, { supabase }) => {
     if (insErr) throw new Error(insErr.message);
     const newId = (inserted as { Request_ID: string }).Request_ID;
 
+    // ── Detección de rol: se usa para sprint Y para el correo ─────────────
+    let isExternalRequester = false;
+    {
+      const { data: userRoleRow } = await supabase
+        .from('TBL_Users').select('User_Role').eq('User_ID', p.requestedBy).single();
+      const userRole = (userRoleRow as any)?.User_Role as string | undefined;
+      isExternalRequester = userRole !== 'admin' && userRole !== 'ti_member';
+    }
+
     // ── Auto-asignación de sprint para usuarios externos ──────────────────
     let resolvedSprintId: number | null = p.sprintId;
     let autoAssignedSprint: Record<string, unknown> | null = null;
 
     if (p.sprintId === null && p.equipoIds.length > 0) {
       try {
-        const { data: userRoleRow } = await supabase
-          .from('TBL_Users').select('User_Role').eq('User_ID', p.requestedBy).single();
-        const userRole   = (userRoleRow as any)?.User_Role as string | undefined;
-        const isExternal = userRole !== 'admin' && userRole !== 'ti_member';
-
-        if (isExternal) {
+        if (isExternalRequester) {
           const teamId = p.equipoIds[0];
           const nowIso = new Date().toISOString();
 
@@ -311,6 +316,57 @@ fetchByTeamCode: async (payload, { supabase }) => {
       .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
     if (error) throw new Error(error.message);
 
+    // ── Correo "solicitud recibida" — SOLO a solicitantes externos ────────
+    // Entre TI (admin / ti_member) no se manda: llenaría el correo sin sentido.
+    // Solo correo, sin notificación in-app (el solicitante ya sabe que la creó).
+    try {
+      if (!isExternalRequester) {
+        // interno → no se manda correo, se omite todo el bloque
+} else {
+        // Nombre del solicitante para el saludo (formato PRISMA: 1er nombre + 1er apellido)
+        const { data: reqUser } = await supabase
+          .from('TBL_Users').select('User_Name').eq('User_ID', p.requestedBy).single();
+        const fullName = (reqUser as any)?.User_Name ?? '';
+        const parts    = fullName.trim().split(/\s+/);
+        const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
+
+        const fmtFecha = (iso: string) => {
+        if (!iso) return '';
+        const clean = iso.includes('T') ? iso : `${iso}T00:00:00`;
+        return new Date(clean).toLocaleDateString('es-CO', {
+          timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
+        });
+      };
+
+      let sprintInfo: string;
+      if (autoAssignedSprint) {
+        const sp    = autoAssignedSprint as any;
+        const desde = fmtFecha(sp.Sprint_Start_Date ?? '');
+        const hasta = fmtFecha(sp.Sprint_End_Date ?? '');
+        const rango = (desde && hasta) ? ` (del ${desde} al ${hasta})` : '';
+        sprintInfo  = `Tu solicitud quedó programada para ${sp.Sprint_Text}${rango}.`;
+      } else {
+        sprintInfo = 'El equipo te notificará cuando tu solicitud quede programada en un sprint.';
+      }
+
+      await sendEventEmail(supabase, {
+        eventKey:  'ticket_recibido',
+        requestId: newId,
+        userIds:   [p.requestedBy],
+        vars: {
+          requester_name:     requesterName,
+          ticket_id:          newId,
+          ticket_title:       p.titulo ?? '',
+          ticket_description: p.descripcion ?? '',
+          ticket_url:         `${Deno.env.get('MAIL_APP_URL')}/ticket/${newId}`,
+          sprint_info:        sprintInfo,
+          sprint_name:        autoAssignedSprint ? String((autoAssignedSprint as any).Sprint_Text) : '',
+        },
+      });
+    }
+    } catch (_emailErr) { /* el correo nunca debe tumbar la creación */ }
+    // ── /Correo ───────────────────────────────────────────────────────────
+
     return autoAssignedSprint !== null
       ? { ...(data as object), _autoAssignedSprint: autoAssignedSprint }
       : data;
@@ -368,6 +424,57 @@ fetchByTeamCode: async (payload, { supabase }) => {
         requestId: id,
         actorId:   movedBy,
       });
+
+      // ── Correo "listo para revisión del cliente" ──────────────────────
+      // Solo al mover a Client Review (columna 10). Solo al solicitante.
+      // Condiciones: (a) solicitante externo, (b) solicitante NO es resolutor.
+      // La notificación in-app de arriba queda intacta; esto es SOLO correo adicional.
+console.log(`[cr-debug] movedBy=${movedBy} columnId=${columnId} (${typeof columnId}) requestedBy=${requestedBy}`);
+      if (Number(columnId) === 10 && requestedBy) {
+        console.log('[cr-debug] entró al if de columna 10');
+        try {
+          const { data: reqUser } = await supabase
+            .from('TBL_Users')
+            .select('User_Name, User_Role')
+            .eq('User_ID', requestedBy)
+            .single();
+
+          const isAlsoResolver = assigneeIds.includes(requestedBy);
+          console.log(`[cr-debug] isAlsoResolver=${isAlsoResolver} assignees=${JSON.stringify(assigneeIds)}`);
+
+          if (!isAlsoResolver) {
+            console.log('[cr-debug] pasó validación, va a mandar correo');
+            const fullName = (reqUser as any)?.User_Name ?? '';
+            const parts    = fullName.trim().split(/\s+/);
+            const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
+
+            const { data: reqRow } = await supabase
+              .from('TBL_Requests')
+              .select('Request_Title')
+              .eq('Request_ID', id)
+              .single();
+
+            await sendEventEmail(supabase, {
+              eventKey:  'moveToClientReview',
+              requestId: id,
+              userIds:   [requestedBy],
+              vars: {
+                requester_name: requesterName,
+                ticket_id:      id,
+                ticket_title:   (reqRow as any)?.Request_Title ?? '',
+                ticket_url:     `${Deno.env.get('MAIL_APP_URL')}/ticket/${id}`,
+              },
+            });
+            console.log('[cr-debug] sendEventEmail terminó');
+          } else {
+            console.log('[cr-debug] CORTÓ: solicitante es también resolutor');
+          }
+        } catch (emailErr) {
+          console.log('[cr-debug] ERROR en el bloque:', emailErr);
+        }
+      } else {
+        console.log('[cr-debug] CORTÓ: no entró al if (columnId !== 10 o requestedBy vacío)');
+      }      // ── /Correo ───────────────────────────────────────────────────────
     }
 
     // ── Ejecutar reglas columna_cambiada ──────────────────
