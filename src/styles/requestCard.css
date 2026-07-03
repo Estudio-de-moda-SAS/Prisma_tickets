@@ -8,9 +8,11 @@
   padding: 14px;
   cursor: grab;
   position: relative;
-  overflow: visible; /* visible para que el dot de actividad no se corte */
+  overflow: visible;
   transition: border-color 0.12s, transform 0.12s;
   user-select: none;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .request-card:hover {
@@ -68,6 +70,9 @@
   line-height: 1.45;
   margin-bottom: 8px;
   color: var(--txt);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .request-card__desc {
@@ -75,6 +80,9 @@
   color: var(--txt-muted);
   line-height: 1.5;
   margin-bottom: 10px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .request-card__progress {

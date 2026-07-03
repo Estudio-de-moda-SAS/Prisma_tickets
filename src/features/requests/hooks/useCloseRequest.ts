@@ -124,6 +124,7 @@ export function useCloseRequest(equipo: Equipo) {
     onSettled: () => {
       if (!config.USE_MOCK) {
         queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ queryKey: requestKeys.completoStats });
       }
     },
   });

@@ -1,7 +1,5 @@
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
-import { BASE_SELECT, BASE_SELECT_LIGHT } from '../shared/selects.ts';
-// @ts-ignore
 import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
@@ -9,6 +7,9 @@ import { insertNotifications } from '../shared/notifications.ts';
 import { getRequestParticipants, isCloseColumn } from '../shared/requests.ts';
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
+// @ts-ignore
+import { BASE_SELECT, BASE_SELECT_LIGHT, STATS_SELECT } from '../shared/selects.ts';
+
 const HISTORIAL_COLUMN_ID     = 9;
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
 
@@ -740,5 +741,29 @@ console.log(`[cr-debug] movedBy=${movedBy} columnId=${columnId} (${typeof column
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
-};
 
+fetchAllByBoardStats: async (payload, { supabase }) => {
+    const { boardId } = payload as { boardId: number };
+    const PAGE = 500;
+    let from = 0;
+    const all: Record<string, unknown>[] = [];
+    for (;;) {
+      const { data, error } = await supabase
+        .from('TBL_Requests').select(STATS_SELECT)
+        .eq('Request_Board_ID', boardId)
+        .order('Request_ID', { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.error('[stats] error en tanda from=' + from, error.message);
+        throw new Error(error.message);
+      }
+      const batch = (data ?? []) as Record<string, unknown>[];
+      console.log('[stats] tanda from=' + from + ' trajo ' + batch.length + ' filas');
+      all.push(...batch);
+      if (batch.length < PAGE) break;
+      from += PAGE;
+    }
+    console.log('[stats] TOTAL devuelto: ' + all.length);
+    return all;
+  },
+};

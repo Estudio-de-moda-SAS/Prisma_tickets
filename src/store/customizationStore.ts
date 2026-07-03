@@ -48,7 +48,10 @@ export type BoardCustomization = {
   priorityColors: PriorityColors; // mantenido para compat de tipo — usePriorityColor ya no lo lee
   groupBy:        GroupBy;
   sortBy:         SortBy;
-  hoursColumns?:  string[]; // slugs que suman horas en MemberHoursBar (undefined → default)
+hoursColumns?:          string[]; // slugs que suman horas en MemberHoursBar (undefined → default)
+  estimatedHoursColumns?: string[]; // slugs con ⏱ estimadas en el header de columna
+consumedHoursColumns?:  string[]; // slugs con 🔥 consumidas en el header de columna
+  collapsedColumns?:      string[]; // slugs colapsados (barra vertical estilo Airtable)  
 };
 
 /* ============================================================
@@ -63,31 +66,41 @@ export const PRIORITY_DEFAULTS: PriorityColors = {
 /** Columnas que suman horas por defecto cuando un board no tiene config propia */
 export const HOURS_COLUMNS_DEFAULT: string[] = ['todo', 'en_progreso'];
 
+/** Columnas con contador ⏱ de horas estimadas en el header (default = estado actual) */
+export const ESTIMATED_HOURS_COLUMNS_DEFAULT: string[] = ['todo', 'en_progreso'];
+
+/** Columnas con contador 🔥 de horas consumidas en el header (default = estado actual) */
+export const CONSUMED_HOURS_COLUMNS_DEFAULT: string[] = ['en_progreso'];
+
+/** Columnas colapsadas por defecto (ninguna) */
+export const COLLAPSED_COLUMNS_DEFAULT: string[] = [];
+
 export const COLUMN_DEFAULTS: Record<KanbanColumna, ColumnCustomization> = {
-  sin_categorizar: { headerColor: '#5a6a8a', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 240 },
-  icebox:          { headerColor: '#60a5fa', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 280 },
-  backlog:         { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 280 },
-  todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 280 },
-  en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 280 },
-  en_revision_qas: { headerColor: '#fb7121', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 280 },
-  cliente_review:  { headerColor: '#34d399', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 280 },
-  ready_to_deploy: { headerColor: '#ec4899', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 280 },
-  hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 280 },
-  historial:       { headerColor: '#6b7280', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
+  sin_categorizar: { headerColor: '#5a6a8a', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 400 },
+  icebox:          { headerColor: '#60a5fa', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 400 },
+  backlog:         { headerColor: '#a78bfa', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 400 },
+  todo:            { headerColor: '#ffa502', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 400 },
+  en_progreso:     { headerColor: '#00c8ff', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 400 },
+  en_revision_qas: { headerColor: '#fb7121', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 400 },
+  cliente_review:  { headerColor: '#34d399', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 400 },
+  ready_to_deploy: { headerColor: '#ec4899', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 400 },
+  hecho:           { headerColor: '#00e5a0', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 400 },
+  historial:       { headerColor: '#6b7280', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 400 },
 };
 
 export const COLUMN_DEFAULTSBLACK: Record<KanbanColumna, ColumnCustomization> = {
-  sin_categorizar: { headerColor: '#000000', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 240 },
-  icebox:          { headerColor: '#000000', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 280 },
-  backlog:         { headerColor: '#000000', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 280 },
-  todo:            { headerColor: '#000000', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 280 },
-  en_progreso:     { headerColor: '#000000', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 280 },
-  en_revision_qas: { headerColor: '#000000', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 280 },
-  cliente_review:  { headerColor: '#000000', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 280 },
-  ready_to_deploy: { headerColor: '#000000', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 280 },
-  hecho:           { headerColor: '#000000', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 280 },
-  historial:       { headerColor: '#000000', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 280 },
+  sin_categorizar: { headerColor: '#000000', accent: 'rgba(90,106,138,0.3)',    emoji: '', hidden: false, width: 300 },
+  icebox:          { headerColor: '#000000', accent: 'rgba(96,165,250,0.15)',   emoji: '', hidden: false, width: 300 },
+  backlog:         { headerColor: '#000000', accent: 'rgba(167,139,250,0.15)',  emoji: '', hidden: false, width: 400 },
+  todo:            { headerColor: '#000000', accent: 'rgba(255,165,2,0.15)',    emoji: '', hidden: false, width: 400 },
+  en_progreso:     { headerColor: '#000000', accent: 'rgba(0,200,255,0.15)',    emoji: '', hidden: false, width: 400 },
+  en_revision_qas: { headerColor: '#000000', accent: 'rgba(251,113,33,0.15)',   emoji: '', hidden: false, width: 400 },
+  cliente_review:  { headerColor: '#000000', accent: 'rgba(52,211,153,0.15)',   emoji: '', hidden: false, width: 400 },
+  ready_to_deploy: { headerColor: '#000000', accent: 'rgba(236,72,153,0.15)',   emoji: '', hidden: false, width: 400 },
+  hecho:           { headerColor: '#000000', accent: 'rgba(0,229,160,0.15)',    emoji: '', hidden: false, width: 400 },
+  historial:       { headerColor: '#000000', accent: 'rgba(107,114,128,0.15)',  emoji: '', hidden: false, width: 400 },
 };
+
 
 export const CARD_DEFAULTS: CardCustomization = {
   density:       'normal',
@@ -282,6 +295,18 @@ type CustomizationState = {
   getHoursColumns:   (boardId: string, availableSlugs: string[]) => string[];
   toggleHoursColumn: (boardId: string, slug: string) => void;
   resetHoursColumns: (boardId: string) => void;
+
+  /* ── Contadores de horas en el header de columna ── */
+  getEstimatedHoursColumns:   (boardId: string, availableSlugs: string[]) => string[];
+  toggleEstimatedHoursColumn: (boardId: string, slug: string) => void;
+  resetEstimatedHoursColumns: (boardId: string) => void;
+  getConsumedHoursColumns:    (boardId: string, availableSlugs: string[]) => string[];
+  toggleConsumedHoursColumn:  (boardId: string, slug: string) => void;
+  resetConsumedHoursColumns:  (boardId: string) => void;
+  /* ── Columnas colapsadas ── */
+  getCollapsedColumns:   (boardId: string, availableSlugs: string[]) => string[];
+  toggleCollapsedColumn: (boardId: string, slug: string) => void;
+  resetCollapsedColumns: (boardId: string) => void;
 };
 
 export const useCustomizationStore = create<CustomizationState>()(
@@ -356,6 +381,67 @@ export const useCustomizationStore = create<CustomizationState>()(
           })),
         })),
 
+      /* ── Contador ⏱ estimadas en header ── */
+      getEstimatedHoursColumns: (boardId, availableSlugs) => {
+        const raw  = get().byBoard[boardId]?.estimatedHoursColumns;
+        const base = raw ?? ESTIMATED_HOURS_COLUMNS_DEFAULT;
+        return base.filter((slug) => availableSlugs.includes(slug));
+      },
+      toggleEstimatedHoursColumn: (boardId, slug) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, (prev) => {
+            const current = prev.estimatedHoursColumns ?? [...ESTIMATED_HOURS_COLUMNS_DEFAULT];
+            const next = current.includes(slug)
+              ? current.filter((x) => x !== slug)
+              : [...current, slug];
+            return { estimatedHoursColumns: next };
+          }),
+        })),
+      resetEstimatedHoursColumns: (boardId) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, () => ({ estimatedHoursColumns: undefined })),
+        })),
+
+      /* ── Contador 🔥 consumidas en header ── */
+      getConsumedHoursColumns: (boardId, availableSlugs) => {
+        const raw  = get().byBoard[boardId]?.consumedHoursColumns;
+        const base = raw ?? CONSUMED_HOURS_COLUMNS_DEFAULT;
+        return base.filter((slug) => availableSlugs.includes(slug));
+      },
+      toggleConsumedHoursColumn: (boardId, slug) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, (prev) => {
+            const current = prev.consumedHoursColumns ?? [...CONSUMED_HOURS_COLUMNS_DEFAULT];
+            const next = current.includes(slug)
+              ? current.filter((x) => x !== slug)
+              : [...current, slug];
+            return { consumedHoursColumns: next };
+          }),
+        })),
+      resetConsumedHoursColumns: (boardId) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, () => ({ consumedHoursColumns: undefined })),
+        })),
+/* ── Columnas colapsadas ── */
+      getCollapsedColumns: (boardId, availableSlugs) => {
+        const raw  = get().byBoard[boardId]?.collapsedColumns;
+        const base = raw ?? COLLAPSED_COLUMNS_DEFAULT;
+        return base.filter((slug) => availableSlugs.includes(slug));
+      },
+      toggleCollapsedColumn: (boardId, slug) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, (prev) => {
+            const current = prev.collapsedColumns ?? [...COLLAPSED_COLUMNS_DEFAULT];
+            const next = current.includes(slug)
+              ? current.filter((x) => x !== slug)
+              : [...current, slug];
+            return { collapsedColumns: next };
+          }),
+        })),
+      resetCollapsedColumns: (boardId) =>
+        set((s) => ({
+          byBoard: patchBoard(s.byBoard, boardId, () => ({ collapsedColumns: undefined })),
+        })),
       resetColumn: (boardId, col) =>
         set((s) => ({
           byBoard: patchBoard(s.byBoard, boardId, (prev) => {

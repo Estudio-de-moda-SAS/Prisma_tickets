@@ -16,6 +16,7 @@ export const requestKeys = {
   all:            ALL,
   byEquipo:       (equipo: Equipo) => [...ALL, 'equipo', equipo] as const,
   sinCategorizar: [...ALL, 'sin_categorizar']                    as const,
+  completoStats:  [...ALL, 'completo-stats']                     as const,
 };
 
 /* ============================================================
@@ -118,7 +119,26 @@ export function useBoardCompleto() {
     retry:                config.USE_MOCK ? false : 1,
   });
 }
+/* ============================================================
+   Hook — board completo para ESTADÍSTICAS (dataset completo, liviano)
+   No poliea agresivamente; Stats no necesita realtime de 15s.
+   ============================================================ */
+export function useBoardCompletoStats() {
+  const { Requests } = useGraphServices();
 
+  return useQuery<BoardData>({
+    queryKey: requestKeys.completoStats,
+    queryFn:  config.USE_MOCK
+      ? () => Promise.resolve(getMockBoardFull())
+      : () => Requests.fetchAllByBoardStats().then(groupRequestsByColumn),
+
+    staleTime:            config.USE_MOCK ? Infinity : 30_000,
+    refetchOnMount:       'always',
+    refetchOnWindowFocus: false,
+    refetchInterval:      false,
+    retry:                config.USE_MOCK ? false : 1,
+  });
+}
 /* ============================================================
    Hook — bandeja de entrada (sin categorizar)
    ============================================================ */

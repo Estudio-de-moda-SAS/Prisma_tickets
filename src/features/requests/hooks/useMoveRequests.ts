@@ -85,6 +85,7 @@ next[payload.columna] = [
 
 onSettled: () => {
   queryClient.invalidateQueries({ queryKey });
+  queryClient.invalidateQueries({ queryKey: requestKeys.completoStats });
 },
   });
 }

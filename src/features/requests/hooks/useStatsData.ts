@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { useMemo } from 'react';
-import { useBoardCompleto }    from '@/features/requests/hooks/useRequests';
+import { useBoardCompletoStats } from '@/features/requests/hooks/useRequests';
 import { useSprints }          from '@/features/requests/hooks/useSprints';
 import { PRIORIDAD_TO_SCORE } from '@/features/requests/types';import type { Request, KanbanColumna, RequestAssignee } from '@/features/requests/types';
 import type { BoardTeam }      from '@/features/requests/hooks/useBoardMetadata';
@@ -369,7 +369,10 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
   const refSprintId      = sprints.length > 0
     ? [...sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
     : null;
-  const penalizacion     = calcPenalizacion(requests.filter(isCountable), allSprints, refSprintId);
+  // Opción A: la penalización se acota a las solicitudes del/los sprint(s)
+  // seleccionado(s), no a todo el board. Así un sprint sin solicitudes propias
+  // no arrastra deuda de otros sprints (elimina el −132 fantasma en sprints vacíos).
+  const penalizacion     = calcPenalizacion(activeInSprint, allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
   const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
@@ -418,7 +421,7 @@ export function useStatsData(
   teamCodeFilter:   string | null  = null,
   statsConfig?:     StatsConfig,
 ): StatsData {
-  const boardQuery   = useBoardCompleto();
+  const boardQuery   = useBoardCompletoStats();
   const sprintsQuery = useSprints();
 
   const allRequests: Request[] = useMemo(() => {
