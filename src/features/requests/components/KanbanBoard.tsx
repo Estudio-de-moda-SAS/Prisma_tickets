@@ -343,6 +343,7 @@ const { data: historialCount } = useHistorialCount(equipo);
             <KanbanColumn
               key={col}
               id={col}
+              boardId={equipo}
               titulo={columnLabels[col] ?? col}
               color={columnColors[col]}
               titleColor={columnTitleColors[col]}

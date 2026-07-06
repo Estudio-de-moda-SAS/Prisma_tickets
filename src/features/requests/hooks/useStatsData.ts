@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { useMemo } from 'react';
-import { useBoardCompleto }    from '@/features/requests/hooks/useRequests';
+import { useBoardCompletoStats } from '@/features/requests/hooks/useRequests';
 import { useSprints }          from '@/features/requests/hooks/useSprints';
 import { PRIORIDAD_TO_SCORE } from '@/features/requests/types';import type { Request, KanbanColumna, RequestAssignee } from '@/features/requests/types';
 import type { BoardTeam }      from '@/features/requests/hooks/useBoardMetadata';
@@ -191,7 +191,7 @@ function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: Stat
       }))
     : requests;
 
-  const total      = activeRequests.length;
+const total = activeRequests.length;
   const resueltas  = activeRequests.filter(r => DONE_COLUMNS.has(r.columna)).length;
   const tasaGlobal = total > 0 ? Math.round((resueltas / total) * 100) : 0;
 
@@ -226,20 +226,26 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
   const allMine = requests.filter(r => r.equipo.includes(equipo)); // sin filtro de posición
   const mine    = requests.filter(r => r.equipo.includes(equipo) && countable(r));
 
-  const done     = mine.filter(r => DONE_COLUMNS.has(r.columna));
-  const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
+  // ── Filtro de sprint por equipo ────────────────────────────
+  // Si hay uno o más sprints seleccionados, TODO el detalle del equipo
+  // (solicitudes, resueltas, críticas, prioridades, resolutores y puntaje)
+  // se limita a ese/esos sprint(s) — incluidos los históricos, cuyas
+  // solicitudes migradas viven en la columna "historial" pero conservan
+  // su Sprint_ID. Sin sprint seleccionado → acumulado total del equipo.
+  const sprintSet   = new Set(selectedSprints.map(s => s.Sprint_ID));
+  const inSelSprint = (r: Request) =>
+    selectedSprints.length === 0 || (r.sprintId != null && sprintSet.has(r.sprintId));
+
+  const allMineInSprint = allMine.filter(inSelSprint);
+  const mineScoped      = mine.filter(inSelSprint);
+
+  const done     = mineScoped.filter(r => DONE_COLUMNS.has(r.columna));
+  const criticas = mineScoped.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
 
   // ── Métricas de sprint por equipo ──────────────────────────
-  const sprintSet        = new Set(selectedSprints.map(s => s.Sprint_ID));
-  const allMineInSprint  = selectedSprints.length > 0
-    ? allMine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
-    : allMine;
-  const mineForScore     = selectedSprints.length > 0
-    ? mine.filter(r => r.sprintId != null && sprintSet.has(r.sprintId!))
-    : mine;
-  const puntajePlaneado  = mineForScore.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
-  const puntajeRealizado = mineForScore.filter(r => DONE_COLUMNS.has(r.columna))
-    .reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  const puntajePlaneado  = mineScoped.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  const puntajeRealizado = done.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+
   const meta             = Math.round(puntajePlaneado * 0.83334);
   const refSprintId      = selectedSprints.length > 0
     ? [...selectedSprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
@@ -256,9 +262,9 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
     value: allMineInSprint.filter(r => r.columna === col).length,
     color: COL_META[col].color,
   }));
-  const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
+const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
     label: p.label,
-    value: mine.filter(r => r.prioridad === p.key).length,
+    value: mineScoped.filter(r => r.prioridad === p.key).length,
     color: p.color,
   }));
 
@@ -277,7 +283,7 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
       avatarBg: AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
     }));
 
-  return { equipo, creadas: mine.length, resueltas: done.length, criticas, meta, penalizacion, puntajeReal, cumplimiento, porColumna, porPrioridad, resolutores };
+  return { equipo, creadas: mineScoped.length, resueltas: done.length, criticas, meta, penalizacion, puntajeReal, cumplimiento, porColumna, porPrioridad, resolutores };
 }
 
 /* ─── calcSprint ──────────────────────────────────────────── */
@@ -363,7 +369,10 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
   const refSprintId      = sprints.length > 0
     ? [...sprints].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0].Sprint_ID
     : null;
-  const penalizacion     = calcPenalizacion(requests.filter(isCountable), allSprints, refSprintId);
+  // Opción A: la penalización se acota a las solicitudes del/los sprint(s)
+  // seleccionado(s), no a todo el board. Así un sprint sin solicitudes propias
+  // no arrastra deuda de otros sprints (elimina el −132 fantasma en sprints vacíos).
+  const penalizacion     = calcPenalizacion(activeInSprint, allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
   const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
@@ -412,7 +421,7 @@ export function useStatsData(
   teamCodeFilter:   string | null  = null,
   statsConfig?:     StatsConfig,
 ): StatsData {
-  const boardQuery   = useBoardCompleto();
+  const boardQuery   = useBoardCompletoStats();
   const sprintsQuery = useSprints();
 
   const allRequests: Request[] = useMemo(() => {

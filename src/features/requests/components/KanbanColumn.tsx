@@ -10,18 +10,19 @@ import { useRef, useEffect } from 'react';
 
 type Props = {
   id:                  string;
+  boardId:             string;
   titulo:              string;
   color?:              string;
   titleColor?:         string;
   requests:            Request[];
-totalCount?:         number;
+  totalCount?:         number;
   isOver:              boolean;
   onCardClick:         (card: Request) => void;
   onAddClick:          (columna: string) => void;
   unreadByRequestId?:  Map<string, Notification[]>;
   onLoadMore?:         () => void;
   hasMore?:            boolean;
-  isLoadingMore?:      boolean;  
+  isLoadingMore?:      boolean;
 };
 
 const COL_CLASS: Record<KanbanColumna, string> = {
@@ -46,11 +47,23 @@ function formatHours(totalHours: number): string {
   return `${m}m`;
 }
 
-export function KanbanColumn({ id, titulo, color, titleColor, requests, totalCount, isOver, onCardClick, onAddClick, unreadByRequestId, onLoadMore, hasMore, isLoadingMore }: Props) {
-const { setNodeRef } = useDroppable({ id });
+export function KanbanColumn({ id, boardId, titulo, color, titleColor, requests, totalCount, isOver, onCardClick, onAddClick, unreadByRequestId, onLoadMore, hasMore, isLoadingMore }: Props) {
+  const {
+    getCustomization,
+    getEstimatedHoursColumns,
+    getConsumedHoursColumns,
+    getCollapsedColumns,
+    toggleCollapsedColumn,
+  } = useCustomizationStore();
+
+  const isCollapsed = getCollapsedColumns(boardId, [id]).includes(id);
+
+  // Droppable deshabilitado cuando la columna está colapsada (no es drop target)
+  const { setNodeRef } = useDroppable({ id, disabled: isCollapsed });
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!onLoadMore || !hasMore) return;
+    if (!onLoadMore || !hasMore || isCollapsed) return;
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
@@ -61,11 +74,11 @@ const { setNodeRef } = useDroppable({ id });
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [onLoadMore, hasMore, isLoadingMore]);  
-  const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
-  const { getCustomization } = useCustomizationStore();
+  }, [onLoadMore, hasMore, isLoadingMore, isCollapsed]);
 
-  const showBg = getCustomization(id).showBoardBg;
+  const { containerStyle, titleStyle, emoji } = useColumnStyle(id);
+
+  const showBg = getCustomization(boardId).showBoardBg;
   const colStyle: React.CSSProperties = {
     ...containerStyle,
     // Color dinámico desde TBL_Board_Columns — overrides el color hardcodeado del CSS
@@ -79,23 +92,64 @@ const { setNodeRef } = useDroppable({ id });
     ...titleStyle,
     ...(titleColor ? { color: titleColor } : (color ? { color } : {})),
   };
-  // Contador de horas estimadas — solo para la columna "To do"
-const totalHours    = (id === 'todo' || id === 'en_progreso')
-  ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
-  : 0;
-const consumedHours = id === 'en_progreso'
-  ? requests.reduce((acc, r) => acc + (r.loggedHours ?? 0), 0)
-  : 0;
-  if (id === 'en_progreso') {
-}
-const showHours     = (id === 'todo' || id === 'en_progreso') && totalHours > 0;
-const isEnProgreso  = id === 'en_progreso';
+
+  /* ── Contadores de horas en el header — configurables por columna ── */
+  const showEstimated = getEstimatedHoursColumns(boardId, [id]).includes(id);
+  const showConsumed  = getConsumedHoursColumns(boardId, [id]).includes(id);
+
+  const totalHours = showEstimated
+    ? requests.reduce((acc, r) => acc + (r.estimatedHours ?? 0), 0)
+    : 0;
+  const consumedHours = showConsumed
+    ? requests.reduce((acc, r) => acc + (r.loggedHours ?? 0), 0)
+    : 0;
+
+  /* ══════════════════════════════════════════════
+     Render colapsado — barra vertical estilo Airtable
+     ══════════════════════════════════════════════ */
+  if (isCollapsed) {
+    return (
+      <div
+        ref={setNodeRef}
+        className={[
+          'kanban__col',
+          'kanban__col--collapsed',
+          COL_CLASS[id as KanbanColumna],
+        ].join(' ')}
+        style={colStyle}
+        onClick={() => toggleCollapsedColumn(boardId, id)}
+        title={`Expandir ${titulo}`}
+      >
+        <div className="kanban__col-collapsed-inner">
+          <span
+            className="kanban__col-expand-btn"
+            aria-label={`Expandir ${titulo}`}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+          <span className="kanban__col-collapsed-title" style={effectiveTitleStyle}>
+            {emoji && <span style={{ marginBottom: 4 }}>{emoji}</span>}
+            {titulo}
+          </span>
+          <span className="kanban__col-collapsed-count">
+            {totalCount != null ? totalCount : requests.length}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══════════════════════════════════════════════
+     Render normal
+     ══════════════════════════════════════════════ */
   return (
     <div
       ref={setNodeRef}
       className={[
         'kanban__col',
-        COL_CLASS[id],
+        COL_CLASS[id as KanbanColumna],
         isOver ? 'kanban__col--over' : '',
       ].join(' ')}
       style={{
@@ -109,7 +163,6 @@ const isEnProgreso  = id === 'en_progreso';
       <div className="kanban__col-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
           <span className="kanban__col-title" style={effectiveTitleStyle}>
-
             {emoji && (
               <span style={{ marginRight: 5, fontSize: 12 }}>{emoji}</span>
             )}
@@ -119,84 +172,119 @@ const isEnProgreso  = id === 'en_progreso';
             {requests.length}{totalCount != null ? ` / ${totalCount}` : ''}
           </span>
 
-          {/* Contador de horas estimadas — solo en To do */}
-{showHours && (
-  <>
-    {/* Horas estimadas totales */}
-    <span
-      title="Suma de horas estimadas (responde a filtros activos)"
-      style={{
-        fontSize: 10,
-        fontWeight: 600,
-        color: 'var(--txt-muted)',
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 4,
-        padding: '1px 6px',
-        letterSpacing: 0.2,
-        whiteSpace: 'nowrap',
-        flexShrink: 0,
-      }}
-    >
-      ⏱ {formatHours(totalHours)}
-    </span>
+          {/* Horas estimadas totales — ⏱ */}
+          {showEstimated && totalHours > 0 && (
+            <span
+              title="Suma de horas estimadas (responde a filtros activos)"
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'var(--txt-muted)',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 4,
+                padding: '1px 6px',
+                letterSpacing: 0.2,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              ⏱ {formatHours(totalHours)}
+            </span>
+          )}
 
-    {/* Horas consumidas — solo en En Progreso */}
-    {isEnProgreso && consumedHours > 0 && (
-      <span
-        title="Horas ya consumidas según el progreso reportado de cada card"
-        style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: 'var(--danger)',
-          background: 'rgba(255,71,87,0.08)',
-          border: '1px solid rgba(255,71,87,0.30)',
-          borderRadius: 4,
-          padding: '1px 6px',
-          letterSpacing: 0.2,
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-        }}
-      >
-        🔥 {formatHours(consumedHours)}
-      </span>
-    )}
-  </>
-)}
+          {/* Horas consumidas — 🔥 */}
+          {showConsumed && consumedHours > 0 && (
+            <span
+              title="Horas ya consumidas según el progreso reportado de cada card"
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'var(--danger)',
+                background: 'rgba(255,71,87,0.08)',
+                border: '1px solid rgba(255,71,87,0.30)',
+                borderRadius: 4,
+                padding: '1px 6px',
+                letterSpacing: 0.2,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              🔥 {formatHours(consumedHours)}
+            </span>
+          )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => onAddClick(id)}
-          aria-label={`Agregar actividad en ${titulo}`}
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
-            border: '1px solid var(--border-subtle)',
-            background: 'transparent',
-            color: 'var(--txt-muted)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 16,
-            lineHeight: 1,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent)';
-            e.currentTarget.style.color = 'var(--accent)';
-            e.currentTarget.style.background = 'rgba(0,200,255,0.06)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            e.currentTarget.style.color = 'var(--txt-muted)';
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          +
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          {/* Colapsar columna */}
+          <button
+            type="button"
+            onClick={() => toggleCollapsedColumn(boardId, id)}
+            aria-label={`Colapsar ${titulo}`}
+            title={`Colapsar ${titulo}`}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              border: '1px solid var(--border-subtle)',
+              background: 'transparent',
+              color: 'var(--txt-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.background = 'rgba(0,200,255,0.06)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              e.currentTarget.style.color = 'var(--txt-muted)';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {/* Agregar actividad */}
+          <button
+            type="button"
+            onClick={() => onAddClick(id)}
+            aria-label={`Agregar actividad en ${titulo}`}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              border: '1px solid var(--border-subtle)',
+              background: 'transparent',
+              color: 'var(--txt-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 16,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.background = 'rgba(0,200,255,0.06)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              e.currentTarget.style.color = 'var(--txt-muted)';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {id === 'sin_categorizar' && (
@@ -218,7 +306,7 @@ const isEnProgreso  = id === 'en_progreso';
           ))}
         </SortableContext>
 
-{requests.length === 0 && (
+        {requests.length === 0 && (
           <div className="kanban__col-empty">
             <span>Sin solicitudes</span>
           </div>

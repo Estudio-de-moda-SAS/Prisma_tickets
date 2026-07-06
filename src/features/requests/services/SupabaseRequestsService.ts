@@ -266,7 +266,10 @@ export class SupabaseRequestsService {
     const rows = await apiClient.call<RawRequestRow[]>('fetchAllByBoard', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
-
+async fetchAllByBoardStats(): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchAllByBoardStats', { boardId: this.boardId });
+    return rows.map(mapRowToRequest);
+  }
   async fetchByTeamCode(teamCode: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchByTeamCode', { boardId: this.boardId, teamCode });
     return rows.map(mapRowToRequest);
