@@ -548,7 +548,7 @@
   right: 24px;
   z-index: 9999;
   width: 272px;
-  background: var(--bg-surface);
+  background: white;
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-lg);
   box-shadow:

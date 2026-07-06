@@ -399,6 +399,9 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void }) {
+  const selectedTeam = teams.find((t) => t.Board_Team_ID === selectedTeamId) ?? null;
+  const {  border: selBorder } = selectedTeam ? teamColors(selectedTeam.Board_Team_Color) : {  border: 'var(--accent)' };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
@@ -444,7 +447,25 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
           );
         })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+      <div style={{
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 20,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        marginTop: 24,
+        marginLeft: -50,
+        marginRight: -50,
+        marginBottom: -32,
+        padding: '14px 50px',
+        background: 'var(--bg-panel)',
+        borderTop: `1px solid ${selectedTeamId !== null ? selBorder : 'transparent'}`,
+        opacity: selectedTeamId !== null ? 1 : 0,
+        transform: selectedTeamId !== null ? 'translateY(0)' : 'translateY(10px)',
+        pointerEvents: selectedTeamId !== null ? 'auto' : 'none',
+        transition: 'opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease',
+      }}>
         <button type="button" onClick={onNext} disabled={selectedTeamId === null} style={{ padding: '10px 28px', borderRadius: 6, border: 'none', background: selectedTeamId !== null ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: selectedTeamId !== null ? 'white' : 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: selectedTeamId !== null ? 'pointer' : 'not-allowed' }}>Continuar →</button>
       </div>
     </div>

@@ -160,3 +160,31 @@ export const BASE_SELECT_LIGHT = `
     closer:TBL_Users!Closed_By ( User_ID, User_Name )
   )
 `.trim();
+
+export const STATS_SELECT = `
+  Request_ID,
+  Request_Board_Column_ID,
+  Request_Score,
+  Request_Created_At,
+  Request_Finished_At,
+  column:TBL_Board_Columns!Request_Board_Column_ID (
+    Board_Column_Name, Board_Column_Slug
+  ),
+  assignments:TBL_Requests_Assignments (
+    Request_Assignment_At,
+    assignee:TBL_Users!Request_Assignment_User_ID (
+      User_ID, User_Name
+    )
+  ),
+  teams:TBL_Request_Team (
+    team:TBL_Board_Teams!Request_Team_ID (
+      Board_Team_ID, Board_Team_Code
+    )
+  ),
+  sprints:TBL_Request_Sprint (
+    Request_Sprint_ID,
+    sprint:TBL_Sprint!Request_Sprint_ID (
+      Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date
+    )
+  )
+`.trim();

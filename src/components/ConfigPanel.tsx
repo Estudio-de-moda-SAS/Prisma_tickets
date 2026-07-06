@@ -48,18 +48,22 @@ const TEAM_CODE_COLORS: Record<string, string> = {
 
 type Section = 'labels' | 'subteams' | 'sprints' | 'templates' | 'users' | 'emails' | 'org' | 'kanbans' | 'announcements' | 'exports';
 
-const NAV_ITEMS: { key: Section; label: string; icon: string }[] = [
-  { key: 'labels',    label: 'Etiquetas',   icon: '🏷️' },
-  { key: 'subteams',  label: 'Sub-equipos', icon: '👥' },
-  { key: 'sprints',   label: 'Sprints',     icon: '⚡' },
-  { key: 'kanbans',   label: 'Kanbans',     icon: '🗂️' },
-  { key: 'templates', label: 'Plantillas',   icon: '📋' },  { key: 'users',     label: 'Usuarios',    icon: '👤' },
-  { key: 'emails',    label: 'Correos',     icon: '✉️' },
-  { key: 'announcements', label: 'Avisos', icon: '📢' },
-  { key: 'exports',   label: 'Exportar',    icon: '📤' },
-  { key: 'org',       label: 'Organización',  icon: '🏢' }, 
+const NAV_ITEMS: { key: Section; label: string; icon: string; description: string }[] = [
+  { key: 'labels',    label: 'Etiquetas',   icon: '🏷️', description: 'Crea y edita las etiquetas de color para clasificar tickets dentro del equipo seleccionado.' },
+  { key: 'subteams',  label: 'Sub-equipos', icon: '👥', description: 'Organiza los integrantes del equipo en sub-equipos para asignación y reportes.' },
+  { key: 'sprints',   label: 'Sprints',     icon: '⚡', description: 'Define los sprints activos e históricos usados para planificación y estadísticas.' },
+  { key: 'kanbans',   label: 'Kanbans',     icon: '🗂️', description: 'Configura los equipos del board, sus columnas y reglas de evidencia.' },
+  { key: 'templates', label: 'Plantillas',   icon: '📋', description: 'Diseña los formularios que ven los usuarios al crear una solicitud.' },
+  { key: 'users',     label: 'Usuarios',    icon: '👤', description: 'Gestiona roles, departamentos y permisos de cada usuario del sistema.' },
+  { key: 'emails',    label: 'Correos',     icon: '✉️', description: 'Edita las plantillas HTML que se envían automáticamente en cada evento.' },
+  { key: 'announcements', label: 'Avisos', icon: '📢', description: 'Publica avisos visibles para todos los usuarios de la plataforma.' },
+  { key: 'exports',   label: 'Exportar',    icon: '📤', description: 'Genera y descarga reportes en Excel o CSV con los tickets del board.' },
+  { key: 'org',       label: 'Organización',  icon: '🏢', description: 'Administra los departamentos y equipos corporativos de la empresa.' },
 ];
-/* ============================================================
+
+function getNavDescription(key: Section): string {
+  return NAV_ITEMS.find((n) => n.key === key)?.description ?? '';
+}/* ============================================================
    NavTeamSwitcher
    ============================================================ */function NavTeamSwitcher({ teams, equipoActivo, onSelect }: {
   teams:        BoardTeam[];
@@ -238,51 +242,69 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
 
             <div className="cpanel__nav-group">
               <span className="cpanel__nav-group-label">Board</span>
-{NAV_ITEMS.filter((n) => n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails' && n.key !== 'org' && n.key !== 'announcements').map((item) => (                <button key={item.key} onClick={() => setSection(item.key)}
-                  className={`cpanel__nav-item${section === item.key ? ' cpanel__nav-item--active' : ''}`}>
-                  <span className="cpanel__nav-item-icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                  {item.key === 'labels'   && <span className="cpanel__nav-badge">{labels.length}</span>}
-                  {item.key === 'subteams' && <span className="cpanel__nav-badge">{subTeams.length}</span>}
-{item.key === 'sprints'  && <span className="cpanel__nav-badge">{sprints.length}</span>}
-                  {item.key === 'kanbans'  && <span className="cpanel__nav-badge">{teams.length}</span>}
-                  </button>
-              ))}
+              {NAV_ITEMS.filter((n) =>
+                n.key !== 'templates' && n.key !== 'users' && n.key !== 'emails' &&
+                n.key !== 'org' && n.key !== 'announcements' && n.key !== 'exports'
+              ).map((item) => {
+                const badge =
+                  item.key === 'labels'   ? labels.length :
+                  item.key === 'subteams' ? subTeams.length :
+                  item.key === 'sprints'  ? sprints.length :
+                  item.key === 'kanbans'  ? teams.length :
+                  undefined;
+                return (
+                  <NavButton
+                    key={item.key}
+                    icon={item.icon}
+                    label={item.label}
+                    description={item.description}
+                    badge={badge}
+                    active={section === item.key}
+                    onClick={() => setSection(item.key)}
+                  />
+                );
+              })}
             </div>
 
             <div className="cpanel__nav-group cpanel__nav-group--separated">
               <span className="cpanel__nav-group-label">Sistema</span>
-              <button onClick={() => setSection('templates')}
-                className={`cpanel__nav-item${section === 'templates' ? ' cpanel__nav-item--active' : ''}`}>
-                <span className="cpanel__nav-item-icon">📋</span>
-                <span>Plantillas</span>
-                <span className="cpanel__nav-badge">{templates.length}</span>
-              </button>
-              <button onClick={() => setSection('emails')}
-                className={`cpanel__nav-item${section === 'emails' ? ' cpanel__nav-item--active' : ''}`}>
-                <span className="cpanel__nav-item-icon">✉️</span>
-                <span>Correos</span>
-              </button>
-              <button onClick={() => setSection('users')}
-                className={`cpanel__nav-item${section === 'users' ? ' cpanel__nav-item--active' : ''}`}>
-                <span className="cpanel__nav-item-icon">👤</span>
-                <span>Usuarios</span>
-              </button>
-              <button onClick={() => setSection('announcements')}
-  className={`cpanel__nav-item${section === 'announcements' ? ' cpanel__nav-item--active' : ''}`}>
-  <span className="cpanel__nav-item-icon">📢</span>
-  <span>Avisos</span>
-</button>
-              <button onClick={() => setSection('exports')}
-  className={`cpanel__nav-item${section === 'exports' ? ' cpanel__nav-item--active' : ''}`}>
-  <span className="cpanel__nav-item-icon">📤</span>
-  <span>Exportar</span>
-</button>
-              <button onClick={() => setSection('org')}
-  className={`cpanel__nav-item${section === 'org' ? ' cpanel__nav-item--active' : ''}`}>
-  <span className="cpanel__nav-item-icon">🏢</span>
-  <span>Organización</span>
-</button>
+              <NavButton
+                icon="📋" label="Plantillas"
+                description={getNavDescription('templates')}
+                badge={templates.length}
+                active={section === 'templates'}
+                onClick={() => setSection('templates')}
+              />
+              <NavButton
+                icon="✉️" label="Correos"
+                description={getNavDescription('emails')}
+                active={section === 'emails'}
+                onClick={() => setSection('emails')}
+              />
+              <NavButton
+                icon="👤" label="Usuarios"
+                description={getNavDescription('users')}
+                active={section === 'users'}
+                onClick={() => setSection('users')}
+              />
+              <NavButton
+                icon="📢" label="Avisos"
+                description={getNavDescription('announcements')}
+                active={section === 'announcements'}
+                onClick={() => setSection('announcements')}
+              />
+              <NavButton
+                icon="📤" label="Exportar"
+                description={getNavDescription('exports')}
+                active={section === 'exports'}
+                onClick={() => setSection('exports')}
+              />
+              <NavButton
+                icon="🏢" label="Organización"
+                description={getNavDescription('org')}
+                active={section === 'org'}
+                onClick={() => setSection('org')}
+              />
             </div>
           </aside>
           {/* ── Contenido ── */}
@@ -303,6 +325,9 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   )}
                   {section === 'labels' && teamId && (
                     <p className="cpanel__content-subtitle">{activeTeam?.Board_Team_Name}</p>
+                  )}
+                  {section === 'sprints' && (
+                    <p className="cpanel__content-subtitle">Planificación y seguimiento de sprints por equipo</p>
                   )}
                   {section === 'templates' && (
                     <p className="cpanel__content-subtitle">Formularios de solicitudes</p>
@@ -515,4 +540,68 @@ export function SmBtn({ color, onClick, title, children }: { color: string; onCl
 
 export function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 5 }}>{children}</label>;
+}
+/* ============================================================
+   NavTooltip — descripción al hover, vía portal
+   ============================================================ */
+function NavTooltip({
+  text, anchorRef, visible,
+}: {
+  text:      string;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  visible:   boolean;
+}) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!visible || !anchorRef.current) { setPos(null); return; }
+    const rect = anchorRef.current.getBoundingClientRect();
+    setPos({ top: rect.top + rect.height / 2, left: rect.right + 10 });
+  }, [visible, anchorRef]);
+
+  if (!visible || !pos) return null;
+
+  return createPortal(
+    <div className="cpanel-tooltip" style={{ top: pos.top, left: pos.left }} role="tooltip">
+      {text}
+      <span className="cpanel-tooltip__arrow" />
+    </div>,
+    document.body,
+  );
+}
+
+/* ============================================================
+   NavButton — item de nav con tooltip de descripción
+   ============================================================ */
+function NavButton({
+  icon, label, description, badge, active, onClick,
+}: {
+  icon:        string;
+  label:       string;
+  description: string;
+  badge?:      number;
+  active:      boolean;
+  onClick:     () => void;
+}) {
+  const [hov, setHov] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  return (
+    <div
+      className="cpanel-nav-item-wrap"
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      <button
+        ref={btnRef}
+        onClick={onClick}
+        className={`cpanel__nav-item${active ? ' cpanel__nav-item--active' : ''}`}
+      >
+        <span className="cpanel__nav-item-icon">{icon}</span>
+        <span>{label}</span>
+        {typeof badge === 'number' && <span className="cpanel__nav-badge">{badge}</span>}
+      </button>
+      <NavTooltip text={description} anchorRef={btnRef} visible={hov} />
+    </div>
+  );
 }

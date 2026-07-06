@@ -17,6 +17,7 @@ import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { config }          from '@/config';
 import '@/styles/stats.css';
 import { StatsSkeleton } from '@/features/requests/components/StatsSkeleton';
+import { useStatsUIStore } from '@/store/statsStore';
 
 /* ─── Chart.js ─────────────────────────────────────────────── */
 type ChartInstance = { destroy: () => void };
@@ -463,13 +464,20 @@ function UserFilterDropdown({
 export function StatsPage() {
   const GLOBAL_KEY = 'global';
 
-  const [sprintIds,  setSprintIds]  = useState<number[]>([]);
-  const [userFilter, setUserFilter] = useState<number | null>(null);
-  const [teamTab,    setTeamTab]    = useState<string>(GLOBAL_KEY);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const autoSelectedTeam = useRef(false);
-  const sprintAutoSelected = useRef(false); 
+const sprintIds    = useStatsUIStore(s => s.sprintIds);
+  const userFilter   = useStatsUIStore(s => s.userFilter);
+  const teamTab      = useStatsUIStore(s => s.teamTab);
+  const selectedYear = useStatsUIStore(s => s.selectedYear);
+  const teamPicked   = useStatsUIStore(s => s.teamPicked);
+  const sprintPicked = useStatsUIStore(s => s.sprintPicked);
 
+  const setSprintIds     = useStatsUIStore(s => s.setSprintIds);
+  const setUserFilter    = useStatsUIStore(s => s.setUserFilter);
+  const setTeamTab       = useStatsUIStore(s => s.setTeamTab);
+  const setSelectedYear  = useStatsUIStore(s => s.setSelectedYear);
+  const markTeamPicked   = useStatsUIStore(s => s.markTeamPicked);
+  const markSprintPicked = useStatsUIStore(s => s.markSprintPicked);
+  
   const { data: boardTeams = [] }  = useBoardTeams(config.DEFAULT_BOARD_ID);
   const { data: statsStartConfig } = useStatsStartConfig(config.DEFAULT_BOARD_ID);
   const teamColorMap = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Color])), [boardTeams]);
@@ -504,32 +512,30 @@ const sprintDatesBadge = useMemo(() => {
   );
   // Auto-selecciona sprint activo; si no hay ninguno activo, el más reciente
 useEffect(() => {
-  if (stats.sprints.length > 0 && !sprintAutoSelected.current) {
-    sprintAutoSelected.current = true;
-    const d = new Date();
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const dated = stats.sprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
-    const active = dated.find(s =>
-      s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
-    );
-    const fallback = [...dated].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0];
-    const chosen = active ?? fallback;
-    if (chosen) {
-      setSprintIds([chosen.Sprint_ID]);
-      const y = getSprintYear(chosen);
-      if (y !== null) setSelectedYear(y); // alinear el año al sprint auto-seleccionado
-    }
+  if (stats.sprints.length === 0 || sprintPicked) return;
+  markSprintPicked();
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dated = stats.sprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
+  const active = dated.find(s =>
+    s.Sprint_Start_Date.slice(0, 10) <= today && today <= s.Sprint_End_Date.slice(0, 10)
+  );
+  const fallback = [...dated].sort((a, b) => b.Sprint_ID - a.Sprint_ID)[0];
+  const chosen = active ?? fallback;
+  if (chosen) {
+    setSprintIds([chosen.Sprint_ID]);
+    const y = getSprintYear(chosen);
+    if (y !== null) setSelectedYear(y);
   }
-}, [stats.sprints]);
+}, [stats.sprints, sprintPicked, markSprintPicked, setSprintIds, setSelectedYear]);
 
   // Auto-selecciona primer equipo al cargar
-  useEffect(() => {
-    if (boardTeams.length > 0 && !autoSelectedTeam.current) {
-      autoSelectedTeam.current = true;
-      setTeamTab(boardTeams[0].Board_Team_Code);
-    }
-  }, [boardTeams]);
-
+useEffect(() => {
+    if (boardTeams.length === 0 || teamPicked) return;
+    markTeamPicked();
+    setTeamTab(boardTeams[0].Board_Team_Code);
+  }, [boardTeams, teamPicked, markTeamPicked, setTeamTab]);
+  
   // Resetear userFilter al cambiar de equipo (evita filtros huérfanos)
   const prevTeamTab = useRef(teamTab);
   useEffect(() => {
