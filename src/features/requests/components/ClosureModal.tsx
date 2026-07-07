@@ -1,7 +1,8 @@
 // src/features/requests/components/ClosureModal.tsx
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Upload, FileText, Image, File, CheckCircle, AlertCircle, Paperclip, Recycle, Ban } from 'lucide-react';
+import { X, Upload, FileText, Image, File, CheckCircle, AlertCircle, Paperclip, Recycle, Ban, ListChecks } from 'lucide-react';
 import type { KanbanColumna, Request, CierreInfo } from '../types';
+import { useAcceptanceCriteria } from '../hooks/useAcceptanceCriteria';
 
 const MAX_FILES = 5;
 const MAX_IMAGE_SIZE_MB = 2;
@@ -99,6 +100,19 @@ export function ClosureModal({
   const canAddMore  = attachments.length < MAX_FILES;
   const hasReusable = canReuseEvidence && previousClosure && (previousClosure.attachments?.length ?? 0) > 0;
 
+  // Este modal solo se muestra al cerrar → siempre validamos criterios de aceptación.
+  const { data: criteria = [], isLoading: criteriaLoading } =
+    useAcceptanceCriteria(request.id);
+
+  const pendingCriteria = criteria.filter((c) => c.status === 'pending');
+  const rejectedCount   = criteria.filter((c) => c.status === 'rejected').length;
+  const acceptedCount   = criteria.filter((c) => c.status === 'accepted').length;
+  const hasCriteria     = criteria.length > 0;
+  const criteriaBlocked = !criteriaLoading && pendingCriteria.length > 0;
+
+  const submitDisabled = isPending || !note.trim() || compressing || criteriaBlocked || criteriaLoading;
+  const submitReady    = !!note.trim() && !isPending && !compressing && !criteriaBlocked && !criteriaLoading;
+
   useEffect(() => {
     textareaRef.current?.focus();
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
@@ -140,6 +154,10 @@ export function ClosureModal({
     if (!trimmed) {
       setError('La nota es obligatoria en todos los casos.');
       textareaRef.current?.focus();
+      return;
+    }
+    if (criteriaBlocked) {
+      setError('No podés cerrar: hay criterios de aceptación sin contestar.');
       return;
     }
     setError('');
@@ -190,6 +208,18 @@ export function ClosureModal({
 
         {/* Cuerpo */}
         <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          <CriteriaGate
+            loading={criteriaLoading}
+            hasCriteria={hasCriteria}
+            total={criteria.length}
+            accepted={acceptedCount}
+            rejected={rejectedCount}
+            pending={pendingCriteria.length}
+            pendingTitles={pendingCriteria.map((c) => c.title)}
+            blocked={criteriaBlocked}
+            accent={accentColor}
+          />
 
           {/* Selector de modo (solo si se viene de una columna con evidencia) */}
           {canReuseEvidence && (
@@ -390,12 +420,12 @@ export function ClosureModal({
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
             Cancelar
           </button>
-          <button onClick={handleSubmit} disabled={isPending || !note.trim() || compressing}
+          <button onClick={handleSubmit} disabled={submitDisabled}
             style={{
               padding: '8px 22px', borderRadius: 7, fontSize: 12, fontWeight: 700, border: 'none',
-              background: note.trim() && !isPending && !compressing ? accentColor : 'var(--bg-surface)',
-              color: note.trim() && !isPending && !compressing ? 'white' : 'var(--txt-muted)',
-              cursor: isPending || !note.trim() || compressing ? 'not-allowed' : 'pointer',
+              background: submitReady ? accentColor : 'var(--bg-surface)',
+              color: submitReady ? 'white' : 'var(--txt-muted)',
+              cursor: submitDisabled ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--font-display)', letterSpacing: 0.5, transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', gap: 7, opacity: isPending ? 0.7 : 1,
             }}>
@@ -431,5 +461,75 @@ function ModeButton({ active, onClick, accent, icon, title, subtitle }: {
       </div>
       <span style={{ fontSize: 9, opacity: 0.8 }}>{subtitle}</span>
     </button>
+  );
+}
+
+/* ── Gate de criterios de aceptación ── */
+function CriteriaGate({
+  loading, hasCriteria, total, accepted, rejected, pending, pendingTitles, blocked, accent,
+}: {
+  loading: boolean; hasCriteria: boolean; total: number;
+  accepted: number; rejected: number; pending: number;
+  pendingTitles: string[]; blocked: boolean; accent: string;
+}) {
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+        <ListChecks size={14} style={{ color: 'var(--txt-muted)' }} />
+        <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>Verificando criterios de aceptación…</span>
+      </div>
+    );
+  }
+
+  if (!hasCriteria) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+        <ListChecks size={14} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
+        <span style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+          Esta solicitud no tiene criterios de aceptación definidos.
+        </span>
+      </div>
+    );
+  }
+
+  const color = blocked ? 'var(--danger)' : 'var(--success)';
+
+  return (
+    <div style={{ borderRadius: 8, border: `1px solid ${color}35`, background: `${color}0d`, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' }}>
+        <div style={{ width: 30, height: 30, borderRadius: 7, flexShrink: 0, background: `${color}15`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
+          {blocked ? <AlertCircle size={15} /> : <CheckCircle size={15} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color, letterSpacing: 0.2 }}>
+            {blocked
+              ? `${pending} criterio${pending === 1 ? '' : 's'} sin contestar`
+              : 'Todos los criterios contestados'}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>
+            {total} en total · {accepted} aceptado{accepted === 1 ? '' : 's'} · {rejected} rechazado{rejected === 1 ? '' : 's'} · {pending} pendiente{pending === 1 ? '' : 's'}
+          </div>
+        </div>
+      </div>
+
+      {blocked && (
+        <div style={{ padding: '0 12px 10px 52px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {pendingTitles.slice(0, 4).map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--txt)' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t}</span>
+            </div>
+          ))}
+          {pendingTitles.length > 4 && (
+            <span style={{ fontSize: 10, color: 'var(--txt-muted)', paddingLeft: 11 }}>
+              +{pendingTitles.length - 4} más…
+            </span>
+          )}
+          <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 4, opacity: 0.9 }}>
+            Contesta estos criterios (aceptar o rechazar) antes de cerrar la solicitud.
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

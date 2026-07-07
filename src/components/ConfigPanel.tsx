@@ -31,13 +31,27 @@ import { ExportsConfig } from './ConfigPanelComponents/ExportsConfig';
    Constantes
    ============================================================ */
 const COLORS = [
-  '#ff4757','#ff6b81','#ff7f50','#fdcb6e','#f9ca24','#a3cb38',
-  '#00e5a0','#00cec9','#00c8ff','#0984e3','#6c5ce7','#a29bfe',
-  '#fd79a8','#e84393','#b2bec3','#000000',
+  // Rojos y rosas
+  '#ff4757','#ff6b81','#ff7675','#e84393','#fd79a8','#c44569',
+  // Naranjas y ámbar
+  '#ff7f50','#e17055','#ef9f27','#f0932b','#fdcb6e','#f9ca24',
+  // Verdes
+  '#a3cb38','#6ab04c','#1d9e75','#00b894','#00e5a0','#55efc4',
+  // Turquesas y cian
+  '#00cec9','#22a6b3','#00c8ff','#378add','#0984e3','#4834d4',
+  // Púrpuras
+  '#6c5ce7','#7f77dd','#a29bfe','#a55eea',
+  // Neutros
+  '#b2bec3','#808e9b','#57606f','#000000',
 ];
-export const EMOJIS = ['🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡','📋','🔒','🌐','📱','💰','🔔','✅','🧪','🎯','🏷️','🛠️','🏪','📦','🔍','💬','🗂️'];
-
-
+export const EMOJIS = [
+  '🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡',
+  '📋','🔒','🌐','📱','💰','🔔','✅','🧪',
+  '🎯','🏷️','🛠️','🏪','📦','🔍','💬','🗂️',
+  '📝','📌','⭐','🔥','⏰','📅','👤','👥',
+  '💻','🖥️','📧','📞','🔗','📎','🎫','🚨',
+  '⚠️','❗','❓','♻️','🧩','📁','🔓','🏠',
+];
 
 const TEAM_CODE_COLORS: Record<string, string> = {
   desarrollo: '#378ADD',
@@ -500,7 +514,7 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string)
 
 export function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 5, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 5, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, maxHeight: 132, overflowY: 'auto' }}>
       {COLORS.map((c) => (
         <button key={c} type="button" onClick={() => onChange(c)} title={c}
           style={{ width: '100%', aspectRatio: '1', borderRadius: 5, border: 'none', background: c, cursor: 'pointer', transition: 'transform 0.14s ease, outline 0.1s', outline: color === c ? `2px solid var(--txt)` : `2px solid transparent`, outlineOffset: 1, transform: color === c ? 'scale(1.12)' : 'scale(1)' }}

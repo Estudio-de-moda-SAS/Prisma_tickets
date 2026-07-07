@@ -167,6 +167,9 @@ export const STATS_SELECT = `
   Request_Score,
   Request_Created_At,
   Request_Finished_At,
+  Request_Estimated_Hours,
+  Request_Logged_Hours,
+  Request_Title,
   column:TBL_Board_Columns!Request_Board_Column_ID (
     Board_Column_Name, Board_Column_Slug
   ),
@@ -185,6 +188,11 @@ export const STATS_SELECT = `
     Request_Sprint_ID,
     sprint:TBL_Sprint!Request_Sprint_ID (
       Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date
+    )
+  ),
+  labels:TBL_Request_Labels (
+    label:TBL_Labels!Request_Labels_Label_ID (
+      Label_ID, Label_Name, Label_Color, Label_Icon
     )
   )
 `.trim();

@@ -131,7 +131,6 @@ function handleEquipo(key: string) {
           )}
 
           {/* ── MIS SOLICITUDES (usuarios regulares) ── */}
-          {isRegularUser && (
             <NavLink
               to="/mis-solicitudes"
               title={sidebarAbierto ? undefined : 'Mis Solicitudes'}
@@ -142,7 +141,6 @@ function handleEquipo(key: string) {
               <ClipboardList size={16} />
               {sidebarAbierto && <span>Mis Solicitudes</span>}
             </NavLink>
-          )}
 
 
 

@@ -13,6 +13,23 @@ import { BASE_SELECT, BASE_SELECT_LIGHT, STATS_SELECT } from '../shared/selects.
 const HISTORIAL_COLUMN_ID     = 9;
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
 
+// ⬇️ PEGÁ AQUÍ, justo debajo de las constantes existentes
+const IN_CHUNK = 120;
+
+async function chunkedIn(
+  supabase: any,
+  ids: string[],
+  build: (slice: string[]) => any,
+): Promise<Record<string, unknown>[]> {
+  const out: Record<string, unknown>[] = [];
+  for (let i = 0; i < ids.length; i += IN_CHUNK) {
+    const { data, error } = await build(ids.slice(i, i + IN_CHUNK));
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as Record<string, unknown>[]));
+  }
+  return out;
+}
+
 export const requestHandlers: Record<string, ActionHandler> = {
   fetchAllByBoard: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
@@ -37,32 +54,39 @@ fetchByTeamCode: async (payload, { supabase }) => {
     const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
     if (ids.length === 0) return [];
 
-    // Columnas activas — completas (su tamaño está acotado por flujo)
-    const activePromise = supabase
-      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
-      .in('Request_ID', ids)
-      .eq('Request_Board_ID', boardId)
-      .neq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
-      .order('Request_Created_At', { ascending: false });
+    // Columnas activas — sin límite, se concatenan todas las tandas
+    const active = await chunkedIn(supabase, ids, (slice) =>
+      supabase
+        .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+        .in('Request_ID', slice)
+        .eq('Request_Board_ID', boardId)
+        .neq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+        .order('Request_Created_At', { ascending: false }),
+    );
 
-    // Historial — solo los más recientes (el resto se busca on-demand)
-    const historialPromise = supabase
-      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
-      .in('Request_ID', ids)
-      .eq('Request_Board_ID', boardId)
-.eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
-      .order('Request_Created_At', { ascending: false })
-      .order('Request_ID',         { ascending: false })
-      .limit(HISTORIAL_INITIAL_LIMIT);
+    // Historial — límite global de 50: se pide hasta 50 por tanda, se combina y se recorta
+    const historialRaw = await chunkedIn(supabase, ids, (slice) =>
+      supabase
+        .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+        .in('Request_ID', slice)
+        .eq('Request_Board_ID', boardId)
+        .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+        .order('Request_Created_At', { ascending: false })
+        .order('Request_ID', { ascending: false })
+        .limit(HISTORIAL_INITIAL_LIMIT),
+    );
+    historialRaw.sort((a: any, b: any) => {
+      const ca = String(a.Request_Created_At ?? '');
+      const cb = String(b.Request_Created_At ?? '');
+      if (ca !== cb) return ca > cb ? -1 : 1;               // Created_At desc
+      return String(a.Request_ID) > String(b.Request_ID) ? -1 : 1; // Request_ID desc
+    });
+    const historial = historialRaw.slice(0, HISTORIAL_INITIAL_LIMIT);
 
-    const [activeRes, historialRes] = await Promise.all([activePromise, historialPromise]);
-    if (activeRes.error)    throw new Error(activeRes.error.message);
-    if (historialRes.error) throw new Error(historialRes.error.message);
-
-    const combined = [...(activeRes.data ?? []), ...(historialRes.data ?? [])];
+    const combined = [...active, ...historial];
     return attachCriteriaSummary(combined as Record<string, unknown>[], supabase);
   },
-
+  
   fetchByRequestedBy: async (payload, { supabase }) => {
     const { userId, boardId } = payload as { userId: number; boardId: number };
     const { data, error } = await supabase
@@ -312,6 +336,50 @@ fetchByTeamCode: async (payload, { supabase }) => {
         } catch (_ruleErr) { /* no bloquear la creación */ }
       }
     } catch (_autoErr) { /* no bloquear la creación */ }
+
+    // ── Notificación a sub-equipos — SOLO si la solicitud es EXTERNA (no TI) ──
+    // "Externa" = el solicitante NO pertenece al departamento de TI.
+    // La verdad de "es TI" es Department_ID === TI_DEPARTMENT_ID (ver auth/roles.ts).
+    // No se reutiliza isExternalRequester porque ese compara contra el rol
+    // 'ti_member', string que no existe en TBL_Users.User_Role (solo admin/member),
+    // y por eso trata a los member de TI como externos. Acá usamos el criterio real.
+    // Notifica a todos los miembros (dedup) de todos los sub-equipos de los
+    // board teams a los que se dirigió la solicitud (p.equipoIds).
+    try {
+      const TI_DEPARTMENT_ID = 7;
+      const isExternalByDept = p.requesterDepartmentId !== TI_DEPARTMENT_ID;
+      if (isExternalByDept && p.equipoIds.length > 0) {
+        const { data: subTeamRows } = await supabase
+          .from('TBL_Sub_Teams')
+          .select('Sub_Team_ID')
+          .in('Sub_Team_Team_ID', p.equipoIds);
+        const subTeamIds = ((subTeamRows ?? []) as { Sub_Team_ID: number }[])
+          .map((s) => s.Sub_Team_ID);
+
+        if (subTeamIds.length > 0) {
+          const { data: memberRows } = await supabase
+            .from('TBL_Sub_Team_Members')
+            .select('Sub_Team_Member_User_ID')
+            .in('Sub_Team_Member_Sub_Team_ID', subTeamIds);
+
+          const memberIds = [...new Set(
+            ((memberRows ?? []) as { Sub_Team_Member_User_ID: number }[])
+              .map((m) => m.Sub_Team_Member_User_ID)
+          )].filter((uid) => uid !== p.requestedBy);
+
+          if (memberIds.length > 0) {
+            await insertNotifications(supabase, {
+              userIds:   memberIds,
+              type:      'new_external_request',
+              title:     `Nueva solicitud externa ${newId}`,
+              body:      `Se creó la solicitud externa "${p.titulo}" dirigida a tu equipo.`,
+              requestId: newId,
+              actorId:   p.requestedBy,
+            });
+          }
+        }
+      }
+    } catch (_subTeamNotifErr) { /* no bloquear la creación */ }
 
     const { data, error } = await supabase
       .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
@@ -699,17 +767,28 @@ console.log(`[cr-debug] movedBy=${movedBy} columnId=${columnId} (${typeof column
     const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
     if (ids.length === 0) return [];
 
-    const { data, error } = await supabase
-      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
-      .in('Request_ID', ids)
-      .eq('Request_Board_ID', boardId)
-      .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
-      .or(`Request_Created_At.lt.${cursorCreatedAt},and(Request_Created_At.eq.${cursorCreatedAt},Request_ID.lt.${cursorId})`)
-      .order('Request_Created_At', { ascending: false })
-      .order('Request_ID',         { ascending: false })
-      .limit(HISTORIAL_INITIAL_LIMIT);
-    if (error) throw new Error(error.message);
-    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+// Chunking del .in() para evitar overflow de la URL con boards grandes.
+    // Cada tanda aplica el mismo cursor/orden y pide hasta el límite; luego se
+    // combinan, se reordena globalmente y se recorta al límite una sola vez.
+    const raw = await chunkedIn(supabase, ids, (slice) =>
+      supabase
+        .from('TBL_Requests').select(BASE_SELECT_LIGHT)
+        .in('Request_ID', slice)
+        .eq('Request_Board_ID', boardId)
+        .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+        .or(`Request_Created_At.lt.${cursorCreatedAt},and(Request_Created_At.eq.${cursorCreatedAt},Request_ID.lt.${cursorId})`)
+        .order('Request_Created_At', { ascending: false })
+        .order('Request_ID',         { ascending: false })
+        .limit(HISTORIAL_INITIAL_LIMIT),
+    );
+    raw.sort((a: any, b: any) => {
+      const ca = String(a.Request_Created_At ?? '');
+      const cb = String(b.Request_Created_At ?? '');
+      if (ca !== cb) return ca > cb ? -1 : 1;                      // Created_At desc
+      return String(a.Request_ID) > String(b.Request_ID) ? -1 : 1; // Request_ID desc
+    });
+    const page = raw.slice(0, HISTORIAL_INITIAL_LIMIT);
+    return attachCriteriaSummary(page as Record<string, unknown>[], supabase);
   },
 
   searchRequests: async (payload, { supabase }) => {
