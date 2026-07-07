@@ -466,7 +466,7 @@ function ModeButton({ active, onClick, accent, icon, title, subtitle }: {
 
 /* ── Gate de criterios de aceptación ── */
 function CriteriaGate({
-  loading, hasCriteria, total, accepted, rejected, pending, pendingTitles, blocked, accent,
+  loading, hasCriteria, total, accepted, rejected, pending, pendingTitles, blocked, 
 }: {
   loading: boolean; hasCriteria: boolean; total: number;
   accepted: number; rejected: number; pending: number;
