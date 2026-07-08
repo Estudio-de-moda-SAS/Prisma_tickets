@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, Clock, ChevronDown as ChevDown,
   Send, Trash2, Paperclip, Upload, FileText, Image, File,
-  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, Users
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, Users,
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useDeleteRequest } from '../hooks/useRequests';
@@ -792,8 +792,8 @@ function handleToggleAssignee(userId: number) {
   const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
 const yaHayClosure = !!effectiveRequest.fechaCierre;
 
+const [showDescriptionModal, setShowDescriptionModal] = useState(false);
 
-  /* ─────────────────────────────────────────────────────────── */
   return (
     <>
       <div
@@ -1115,23 +1115,144 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
                 </div>
               )}
 
-              <FieldBlock label="Descripción">
-<textarea
-  value={descripcion}
-  onChange={(e) => {
-    if (readOnly) return;
-    const val = e.target.value;
-    setDescripcion(val);
-    debouncedSave({ descripcion: val });
-  }}
-  onBlur={() => {}}
-  readOnly={readOnly}
-  placeholder="Escribe una descripción..."
-  rows={4}
-  style={{ width: '100%', minHeight: 100, maxHeight: 180, padding: '12px 14px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descripcion ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'none', overflowY: 'auto', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', cursor: readOnly ? 'default' : 'text' }}
-/>
-              </FieldBlock>
+<FieldBlock label="Descripción">
+  <textarea
+    value={descripcion}
+    onChange={(e) => {
+      if (readOnly) return;
 
+      const val = e.target.value;
+      setDescripcion(val);
+      debouncedSave({ descripcion: val });
+    }}
+    readOnly={readOnly}
+    rows={4}
+    placeholder="Escribe una descripción..."
+style={{
+  width: "100%",
+  height: 100,
+  padding: "12px 14px",
+  borderRadius: 7,
+  border: "1px solid var(--border-subtle)",
+  background: "var(--bg-surface)",
+  color: descripcion ? "var(--txt)" : "var(--txt-muted)",
+  fontSize: 13,
+  lineHeight: 1.65,
+  resize: "none",
+  overflowY: "auto",
+  overflowX: "hidden",
+  outline: "none",
+  fontFamily: "var(--font-body)",
+  boxSizing: "border-box",
+}}
+  />
+
+  {descripcion.length > 180 && (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        marginTop: 4,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setShowDescriptionModal(true)}
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          color: "var(--txt-muted)",
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          padding: "2px 4px",
+        }}
+      >
+        Ver todo
+      </button>
+    </div>
+  )}
+</FieldBlock>
+{showDescriptionModal && (
+  <div
+    onClick={() => setShowDescriptionModal(false)}
+    style={{
+      position: "fixed",
+      inset: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "70%",
+        maxWidth: 900,
+        background: "var(--bg-panel)",
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+          }}
+        >
+          Descripción
+        </span>
+
+        <button
+          onClick={() => setShowDescriptionModal(false)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 20,
+            color: "var(--txt-muted)",
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <textarea
+        value={descripcion}
+        readOnly={readOnly}
+        onChange={(e) => {
+          const val = e.target.value;
+          setDescripcion(val);
+          debouncedSave({ descripcion: val });
+        }}
+        style={{
+          width: "100%",
+          height: "60vh",
+          resize: "none",
+          padding: 16,
+          borderRadius: 8,
+          border: "1px solid var(--border-subtle)",
+          background: "var(--bg-surface)",
+          color: "var(--txt)",
+          lineHeight: 1.7,
+          fontFamily: "var(--font-body)",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
+  </div>
+)}
 {((effectiveRequest.templateFormSchema?.length ?? 0) > 0 ||
   (effectiveRequest.templateSchemaSnapshot?.length ?? 0) > 0) && (
   <TemplateFormDataPanel
