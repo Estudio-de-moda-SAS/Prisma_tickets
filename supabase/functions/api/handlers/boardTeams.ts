@@ -4,8 +4,7 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
   fetchAllTeams: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Board_Teams')
-      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Sort_Order')
-      .order('Board_Team_Sort_Order', { ascending: true });
+.select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Sort_Order')
     if (error) throw new Error(error.message);
     return data;
   },
@@ -21,9 +20,16 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
   },
 
 createKanbanTeam: async (payload, { supabase }) => {
-    const { name, code, color, description, icon, isAdminOnly } = payload as {
-      name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
+const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive } = payload as {
+      name: string; code: string; color: string; description: string;
+      icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
     };
+
+    const external = isExternal ?? false;
+    const cleanUrl = external ? (externalUrl?.trim() || null) : null;
+    if (external && !cleanUrl) {
+      throw new Error('Un equipo externo requiere un link de destino.');
+    }
 
     // Siguiente posición: max actual + 1 (los nuevos van al final)
     const { data: maxRow, error: maxErr } = await supabase
@@ -44,18 +50,29 @@ createKanbanTeam: async (payload, { supabase }) => {
         Board_Team_Description:    description?.trim() || null,
         Board_Team_Icon:           icon ?? '🗂️',
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
+        Board_Team_Is_External:    external,
+        Board_Team_External_URL:   cleanUrl,
         Board_Team_Sort_Order:     nextOrder,
+        Board_Team_Is_Active:      isActive ?? true,
       })
-      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Is_Admin_Only')
+      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Sort_Order')
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
-  
-  updateKanbanTeam: async (payload, { supabase }) => {
-    const { id, name, code, description, color, icon, isAdminOnly } = payload as {
-      id: number; name: string; code: string; color: string; description: string; icon?: string; isAdminOnly?: boolean;
+
+updateKanbanTeam: async (payload, { supabase }) => {
+    const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive } = payload as {
+      id: number; name: string; code: string; color: string; description: string;
+      icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
     };
+
+    const external = isExternal ?? false;
+    const cleanUrl = external ? (externalUrl?.trim() || null) : null;
+    if (external && !cleanUrl) {
+      throw new Error('Un equipo externo requiere un link de destino.');
+    }
+
     const { error } = await supabase
       .from('TBL_Board_Teams')
       .update({
@@ -65,12 +82,15 @@ createKanbanTeam: async (payload, { supabase }) => {
         Board_Team_Description:    description?.trim() || null,
         Board_Team_Icon:           icon ?? '🗂️',
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
+        Board_Team_Is_External:    external,
+        Board_Team_External_URL:   cleanUrl,
+        Board_Team_Is_Active:      isActive ?? true,
       })
       .eq('Board_Team_ID', id);
     if (error) throw new Error(error.message);
     return { ok: true };
   },
-
+    
 reorderBoardTeam: async (payload, { supabase }) => {
     const { teamId, direction } = payload as { teamId: number; direction: 'up' | 'down' };
 

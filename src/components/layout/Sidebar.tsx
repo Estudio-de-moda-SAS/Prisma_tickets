@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate, useMatch } from 'react-router-dom';
 import {
   BarChart2, Home, LogOut, Plus, Star,
-  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList
+  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -54,7 +54,7 @@ const activeTeamKey     = boardMatch?.params?.equipo
 
   const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const equiposVisibles = (isAdmin || isTIMember)
-    ? boardTeams.filter((t) => isAdmin || !t.Board_Team_Is_Admin_Only)
+    ? boardTeams.filter((t) => t.Board_Team_Is_Active && (isAdmin || !t.Board_Team_Is_Admin_Only))
     : [];
   
 function handleEquipo(key: string) {
@@ -150,26 +150,36 @@ function handleEquipo(key: string) {
               <NavLabel top>Equipos</NavLabel>
 
               {equiposVisibles.map((team) => {
-                const key   = team.Board_Team_Code;
-                const label = team.Board_Team_Name;
-                const c     = teamSidebarColors(team.Board_Team_Color);
-const ia = activeTeamKey === key;
-                const Icon = getTeamIcon(team.Board_Team_Icon);
+                const key        = team.Board_Team_Code;
+                const label      = team.Board_Team_Name;
+                const c          = teamSidebarColors(team.Board_Team_Color);
+                const isExternal = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
+                const ia         = !isExternal && activeTeamKey === key;
+                const Icon       = getTeamIcon(team.Board_Team_Icon);
 
                 return (
                   <div key={key} className="sidebar__nav-group">
                     <button
-                      onClick={() => handleEquipo(key)}
-                      title={sidebarAbierto ? undefined : label}
+                      onClick={() => {
+                        if (isExternal) {
+                          window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
+                          return;
+                        }
+                        handleEquipo(key);
+                      }}
+                      title={sidebarAbierto ? undefined : (isExternal ? `${label} (herramienta externa)` : label)}
                       className="sidebar__nav-item sidebar__nav-item--team"
                       style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
                     >
                       <Icon size={15} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
                       {sidebarAbierto && (
-                        <span style={{ color: ia ? c.dot : undefined }}>{label}</span>
+                        <span style={{ color: ia ? c.dot : undefined, flex: 1, minWidth: 0 }}>{label}</span>
+                      )}
+                      {isExternal && sidebarAbierto && (
+                        <ExternalLink size={12} style={{ opacity: 0.45, flexShrink: 0 }} />
                       )}
                     </button>
-                                        {ia && sidebarAbierto && teamSubOpen && (
+                                        {!isExternal && ia && sidebarAbierto && teamSubOpen && (
                       <div
                         className="sidebar__nav-sub sidebar__nav-sub--team"
                         style={{
