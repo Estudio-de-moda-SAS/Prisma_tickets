@@ -13,6 +13,9 @@ export type KanbanTeam = {
   Board_Team_Description:   string | null;
   Board_Team_Icon:          string;
   Board_Team_Is_Admin_Only: boolean;
+  Board_Team_Is_External:   boolean;
+  Board_Team_External_URL:  string | null;
+  Board_Team_Is_Active:     boolean;
   Board_Team_Sort_Order:    number;
 };
 
@@ -47,8 +50,7 @@ const keys = {
 export function useCreateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean }) =>
-      apiClient.call<KanbanTeam>('createKanbanTeam', d),
+mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean }) =>      apiClient.call<KanbanTeam>('createKanbanTeam', d),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.teams() }),
   });
 }
@@ -59,7 +61,7 @@ export function useCreateKanbanTeam() {
 export function useUpdateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean }) =>
+    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string }) =>
       apiClient.call('updateKanbanTeam', d),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.teams() }),
   });
@@ -188,7 +190,6 @@ export function useCreateBoardColumn(boardId: number) {
     },
   });
 }
-
 /* ============================================================
    Reordenar columna (optimistic swap)
    ============================================================ */

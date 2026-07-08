@@ -43,16 +43,20 @@ function mapNotification(raw: RawNotification): Notification {
 }
 
 const QUERY_KEY = (userId: number) => ['notifications', userId];
-const POLL_INTERVAL_MS = 30_000;
+const POLL_ACTIVE_MS     = 30_000;   // pestaña visible
+const POLL_BACKGROUND_MS = 120_000;  // pestaña en segundo plano (2 min)
 
 export function useNotifications(userId: number | null) {
   const queryClient = useQueryClient();
 
-  const query = useQuery<NotificationsResponse>({
+const query = useQuery<NotificationsResponse>({
     queryKey:    QUERY_KEY(userId ?? 0),
     enabled:     !!userId,
-    refetchInterval: POLL_INTERVAL_MS,
-    refetchIntervalInBackground: false,
+    refetchInterval: () =>
+      typeof document !== 'undefined' && document.visibilityState === 'hidden'
+        ? POLL_BACKGROUND_MS
+        : POLL_ACTIVE_MS,
+    refetchIntervalInBackground: true,
     staleTime:   20_000,
     queryFn:     async () => {
       const raw = await apiClient.call<{ notifications: RawNotification[]; unreadCount: number }>(
@@ -65,7 +69,7 @@ export function useNotifications(userId: number | null) {
       };
     },
   });
-
+  
   const markRead = useMutation({
     mutationFn: (notificationId: number) =>
       apiClient.call('markNotificationRead', { notificationId, userId }),

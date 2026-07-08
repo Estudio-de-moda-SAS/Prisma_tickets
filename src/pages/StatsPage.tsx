@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  BarChart2, Globe, LayoutGrid,
+  Globe, LayoutGrid,
   TrendingUp, TrendingDown, Minus,
   CheckCircle2, Clock, AlertTriangle, Layers,
   PlusCircle, XCircle, Star, Target,
@@ -8,9 +8,11 @@ import {
 } from 'lucide-react';
 import { useStatsData }             from '@/features/requests/hooks/useStatsData';
 import { useUsers }                  from '@/features/requests/hooks/useUsers';
-import { useSubTeams }               from '@/features/requests/hooks/useSubTeams';
+import { useSubTeams, useSubTeamsMulti } from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped }  from '@/features/requests/hooks/useSubTeamMembers';
 import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStatsData';
+import { isBlockedLabelName } from '@/features/requests/hooks/useStatsData';
+import { useLabelsByTeamId } from '@/features/requests/hooks/useLabels';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
 import { useBoardTeams }       from '@/features/requests/hooks/useBoardMetadata';
 import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
@@ -46,6 +48,44 @@ const AVATAR_GRADIENTS = [
 const avatarBg = (id: number)   => AVATAR_GRADIENTS[id % AVATAR_GRADIENTS.length];
 const fmtInits = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
 const fmtDate  = (d: Date)      => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(d);
+/** Convierte horas decimales a "Xh Ym". null → "—". Ej: 2.5 → "2h 30m", 0.75 → "45m", 3 → "3h". */
+const PRI_COLOR: Record<string, string> = {
+  critica: '#ff4757', alta: '#ffa502', media: '#a78bfa', baja: '#5a6a8a',
+};
+const PRIORIDADES_LABEL: Record<string, string> = {
+  critica: 'Crítica', alta: 'Alta', media: 'Media', baja: 'Baja',
+};
+const fmtHoras = (h: number | null): string => {
+  if (h == null) return '—';
+  const totalMin = Math.round(h * 60);
+  const horas = Math.floor(totalMin / 60);
+  const mins  = totalMin % 60;
+  if (horas === 0) return `${mins}m`;
+  if (mins === 0)  return `${horas}h`;
+  return `${horas}h ${mins}m`;
+};
+/** Delta de una métrica vs sprint anterior.
+ *  mode 'pct' → variación porcentual (creadas/resueltas/críticas).
+ *  mode 'pts' → diferencia en puntos (cumplimiento, que ya es %). */
+type DeltaInfo = { trend: 'up' | 'down' | 'neutral'; sub: string };
+function calcDelta(actual: number, prev: number | undefined, mode: 'pct' | 'pts'): DeltaInfo | null {
+  if (prev === undefined) return null;
+  const diff = actual - prev;
+  const trend: DeltaInfo['trend'] = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
+  const arrow = diff > 0 ? '+' : ''; // el signo − ya viene en el número negativo
+  if (mode === 'pts') {
+    if (diff === 0) return { trend, sub: 'sin cambio vs anterior' };
+    return { trend, sub: `${arrow}${diff} pts vs anterior` };
+  }
+  // pct
+  if (prev === 0) {
+    if (actual === 0) return { trend: 'neutral', sub: 'sin cambio vs anterior' };
+    return { trend: 'up', sub: 'nuevo vs anterior' };
+  }
+  const pct = Math.round((diff / prev) * 100);
+  if (pct === 0) return { trend: 'neutral', sub: 'sin cambio vs anterior' };
+  return { trend, sub: `${arrow}${pct}% vs anterior` };
+}
 /** Extrae el año de un sprint: de la fecha si existe, o del patrón (YYYY) del nombre. */
 function getSprintYear(s: Sprint): number | null {
   if (s.Sprint_Start_Date) {
@@ -315,9 +355,11 @@ function SectionDivider({ icon: Icon, label }: { icon: React.ElementType; label:
 
 /* ── User Filter Dropdown ───────────────────────────────────── */
 function UserFilterDropdown({
-  boardTeamId, selectedUserId, onSelect,
+  boardTeamId, boardTeamIds, selectedUserId, onSelect,
 }: {
   boardTeamId:    number | null;
+  /** Modo combinado: varios equipos. Si tiene 2+, tiene prioridad sobre boardTeamId. */
+  boardTeamIds?:  number[];
   selectedUserId: number | null;
   onSelect:       (id: number | null) => void;
 }) {
@@ -325,15 +367,29 @@ function UserFilterDropdown({
   const [search, setSearch] = useState('');
   const ref                 = useRef<HTMLDivElement>(null);
 
-  const { data: subTeams = [] }   = useSubTeams(boardTeamId);
-  const groupedMembers             = useSubTeamMembersGrouped(subTeams);
+  const isMulti = (boardTeamIds?.length ?? 0) >= 2;
+
+  // Sub-equipos: en modo combinado, de todos los equipos; si no, del único.
+  const multiTeams   = useSubTeamsMulti(isMulti ? boardTeamIds! : []);
+  const { data: singleSubTeams = [] } = useSubTeams(isMulti ? null : boardTeamId);
+
+  // Lista unificada de sub-equipos para alimentar useSubTeamMembersGrouped.
+  // En multi se concatenan preservando el orden por equipo.
+  const subTeams = useMemo(
+    () => isMulti ? multiTeams.flatMap(t => t.subTeams) : singleSubTeams,
+    [isMulti, multiTeams, singleSubTeams],
+  );
+
+  const groupedMembers = useSubTeamMembersGrouped(subTeams);
   const { data: rawUsers = [] }   = useUsers() as { data: Array<{ User_ID: number; User_Name: string; User_Email: string; Is_Active?: boolean | null }> };
 
+  const hasTeamScope = isMulti || boardTeamId !== null;
+
   const allFlat = useMemo(() =>
-    boardTeamId !== null
+    hasTeamScope
       ? groupedMembers.flatMap(g => g.members)
       : rawUsers.filter(u => u.Is_Active !== false),
-    [boardTeamId, groupedMembers, rawUsers],
+    [hasTeamScope, groupedMembers, rawUsers],
   );
 
   const selUser  = allFlat.find(u => u.User_ID === selectedUserId);
@@ -391,8 +447,8 @@ function UserFilterDropdown({
             </button>
           )}
 
-          {/* ── Vista por equipo: sub-equipos ─────────────── */}
-          {boardTeamId !== null && (
+          {/* ── Vista por equipo: sub-equipos (uno o varios combinados) ── */}
+          {hasTeamScope && (
             <>
               {groupedMembers.length === 0 && (
                 <div className="user-filter__empty">No hay sub-equipos configurados para este equipo</div>
@@ -435,7 +491,7 @@ function UserFilterDropdown({
           )}
 
           {/* ── Vista global: todos los usuarios plano ─────── */}
-          {boardTeamId === null && (() => {
+          {!hasTeamScope && (() => {
             const visible = rawUsers.filter(u => u.Is_Active !== false && matches(u.User_Name));
             if (visible.length === 0) return <div className="user-filter__empty">Sin resultados</div>;
             return visible.map(user => (
@@ -467,6 +523,7 @@ export function StatsPage() {
 const sprintIds    = useStatsUIStore(s => s.sprintIds);
   const userFilter   = useStatsUIStore(s => s.userFilter);
   const teamTab      = useStatsUIStore(s => s.teamTab);
+  const selectedTeams = useStatsUIStore(s => s.selectedTeams);
   const selectedYear = useStatsUIStore(s => s.selectedYear);
   const teamPicked   = useStatsUIStore(s => s.teamPicked);
   const sprintPicked = useStatsUIStore(s => s.sprintPicked);
@@ -474,6 +531,7 @@ const sprintIds    = useStatsUIStore(s => s.sprintIds);
   const setSprintIds     = useStatsUIStore(s => s.setSprintIds);
   const setUserFilter    = useStatsUIStore(s => s.setUserFilter);
   const setTeamTab       = useStatsUIStore(s => s.setTeamTab);
+  const toggleTeam       = useStatsUIStore(s => s.toggleTeam);
   const setSelectedYear  = useStatsUIStore(s => s.setSelectedYear);
   const markTeamPicked   = useStatsUIStore(s => s.markTeamPicked);
   const markSprintPicked = useStatsUIStore(s => s.markSprintPicked);
@@ -485,7 +543,8 @@ const sprintIds    = useStatsUIStore(s => s.sprintIds);
 
   const isGlobal = teamTab === GLOBAL_KEY;
 
-  const stats = useStatsData(sprintIds, boardTeams, userFilter, isGlobal ? null : teamTab, statsStartConfig ?? undefined);
+  const isCombined = !isGlobal && selectedTeams.length >= 2;
+  const stats = useStatsData(sprintIds, boardTeams, userFilter, isGlobal ? null : teamTab, statsStartConfig ?? undefined, isGlobal ? [] : selectedTeams);
   // Años disponibles entre todos los sprints (fecha o nombre)
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -506,9 +565,22 @@ const sprintDatesBadge = useMemo(() => {
     return `${fmtDate(new Date(sorted[0].Sprint_Start_Date!))} — ${fmtDate(new Date(sorted[sorted.length - 1].Sprint_End_Date!))}`;
   }, [stats.sprints, sprintIds]);
 /** Board_Team_ID del tab seleccionado — null en Global */
-  const selectedBoardTeamId = useMemo(
+const selectedBoardTeamId = useMemo(
     () => isGlobal ? null : (boardTeams.find(t => t.Board_Team_Code === teamTab)?.Board_Team_ID ?? null),
     [isGlobal, boardTeams, teamTab],
+  );
+  // IDs de los equipos combinados, para el dropdown de usuario en modo multi.
+  const combinedBoardTeamIds = useMemo(
+    () => isGlobal ? [] : selectedTeams
+      .map(code => boardTeams.find(t => t.Board_Team_Code === code)?.Board_Team_ID)
+      .filter((id): id is number => id != null),
+    [isGlobal, selectedTeams, boardTeams],
+  );
+  // ¿El equipo activo tiene configurada la categoría "bloqueada"?
+  const { data: teamLabels = [], isLoading: labelsLoading } = useLabelsByTeamId(config.DEFAULT_BOARD_ID, selectedBoardTeamId);
+  const tieneCategoriaBloqueada = useMemo(
+    () => teamLabels.some(l => isBlockedLabelName(l.Label_Name)),
+    [teamLabels],
   );
   // Auto-selecciona sprint activo; si no hay ninguno activo, el más reciente
 useEffect(() => {
@@ -545,10 +617,20 @@ useEffect(() => {
     }
   }, [teamTab]);
 
+  const [expandedResolutor, setExpandedResolutor] = useState<number | null>(null);
+
   const sp        = stats.sprint;
   const gn        = stats.general;
-  const boardData = isGlobal ? null : stats.boards[teamTab];
+  const boardData = isGlobal ? null : (isCombined ? stats.boardCombined : stats.boards[teamTab]);
+  // El delta vs sprint anterior se oculta en modo combinado (acordado Fase 1).
+  const boardPrev = (isGlobal || isCombined) ? undefined : stats.boardsPrev?.[teamTab];
   const maxPri    = boardData ? Math.max(...boardData.porPrioridad.map(p => p.value), 1) : 1;
+
+  // Deltas vs sprint anterior (solo vista equipo, 1 sprint, mismo linaje)
+  const dCreadas      = boardData ? calcDelta(boardData.creadas,      boardPrev?.creadas,      'pct') : null;
+  const dResueltas    = boardData ? calcDelta(boardData.resueltas,    boardPrev?.resueltas,    'pct') : null;
+  const dCumplimiento = boardData ? calcDelta(boardData.cumplimiento, boardPrev?.cumplimiento, 'pts') : null;
+  const dCriticas     = boardData ? calcDelta(boardData.criticas,     boardPrev?.criticas,     'pct') : null;
 
 const totalSprint = sp.planeadas + sp.postPlanning;
 const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) * 100) : 0;
@@ -559,15 +641,18 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
 
       {/* ═══ Tabs primarios de equipo ══════════════════════════ */}
       <div className="stats-primary-tabs">
-        {boardTeams.map(t => (
-          <button key={t.Board_Team_Code}
-            className={['stats-primary-tab', teamTab === t.Board_Team_Code ? 'stats-primary-tab--active' : ''].join(' ')}
-            style={{ '--tab-color': teamColorMap[t.Board_Team_Code] ?? 'var(--accent)' } as React.CSSProperties}
-            onClick={() => setTeamTab(t.Board_Team_Code)}>
-            <span className="stats-primary-tab__dot" style={{ background: teamColorMap[t.Board_Team_Code] ?? '#888' }} />
-            {t.Board_Team_Name}
-          </button>
-        ))}
+        {boardTeams.map(t => {
+          const isSel = !isGlobal && selectedTeams.includes(t.Board_Team_Code);
+          return (
+            <button key={t.Board_Team_Code}
+              className={['stats-primary-tab', isSel ? 'stats-primary-tab--active' : ''].join(' ')}
+              style={{ '--tab-color': teamColorMap[t.Board_Team_Code] ?? 'var(--accent)' } as React.CSSProperties}
+              onClick={() => toggleTeam(t.Board_Team_Code)}>
+              <span className="stats-primary-tab__dot" style={{ background: teamColorMap[t.Board_Team_Code] ?? '#888' }} />
+              {t.Board_Team_Name}
+            </button>
+          );
+        })}
         <button
           className={['stats-primary-tab', isGlobal ? 'stats-primary-tab--active' : ''].join(' ')}
           style={{ '--tab-color': 'var(--txt-muted)' } as React.CSSProperties}
@@ -595,9 +680,10 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
           </div>
         </div>
         <div className="stats-control-bar__right">
-          <a href="/"    className="stats-quick-link"><LayoutGrid size={11} /> Board</a>
+
           <UserFilterDropdown
             boardTeamId={selectedBoardTeamId}
+            boardTeamIds={combinedBoardTeamIds}
             selectedUserId={userFilter}
             onSelect={setUserFilter}
           />
@@ -612,17 +698,26 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
       {!stats.isLoading && !stats.isError && (
         <>
           {/* ── Sprint (siempre visible, filtrado por equipo activo) ── */}
-          <SectionDivider icon={Target} label={isGlobal ? 'Sprint activo — todos los equipos' : `Sprint activo — ${teamNameMap[teamTab] ?? teamTab}`} />
+          <SectionDivider icon={Target} label={
+            isGlobal ? 'Sprint activo — todos los equipos'
+            : isCombined ? `Sprint activo — ${selectedTeams.map(c => teamNameMap[c] ?? c).join(' + ')}`
+            : `Sprint activo — ${teamNameMap[teamTab] ?? teamTab}`
+          } />
 
           <div className="scard-grid scard-grid--5">
             <SprintCard label="Planeadas"     value={sp.planeadas}   color="#378ADD" icon={Layers} />
             <SprintCard label="Activas"       value={sp.activas}     color="#00c8ff" icon={Clock} pulse />
             <SprintCard label="Completadas"   value={sp.completadas} color="#1D9E75" icon={CheckCircle2} />
             <SprintCard label="Post-planning" value={sp.postPlanning} sub="Fuera del scope original" color="#EF9F27" icon={PlusCircle} />
-            <SprintCard label="Bloqueadas"    value={sp.bloqueadas}  sub="En Icebox"
-              color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
-              icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
-          </div>
+{!isGlobal && !isCombined && !labelsLoading && !tieneCategoriaBloqueada ? (
+              <SprintCard label="Bloqueadas" value="—" sub="Categoría no configurada"
+                color="#5a6a8a" icon={Minus} />
+            ) : (
+              <SprintCard label="Bloqueadas" value={sp.bloqueadas} sub="Con label bloqueada/pausada"
+                color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
+                icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
+            )}
+                                  </div>
 
           <div className="stats-mid-grid">
             <div className="stats-panel">
@@ -652,18 +747,23 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                 </div>
               </div>
             </div>
-            <div className="stats-panel">
-              <div className="stats-panel__header"><span className="stats-panel__title"><BarChart2 size={12} /> Actividad del mes</span></div>
+<div className="stats-panel">
+              <div className="stats-panel__header"><span className="stats-panel__title"><Clock size={12} /> Tiempos promedio</span></div>
               <div className="month-stats">
                 <div className="month-stat">
-                  <span className="month-stat__num" style={{ color: 'var(--accent)' }}>{sp.planeadasMes}</span>
-                  <span className="month-stat__label">Planeadas en el mes</span>
-                  <p className="month-stat__note">Total creadas, excluye bloqueadas e icebox</p>
+                  <span className="month-stat__num" style={{ color: 'var(--accent)' }}>
+                    {fmtHoras(sp.tiempoEstimadoProm)}
+                  </span>
+                  <span className="month-stat__label">Tiempo estimado promedio</span>
+                  <p className="month-stat__note">Sobre solicitudes con estimación cargada</p>
                 </div>
                 <div className="month-stat-divider" />
                 <div className="month-stat">
-                  <span className="month-stat__num" style={{ color: 'var(--success)' }}>{sp.cerradasMes}</span>
-                  <span className="month-stat__label">Cerradas en el mes</span>
+                  <span className="month-stat__num" style={{ color: 'var(--success)' }}>
+                    {fmtHoras(sp.tiempoConsumidoProm)}
+                  </span>
+                  <span className="month-stat__label">Tiempo consumido promedio</span>
+                  <p className="month-stat__note">Sobre solicitudes cerradas</p>
                 </div>
               </div>
             </div>
@@ -707,7 +807,7 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                     <div className="stats-comp-stat"><span>Resueltas</span><span>{e.resueltas}</span></div>
                     <div className="stats-comp-stat"><span>Cumplimiento</span><span>{stats.boards[e.equipo]?.cumplimiento ?? 0}%</span></div>
                     <div className="stats-comp-stat"><span>Críticas</span><span style={{ color: e.criticas > 0 ? 'var(--danger)' : 'var(--success)' }}>{e.criticas}</span></div>
-                    <div className="stats-comp-stat"><span>Score</span><span style={{ color: 'var(--accent)' }}>{e.score}</span></div>
+                    <div className="stats-comp-stat"><span>Puntaje histórico</span><span style={{ color: 'var(--accent)' }}>{e.score}</span></div>
                   </div>
                 ))}
               </div>
@@ -717,14 +817,26 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
           {/* ── Vista EQUIPO ESPECÍFICO ───────────────────────── */}
           {!isGlobal && boardData && (
             <>
-              <SectionDivider icon={LayoutGrid} label={`Detalle — ${teamNameMap[teamTab] ?? teamTab}`} />
+              <SectionDivider icon={LayoutGrid} label={
+                isCombined
+                  ? `Detalle combinado — ${selectedTeams.map(c => teamNameMap[c] ?? c).join(' + ')}`
+                  : `Detalle — ${teamNameMap[teamTab] ?? teamTab}`
+              } />
               <div className="stats-kpi-grid">
-                <KPICard label="Solicitudes"      value={boardData.creadas}    sub="En este equipo"          trend="neutral" accent={teamColor} />
-                <KPICard label="Resueltas"        value={boardData.resueltas}  sub="Columna Hecho"           trend="up"      accent="var(--success)" />
-                <KPICard label="Cumplimiento" value={`${boardData.cumplimiento}%`} sub="Pts. reales vs meta" trend={boardData.cumplimiento >= 80 ? 'up' : boardData.cumplimiento >= 50 ? 'neutral' : 'down'} accent="var(--warn)" />
+                <KPICard label="Solicitudes"      value={boardData.creadas}
+                  sub={dCreadas?.sub ?? 'En este equipo'}
+                  trend={dCreadas?.trend ?? 'neutral'} accent={teamColor} />
+                <KPICard label="Resueltas"        value={boardData.resueltas}
+                  sub={dResueltas?.sub ?? 'Columna Hecho'}
+                  trend={dResueltas?.trend ?? 'neutral'} accent="var(--success)" />
+                <KPICard label="Cumplimiento"     value={`${boardData.cumplimiento}%`}
+                  sub={dCumplimiento?.sub ?? 'Pts. reales vs meta'}
+                  trend={dCumplimiento?.trend ?? (boardData.cumplimiento >= 80 ? 'up' : boardData.cumplimiento >= 50 ? 'neutral' : 'down')}
+                  accent="var(--warn)" />
                 <KPICard label="Críticas activas" value={boardData.criticas}
-                  sub={boardData.criticas > 0 ? `${boardData.criticas} sin resolver` : '✓ ninguna'}
-                  trend={boardData.criticas > 0 ? 'down' : 'neutral'} accent="var(--danger)" trendGood="down" />
+                  sub={dCriticas?.sub ?? (boardData.criticas > 0 ? `${boardData.criticas} sin resolver` : '✓ ninguna')}
+                  trend={dCriticas?.trend ?? (boardData.criticas > 0 ? 'down' : 'neutral')}
+                  accent="var(--danger)" trendGood="down" />
               </div>
               <div className="stats-mid-grid">
                 <div className="stats-panel">
@@ -756,15 +868,46 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                   <div className="stats-resolutores">
                     {boardData.resolutores.map(r => (
                       <button key={r.userId}
-                        className={['stats-resolutor', userFilter === r.userId ? 'stats-resolutor--active' : ''].join(' ')}
-                        onClick={() => setUserFilter(userFilter === r.userId ? null : r.userId)}
-                        title={userFilter === r.userId ? 'Quitar filtro' : `Filtrar por ${r.nombre}`}>
+                        className={['stats-resolutor', userFilter === r.userId ? 'stats-resolutor--active' : '', expandedResolutor === r.userId ? 'stats-resolutor--expanded' : ''].join(' ')}
+                        onClick={() => setExpandedResolutor(expandedResolutor === r.userId ? null : r.userId)}
+                        title={expandedResolutor === r.userId ? 'Ocultar solicitudes' : `Ver solicitudes de ${r.nombre}`}>
                         <div className="stats-resolutor__avatar" style={{ background: r.avatarBg }}>{r.initials}</div>
                         <span className="stats-resolutor__name">{r.nombre}</span>
                         <span className="stats-resolutor__count">{r.resueltas} res.</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Listado expandible del resolutor seleccionado */}
+                  {expandedResolutor !== null && (() => {
+                    const sel = boardData.resolutores.find(r => r.userId === expandedResolutor);
+                    if (!sel) return null;
+                    return (
+                      <div className="resolutor-detail">
+                        <div className="resolutor-detail__head">
+                          <span className="resolutor-detail__title">
+                            Solicitudes resueltas por {sel.nombre}
+                          </span>
+                          <span className="resolutor-detail__count">{sel.resueltas}</span>
+                        </div>
+                        <div className="resolutor-detail__list">
+                          {sel.solicitudes.map(s => (
+                            <div key={s.id} className="resolutor-detail__row">
+                              <span className="resolutor-detail__id">{s.id}</span>
+                              <span className="resolutor-detail__titulo" title={s.titulo}>{s.titulo || '—'}</span>
+                              <span className="resolutor-detail__pri" style={{ color: PRI_COLOR[s.prioridad] }}>
+                                {PRIORIDADES_LABEL[s.prioridad]}
+                              </span>
+                              <span className="resolutor-detail__sprint">{s.sprintName ?? 'Sin sprint'}</span>
+                              <span className="resolutor-detail__fecha">
+                                {s.fechaCierre ? fmtDate(new Date(s.fechaCierre)) : '—'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </>
