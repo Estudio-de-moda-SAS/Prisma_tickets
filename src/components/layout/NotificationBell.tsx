@@ -1,11 +1,15 @@
 // src/components/layout/NotificationBell.tsx
-import { useState, useRef, useEffect, forwardRef } from 'react';
+import { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, BellRing, Check, CheckCheck, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNotifications } from '@/features/requests/hooks/useNotifications';
+import {
+  useBrowserNotifications,
+  type BrowserPermission,
+} from '@/features/requests/hooks/useBrowserNotifications';
 import type { Notification } from '@/types/commons';
 
 const TYPE_ICON: Record<string, string> = {
@@ -17,6 +21,7 @@ const TYPE_ICON: Record<string, string> = {
   sub_request_created: '🔗',
   mention:             '@',
   export_ready:        '📤',
+  new_external_request:'📥',
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -28,6 +33,7 @@ const TYPE_COLOR: Record<string, string> = {
   sub_request_created: '#f472b6',
   mention:             'var(--accent)',
   export_ready:        '#38bdf8',
+  new_external_request:'#f59e0b',
 };
 
 type Props = { userId: number | null };
@@ -37,9 +43,25 @@ export function NotificationBell({ userId }: Props) {
   const bellRef             = useRef<HTMLButtonElement>(null);
   const panelRef            = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, right: 0 });
+  const navigate            = useNavigate();
 
   const { notifications, unreadCount, isLoading, markRead, markAllRead } =
     useNotifications(userId);
+
+  // Acción al hacer click en la notificación nativa del SO (reutiliza tu lógica)
+  const activateNotification = useCallback((n: Notification) => {
+    if (!n.isRead) markRead(n.notificationId);
+    if (n.type === 'export_ready') {
+      window.dispatchEvent(new CustomEvent('prisma:open-exports-history'));
+      return;
+    }
+    if (n.requestId) navigate(`/ticket/${n.requestId}`);
+  }, [markRead, navigate]);
+
+  const { permission, requestPermission } = useBrowserNotifications(notifications, {
+    icon:       '/favicon.ico', // cámbialo por el logo de PRISMA en /public si quieres
+    onActivate: activateNotification,
+  });
 
   const handleOpen = () => {
     if (!open && bellRef.current) {
@@ -95,6 +117,8 @@ export function NotificationBell({ userId }: Props) {
           ref={panelRef}
           notifications={notifications}
           coords={coords}
+          browserPermission={permission}
+          onEnableBrowser={requestPermission}
           onClose={() => setOpen(false)}
           onMarkRead={markRead}
           onMarkAllRead={markAllRead}
@@ -107,19 +131,21 @@ export function NotificationBell({ userId }: Props) {
 
 /* ── Panel ── */
 type PanelProps = {
-  notifications: Notification[];
-  coords:        { top: number; right: number };
-  onClose:       () => void;
-  onMarkRead:    (id: number) => void;
-  onMarkAllRead: () => void;
+  notifications:     Notification[];
+  coords:            { top: number; right: number };
+  browserPermission: BrowserPermission;
+  onEnableBrowser:   () => void;
+  onClose:           () => void;
+  onMarkRead:        (id: number) => void;
+  onMarkAllRead:     () => void;
 };
 
 const NotificationPanel = forwardRef<HTMLDivElement, PanelProps>(
-  ({ notifications, coords, onClose, onMarkRead, onMarkAllRead }, ref) => {
+  ({ notifications, coords, browserPermission, onEnableBrowser, onClose, onMarkRead, onMarkAllRead }, ref) => {
     const navigate  = useNavigate();
     const hasUnread = notifications.some((n) => !n.isRead);
 
-const handleClick = (n: Notification) => {
+    const handleClick = (n: Notification) => {
       if (!n.isRead) onMarkRead(n.notificationId);
 
       // Notificaciones de export → abrir ConfigPanel en pestaña Historial
@@ -134,6 +160,7 @@ const handleClick = (n: Notification) => {
         onClose();
       }
     };
+
     return (
       <div
         ref={ref}
@@ -153,6 +180,25 @@ const handleClick = (n: Notification) => {
             </button>
           )}
         </div>
+
+        {/* Banner de permiso del navegador */}
+        {browserPermission === 'default' && (
+          <div className="notif-panel__enable">
+            <BellRing size={16} className="notif-panel__enable-icon" />
+            <span className="notif-panel__enable-text">
+              Recibe avisos en el escritorio aunque estés en otra ventana.
+            </span>
+            <button className="notif-panel__enable-btn" onClick={onEnableBrowser}>
+              Activar
+            </button>
+          </div>
+        )}
+        {browserPermission === 'denied' && (
+          <div className="notif-panel__denied">
+            Las notificaciones del navegador están bloqueadas. Habilítalas desde
+            los ajustes del sitio en tu navegador.
+          </div>
+        )}
 
         <div className="notif-panel__list">
           {notifications.length === 0 ? (

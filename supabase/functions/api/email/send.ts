@@ -8,7 +8,7 @@ const MAIL_SENDER    = Deno.env.get('MAIL_SENDER')    ?? '';
 //  (a) el endpoint acepta message.internetMessageHeaders, y
 //  (b) devuelve el internetMessageId en la respuesta.
 // Mientras esté en false: se envía sin headers de reply (agrupación best-effort por subject).
-const MAIL_SUPPORTS_REPLY_HEADERS = false;
+const MAIL_SUPPORTS_REPLY_HEADERS = true;
 
 export function renderTemplate(html: string, vars: Record<string, string>): string {
   return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
@@ -106,11 +106,7 @@ export async function sendEventEmail(
           },
           body: JSON.stringify({ senderMail: MAIL_SENDER, message, saveToSentItems: true }),
         });
-        const rawText = await res.text();
-        // TEMPORAL: para descubrir qué devuelve la API. Revisá los logs de Supabase
-        // tras la primera prueba. Si aparece internetMessageId → activás threading real.
-        console.log(`[email] respuesta API (${res.status}):`, rawText.slice(0, 800));
-
+const rawText = await res.text();
         let json: any = {};
         try { json = JSON.parse(rawText); } catch { /* respuesta no-JSON */ }
 
@@ -118,10 +114,9 @@ export async function sendEventEmail(
           status  = 'error';
           errText = json.message ?? `HTTP ${res.status}: ${rawText.slice(0, 500)}`;
         } else {
-          // Si la API resulta devolver el id, lo captura solo. Si no, queda null.
-          providerMsgId = json.internetMessageId ?? json.id ?? json.messageId ?? null;
+          providerMsgId = json.graph?.internetMessageId ?? json.graph?.id ?? null;
         }
-      } catch (e) {
+        } catch (e) {
         status  = 'error';
         errText = String(e);
       }

@@ -682,7 +682,11 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const { data: teams        = [] } = useBoardTeams(boardId);
   const { data: allTemplates = [] } = useBoardTemplates(boardId);
   const role        = useRole();
-  const visibleTeams = teams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
+  const visibleTeams = teams.filter((t) =>
+    t.Board_Team_Is_Active !== false &&
+    !t.Board_Team_Is_External &&
+    (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
+  );
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
    const [step,                setStep]               = useState<Step>(defaultTeamId !== undefined ? 'template' : 'equipo');

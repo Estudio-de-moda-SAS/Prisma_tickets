@@ -1,5 +1,5 @@
 // src/features/requests/hooks/useSubTeams.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 
 export type SubTeam = {
@@ -16,6 +16,25 @@ export function useSubTeams(teamId: number | null) {
     staleTime: 0,
     retry:     1,
   });
+}
+
+/** Sub-equipos de VARIOS equipos a la vez (para el filtro combinado).
+ *  Devuelve, por cada teamId, sus sub-equipos — preservando el orden de
+ *  entrada para que los grupos salgan agrupados por equipo. */
+export function useSubTeamsMulti(teamIds: number[]) {
+  const results = useQueries({
+    queries: teamIds.map((id) => ({
+      queryKey:  ['subTeams', id],
+      queryFn:   () => apiClient.call<SubTeam[]>('fetchSubTeamsByTeamId', { teamId: id }),
+      staleTime: 0,
+      retry:     1,
+    })),
+  });
+  return teamIds.map((teamId, i) => ({
+    teamId,
+    subTeams:  (results[i]?.data ?? []) as SubTeam[],
+    isLoading: results[i]?.isLoading ?? false,
+  }));
 }
 
 export function useCreateSubTeam(teamId: number | null) {

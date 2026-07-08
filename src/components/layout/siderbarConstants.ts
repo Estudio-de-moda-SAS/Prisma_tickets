@@ -3,6 +3,9 @@ import {
   Database, Globe, Briefcase, Zap, Package,
   BarChart2, Monitor, Cpu, Layers, GitBranch,
   Target, Inbox, UserCheck, LayoutGrid,
+  Bug, Terminal, Cloud, Shield, Lock,
+  Key, Wrench, Settings, Rocket, Headphones,
+  MessageSquare, PieChart, Palette,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -11,6 +14,9 @@ export const TEAM_ICON_MAP: Record<string, LucideIcon> = {
   Database, Globe, Briefcase, Zap, Package,
   BarChart2, Monitor, Cpu, Layers, GitBranch,
   Target, Inbox, UserCheck, LayoutGrid,
+  Bug, Terminal, Cloud, Shield, Lock,
+  Key, Wrench, Settings, Rocket, Headphones,
+  MessageSquare, PieChart, Palette,
 };
 
 export function getTeamIcon(iconName: string | null | undefined): LucideIcon {

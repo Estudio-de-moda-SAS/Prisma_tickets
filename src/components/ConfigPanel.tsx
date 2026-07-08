@@ -31,13 +31,27 @@ import { ExportsConfig } from './ConfigPanelComponents/ExportsConfig';
    Constantes
    ============================================================ */
 const COLORS = [
-  '#ff4757','#ff6b81','#ff7f50','#fdcb6e','#f9ca24','#a3cb38',
-  '#00e5a0','#00cec9','#00c8ff','#0984e3','#6c5ce7','#a29bfe',
-  '#fd79a8','#e84393','#b2bec3','#000000',
+  // Rojos y rosas
+  '#ff4757','#ff6b81','#ff7675','#e84393','#fd79a8','#c44569',
+  // Naranjas y ámbar
+  '#ff7f50','#e17055','#ef9f27','#f0932b','#fdcb6e','#f9ca24',
+  // Verdes
+  '#a3cb38','#6ab04c','#1d9e75','#00b894','#00e5a0','#55efc4',
+  // Turquesas y cian
+  '#00cec9','#22a6b3','#00c8ff','#378add','#0984e3','#4834d4',
+  // Púrpuras
+  '#6c5ce7','#7f77dd','#a29bfe','#a55eea',
+  // Neutros
+  '#b2bec3','#808e9b','#57606f','#000000',
 ];
-export const EMOJIS = ['🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡','📋','🔒','🌐','📱','💰','🔔','✅','🧪','🎯','🏷️','🛠️','🏪','📦','🔍','💬','🗂️'];
-
-
+export const EMOJIS = [
+  '🐛','🎨','🖼️','📊','⚙️','🔧','🚀','💡',
+  '📋','🔒','🌐','📱','💰','🔔','✅','🧪',
+  '🎯','🏷️','🛠️','🏪','📦','🔍','💬','🗂️',
+  '📝','📌','⭐','🔥','⏰','📅','👤','👥',
+  '💻','🖥️','📧','📞','🔗','📎','🎫','🚨',
+  '⚠️','❗','❓','♻️','🧩','📁','🔓','🏠',
+];
 
 const TEAM_CODE_COLORS: Record<string, string> = {
   desarrollo: '#378ADD',
@@ -182,6 +196,7 @@ function ConfigPanel({
   const { data: teams     = [] } = useBoardTeams(boardId);
   const { data: templates = [] } = useBoardTemplates(boardId);
   const activeTeam = teams.find((t) => t.Board_Team_Code === localEquipo);  const teamId     = activeTeam?.Board_Team_ID ?? null;
+const activeTeamIsExternal = !!activeTeam?.Board_Team_Is_External;
 
   const { data: labels   = [] } = useLabelsByTeamId(boardId, teamId);
   const { data: sprints  = [] } = useSprints();
@@ -357,7 +372,12 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
             </div>
 
             <div className="cpanel__content-body">
-              {section === 'labels' && teamId && (
+              {/* Equipo externo: no tiene config de Kanban, solo su URL */}
+              {(section === 'labels' || section === 'subteams') && activeTeamIsExternal && (
+                <ExternalTeamNotice team={activeTeam!} />
+              )}
+
+              {section === 'labels' && !activeTeamIsExternal && teamId && (
                 <LabelList
                   labels={labels}
                   onAdd={(d) => createLabel.mutate(d)}
@@ -365,9 +385,9 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   onDelete={(id) => deleteLabel.mutate(id)}
                 />
               )}
-              {section === 'labels' && !teamId && <EmptyTeam />}
+              {section === 'labels' && !activeTeamIsExternal && !teamId && <EmptyTeam />}
 
-              {section === 'subteams' && teamId && (
+              {section === 'subteams' && !activeTeamIsExternal && teamId && (
                 <SubTeamList
                   subTeams={subTeams}
                   teamId={teamId}
@@ -376,7 +396,7 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
                   onRemove={(id) => deleteSubTeam.mutate(id)}
                 />
               )}
-              {section === 'subteams' && !teamId && <EmptyTeam />}
+              {section === 'subteams' && !activeTeamIsExternal && !teamId && <EmptyTeam />}
 
               {section === 'sprints' && (
                 <SprintList
@@ -390,7 +410,7 @@ const showTeamSwitcher = section !== 'users' && section !== 'sprints' && section
               {section === 'templates' && (
                 <TemplateList
                   templates={templates}
-                  teams={teams}
+                  teams={teams.filter((t) => !t.Board_Team_Is_External)}
                   onAdd={(d) => createTemplate.mutate(d)}
                   onUpdate={(id, d) => updateTemplate.mutate({ id, ...d })}
                   onDelete={(id) => deleteTemplate.mutate(id)}
@@ -430,6 +450,8 @@ function EmptyTeam() {
   );
 }
 
+
+
 /* ============================================================
    Formularios reutilizables
    ============================================================ */
@@ -447,6 +469,62 @@ export function LabelForm({ initial, onSave, onCancel }: {
       <EmojiPicker value={icon} onChange={setIcon} />
       <ColorPicker color={color} onChange={setColor} />
       <FormActions canSave={canSave} onSave={() => onSave({ name: name.trim(), color, icon })} onCancel={onCancel} />
+    </div>
+  );
+}
+function ExternalTeamNotice({ team }: { team: BoardTeam }) {
+  const [copied, setCopied] = useState(false);
+  const url = team.Board_Team_External_URL ?? '';
+  const color = team.Board_Team_Color || '#6c5ce7';
+
+  function copy() {
+    if (!url) return;
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    }).catch(() => {});
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 460 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 10, background: `${color}0d`, border: `1px solid ${color}30` }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}18`, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
+          {'\uD83D\uDD17'}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{team.Board_Team_Name}</div>
+          <div style={{ fontSize: 11, color: color, fontWeight: 600, marginTop: 1 }}>Equipo externo - sin Kanban</div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--txt-muted)', lineHeight: 1.65, margin: 0 }}>
+        Este equipo no tiene tablero dentro de PRISMA, por lo que no maneja etiquetas, sub-equipos, sprints ni columnas. Al seleccionarlo en el sidebar o al crear una solicitud, se abre directamente su herramienta propia en una pestaña nueva.
+      </p>
+
+      <div>
+        <FieldLabel>Herramienta externa</FieldLabel>
+        {url ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+            <span title={url} style={{ flex: 1, minWidth: 0, fontSize: 12, fontFamily: 'monospace', color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {url}
+            </span>
+            <button type="button" onClick={copy} title="Copiar link" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: `1px solid ${copied ? 'rgba(0,229,160,0.4)' : 'var(--border-subtle)'}`, background: copied ? 'rgba(0,229,160,0.1)' : 'transparent', color: copied ? '#00e5a0' : 'var(--txt-muted)', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s' }}>
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+            <a href={url} target="_blank" rel="noopener noreferrer" title="Abrir en pestaña nueva" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: `1px solid ${color}40`, background: `${color}12`, color, fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, textDecoration: 'none' }}>
+              Abrir
+            </a>
+          </div>
+        ) : (
+          <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(255,71,87,0.06)', border: '1px solid rgba(255,71,87,0.25)', fontSize: 11, color: '#ff4757', lineHeight: 1.5 }}>
+            Este equipo externo no tiene URL configurada. Editalo en la sección Kanbans para agregar el link.
+          </div>
+        )}
+      </div>
+
+      <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: 0, opacity: 0.75, lineHeight: 1.5 }}>
+        Para cambiar el nombre, el link o el ícono, andá a la sección Kanbans en el panel izquierdo.
+      </p>
     </div>
   );
 }
@@ -500,7 +578,7 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string)
 
 export function ColorPicker({ color, onChange }: { color: string; onChange: (c: string) => void }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 5, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 5, padding: '8px', background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, maxHeight: 132, overflowY: 'auto' }}>
       {COLORS.map((c) => (
         <button key={c} type="button" onClick={() => onChange(c)} title={c}
           style={{ width: '100%', aspectRatio: '1', borderRadius: 5, border: 'none', background: c, cursor: 'pointer', transition: 'transform 0.14s ease, outline 0.1s', outline: color === c ? `2px solid var(--txt)` : `2px solid transparent`, outlineOffset: 1, transform: color === c ? 'scale(1.12)' : 'scale(1)' }}

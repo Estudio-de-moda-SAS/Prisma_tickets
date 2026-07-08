@@ -48,7 +48,10 @@ export function KanbanSection() {
           color:       team.Board_Team_Color,
           description: team.Board_Team_Description ?? '',
           icon:        team.Board_Team_Icon ?? '🗂️',
-          isAdminOnly: team.Board_Team_Is_Admin_Only ?? false
+          isAdminOnly: team.Board_Team_Is_Admin_Only ?? false,
+          isExternal:  team.Board_Team_Is_External ?? false,
+          externalUrl: team.Board_Team_External_URL ?? '',
+          isActive:    team.Board_Team_Is_Active ?? true,
         } : undefined}
         saving={createKanbanTeam.isPending || updateKanbanTeam.isPending}
         onSave={(data) => {
@@ -200,6 +203,18 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, tota
           {team.Board_Team_Code}
         </span>
 
+        {!team.Board_Team_Is_Active && (
+          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757', flexShrink: 0 }}>
+            💤 Inactivo
+          </span>
+        )}
+
+        {team.Board_Team_Is_External && (
+          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(108,92,231,0.35)', color: '#6c5ce7', flexShrink: 0 }}>
+            🔗 Externo
+          </span>
+        )}
+
         {team.Board_Team_Is_Admin_Only && (
           <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757', flexShrink: 0 }}>
             🔒 Solo admins
@@ -283,9 +298,9 @@ function IconPicker({ value, onChange }: { value: string; onChange: (v: string) 
 }
 /* ── KanbanTeamForm ── */
 function KanbanTeamForm({ initial, saving, onSave, onCancel }: {
-  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean };
+  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean };
   saving?:  boolean;
-  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean }) => void;
+  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean }) => void;
   onCancel: () => void;
 }) {
   const [name,        setName]        = useState(initial?.name        ?? '');
@@ -294,7 +309,10 @@ function KanbanTeamForm({ initial, saving, onSave, onCancel }: {
   const [description, setDescription] = useState(initial?.description ?? '');
 const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️');
   const [isAdminOnly, setIsAdminOnly] = useState(initial?.isAdminOnly ?? false);
-  const canSave = name.trim().length > 0 && code.trim().length > 0;
+  const [isExternal,  setIsExternal]  = useState(initial?.isExternal  ?? false);
+  const [externalUrl, setExternalUrl] = useState(initial?.externalUrl ?? '');
+  const [isActive,    setIsActive]    = useState(initial?.isActive    ?? true);
+  const canSave = name.trim().length > 0 && code.trim().length > 0 && (!isExternal || externalUrl.trim().length > 0);
 
   function handleNameChange(val: string) {
     setName(val);
@@ -361,6 +379,58 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
         </label>
       </div>
 
+      {/* Tipo de equipo: interno (Kanban) vs externo (link) */}
+      <div>
+        <FieldLabel>Tipo de equipo</FieldLabel>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isExternal ? 'rgba(108,92,231,0.35)' : 'var(--border-subtle)'}`, background: isExternal ? 'rgba(108,92,231,0.05)' : 'transparent', transition: 'all 0.15s' }}>
+          <input type="checkbox" checked={isExternal} onChange={(e) => setIsExternal(e.target.checked)} style={{ accentColor: '#6c5ce7', width: 14, height: 14 }} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isExternal ? '#6c5ce7' : 'var(--txt-muted)' }}>
+              {isExternal ? '🔗 Equipo externo (sin Kanban)' : '🗂️ Equipo con Kanban propio'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2, lineHeight: 1.5 }}>
+              {isExternal
+                ? 'Al seleccionarlo (en el sidebar o al crear una solicitud) se abre una herramienta externa en una pestaña nueva, en vez de un tablero.'
+                : 'El equipo tendrá su propio tablero Kanban dentro de PRISMA.'}
+            </div>
+          </div>
+        </label>
+      </div>
+
+      {isExternal && (
+        <div>
+          <FieldLabel>Link de la herramienta *</FieldLabel>
+          <input
+            value={externalUrl}
+            onChange={(e) => setExternalUrl(e.target.value)}
+            placeholder="https://…"
+            className="cpop-input"
+            style={{ fontFamily: 'monospace' }}
+          />
+          <p style={{ fontSize: 10, color: 'var(--txt-muted)', margin: '6px 0 0', lineHeight: 1.5 }}>
+            Se abrirá en una pestaña nueva. Incluí el <code>https://</code> completo.
+          </p>
+        </div>
+      )}
+
+      {/* Estado: activo / inactivo */}
+      <div>
+        <FieldLabel>Estado</FieldLabel>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isActive ? 'rgba(0,229,160,0.3)' : 'rgba(255,71,87,0.3)'}`, background: isActive ? 'rgba(0,229,160,0.04)' : 'rgba(255,71,87,0.04)', transition: 'all 0.15s' }}>
+          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} style={{ accentColor: '#00e5a0', width: 14, height: 14 }} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#00e5a0' : '#ff4757' }}>
+              {isActive ? '✅ Activo' : '💤 Inactivo (archivado)'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2, lineHeight: 1.5 }}>
+              {isActive
+                ? 'Visible en el home, el sidebar y al crear solicitudes.'
+                : 'Se oculta del home, el sidebar y el selector de solicitudes. Sigue visible acá y en las plantillas, y podés reactivarlo cuando quieras.'}
+            </div>
+          </div>
+        </label>
+      </div>
+
       {/* Preview */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: `${color}08`, border: `1px solid ${color}20` }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 7px ${color}` }} />
@@ -376,7 +446,7 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
         <button
-          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly })}
+          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly, isExternal, externalUrl: isExternal ? externalUrl.trim() : '', isActive })}
           disabled={!canSave || saving}
           className={`cpop-btn-save${!canSave || saving ? ' cpop-btn-save--disabled' : ''}`}
         >

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Zap, Search, X, Clock } from 'lucide-react';
+import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
@@ -255,6 +255,62 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
           <span style={{ fontSize: 20, fontWeight: 700, color: '#4CAF50', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{done}</span>
           <span style={{ fontSize: 9, color: 'var(--txt-muted)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>resueltas</span>
         </div>
+      </div>
+    </button>
+  );
+}
+/* ══════════════════════════════════════════════════════════════
+   EquipoTabExternal — equipo sin Kanban, abre herramienta externa
+   ══════════════════════════════════════════════════════════════ */
+function EquipoTabExternal({ teamColor, teamIcon, description, label, url }: {
+  teamColor: string; teamIcon: string; description: string; label: string; url: string | null;
+}) {
+  const c    = teamColors(teamColor);
+  const Icon = getTeamIcon(teamIcon);
+  const hasUrl = !!url;
+
+  function open() {
+    if (hasUrl) window.open(url!, '_blank', 'noopener,noreferrer');
+  }
+
+  return (
+    <button onClick={open} title={hasUrl ? `Abrir ${label}` : `${label} — sin URL configurada`} style={{
+      flexShrink: 0, width: 200,
+      background: 'var(--surface-1)',
+      border: `1px solid ${c.dot}30`,
+      borderRadius: 12, padding: '14px 16px', cursor: hasUrl ? 'pointer' : 'not-allowed',
+      transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', position: 'relative', overflow: 'hidden',
+      opacity: hasUrl ? 1 : 0.7,
+    }}
+      onMouseEnter={(e) => { if (hasUrl) { const el = e.currentTarget as HTMLElement; el.style.borderColor = c.dot + '55'; el.style.background = `linear-gradient(145deg, ${c.dot}0A 0%, ${c.dot}03 100%)`; el.style.transform = 'translateY(-1px)'; }}}
+      onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = c.dot + '30'; el.style.background = 'var(--surface-1)'; el.style.transform = 'translateY(0)'; }}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c.dot}00, ${c.dot}35, ${c.dot}00)` }} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, height: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: c.dot + '14', border: `1px solid ${c.dot}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon size={14} style={{ color: c.dot }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }} title={label}>{label}</span>
+        </div>
+        <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(108,92,231,0.14)', border: '1px solid rgba(108,92,231,0.35)', color: '#6c5ce7', letterSpacing: '0.5px', flexShrink: 0 }}>EXTERNO</span>
+      </div>
+
+      {/* Descripción */}
+      <div style={{ height: 33, overflow: 'hidden', margin: '0 0 12px', textAlign: 'left' }}>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {description || 'Herramienta propia del equipo.'}
+        </p>
+      </div>
+
+      {/* Footer: en vez de stats, un CTA de abrir */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, borderTop: `1px solid ${c.dot}20` }}>
+        <ExternalLink size={12} style={{ color: hasUrl ? c.dot : 'var(--txt-muted)', flexShrink: 0 }} />
+        <span style={{ fontSize: 10, fontWeight: 600, color: hasUrl ? c.dot : 'var(--txt-muted)', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+          {hasUrl ? 'Abrir herramienta' : 'Sin URL configurada'}
+        </span>
       </div>
     </button>
   );
@@ -661,12 +717,26 @@ export function HomePage() {
   const role        = useRole();
   const userCanSeeBoard = canSeeBoard(role);
 
-  const [activeEquipo,    setActiveEquipo]    = useState<Equipo>('desarrollo');
+  const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
   const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const { data: sprints    = [] } = useSprints();
-  const visibleTeams = boardTeams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
+  const visibleTeams = boardTeams.filter((t) =>
+    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
+  );
+
+  // Equipos que sí tienen board (los externos no cuentan como seleccionables)
+  const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External);
+
+  // Auto-selección del primer equipo real cuando cargan los datos (o si el activo dejó de ser válido)
+  useEffect(() => {
+    if (selectableTeams.length === 0) return;
+    const stillValid = activeEquipo !== null && selectableTeams.some((t) => t.Board_Team_Code === activeEquipo);
+    if (!stillValid) {
+      setActiveEquipo(selectableTeams[0].Board_Team_Code);
+    }
+  }, [selectableTeams, activeEquipo]);
 
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
@@ -718,31 +788,45 @@ export function HomePage() {
       </div>
       {/* Tabs de equipo */}
 <TabsScroller>
-          {visibleTeams.map((team) => (
-          <EquipoTab
-            key={team.Board_Team_Code}
-            equipo={team.Board_Team_Code}
-            label={team.Board_Team_Name}
-            teamColor={team.Board_Team_Color}
-            teamIcon={team.Board_Team_Icon ?? '🗂️'}
-            description={team.Board_Team_Description ?? ''}
-            isActive={activeEquipo === team.Board_Team_Code}
-            isAdminOnly={team.Board_Team_Is_Admin_Only ?? false}
-            onClick={() => setActiveEquipo(team.Board_Team_Code)}
-          />
-        ))}
+          {visibleTeams.map((team) =>
+          team.Board_Team_Is_External ? (
+            <EquipoTabExternal
+              key={team.Board_Team_Code}
+              label={team.Board_Team_Name}
+              teamColor={team.Board_Team_Color}
+              teamIcon={team.Board_Team_Icon ?? '🗂️'}
+              description={team.Board_Team_Description ?? ''}
+              url={team.Board_Team_External_URL ?? null}
+            />
+          ) : (
+            <EquipoTab
+              key={team.Board_Team_Code}
+              equipo={team.Board_Team_Code}
+              label={team.Board_Team_Name}
+              teamColor={team.Board_Team_Color}
+              teamIcon={team.Board_Team_Icon ?? '🗂️'}
+              description={team.Board_Team_Description ?? ''}
+              isActive={activeEquipo === team.Board_Team_Code}
+              isAdminOnly={team.Board_Team_Is_Admin_Only ?? false}
+              onClick={() => setActiveEquipo(team.Board_Team_Code)}
+            />
+          )
+        )}
       </TabsScroller>
 
       {/* Panel principal */}
-      <EquipoPanel
-        key={activeEquipo}
-        equipo={activeEquipo}
-teamColor={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Color ?? '#00c8ff'}
-  label={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Name ?? activeEquipo}        activeSprint={activeSprint}
-        onRowClick={handleRowClick}
-        onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
-        canAccessBoard={userCanSeeBoard}
-      />
+      {activeEquipo && (
+        <EquipoPanel
+          key={activeEquipo}
+          equipo={activeEquipo}
+          teamColor={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Color ?? '#00c8ff'}
+          label={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Name ?? activeEquipo}
+          activeSprint={activeSprint}
+          onRowClick={handleRowClick}
+          onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
+          canAccessBoard={userCanSeeBoard}
+        />
+      )}
 
       {selectedRequest && (
         <HomeRequestModal request={selectedRequest} onClose={handleModalClose} />

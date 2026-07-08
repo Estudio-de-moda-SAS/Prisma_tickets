@@ -10,6 +10,7 @@ import { AnnouncementBanner } from './AnnouncementBanner';
 import { AnnouncementModal }  from './AnnouncementModal';
 import { VersionUpdateBanner } from './VersionUpdateBanner';
 import { FloatingTimer } from './FloatingTimer';
+import { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
 
 const TITULOS: Record<string, string> = {
   '/home':         'Home',
@@ -37,6 +38,7 @@ export function AppLayout() {
 
   return (
     <>
+  <NotificationPermissionPrompt />
       <div className="app-layout">
         <Sidebar />
         <div className="app-layout__main">

@@ -22,7 +22,7 @@ import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
-import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock } from 'lucide-react';
+import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
 
 type Step = 'equipo' | 'template' | 'form';
 
@@ -410,8 +410,9 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
         {teams.map((team, idx) => {
-          const isAlone             = teams.length % 2 !== 0 && idx === teams.length - 1;
-          const selected            = selectedTeamId === team.Board_Team_ID;
+          const isAlone               = teams.length % 2 !== 0 && idx === teams.length - 1;
+          const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
+          const selected              = !isExternal && selectedTeamId === team.Board_Team_ID;
           const { dot, glow, border } = teamColors(team.Board_Team_Color);
           const Icon = getTeamIcon(team.Board_Team_Icon);
 
@@ -419,7 +420,13 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
             <button
               key={team.Board_Team_ID}
               type="button"
-              onClick={() => onSelect(team.Board_Team_ID)}
+              onClick={() => {
+                if (isExternal) {
+                  window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
+                  return;
+                }
+                onSelect(team.Board_Team_ID);
+              }}
               style={{
                 padding: '22px 20px', borderRadius: 10,
                 border: `1.5px solid ${selected ? border : 'var(--border)'}`,
@@ -434,14 +441,14 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
               {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+              {isExternal && <div style={{ position: 'absolute', top: 12, right: 14, width: 22, height: 22, borderRadius: 6, background: `${dot}18`, border: `1px solid ${dot}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Abre en herramienta externa"><ExternalLink size={12} style={{ color: dot }} /></div>}
 <div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
 </div>              <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
   <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
   <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65 }}>
-    {team.Board_Team_Description ?? team.Board_Team_Code}
-  </div>
+{team.Board_Team_Description ?? (isExternal ? 'Herramienta externa del equipo' : team.Board_Team_Code)}  </div>
 </div>              </div>
             </button>
           );
@@ -944,7 +951,9 @@ export function NuevaSolicitudPage() {
   const { data: teams      = [] } = useBoardTeams(boardId);
   const { data: templates  = [] } = useBoardTemplates(boardId);
   const role        = useRole();
-  const visibleTeams = teams.filter((t) => role.role === 'admin' || !t.Board_Team_Is_Admin_Only);
+  const visibleTeams = teams.filter((t) =>
+    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
+  );
 
   const [step,               setStep]               = useState<Step>('equipo');
   const [selectedTeamId,     setSelectedTeamId]     = useState<number | null>(null);

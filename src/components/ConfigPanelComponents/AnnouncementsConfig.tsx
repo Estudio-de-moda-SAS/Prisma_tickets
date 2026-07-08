@@ -14,17 +14,17 @@ import { AddBtn, SmBtn, FieldLabel, FormActions } from '../ConfigPanel';
 
 /* ── Constantes ── */
 const SURFACES = [
-  { key: 'banner', label: 'Banner'      },
-  { key: 'login',  label: 'Login'       },
-  { key: 'home',   label: 'Inicio'      },
-  { key: 'modal',  label: 'Modal'       },
+  { key: 'banner', label: 'Banner', desc: 'Barra fija en la parte superior de la app, visible mientras el usuario navega.' },
+  { key: 'login',  label: 'Login',  desc: 'Pantalla de inicio de sesión, antes de autenticarse. Visible para cualquiera.' },
+  { key: 'home',   label: 'Inicio', desc: 'Página de inicio, al entrar a la aplicación.' },
+  { key: 'modal',  label: 'Modal',  desc: 'Ventana emergente que aparece sobre el contenido para captar la atención.' },
 ] as const;
 
 const TYPES = [
-  { key: 'info',     label: 'Info',    color: '#00c8ff' },
-  { key: 'warning',  label: 'Aviso',   color: '#EF9F27' },
-  { key: 'critical', label: 'Crítico', color: '#ff4757' },
-  { key: 'success',  label: 'Éxito',   color: '#4CAF50' },
+  { key: 'info',     label: 'Info',    color: '#00c8ff', desc: 'Mensaje informativo neutro. Para novedades o recordatorios sin urgencia.' },
+  { key: 'warning',  label: 'Aviso',   color: '#EF9F27', desc: 'Advertencia. Algo requiere atención, como un mantenimiento próximo o un cambio importante.' },
+  { key: 'critical', label: 'Crítico', color: '#ff4757', desc: 'Alerta crítica. Situaciones urgentes o caídas que el usuario debe ver de inmediato.' },
+  { key: 'success',  label: 'Éxito',   color: '#4CAF50', desc: 'Mensaje positivo. Confirma que algo se resolvió o que un servicio ya está disponible.' },
 ] as const;
 
 /* ── Helpers de audiencia ── */
@@ -110,6 +110,45 @@ function toForm(a: Announcement): FormState {
   };
 }
 
+/* ── HelpDot: ícono de ayuda con tooltip ── */
+function HelpDot({ text, side = 'top' }: { text: string; side?: 'top' | 'bottom' }) {
+  const [show, setShow] = useState(false);
+  const pos = side === 'top' ? { bottom: 'calc(100% + 7px)' } : { top: 'calc(100% + 7px)' };
+  return (
+    <span
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      style={{
+        position: 'relative', display: 'inline-flex', alignItems: 'center',
+        justifyContent: 'center', width: 13, height: 13, borderRadius: '50%',
+        border: '1px solid var(--border)', color: 'var(--txt-muted)',
+        fontSize: 9, fontWeight: 700, lineHeight: 1, cursor: 'help',
+        marginLeft: 5, verticalAlign: 'middle', flexShrink: 0, userSelect: 'none',
+      }}
+    >
+      ?
+      {show && (
+        <span
+          role="tooltip"
+          style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            ...pos,
+            width: 'max-content', maxWidth: 210, padding: '7px 9px',
+            borderRadius: 7, background: 'var(--bg-panel)',
+            border: '1px solid var(--border)', color: 'var(--txt)',
+            fontSize: 10.5, fontWeight: 400, lineHeight: 1.45,
+            letterSpacing: 'normal', textTransform: 'none', textAlign: 'left',
+            whiteSpace: 'normal', boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+            zIndex: 100, pointerEvents: 'none',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /* ── AnnouncementForm ── */
 function AnnouncementForm({ initial, onSave, onCancel }: {
   initial?: FormState;
@@ -148,7 +187,7 @@ const toggle = (key: string) =>
 
       {/* Título */}
       <div>
-        <FieldLabel>Título *</FieldLabel>
+        <FieldLabel>Título * <HelpDot text="Encabezado principal del aviso. Es lo primero (y a veces lo único) que verá el usuario." side="bottom" /></FieldLabel>
         <input
           autoFocus value={f.title}
           onChange={(e) => setF((p) => ({ ...p, title: e.target.value }))}
@@ -160,7 +199,7 @@ const toggle = (key: string) =>
 
       {/* Descripción */}
       <div>
-        <FieldLabel>Descripción (opcional)</FieldLabel>
+        <FieldLabel>Descripción (opcional) <HelpDot text="Texto secundario opcional con más detalle. Se muestra debajo del título." side="bottom" /></FieldLabel>
         <textarea
           value={f.body}
           onChange={(e) => setF((p) => ({ ...p, body: e.target.value }))}
@@ -172,11 +211,11 @@ const toggle = (key: string) =>
 
       {/* Tipo */}
       <div>
-        <FieldLabel>Tipo</FieldLabel>
+        <FieldLabel>Tipo <HelpDot text="Define el color y la severidad visual del aviso. No cambia dónde aparece, solo cómo se ve." /></FieldLabel>
         <div style={{ display: 'flex', gap: 5 }}>
           {TYPES.map((t) => (
             <button
-              key={t.key} type="button"
+              key={t.key} type="button" title={t.desc}
               onClick={() => setF((p) => ({ ...p, type: t.key as Announcement['type'] }))}
               style={{
                 flex: 1, padding: '5px 4px', borderRadius: 7,
@@ -193,11 +232,11 @@ const toggle = (key: string) =>
 
       {/* Mostrar en */}
       <div>
-        <FieldLabel>Mostrar en</FieldLabel>
+        <FieldLabel>Mostrar en <HelpDot text="Superficies donde aparecerá el aviso. Puedes activar varias a la vez." /></FieldLabel>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {SURFACES.map((s) => (
             <button
-              key={s.key} type="button" onClick={() => toggle(s.key)}
+              key={s.key} type="button" title={s.desc} onClick={() => toggle(s.key)}
               style={{
                 padding: '4px 10px', borderRadius: 6,
                 border: `1px solid ${f.showIn.includes(s.key) ? 'rgba(0,200,255,0.5)' : 'var(--border)'}`,
@@ -213,7 +252,7 @@ const toggle = (key: string) =>
 
 {/* Audiencia */}
 <div>
-  <FieldLabel>Audiencia</FieldLabel>
+  <FieldLabel>Audiencia <HelpDot text="Quién verá el aviso. Si lo muestras en Login será visible para todos, porque aún no hay sesión iniciada." /></FieldLabel>
 
   {f.showIn.includes('login') && (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '7px 10px', borderRadius: 7, background: 'rgba(239,159,39,0.08)', border: '1px solid rgba(239,159,39,0.25)', marginBottom: 8 }}>
@@ -227,11 +266,16 @@ const toggle = (key: string) =>
   <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
     {(['all', 'admin', 'department'] as const).map((type) => {
       const labels   = { all: 'Todos', admin: 'Solo admin', department: 'Por departamento' };
+      const descs    = {
+        all:        'Visible para todos los usuarios autenticados.',
+        admin:      'Solo lo verán los administradores de TI.',
+        department: 'Dirígelo a un departamento específico y, opcionalmente, a un equipo concreto.',
+      };
       const active   = f.audienceType === type;
       const disabled = f.showIn.includes('login') && type !== 'all';
       return (
         <button
-          key={type} type="button"
+          key={type} type="button" title={descs[type]}
           onClick={() => !disabled && setF((p) => ({ ...p, audienceType: type, targetDeptId: null, targetTeamId: null }))}
           style={{
             flex: 1, padding: '5px 4px', borderRadius: 7,
@@ -291,13 +335,13 @@ const toggle = (key: string) =>
 
       {/* Fechas */}
       <div>
-        <FieldLabel>Inicio</FieldLabel>
+        <FieldLabel>Inicio <HelpDot text="Fecha y hora desde la que el aviso empieza a mostrarse." /></FieldLabel>
         <input type="datetime-local" value={f.startsAt}
           onChange={(e) => setF((p) => ({ ...p, startsAt: e.target.value }))}
           style={inputStyle} />
       </div>
       <div>
-        <FieldLabel>Fin (opcional)</FieldLabel>
+        <FieldLabel>Fin (opcional) <HelpDot text="Fecha y hora en que el aviso deja de mostrarse. Déjalo vacío para que no expire." /></FieldLabel>
         <input type="datetime-local" value={f.endsAt}
           onChange={(e) => setF((p) => ({ ...p, endsAt: e.target.value }))}
           style={inputStyle} />
