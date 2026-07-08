@@ -216,7 +216,7 @@ function handleEquipo(key: string) {
                           }
                         >
                           <ClipboardList size={12} />
-                          <span>Mis solicitudes</span>
+                          <span>Solicitudes</span>
                         </NavLink>
                       </div>
                     )}

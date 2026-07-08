@@ -320,7 +320,7 @@ export function TeamRequestsPage() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.3px' }}>
-              {vista === 'mias' ? 'Mis solicitudes' : 'Asignadas a mí'} — <span style={{ color: c.dot }}>{label}</span>
+              {vista === 'mias' ? 'Solicitudes' : 'Asignadas a mí'} — <span style={{ color: c.dot }}>{label}</span>
             </h1>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--txt-muted)' }}>
               {isLoading ? 'Cargando…' : `${filtradas.length} solicitud${filtradas.length !== 1 ? 'es' : ''} · ${selectedSprintLabel}`}
