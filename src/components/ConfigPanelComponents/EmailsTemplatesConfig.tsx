@@ -172,6 +172,52 @@ function EmailTemplateMetaForm({ template, onSave, onCancel }: {
   );
 }
 
+/* ── Valores de ejemplo para el preview del editor ──────────────────────
+   El preview pinta el HTML crudo, así que las variables en atributos CSS
+   (background:{{s3_bg}}) rompen el layout: el navegador descarta la regla
+   inválida y el elemento colapsa. Acá las sustituimos por valores realistas
+   para que el admin vea el correo como va a llegar. Esto es SOLO visual —
+   el envío real usa renderTemplate() en el Edge Function.
+──────────────────────────────────────────────────────────────────────────── */
+const PREVIEW_VARS: Record<string, string> = {
+  // Comunes
+  ticket_id:      'TCK-2026-A-0142',
+  ticket_title:   'Ajuste en el reporte de ventas mensual',
+  ticket_url:     '#',
+  requester_name: 'María Restrepo',
+  recipient_name: 'María Restrepo',
+  actor_name:     'Carlos Gómez',
+  client_name:    'Carlos Gómez',
+  // ticket_recibido
+  ticket_description: 'Las columnas de la pestaña "Resumen" no están sumando los totales de la región Antioquia.',
+  sprint_info:    'Tu solicitud quedó programada para el Sprint 24.',
+  sprint_name:    'Sprint 24',
+  // Comentarios
+  comment_preview: 'Ya revisé el reporte y ajusté las columnas que faltaban.',
+  is_confidential: 'false',
+  // Feedback — caso aprobado (el más representativo)
+  status_color:   '#16a34a',
+  status_bg:      '#f0fdf4',
+  status_border:  '#bbf7d0',
+  status_message: '<strong>Carlos Gómez</strong> revisó la solicitud y la <strong style="color:#16a34a;">aprobó</strong>.',
+  next_step:      'La solicitud avanzó a <strong>Ready to Deploy</strong>.',
+  feedback_status_lower: 'aprobó',
+  feedback_block: '',
+  // Stepper — estado "aprobado" (1,2,3 verdes · 4 activo)
+  s2_bg: '#16a34a', s2_icon: '\u2713', s2_label_color: '#333333', s2_bold: 'normal',
+  s3_bg: '#16a34a', s3_fg: '#ffffff', s3_icon: '\u2713', s3_label_color: '#333333',
+  s4_bg: '#6b2cff', s4_fg: '#ffffff', s4_icon: '\u2605', s4_label_color: '#6b2cff', s4_bold: 'bold',
+  line23: '#16a34a', line34: '#16a34a',
+};
+
+/** Sustituye {{var}} por su mock. Las desconocidas quedan visibles y marcadas. */
+function renderPreview(html: string): string {
+  return html.replace(/\{\{(\w+)\}\}/g, (_m, key: string) =>
+    PREVIEW_VARS[key] ??
+    `<span style="background:#fff3cd; color:#856404; padding:1px 5px; border-radius:3px; font-family:monospace; font-size:11px;">{{${key}}}</span>`
+  );
+}
+
 function EmailTemplateForm({ template, onSave, onCancel }: {
   template: EmailTemplate; onSave: (d: { subject: string; html: string; text: string }) => void; onCancel: () => void;
 }) {
@@ -209,9 +255,17 @@ function EmailTemplateForm({ template, onSave, onCancel }: {
         </div>
       )}
       {tab === 'preview' && (
-        <div style={{ flex: 1, minHeight: 0, borderRadius: 8, overflow: 'auto', border: '1px solid var(--border-subtle)', background: '#fff' }}>
-          {html.trim() ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999', fontSize: 12 }}>Sin HTML para previsualizar</div>}
+        <>
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', marginBottom: 6, borderRadius: 6, background: 'rgba(253,203,110,0.08)', border: '1px solid rgba(253,203,110,0.25)' }}>
+          <span style={{ fontSize: 11, flexShrink: 0 }}>👁</span>
+          <span style={{ fontSize: 10, color: '#fdcb6e', lineHeight: 1.4 }}>
+            Datos de ejemplo. Las variables sin valor de muestra aparecen resaltadas en amarillo.
+          </span>
         </div>
+        <div style={{ flex: 1, minHeight: 0, borderRadius: 8, overflow: 'auto', border: '1px solid var(--border-subtle)', background: '#fff' }}>
+{html.trim() ? <div dangerouslySetInnerHTML={{ __html: renderPreview(html) }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999', fontSize: 12 }}>Sin HTML para previsualizar</div>}
+        </div>
+        </>
       )}
     </div>
   );

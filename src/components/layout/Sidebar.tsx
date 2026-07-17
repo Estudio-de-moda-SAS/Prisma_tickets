@@ -171,7 +171,7 @@ function handleEquipo(key: string) {
                       className="sidebar__nav-item sidebar__nav-item--team"
                       style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
                     >
-                      <Icon size={15} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
+                      <Icon size={16} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
                       {sidebarAbierto && (
                         <span style={{ color: ia ? c.dot : undefined, flex: 1, minWidth: 0 }}>{label}</span>
                       )}

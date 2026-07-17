@@ -29,7 +29,7 @@ export async function sendEventEmail(
   // El correo NUNCA debe romper la acción principal.
   try {
     if (!MAIL_API_URL || !MAIL_SENDER) {
-      console.warn('[email] MAIL_API_URL / MAIL_SENDER sin configurar — se omite envío');
+      //console.warn('[email] MAIL_API_URL / MAIL_SENDER sin configurar — se omite envío');
       return;
     }
     if (params.userIds.length === 0) return;
@@ -41,7 +41,10 @@ export async function sendEventEmail(
       .eq('Email_Template_Event_Key', params.eventKey)
       .eq('Email_Template_Is_Active', true)
       .maybeSingle();
-    if (!tpl) return; // sin template activo → no se manda nada
+    if (!tpl) {
+      //console.warn(`[email] sin template activo para Event_Key="${params.eventKey}" — no se envía nada`);
+      return;
+    }
 
     // 2. Destinatarios con correo válido
     const { data: users } = await supabase
@@ -125,6 +128,7 @@ const rawText = await res.text();
         Email_Log_Request_ID:      params.requestId,
         Email_Log_Sent_To:         r.User_ID,
         Email_Log_Template_Name:   (tpl as any).Email_Template_Name,
+        Email_Log_Event_Key:       params.eventKey,   // estable aunque renombren el template
         Email_Log_Subject_Sent:    subject,
         Email_Log_Body_Sent:       html,
         Email_Log_Status:          status,

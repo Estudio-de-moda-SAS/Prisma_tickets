@@ -92,10 +92,10 @@ export function useBoardEquipo(equipo: Equipo) {
       ? () => Promise.resolve(getMockBoardForTeam(equipo))
       : () => Requests.fetchByTeamCode(equipo).then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 10_000,
+    staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
-    refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 15_000,
+    refetchOnWindowFocus: false,
+    refetchInterval:      config.USE_MOCK ? false : 180_000,
     retry:                config.USE_MOCK ? false : 1,
   });
 }
@@ -112,12 +112,11 @@ export function useBoardCompleto() {
       ? () => Promise.resolve(getMockBoardFull())
       : () => Requests.fetchAllByBoard().then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 10_000,
+staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
-    refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 15_000,
-    retry:                config.USE_MOCK ? false : 1,
-  });
+    refetchOnWindowFocus: false,
+    refetchInterval:      config.USE_MOCK ? false : 180_000,
+    retry:                config.USE_MOCK ? false : 1,  });
 }
 /* ============================================================
    Hook — board completo para ESTADÍSTICAS (dataset completo, liviano)
@@ -151,12 +150,11 @@ export function useSinCategorizar() {
       ? () => Promise.resolve(MOCK_BOARD.sin_categorizar)
       : () => Requests.fetchUncategorized(),
 
-    staleTime:            config.USE_MOCK ? Infinity : 10_000,
+staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
-    refetchOnWindowFocus: true,
-    refetchInterval:      config.USE_MOCK ? false : 15_000,
-    retry:                config.USE_MOCK ? false : 1,
-  });
+    refetchOnWindowFocus: false,
+    refetchInterval:      config.USE_MOCK ? false : 180_000,
+    retry:                config.USE_MOCK ? false : 1,  });
 }
 
 /* ============================================================

@@ -4,9 +4,7 @@ import { SIGNED_URL_EXPIRES_IN } from '../lib/storage.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants, isCloseColumn } from '../shared/requests.ts';
-// @ts-ignore
-import { sendEventEmail } from '../email/send.ts';
+import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail } from '../shared/requests.ts';
 
 export const closureHandlers: Record<string, ActionHandler> = {
   closeRequest: async (payload, { supabase }) => {
@@ -98,58 +96,14 @@ export const closureHandlers: Record<string, ActionHandler> = {
     });
 
     // ── Correo "listo para revisión del cliente" ──────────────────────────
-    // SOLO al mover a Client Review (columna 10). Otras columnas con evidencia
-    // pasan por acá también, por eso el guard === 10.
-    // Solo al solicitante, solo si es externo y NO es también resolutor.
-    // La notificación in-app de arriba queda intacta; esto es SOLO correo.
-console.log(`[cr-debug] closeRequest targetColumnId=${p.targetColumnId} (${typeof p.targetColumnId}) requestedBy=${requestedBy}`);
-    if (p.targetColumnId === 10 && requestedBy) {
-      console.log('[cr-debug] entró al if de columna 10');
-      try {
-        const { data: reqUser } = await supabase
-          .from('TBL_Users')
-          .select('User_Name, User_Role')
-          .eq('User_ID', requestedBy)
-          .single();
-
-        const role       = (reqUser as any)?.User_Role as string | undefined;
-        const isExternal  = role !== 'admin' && role !== 'ti_member';
-        const isAlsoResolver = assigneeIds.includes(requestedBy);
-        console.log(`[cr-debug] role=${role} isExternal=${isExternal} isAlsoResolver=${isAlsoResolver}`);
-
-        if (isExternal && !isAlsoResolver) {
-          console.log('[cr-debug] pasó validaciones, va a mandar correo');
-          const fullName = (reqUser as any)?.User_Name ?? '';
-          const parts    = fullName.trim().split(/\s+/);
-          const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
-
-          const { data: reqRow } = await supabase
-            .from('TBL_Requests')
-            .select('Request_Title')
-            .eq('Request_ID', p.requestId)
-            .single();
-
-          await sendEventEmail(supabase, {
-            eventKey:  'moveToClientReview',
-            requestId: p.requestId,
-            userIds:   [requestedBy],
-            vars: {
-              requester_name: requesterName,
-              ticket_id:      p.requestId,
-              ticket_title:   (reqRow as any)?.Request_Title ?? '',
-              ticket_url:     `${Deno.env.get('MAIL_APP_URL')}/ticket/${p.requestId}`,
-            },
-          });
-          console.log('[cr-debug] sendEventEmail terminó');
-        } else {
-          console.log('[cr-debug] CORTÓ: interno o es también resolutor');
-        }
-      } catch (emailErr) {
-        console.log('[cr-debug] ERROR:', emailErr);
-      }
-    } else {
-      console.log('[cr-debug] CORTÓ: targetColumnId no es 10 o requestedBy vacío');
-    }
+    // Mismo helper que moveToColumn: decide por slug de columna, departamento
+    // del solicitante y si es también resolutor. Nunca lanza.
+    await maybeSendClientReviewEmail(supabase, {
+      requestId:   p.requestId,
+      columnId:    Number(p.targetColumnId),
+      requestedBy,
+      assigneeIds,
+    });
     // ── /Correo ───────────────────────────────────────────────────────────
 
     return closure;

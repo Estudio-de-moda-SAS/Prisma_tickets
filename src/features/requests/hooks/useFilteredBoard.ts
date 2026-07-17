@@ -192,16 +192,23 @@ function isActive(c: FilterCondition): boolean {
 export function useFilteredBoard(
   boardId: string,
   board: BoardData | undefined,
+  excludeFields?: FilterField[],
 ): BoardData | undefined {
   const { getConditions, getConjunction } = useFilterStore();
 
   const conditions  = getConditions(boardId);
   const conjunction = getConjunction(boardId);
 
+  const excludeKey = excludeFields?.join('|') ?? '';
+
   return useMemo(() => {
     if (!board) return undefined;
 
-    const active = conditions.filter(isActive);
+    const excluded = excludeKey ? new Set(excludeKey.split('|')) : null;
+    const active = conditions
+      .filter(isActive)
+      .filter((c) => !excluded || !excluded.has(c.field));
+
     if (active.length === 0) return board;
 
     const matches = (req: Request): boolean =>
@@ -214,7 +221,7 @@ export function useFilteredBoard(
       filtered[col] = items.filter(matches);
     }
     return filtered;
-  }, [board, conditions, conjunction]);
+  }, [board, conditions, conjunction, excludeKey]);
 }
 
 /* ============================================================

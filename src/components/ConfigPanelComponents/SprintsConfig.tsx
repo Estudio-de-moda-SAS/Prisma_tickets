@@ -317,7 +317,13 @@ export function SprintList({
 
   // Teams fetched here — React Query deduplicates, no extra network call
   const { data: allTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
-  const teams = (allTeams as BoardTeam[]).filter((t) => !t.Board_Team_Is_Admin_Only);
+  // Solo equipos con Kanban propio y activos: los externos no reciben solicitudes en el board,
+  // y los inactivos ya no operan — no tiene sentido definirles capacidad.
+  const teams = (allTeams as BoardTeam[]).filter((t) =>
+    !t.Board_Team_Is_Admin_Only &&
+    !t.Board_Team_Is_External &&
+    t.Board_Team_Is_Active !== false
+  );
 const [activating, setActivating] = useState(false);
 const [activateResult, setActivateResult] = useState<{ moved: number; destColumn?: string } | null>(null);
 

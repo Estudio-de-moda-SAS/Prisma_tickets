@@ -4,7 +4,7 @@ import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants, isCloseColumn } from '../shared/requests.ts';
+import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail, maybeSendInProgressEmail } from '../shared/requests.ts';
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
 // @ts-ignore
@@ -113,9 +113,13 @@ fetchByTeamCode: async (payload, { supabase }) => {
 
   fetchById: async (payload, { supabase }) => {
     const { id } = payload as { id: string };
+    // maybeSingle: un ID inexistente (ticket borrado, deep-link viejo, padre
+    // huérfano) es "no encontrado", no un error 500. Devolvemos null y el
+    // frontend decide qué mostrar.
     const { data, error } = await supabase
-      .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', id).single();
+      .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', id).maybeSingle();
     if (error) throw new Error(error.message);
+    if (!data) console.log(`[fetchById] no encontrado: ${id}`);
     return data;
   },
 
@@ -443,6 +447,7 @@ fetchByTeamCode: async (payload, { supabase }) => {
 
   moveToColumn: async (payload, { supabase }) => {
     const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
+    console.log(`[move] id=${id} columnId=${columnId} movedBy=${movedBy}`);
     const [colRes, reqRes] = await Promise.all([
       supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', columnId).single(),
       supabase.from('TBL_Requests').select('Request_Finished_At').eq('Request_ID', id).single(),
@@ -463,6 +468,21 @@ fetchByTeamCode: async (payload, { supabase }) => {
     const { error } = await supabase
       .from('TBL_Requests').update(updateData).eq('Request_ID', id);
     if (error) throw new Error(error.message);
+
+    // ── Sincronizar bug report vinculado ──────────────────────────────
+    // Si este ticket nació de un bug report y acaba de cerrarse (o de
+    // reabrirse), reflejarlo en TBL_Bug_Reports. El vínculo es
+    // Linked_Request_ID; no dependemos del Form_Data para el match.
+    if (willClose || wasClosed) {
+      try {
+        const nextBugStatus = willClose ? 'cerrado' : 'asignado';
+        await supabase
+          .from('TBL_Bug_Reports')
+          .update({ Status: nextBugStatus, Updated_At: new Date().toISOString() })
+          .eq('Linked_Request_ID', id);
+      } catch (_bugSyncErr) { /* no bloquear el move */ }
+    }
+    // ── /Sincronizar bug report ───────────────────────────────────────
 
     if (!willClose && wasClosed && movedBy) {
       const colName = (colData as any)?.Board_Column_Name ?? 'otra columna';
@@ -494,56 +514,22 @@ fetchByTeamCode: async (payload, { supabase }) => {
         actorId:   movedBy,
       });
 
-      // ── Correo "listo para revisión del cliente" ──────────────────────
-      // Solo al mover a Client Review (columna 10). Solo al solicitante.
-      // Condiciones: (a) solicitante externo, (b) solicitante NO es resolutor.
-      // La notificación in-app de arriba queda intacta; esto es SOLO correo adicional.
-console.log(`[cr-debug] movedBy=${movedBy} columnId=${columnId} (${typeof columnId}) requestedBy=${requestedBy}`);
-      if (Number(columnId) === 10 && requestedBy) {
-        console.log('[cr-debug] entró al if de columna 10');
-        try {
-          const { data: reqUser } = await supabase
-            .from('TBL_Users')
-            .select('User_Name, User_Role')
-            .eq('User_ID', requestedBy)
-            .single();
-
-          const isAlsoResolver = assigneeIds.includes(requestedBy);
-          console.log(`[cr-debug] isAlsoResolver=${isAlsoResolver} assignees=${JSON.stringify(assigneeIds)}`);
-
-          if (!isAlsoResolver) {
-            console.log('[cr-debug] pasó validación, va a mandar correo');
-            const fullName = (reqUser as any)?.User_Name ?? '';
-            const parts    = fullName.trim().split(/\s+/);
-            const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
-
-            const { data: reqRow } = await supabase
-              .from('TBL_Requests')
-              .select('Request_Title')
-              .eq('Request_ID', id)
-              .single();
-
-            await sendEventEmail(supabase, {
-              eventKey:  'moveToClientReview',
-              requestId: id,
-              userIds:   [requestedBy],
-              vars: {
-                requester_name: requesterName,
-                ticket_id:      id,
-                ticket_title:   (reqRow as any)?.Request_Title ?? '',
-                ticket_url:     `${Deno.env.get('MAIL_APP_URL')}/ticket/${id}`,
-              },
-            });
-            console.log('[cr-debug] sendEventEmail terminó');
-          } else {
-            console.log('[cr-debug] CORTÓ: solicitante es también resolutor');
-          }
-        } catch (emailErr) {
-          console.log('[cr-debug] ERROR en el bloque:', emailErr);
-        }
-      } else {
-        console.log('[cr-debug] CORTÓ: no entró al if (columnId !== 10 o requestedBy vacío)');
-      }      // ── /Correo ───────────────────────────────────────────────────────
+      // ── Correos de cambio de columna ──────────────────────────────────
+      // Cada helper valida su propio slug destino y se auto-omite si no aplica.
+      // Nunca lanzan: el correo no puede tumbar el move.
+      await maybeSendClientReviewEmail(supabase, {
+        requestId:   id,
+        columnId:    Number(columnId),
+        requestedBy,
+        assigneeIds,
+      });
+      await maybeSendInProgressEmail(supabase, {
+        requestId:   id,
+        columnId:    Number(columnId),
+        requestedBy,
+        assigneeIds,
+      });
+      // ── /Correos ──────────────────────────────────────────────────────
     }
 
     // ── Ejecutar reglas columna_cambiada ──────────────────
@@ -590,7 +576,7 @@ console.log(`[cr-debug] movedBy=${movedBy} columnId=${columnId} (${typeof column
                 }
               } else if (rule.Rule_Action === 'asignar_prioridad') {
                 const scoreMap: Record<string, number> = {
-                  baja: 1, media: 3, alta: 5, critica: 8,
+                  baja: 1, media: 2, alta: 4, critica: 6,
                 };
                 const score = scoreMap[rule.Rule_Action_Value];
                 if (score !== undefined) {
@@ -844,5 +830,63 @@ fetchAllByBoardStats: async (payload, { supabase }) => {
     }
     console.log('[stats] TOTAL devuelto: ' + all.length);
     return all;
+  },
+  filterRequests: async (payload, { supabase }) => {
+    const { boardId, teamCode, ast, limit, cursorId } = payload as {
+      boardId:  number;
+      teamCode: string | null;
+      ast:      Record<string, unknown>;
+      limit?:   number;
+      cursorId?: string | null;
+    };
+
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('filter_requests', {
+      p_board_id:  boardId,
+      p_team_code: teamCode ?? null,
+      p_ast:       ast,
+      p_limit:     limit ?? 300,
+      p_cursor_id: cursorId ?? null,
+    });
+    if (rpcErr) throw new Error(rpcErr.message);
+
+    const result = (rpcData ?? {}) as {
+      ids?:               string[];
+      total_count?:       number;
+      per_column_counts?: Record<string, number>;
+      next_cursor?:       string | null;
+    };
+    const ids = result.ids ?? [];
+
+    // Sin coincidencias → devolvemos shape vacío pero con metadata
+    if (ids.length === 0) {
+      return {
+        rows:            [],
+        totalCount:      result.total_count ?? 0,
+        perColumnCounts: result.per_column_counts ?? {},
+        nextCursor:      result.next_cursor ?? null,
+      };
+    }
+
+    // Hidratación con BASE_SELECT vía chunkedIn (mismo patrón que fetchByTeamCode)
+    const rows = await chunkedIn(supabase, ids, (slice) =>
+      supabase
+        .from('TBL_Requests').select(BASE_SELECT)
+        .in('Request_ID', slice),
+    );
+
+    // La RPC ya ordenó por Request_ID DESC; el chunking rompe ese orden,
+    // así que reordenamos según la secuencia de ids que devolvió la RPC.
+    const orderMap = new Map(ids.map((id, i) => [id, i]));
+    rows.sort((a: any, b: any) =>
+      (orderMap.get(a.Request_ID) ?? 0) - (orderMap.get(b.Request_ID) ?? 0));
+
+    const withCriteria = await attachCriteriaSummary(rows as Record<string, unknown>[], supabase);
+
+    return {
+      rows:            withCriteria,
+      totalCount:      result.total_count ?? 0,
+      perColumnCounts: result.per_column_counts ?? {},
+      nextCursor:      result.next_cursor ?? null,
+    };
   },
 };

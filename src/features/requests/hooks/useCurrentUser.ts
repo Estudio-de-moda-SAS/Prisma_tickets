@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/auth/AuthProvider';
-import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 import type { UserProfile } from '@/types/commons';
 
@@ -20,18 +19,20 @@ const MOCK_USER: UserProfile = {
 };
 
 export function useCurrentUser() {
-  const { account, ready } = useAuth();
+  const { account, ready, dbReady, dbUser } = useAuth();
 
   return useQuery<UserProfile>({
     queryKey: ['currentUser', account?.homeAccountId ?? 'anonymous'],
-    queryFn: config.USE_MOCK
-      ? () => Promise.resolve(MOCK_USER)
-      : () => apiClient.call<UserProfile>('upsertUserByEntraId', {
-          entraId: account?.homeAccountId ?? '',
-          name:    account?.name          ?? '',
-          email:   account?.username      ?? '',
-        }),
-    enabled:   config.USE_MOCK || (ready && !!account),
+    queryFn: () => {
+      if (config.USE_MOCK) return Promise.resolve(MOCK_USER);
+      // AuthProvider ya resolvió el usuario (por oid.tid con Supabase Auth,
+      // o por homeAccountId con MSAL). Reusamos ese dbUser en vez de volver
+      // a llamar upsertUserByEntraId — así evitamos crear duplicados cuando
+      // el flag está on y account.homeAccountId es el sub de Supabase.
+      if (dbUser) return Promise.resolve(dbUser);
+      throw new Error('[useCurrentUser] dbUser aún no disponible');
+    },
+    enabled:   config.USE_MOCK || (ready && dbReady && !!dbUser),
     staleTime: Infinity,
     retry:     1,
   });

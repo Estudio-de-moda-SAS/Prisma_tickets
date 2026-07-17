@@ -387,7 +387,7 @@ const { data: historialCount } = useHistorialCount(equipo);
           request={modalCard}
           equipo={equipo}
           onClose={() => setModal(null)}
-          onMove={(id, columna,) => onMove(id, columna)}
+          onMove={(id, columna) => onMove(id, columna)}
           onMoveWithClosure={handleModalMoveWithClosure}
           onOpenRequest={(id) => {
             if (modalCard.parentId) {
@@ -410,10 +410,9 @@ const { data: historialCount } = useHistorialCount(equipo);
             setParentModalId(null);
             history.replaceState(null, '', parentModalId ? ticketUrl(parentModalId) : boardUrl);
           }}
-          onMove={(id, columna) => onMove(id, columna)}
+onMove={(id, columna) => onMove(id, columna)}
           onMoveWithClosure={handleModalMoveWithClosure}
-          onOpenRequest={(id) => openParentModal(id)}
-          backLabel="← Volver"
+          onOpenRequest={(id) => openParentModal(id)}          backLabel="← Volver"
           onBack={() => {
             setModalId(parentModalId);
             setParentModalId(null);

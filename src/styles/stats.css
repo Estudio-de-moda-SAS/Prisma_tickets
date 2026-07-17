@@ -457,6 +457,7 @@ font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
   margin-bottom: -1px;
   color: var(--txt-muted);
   cursor: pointer;
@@ -466,14 +467,20 @@ font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
 }
 
 .stats-primary-tab:hover {
-  color: var(--txt);
-  background: var(--bg-hover);
+  color: var(--tab-color, var(--txt));
+  background: color-mix(in srgb, var(--tab-color, var(--accent)) 8%, transparent);
 }
 
 .stats-primary-tab--active {
   color: var(--tab-color, var(--accent));
   border-bottom-color: var(--tab-color, var(--accent));
+  background: color-mix(in srgb, var(--tab-color, var(--accent)) 12%, transparent);
   font-weight: 600;
+}
+
+/* Hover sobre un tab ya activo → tinte un poco más fuerte, pa' que no se "aclare" */
+.stats-primary-tab--active:hover {
+  background: color-mix(in srgb, var(--tab-color, var(--accent)) 18%, transparent);
 }
 
 .stats-primary-tab__dot {
@@ -482,6 +489,13 @@ font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
   border-radius: 50%;
   flex-shrink: 0;
   opacity: 0.8;
+  transition: box-shadow 0.12s, opacity 0.12s;
+}
+
+/* Punto del equipo seleccionado: sólido + halo del color */
+.stats-primary-tab--active .stats-primary-tab__dot {
+  opacity: 1;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tab-color, var(--accent)) 22%, transparent);
 }
 .sprint-selector__clear-btn {
   display: flex;
@@ -718,3 +732,28 @@ font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
 .resolutor-detail__pri { font-weight: 600; }
 .resolutor-detail__sprint { color: var(--txt-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .resolutor-detail__fecha { color: var(--txt-muted); text-align: right; }
+
+.resolutor-detail__titulo-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.resolutor-detail__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.resolutor-detail__label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.resolutor-detail__label-icon { font-size: 10px; line-height: 1; }

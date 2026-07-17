@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import type { BoardData } from '../types';
 import { useCustomizationStore } from '@/store/customizationStore';
+import { useFilterStore } from '@/store/filterStore';
 
 /* ============================================================
    Tipos locales
@@ -83,11 +84,20 @@ function formatHours(h: number): string {
 /* ============================================================
    MemberChip
    ============================================================ */
-function MemberChip({ stat }: { stat: MemberStat }) {
+function MemberChip({
+  stat,
+  active,
+  onToggle,
+}: {
+  stat:     MemberStat;
+  active:   boolean;
+  onToggle: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   const hasLogged = stat.loggedHours > 0;
 
   const tooltipLines = [
+    active ? '✓ Filtrando · click para quitar' : 'Click para filtrar por este resolutor',
     stat.userName,
     stat.subTeamName,
     `${stat.requestCount} ticket${stat.requestCount !== 1 ? 's' : ''}`,
@@ -97,9 +107,22 @@ function MemberChip({ stat }: { stat: MemberStat }) {
     .filter(Boolean)
     .join('\n');
 
+  const border = active
+    ? stat.subTeamColor
+    : hovered
+      ? stat.subTeamColor + '66'
+      : 'var(--border-subtle)';
+
+  const background = active
+    ? stat.subTeamColor + '1f'
+    : hovered
+      ? 'var(--bg-hover)'
+      : 'var(--bg-surface)';
+
   return (
     <div
       title={tooltipLines}
+      onClick={onToggle}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -108,12 +131,15 @@ function MemberChip({ stat }: { stat: MemberStat }) {
         gap:          5,
         height:       26,
         padding:     '0 8px 0 3px',
-        background:   hovered ? 'var(--bg-hover)' : 'var(--bg-surface)',
-        border:      `1px solid ${hovered ? stat.subTeamColor + '66' : 'var(--border-subtle)'}`,
+        background,
+        border:      `1px solid ${border}`,
         borderRadius: 20,
-        cursor:      'default',
+        cursor:      'pointer',
         flexShrink:   0,
-        transition:  'background 0.15s, border-color 0.15s',
+        userSelect:  'none',
+        boxShadow:   active ? `0 0 0 1px ${stat.subTeamColor}55` : 'none',
+        transform:   hovered && !active ? 'translateY(-1px)' : 'none',
+        transition:  'background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s',
       }}
     >
       {/* Avatar con color único por persona */}
@@ -140,7 +166,8 @@ function MemberChip({ stat }: { stat: MemberStat }) {
       {/* Nombre1 Apellido2 */}
       <span style={{
         fontSize:     11,
-        color:       'var(--txt-muted)',
+        color:        active ? 'var(--txt)' : 'var(--txt-muted)',
+        fontWeight:   active ? 600 : 400,
         maxWidth:     80,
         overflow:    'hidden',
         textOverflow:'ellipsis',
@@ -193,6 +220,10 @@ interface Props {
 export function MemberHoursBar({ filteredData, groupedMembers, boardId, availableSlugs }: Props) {
   const [expanded, setExpanded] = useState(false);
   const { getHoursColumns } = useCustomizationStore();
+  const { toggleAssignee, getActiveAssignees } = useFilterStore();
+
+  // Resolutores actualmente filtrados (lowercased) → para resaltar chips
+  const activeSet = new Set(getActiveAssignees(boardId));
 
   // Fallback a las keys del board durante la carga de columnConfig
   const availableForCount = availableSlugs.length > 0
@@ -246,7 +277,7 @@ export function MemberHoursBar({ filteredData, groupedMembers, boardId, availabl
           displayName:    getDisplayName(userName),
           subTeamName:    st?.name ?? '',
           // Color: sub-equipo si existe, si no → color único por nombre
-subTeamColor: colorForName(userName),
+          subTeamColor:   colorForName(userName),
           estimatedHours: est,
           loggedHours:    log,
           requestCount:   count,
@@ -281,7 +312,12 @@ subTeamColor: colorForName(userName),
         minWidth:    0,
       }}>
         {visible.map((m) => (
-          <MemberChip key={m.userName} stat={m} />
+          <MemberChip
+            key={m.userName}
+            stat={m}
+            active={activeSet.has(m.userName.toLowerCase())}
+            onToggle={() => toggleAssignee(boardId, m.userName)}
+          />
         ))}
 
         {!expanded && hidden > 0 && (
@@ -333,7 +369,5 @@ subTeamColor: colorForName(userName),
         )}
       </div>
     </>
-    
   );
-  
 }

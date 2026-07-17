@@ -2,7 +2,7 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants } from '../shared/requests.ts';
+import { getRequestParticipants, maybeSendCommentEmail } from '../shared/requests.ts';
 
 export const commentHandlers: Record<string, ActionHandler> = {
   fetchComments: async (payload, { supabase }) => {
@@ -45,6 +45,19 @@ export const commentHandlers: Record<string, ActionHandler> = {
         actorId:   userId,
       });
     }
+
+    // ── Correo "nuevo comentario" ─────────────────────────────────────────
+    // Resolutores + solicitante, menos el autor. Sin contenido si el ticket
+    // es confidencial. Con cooldown anti-spam. Nunca lanza.
+    await maybeSendCommentEmail(supabase, {
+      requestId,
+      actorId:     userId,
+      commentText: text,
+      assigneeIds,
+      requestedBy,
+    });
+    // ── /Correo ───────────────────────────────────────────────────────────
+
     return data;
   },
 

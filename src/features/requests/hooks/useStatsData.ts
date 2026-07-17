@@ -75,6 +75,7 @@ export type BoardStatsReal = {
       prioridad:   Prioridad;
       fechaCierre: string | null;
       sprintName:  string | null;
+      labelIds:    number[];
     }>;
   }>;
 };
@@ -348,7 +349,7 @@ const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
 
   type ResolAcc = {
     name: string; count: number; idx: number;
-    solicitudes: Array<{ id: string; titulo: string; prioridad: Prioridad; fechaCierre: string | null; sprintName: string | null }>;
+    solicitudes: Array<{ id: string; titulo: string; prioridad: Prioridad; fechaCierre: string | null; sprintName: string | null; labelIds: number[] }>;
   };
   const resolMap = new Map<number, ResolAcc>();
   let idx = 0;
@@ -360,6 +361,7 @@ const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
       acc.solicitudes.push({
         id: r.id, titulo: r.titulo, prioridad: r.prioridad,
         fechaCierre: r.fechaCierre, sprintName: r.sprintName,
+        labelIds: r.labelIds,
       });
     }
   }
@@ -438,7 +440,7 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
 
   type ResolAcc = {
     name: string; count: number; idx: number;
-    solicitudes: Array<{ id: string; titulo: string; prioridad: Prioridad; fechaCierre: string | null; sprintName: string | null }>;
+    solicitudes: Array<{ id: string; titulo: string; prioridad: Prioridad; fechaCierre: string | null; sprintName: string | null; labelIds: number[] }>;
   };
   const resolMap = new Map<number, ResolAcc>();
   let idx = 0;
@@ -450,6 +452,7 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
       acc.solicitudes.push({
         id: r.id, titulo: r.titulo, prioridad: r.prioridad,
         fechaCierre: r.fechaCierre, sprintName: r.sprintName,
+        labelIds: r.labelIds,
       });
     }
   }
@@ -507,9 +510,8 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
       cerradasMes:  active.filter(r =>
         DONE_COLUMNS.has(r.columna) && isThisMonth(r.fechaCierre ?? r.fechaApertura)
       ).length,
-      tiempoEstimadoProm:  avgHoras(active, r => r.estimatedHours),
-      tiempoConsumidoProm: avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
-      meta, penalizacion, puntajeReal, cumplimiento,
+tiempoEstimadoProm:  avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.estimatedHours),
+      tiempoConsumidoProm: avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),      meta, penalizacion, puntajeReal, cumplimiento,
     };
   }
 
@@ -578,7 +580,7 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
     cerradasMes:  requests.filter(r =>
       DONE_COLUMNS.has(r.columna) && isCountable(r) && isSM(r.fechaCierre ?? r.fechaApertura)
     ).length,
-    tiempoEstimadoProm:  avgHoras(activeInSprint, r => r.estimatedHours),
+tiempoEstimadoProm:  avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.columna)), r => r.estimatedHours),
     tiempoConsumidoProm: avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
     meta, penalizacion, puntajeReal, cumplimiento,
   };

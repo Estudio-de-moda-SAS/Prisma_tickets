@@ -194,6 +194,10 @@ const valLabel = (() => {
       const parts = condition.value.split('|').map((v) => v.trim()).filter(Boolean);
       return `${parts.length} sprints`;
     }
+    if (condition.field === 'assignee' && condition.value.includes('|')) {
+      const parts = condition.value.split('|').map((v) => v.trim()).filter(Boolean);
+      return `${parts.length} resolutores`;
+    }
     if (options.length) return options.find((o) => o.value === condition.value)?.label ?? condition.value;
     return condition.value;
   })();
@@ -210,7 +214,20 @@ const valLabel = (() => {
       {showVal && valLabel && (
         <>
           <span className="filter-chip__sep" />
-          <span className="filter-chip__val">{valLabel}</span>
+          <span
+            className="filter-chip__val"
+            title={valLabel}
+            style={{
+              maxWidth:      130,
+              overflow:      'hidden',
+              textOverflow:  'ellipsis',
+              whiteSpace:    'nowrap',
+              display:       'inline-block',
+              verticalAlign: 'bottom',
+            }}
+          >
+            {valLabel}
+          </span>
         </>
       )}
       <button className="filter-chip__remove" onClick={onRemove} title="Eliminar filtro">
