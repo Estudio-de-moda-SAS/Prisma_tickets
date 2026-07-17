@@ -11,6 +11,7 @@ import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { ClientReviewBanner } from './ClientReviewBanner';
+import { ResolutionRatingModal } from './ResolutionRatingModal';
 import { config } from '@/config';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
@@ -309,11 +310,23 @@ export function HomeRequestModal({ request, onClose }: Props) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSendComment(); }
   }
 
-  /* Cuando el cliente aprueba/rechaza desde este modal, simplemente cerramos
-     porque el board (si está abierto en otra pestaña/vista) se actualizará
-     solo vía invalidateQueries en el hook. */
-  function handleFeedbackSubmitted() {
-    // Cerrar el modal tras 1.2s para que el usuario vea el mensaje de confirmación
+  const [showRatingModal,   setShowRatingModal]   = useState(false);
+  const [ratingResolverIds, setRatingResolverIds] = useState<number[]>([]);
+
+  /* Cuando el cliente aprueba/rechaza desde este modal:
+     - Si RECHAZA → cerramos tras 1.2s (el board se actualiza vía invalidateQueries).
+     - Si APRUEBA y es el solicitante → abrimos la encuesta de calificación
+       en vez de cerrar; el cierre ocurre cuando responde o descarta el rating. */
+  function handleFeedbackSubmitted(targetColumna: 'ready_to_deploy' | 'en_revision_qas') {
+    if (
+      targetColumna === 'ready_to_deploy' &&
+      currentUser?.User_ID === request.solicitanteId
+    ) {
+      const resolvers = (request.assignees ?? []).map((a) => a.userId);
+      setRatingResolverIds(resolvers);
+      setShowRatingModal(true);
+      return; // no cerramos: el modal de rating maneja el cierre
+    }
     setTimeout(onClose, 1200);
   }
     const { Requests }     = useGraphServices();
@@ -581,6 +594,17 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
           </div>
         </div>
       </div>
+
+      {showRatingModal && currentUser && (
+        <ResolutionRatingModal
+          requestId={request.id}
+          requestTitle={request.titulo}
+          ratedBy={currentUser.User_ID}
+          resolverIds={ratingResolverIds}
+          onClose={() => { setShowRatingModal(false); onClose(); }}
+          onSubmitted={() => { /* el board ya se invalida vía hook */ }}
+        />
+      )}
     </div>
   );
 }

@@ -11,4 +11,11 @@ export const config = {
   // ── Board por defecto ────────────────────────────────────────
   // Board_ID en Supabase que usa la app al inicializar
   DEFAULT_BOARD_ID: 1,
+
+  // ── Migración de auth (MSAL → Supabase Auth) ─────────────────
+  // false → login por MSAL/Azure directo (comportamiento actual)
+  // true  → login vía Supabase Auth (provider Azure). Aditivo:
+  //         mientras esté en false, nada cambia en producción.
+  USE_SUPABASE_AUTH: true,
+  USE_DIRECT_READS: true,
 } as const;

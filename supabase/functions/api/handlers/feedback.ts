@@ -2,7 +2,7 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants } from '../shared/requests.ts';
+import { getRequestParticipants, maybeSendClientFeedbackEmail } from '../shared/requests.ts';
 
 export const feedbackHandlers: Record<string, ActionHandler> = {
   fetchClientFeedback: async (payload, { supabase }) => {
@@ -83,6 +83,18 @@ export const feedbackHandlers: Record<string, ActionHandler> = {
       requestId: p.requestId,
       actorId:   p.submittedBy,
     });
+
+    // ── Correo "el cliente respondió" ─────────────────────────────────────
+    // A los resolutores (recipientIds ya excluye al cliente que envía).
+    // Sin el texto de la nota si el ticket es confidencial. Nunca lanza.
+    await maybeSendClientFeedbackEmail(supabase, {
+      requestId:    p.requestId,
+      recipientIds,
+      clientId:     p.submittedBy,
+      decision:     p.decision,
+      feedbackNote: p.feedbackNote,
+    });
+    // ── /Correo ───────────────────────────────────────────────────────────
 
     return feedback;
   },

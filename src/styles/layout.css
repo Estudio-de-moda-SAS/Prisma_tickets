@@ -286,6 +286,24 @@
   color:        var(--accent);
 }
 
+/* ── Centrado de íconos en estado plegado ─────────────────── */
+.sidebar--collapsed .sidebar__nav-item {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* el borde transparente del team desnivela 1px → lo neutralizamos */
+.sidebar--collapsed .sidebar__nav-item--team {
+  border-color: transparent;
+}
+
+/* la barrita ::before del activo empuja visualmente → la ocultamos plegado */
+.sidebar--collapsed .sidebar__nav-item--active::before {
+  display: none;
+}
+
 /* ── Footer ───────────────────────────────────────────────── */
 .sidebar__footer {
   padding: 12px 8px;
@@ -520,6 +538,11 @@
 .sidebar__nav {
   scrollbar-width: thin;
   scrollbar-color: var(--sidebar-border) transparent;
+}
+
+/* plegado: reserva el gutter del scroll en ambos lados → íconos centrados de verdad */
+.sidebar--collapsed .sidebar__nav {
+  scrollbar-gutter: stable both-edges;
 }
 
 .sidebar__nav::-webkit-scrollbar {

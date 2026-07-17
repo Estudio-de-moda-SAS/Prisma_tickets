@@ -22,3 +22,23 @@ export async function verifyAzureToken(token: string): Promise<Record<string, un
     throw new Error('[API] Token de tenant no autorizado: ' + payload['tid']);
   return payload as Record<string, unknown>;
 }
+// ── Validación de token de Supabase Auth (migración MSAL → Supabase) ────────
+// Los tokens de Supabase están firmados con ES256 y se validan contra el
+// JWKS público del proyecto. Reusa el mismo mecanismo que verifyAzureToken.
+
+const SUPABASE_URL    = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_ISSUER = `${SUPABASE_URL}/auth/v1`;
+
+const SUPABASE_JWKS = createRemoteJWKSet(
+  new URL(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
+);
+
+export async function verifySupabaseToken(token: string): Promise<Record<string, unknown>> {
+  const { payload } = await jwtVerify(token, SUPABASE_JWKS, {
+    issuer:   SUPABASE_ISSUER,
+    audience: 'authenticated',
+  });
+  if (payload['role'] !== 'authenticated')
+    throw new Error('[API] Token de Supabase sin role authenticated');
+  return payload as Record<string, unknown>;
+}

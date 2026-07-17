@@ -120,6 +120,13 @@ export function ClosureModal({
     return () => window.removeEventListener('keydown', fn);
   }, [onCancel]);
 
+  // Si no hay evidencia reutilizable, el selector no se muestra y el único modo
+  // válido es 'new'. Este guard evita quedar atascado en 'reuse'/'skip' si las
+  // props cambian mientras el modal está abierto.
+  useEffect(() => {
+    if (!hasReusable && mode !== 'new') setMode('new');
+  }, [hasReusable, mode]);
+
   async function addFiles(incoming: File[]) {
     const slots = MAX_FILES - attachments.length;
     const toAdd = incoming.slice(0, slots);
@@ -221,13 +228,15 @@ export function ClosureModal({
             accent={accentColor}
           />
 
-          {/* Selector de modo (solo si se viene de una columna con evidencia) */}
-          {canReuseEvidence && (
+          {/* Selector de modo — solo cuando hay evidencia previa reutilizable.
+             Sin evidencia previa, "Subir nueva" (con adjuntos opcionales) ya cubre
+             el caso de avanzar sin archivos, así que no mostramos el selector. */}
+          {hasReusable && (
             <div>
               <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>
                 Tipo de evidencia
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: hasReusable ? '1fr 1fr 1fr' : '1fr 1fr', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                 <ModeButton
                   active={mode === 'new'}
                   onClick={() => setMode('new')}
@@ -236,23 +245,21 @@ export function ClosureModal({
                   title="Subir nueva"
                   subtitle="Adjuntar archivos"
                 />
-                {hasReusable && (
-                  <ModeButton
-                    active={mode === 'reuse'}
-                    onClick={() => setMode('reuse')}
-                    accent={accentColor}
-                    icon={<Recycle size={13} />}
-                    title="Reutilizar"
-                    subtitle={`${previousClosure!.attachments.length} archivo(s)`}
-                  />
-                )}
+                <ModeButton
+                  active={mode === 'reuse'}
+                  onClick={() => setMode('reuse')}
+                  accent={accentColor}
+                  icon={<Recycle size={13} />}
+                  title="Reutilizar"
+                  subtitle={`${previousClosure!.attachments.length} archivo(s)`}
+                />
                 <ModeButton
                   active={mode === 'skip'}
                   onClick={() => setMode('skip')}
                   accent={accentColor}
                   icon={<Ban size={13} />}
-                  title="No adjuntar"
-                  subtitle="Solo nota"
+                  title="No reutilizar"
+                  subtitle="Avanzar sin evidencia"
                 />
               </div>
             </div>
@@ -271,7 +278,7 @@ export function ClosureModal({
               disabled={isPending}
               placeholder={
                 mode === 'reuse' ? 'Ej: Reutilizo la evidencia de QAS, el entregable no cambió…' :
-                mode === 'skip'  ? 'Ej: Cliente solicitó pasar a deploy sin nueva revisión…' :
+                mode === 'skip'  ? 'Ej: No re-adjunto evidencia; el entregable no cambió desde el cierre anterior…' :
                                    'Describí qué se hizo, qué se entregó, o cualquier detalle relevante… (Ctrl+Enter para confirmar)'
               }
               rows={4}
@@ -320,12 +327,12 @@ export function ClosureModal({
             </div>
           )}
 
-          {/* Banner "no adjuntar" */}
+          {/* Banner "no reutilizar" */}
           {mode === 'skip' && (
             <div style={{ display: 'flex', gap: 10, padding: '10px 12px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.25)' }}>
               <Ban size={14} style={{ color: '#fdcb6e', flexShrink: 0, marginTop: 1 }} />
               <span style={{ fontSize: 11, color: '#fdcb6e', lineHeight: 1.5 }}>
-                Este movimiento quedará registrado sin archivos adjuntos. Solo la nota servirá como evidencia.
+                No se reutilizará la evidencia anterior. Este movimiento se registra solo con la nota; los archivos del cierre previo siguen disponibles en su propio registro de la línea de tiempo.
               </span>
             </div>
           )}

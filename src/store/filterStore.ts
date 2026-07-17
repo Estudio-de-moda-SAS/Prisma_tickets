@@ -77,6 +77,11 @@ type FilterState = {
   setConjunction:  (boardId: string, c: FilterConjunction)                        => void;
   togglePanel:     (boardId: string)                                              => void;
   setOpen:         (boardId: string, v: boolean)                                  => void;
+
+  /** Toggle rápido de un resolutor (usado por la barra de horas). */
+  toggleAssignee:     (boardId: string, userName: string) => void;
+  /** Resolutores activos en filtros 'assignee es' (lowercased). */
+  getActiveAssignees: (boardId: string) => string[];
 };
 
 function patchBoard(
@@ -133,6 +138,63 @@ activeCount: (id) =>
 
       setOpen: (boardId, isOpen) =>
         set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, () => ({ isOpen })) })),
+
+      toggleAssignee: (boardId, userName) =>
+        set((s) => ({ byBoard: patchBoard(s.byBoard, boardId, (prev) => {
+          const target = userName.trim();
+          if (!target) return {};
+
+          // Busca una condición 'assignee es' existente para togglear dentro
+          const cur = prev.conditions.find(
+            (c) => c.field === 'assignee' && c.operator === 'es',
+          );
+
+          if (!cur) {
+            // No existe → crea una nueva con este resolutor
+            const cond: FilterCondition = {
+              id:       `${boardId}-${crypto.randomUUID()}`,
+              field:    'assignee',
+              operator: 'es',
+              value:    target,
+            };
+            return { conditions: [...prev.conditions, cond] };
+          }
+
+          // Existe → toggle dentro de su value multi-valor ('A|B|C')
+          const parts = cur.value.split('|').map((v) => v.trim()).filter(Boolean);
+          const has   = parts.some((p) => p.toLowerCase() === target.toLowerCase());
+          const next  = has
+            ? parts.filter((p) => p.toLowerCase() !== target.toLowerCase())
+            : [...parts, target];
+
+          if (next.length === 0) {
+            // Quedó vacío → elimina la condición para no dejar chip huérfano
+            return { conditions: prev.conditions.filter((c) => c.id !== cur.id) };
+          }
+          return {
+            conditions: prev.conditions.map((c) =>
+              c.id === cur.id ? { ...c, value: next.join('|') } : c,
+            ),
+          };
+          // ↓ Para SINGLE-SELECT (click en B reemplaza a A) cambiá el bloque
+          //   de arriba por:  return { conditions: prev.conditions.map((c) =>
+          //     c.id === cur.id ? { ...c, value: has ? '' : target } : c)
+          //     .filter((c) => !(c.field === 'assignee' && c.operator === 'es' && !c.value.trim())) };
+        }) })),
+
+      getActiveAssignees: (id) => {
+        const conds = (get().byBoard[id] ?? defaultBoardState()).conditions;
+        const out: string[] = [];
+        for (const c of conds) {
+          if (c.field === 'assignee' && c.operator === 'es' && c.value.trim()) {
+            for (const v of c.value.split('|')) {
+              const t = v.trim().toLowerCase();
+              if (t) out.push(t);
+            }
+          }
+        }
+        return out;
+      },
     }),
     {
       name: 'prisma-filters-v3',

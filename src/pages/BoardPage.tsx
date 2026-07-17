@@ -10,7 +10,7 @@ import { useUsers } from '@/features/requests/hooks/useUsers';
 import { useSubTeams }              from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { useSprints } from '@/features/requests/hooks/useSprints';
-import { useLabelsByTeamId } from '@/features/requests/hooks/useLabels';
+import { useLabelsByTeamId} from '@/features/requests/hooks/useLabels';
 import { useBoardTemplates } from '@/features/requests/hooks/useBoardMetadata';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useQuery } from '@tanstack/react-query';
@@ -274,6 +274,10 @@ const {
 
   const filteredData = useFilteredBoard(equipoActivo, dataWithHistorial);
 
+  // Barra de horas: mismos filtros EXCEPTO resolutor, para que no se
+  // colapse a una persona al filtrar y podamos resaltar al activo.
+  const hoursData = useFilteredBoard(equipoActivo, dataWithHistorial, ['assignee']);
+
   /* ── Búsqueda global: materializa resultados que no están cargados
      (p.ej. históricos fuera de la página actual) al tope de su columna,
      solo mientras hay un query activo. Al limpiar, desaparecen. ── */
@@ -340,7 +344,7 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
   <BoardCustomizationTrigger boardId={equipoActivo} columns={boardColumns} />
   <KanbanZoomControl />
   <MemberHoursBar
-    filteredData={filteredData}
+    filteredData={hoursData}
     groupedMembers={groupedMembers}
     boardId={equipoActivo}
     availableSlugs={boardColumns.map((c) => c.slug)}

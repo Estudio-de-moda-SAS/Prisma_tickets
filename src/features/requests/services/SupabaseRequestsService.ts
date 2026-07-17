@@ -1,5 +1,7 @@
 // src/features/requests/services/SupabaseRequestsService.ts
 import { apiClient } from '@/lib/apiClient';
+import { supabase } from '@/lib/supabaseClient';
+import { config } from '@/config';
 import type {
   Request, CrearRequestPayload, ActualizarRequestPayload,
   MoverRequestPayload, KanbanColumna, Prioridad,
@@ -7,6 +9,53 @@ import type {
   ClosureAttachment, ClientFeedback, SubmitClientFeedbackPayload,
 } from '../types';
 import { SCORE_TO_PRIORIDAD, PRIORIDAD_TO_SCORE } from '../types';
+
+// Copia del BASE_SELECT del Edge Function (shared/selects.ts) para reads directos.
+// TODO: centralizar para no duplicar. Mantener en sync si cambia el del backend.
+const BASE_SELECT_DIRECT = `
+  Request_ID,
+  Request_Board_Column_ID,
+  Request_Requested_By,
+  Request_Template_ID,
+  Request_Title,
+  Request_Description,
+  Request_Score,
+  Request_Progress,
+  Request_Created_At,
+  Request_Parent_ID,
+  Request_Estimated_Hours,
+  Request_Logged_Hours,
+  Request_Finished_At,
+  Request_Requester_Team_ID,
+  Request_Is_Confidential,
+  Request_Is_Legacy,
+  Request_Legacy_Requester,
+  Request_Form_Data,
+  Request_Template_Schema_Snapshot,
+  template_schema:TBL_Requests_Templates!Request_Template_ID ( Request_Template_Form_Schema ),
+  requester:TBL_Users!Request_Requested_By (
+    User_Name, User_Email, User_Avatar_url,
+    department:TBL_Departments!Department_ID ( Department_Name )
+  ),
+  requester_team:TBL_Teams!Request_Requester_Team_ID ( Team_ID, Team_Name, Team_Code ),
+  requester_department:TBL_Departments!Request_Requester_Department_ID ( Department_Name ),
+  column:TBL_Board_Columns!Request_Board_Column_ID ( Board_Column_Name, Board_Column_Slug ),
+  assignments:TBL_Requests_Assignments (
+    Request_Assignment_At,
+    assignee:TBL_Users!Request_Assignment_User_ID ( User_ID, User_Name, User_Email, User_Avatar_url )
+  ),
+  teams:TBL_Request_Team ( team:TBL_Board_Teams!Request_Team_ID ( Board_Team_ID, Board_Team_Code ) ),
+  labels:TBL_Request_Labels ( label:TBL_Labels!Request_Labels_Label_ID ( Label_ID, Label_Name, Label_Color, Label_Icon ) ),
+  sub_teams:TBL_Request_Sub_Team ( sub_team:TBL_Sub_Teams!Request_Sub_Team_ID ( Sub_Team_ID, Sub_Team_Name, Sub_Team_Color ) ),
+  sprints:TBL_Request_Sprint ( Request_Sprint_ID, sprint:TBL_Sprint!Request_Sprint_ID ( Sprint_ID, Sprint_Text, Sprint_Start_Date, Sprint_End_Date ) ),
+  child_count:TBL_Requests!Request_Parent_ID ( count ),
+  closure:TBL_Request_Closure (
+    Closure_ID, Closure_Note, Closure_Type, Attachment_URL, Attachment_Name, Attachment_Mime, Closed_At,
+    closer:TBL_Users!Closed_By ( User_ID, User_Name ),
+    closure_attachments:TBL_Closure_Attachments ( Closure_Attachment_ID, Storage_Path, File_Name, Mime_Type, File_Size, Created_At )
+  ),
+  criteria:TBL_Acceptance_Criteria ( Status )
+`.trim();
 
 type RawClosureAttachment = {
   Closure_Attachment_ID: number;
@@ -142,9 +191,19 @@ function mapRowToRequest(row: RawRequestRow): Request {
   const childCount      = row.child_count?.[0]?.count ?? undefined;
   const requesterTeamId = row.Request_Requester_Team_ID ?? null;
   const criteriaSummary = (() => {
+    // Camino Edge: viene pre-calculado como criteria_summary.
     const s = (row as Record<string, unknown>).criteria_summary as
       { total: number; accepted: number; rejected: number } | null | undefined;
-    return (s && s.total > 0) ? s : null;
+    if (s && s.total > 0) return s;
+    // Camino directo: viene como array criteria:[{Status}]; calculamos aquí.
+    const arr = (row as Record<string, unknown>).criteria as { Status: string }[] | undefined;
+    if (arr && arr.length > 0) {
+      const total = arr.length;
+      const accepted = arr.filter((c) => c.Status === 'accepted').length;
+      const rejected = arr.filter((c) => c.Status === 'rejected').length;
+      return { total, accepted, rejected };
+    }
+    return null;
   })();
 
   let extraFields: RequestExtraFields | null = null;
@@ -263,6 +322,7 @@ export class SupabaseRequestsService {
   constructor(boardId: number) { this.boardId = boardId; }
 
   async fetchAllByBoard(): Promise<Request[]> {
+        console.log('🔵 fetchAllByBoard (Edge)');
     const rows = await apiClient.call<RawRequestRow[]>('fetchAllByBoard', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
@@ -270,12 +330,69 @@ async fetchAllByBoardStats(): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchAllByBoardStats', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
-  async fetchByTeamCode(teamCode: string): Promise<Request[]> {
+async fetchByTeamCode(teamCode: string): Promise<Request[]> {
+    // Read directo a PostgREST (Fase 4). Replica el handler: columnas activas
+    // (sin límite) + historial (col 9, límite 50). El filtro !inner por equipo
+    // reemplaza el two-step + chunkedIn del Edge Function.
+    if (config.USE_DIRECT_READS) {
+      const HISTORIAL_COLUMN_ID = 9;
+      const HISTORIAL_LIMIT     = 50;
+
+      // Alias 'team_filter' distinto del 'teams' que ya trae BASE_SELECT_DIRECT,
+      // para no colisionar (dos relaciones con el mismo alias = error 400).
+      const teamFilter = `team_filter:TBL_Request_Team!inner( bt:TBL_Board_Teams!inner(Board_Team_Code) )`;
+      const selectWithTeamFilter = `${BASE_SELECT_DIRECT}, ${teamFilter}`;
+
+      // 1. Columnas activas (todo excepto historial), sin límite.
+      const activePromise = supabase
+        .from('TBL_Requests')
+        .select(selectWithTeamFilter)
+        .eq('Request_Board_ID', this.boardId)
+        .eq('team_filter.bt.Board_Team_Code', teamCode)
+        .neq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+        .order('Request_Created_At', { ascending: false });
+
+      // 2. Historial (columna 9), limitado a 50, ordenado.
+      const historialPromise = supabase
+        .from('TBL_Requests')
+        .select(selectWithTeamFilter)
+        .eq('Request_Board_ID', this.boardId)
+        .eq('team_filter.bt.Board_Team_Code', teamCode)
+        .eq('Request_Board_Column_ID', HISTORIAL_COLUMN_ID)
+        .order('Request_Created_At', { ascending: false })
+        .order('Request_ID',         { ascending: false })
+        .limit(HISTORIAL_LIMIT);
+
+      const [activeRes, historialRes] = await Promise.all([activePromise, historialPromise]);
+      if (activeRes.error)    throw new Error(`[direct] fetchByTeamCode activas: ${activeRes.error.message}`);
+      if (historialRes.error) throw new Error(`[direct] fetchByTeamCode historial: ${historialRes.error.message}`);
+
+      const combined = [...(activeRes.data ?? []), ...(historialRes.data ?? [])];
+      return combined.map((row) => mapRowToRequest(row as unknown as RawRequestRow));
+    }
+    
+    // [EDGE] Camino actual vía Edge Function
+    console.log('🔵 fetchByTeamCode (Edge), team:', teamCode);
     const rows = await apiClient.call<RawRequestRow[]>('fetchByTeamCode', { boardId: this.boardId, teamCode });
     return rows.map(mapRowToRequest);
   }
-
+  
   async fetchUncategorized(): Promise<Request[]> {
+    // Read directo a PostgREST (Fase 4) — 0 invocaciones de Edge Function.
+    // Requiere USE_SUPABASE_AUTH + token authenticated + RLS activo.
+    if (config.USE_DIRECT_READS) {
+            console.log('🟢 fetchUncategorized: leyendo DIRECTO de PostgREST');
+      const { data, error } = await supabase
+        .from('TBL_Requests')
+        .select(BASE_SELECT_DIRECT)
+        .eq('Request_Board_Column_ID', 1)   // "Sin categorizar" en board 1
+        .order('Request_Created_At', { ascending: false });
+      if (error) throw new Error(`[direct] fetchUncategorized: ${error.message}`);
+      return (data ?? []).map((row) => mapRowToRequest(row as unknown as RawRequestRow));
+    }
+
+    // [EDGE] Camino actual vía Edge Function
+        console.log('🔵 fetchUncategorized: leyendo por EDGE FUNCTION');
     const rows = await apiClient.call<RawRequestRow[]>('fetchUncategorized', { boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }

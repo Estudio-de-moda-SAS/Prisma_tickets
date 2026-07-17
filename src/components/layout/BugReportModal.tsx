@@ -4,14 +4,6 @@ import { useLocation } from 'react-router-dom';
 import { apiClient } from '@/lib/apiClient';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 
-type Severity = 'bajo' | 'medio' | 'alto' | 'critico';
-
-const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bg: string }> = {
-  bajo:    { label: 'Bajo',    color: 'var(--severity-bajo-text)',    bg: 'var(--severity-bajo-bg)'    },
-  medio:   { label: 'Medio',   color: 'var(--severity-medio-text)',   bg: 'var(--severity-medio-bg)'   },
-  alto:    { label: 'Alto',    color: 'var(--severity-alto-text)',    bg: 'var(--severity-alto-bg)'    },
-  critico: { label: 'Crítico', color: 'var(--severity-critico-text)', bg: 'var(--severity-critico-bg)' },
-};
 
 type Props = { onClose: () => void };
 
@@ -21,7 +13,6 @@ export function BugReportModal({ onClose }: Props) {
 
   const [title,       setTitle]       = useState('');
   const [description, setDescription] = useState('');
-  const [severity,    setSeverity]    = useState<Severity>('medio');
   const [loading,     setLoading]     = useState(false);
   const [done,        setDone]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
@@ -42,7 +33,6 @@ export function BugReportModal({ onClose }: Props) {
         userId:      currentUser.User_ID,
         title:       title.trim(),
         description: description.trim(),
-        severity,
         screenPath:  pathname,
       });
       setDone(true);
@@ -95,27 +85,6 @@ export function BugReportModal({ onClose }: Props) {
               disabled={loading}
             />
 
-            {/* Severidad */}
-            <label className="feedback-modal__label" style={{ marginTop: 14 }}>
-              Severidad
-            </label>
-            <div className="feedback-modal__severity-grid">
-              {(Object.keys(SEVERITY_CONFIG) as Severity[]).map((s) => {
-                const cfg = SEVERITY_CONFIG[s];
-                const active = severity === s;
-                return (
-                  <button
-                    key={s}
-                    className={['feedback-modal__severity-btn', active ? 'is-active' : ''].join(' ')}
-                    style={active ? { background: cfg.bg, color: cfg.color, borderColor: cfg.color } : {}}
-                    onClick={() => setSeverity(s)}
-                    disabled={loading}
-                  >
-                    {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Descripción */}
             <label className="feedback-modal__label" style={{ marginTop: 14 }}>
