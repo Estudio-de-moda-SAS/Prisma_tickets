@@ -1,5 +1,5 @@
 // @ts-ignore
-import { verifyAzureToken }   from './lib/auth.ts';
+import { verifyAzureToken, verifySupabaseToken } from './lib/auth.ts';
 // @ts-ignore
 import { createServiceClient } from './lib/supabase.ts';
 // @ts-ignore
@@ -77,9 +77,31 @@ if (body.action === 'migrateRequest'
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return errorResponse('Token de autorización requerido', 401);
 
-  try { await verifyAzureToken(token); } catch (err) {
-    console.error('[API] auth error:', (err as Error).message);
-    return errorResponse(`No autorizado: ${(err as Error).message}`, 401);
+  // Acepta ambos tokens durante la migración:
+  //  1. [MSAL-LEGACY] token de Azure AD (usuarios actuales)
+  //  2. token de Supabase Auth (camino nuevo)
+  let authOk = false;
+  let authError = '';
+
+  try {
+    await verifyAzureToken(token);   // [MSAL-LEGACY]
+    authOk = true;
+  } catch (azureErr) {
+    authError = (azureErr as Error).message;
+  }
+
+  if (!authOk) {
+    try {
+      await verifySupabaseToken(token);
+      authOk = true;
+    } catch (sbErr) {
+      authError = `${authError} | supabase: ${(sbErr as Error).message}`;
+    }
+  }
+
+  if (!authOk) {
+    console.error('[API] auth error:', authError);
+    return errorResponse(`No autorizado: ${authError}`, 401);
   }
 
   const supabase = createServiceClient();

@@ -12,7 +12,7 @@ import { useSubTeams, useSubTeamsMulti } from '@/features/requests/hooks/useSubT
 import { useSubTeamMembersGrouped }  from '@/features/requests/hooks/useSubTeamMembers';
 import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStatsData';
 import { isBlockedLabelName } from '@/features/requests/hooks/useStatsData';
-import { useLabelsByTeamId } from '@/features/requests/hooks/useLabels';
+import { useLabelsByTeamId, useLabelsByBoardId } from '@/features/requests/hooks/useLabels';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
 import { useBoardTeams }       from '@/features/requests/hooks/useBoardMetadata';
 import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
@@ -538,6 +538,8 @@ const sprintIds    = useStatsUIStore(s => s.sprintIds);
   
   const { data: boardTeams = [] }  = useBoardTeams(config.DEFAULT_BOARD_ID);
   const { data: statsStartConfig } = useStatsStartConfig(config.DEFAULT_BOARD_ID);
+  const { data: allBoardLabels = [] } = useLabelsByBoardId(config.DEFAULT_BOARD_ID);
+  const labelMap = useMemo(() => new Map(allBoardLabels.map(l => [l.Label_ID, l])), [allBoardLabels]);
   const teamColorMap = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Color])), [boardTeams]);
   const teamNameMap  = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Name])),  [boardTeams]);
 
@@ -891,10 +893,27 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                           <span className="resolutor-detail__count">{sel.resueltas}</span>
                         </div>
                         <div className="resolutor-detail__list">
-                          {sel.solicitudes.map(s => (
+                          {sel.solicitudes.map(s => {
+                            const sLabels = s.labelIds
+                              .map(id => labelMap.get(id))
+                              .filter((l): l is NonNullable<typeof l> => l != null);
+                            return (
                             <div key={s.id} className="resolutor-detail__row">
                               <span className="resolutor-detail__id">{s.id}</span>
-                              <span className="resolutor-detail__titulo" title={s.titulo}>{s.titulo || '—'}</span>
+                              <div className="resolutor-detail__titulo-cell">
+                                <span className="resolutor-detail__titulo" title={s.titulo}>{s.titulo || '—'}</span>
+                                {sLabels.length > 0 && (
+                                  <div className="resolutor-detail__labels">
+                                    {sLabels.map(l => (
+                                      <span key={l.Label_ID} className="resolutor-detail__label-chip"
+                                        style={{ background: `${l.Label_Color}15`, border: `1px solid ${l.Label_Color}35`, color: l.Label_Color }}>
+                                        <span className="resolutor-detail__label-icon">{l.Label_Icon}</span>
+                                        {l.Label_Name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                               <span className="resolutor-detail__pri" style={{ color: PRI_COLOR[s.prioridad] }}>
                                 {PRIORIDADES_LABEL[s.prioridad]}
                               </span>
@@ -903,7 +922,8 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                                 {s.fechaCierre ? fmtDate(new Date(s.fechaCierre)) : '—'}
                               </span>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );

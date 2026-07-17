@@ -11,7 +11,6 @@ import {
 import { useTheme } from '@/store/useTheme';
 import { useBoardTemplates, getTemplateDefinition } from '@/features/requests/hooks/useBoardMetadata';
 import { useSearchStore, matchesSearchQuery } from '@/store/searchStore';
-import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
 import { useLabelsByBoardId }    from '@/features/requests/hooks/useLabels';
 import { config } from '@/config';
 import type { Request } from '../types';
@@ -147,19 +146,19 @@ const IconClock = () => (
   </svg>
 );
 
-function CriteriaBadge({ requestId }: { requestId: string; accent: string }) {
-  const { data: criteria = [] } = useAcceptanceCriteria(requestId);
-  if (criteria.length === 0) return null;
-  const accepted  = criteria.filter((c) => c.status === 'accepted').length;
-  const rejected  = criteria.filter((c) => c.status === 'rejected').length;
-  const total     = criteria.length;
+function CriteriaBadge({ request }: { request: Request; accent: string }) {
+  // Usa el criteriaSummary que YA viene en el request (del BASE_SELECT).
+  // Antes esto hacía una query por card (N+1): 1 invocación por ticket del board.
+  const summary = request.criteriaSummary;
+  if (!summary || summary.total === 0) return null;
+  const { accepted, rejected, total } = summary;
   const allDone   = accepted === total;
   const hasReject = rejected > 0;
   const color  = allDone ? 'var(--success)' : hasReject ? 'var(--danger)' : 'var(--txt-muted)';
   const bg     = allDone ? 'rgba(0,229,160,0.1)' : hasReject ? 'rgba(255,71,87,0.1)' : 'rgba(255,255,255,0.05)';
   const border = allDone ? 'rgba(0,229,160,0.3)' : hasReject ? 'rgba(255,71,87,0.3)' : 'var(--border-subtle)';
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, letterSpacing: 0.3, padding: '2px 6px', borderRadius: 3, background: bg, border: `1px solid ${border}`, color, flexShrink: 0 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, letterSpacing: 0.3, padding: '2px 6px', borderRadius: 3, background: bg, border: `1px solid ${border}`, color, flexShrink: 0 }}>
       <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
       {accepted}/{total}
       {hasReject && <span style={{ color: 'var(--danger)', marginLeft: 1 }}> · {rejected}✗</span>}
@@ -434,7 +433,7 @@ const closureBorderStyle = isCerrada
               <IconShield />
             </span>
           )}
-          <CriteriaBadge requestId={request.id} accent={accent} />
+<CriteriaBadge request={request} accent={accent} />
         </div>
       </div>
 

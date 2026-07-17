@@ -10,7 +10,9 @@ import {
   logout,
 } from './msal';
 import { apiClient } from '@/lib/apiClient';
+import { getSupabaseEntraId, signInWithSupabaseAzure, signOutSupabase } from './supabaseAuth';
 import type { UserProfile } from '@/types/commons';
+import { supabase } from '@/lib/supabaseClient';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // Cambiá este mail cuando lo tengan definido
@@ -207,6 +209,18 @@ async function loadDbUser(account: AccountInfo): Promise<UserProfile> {
   return user;
 }
 
+// Carga el usuario DB usando la sesión de Supabase Auth (camino nuevo).
+// Reusa el mismo handler upsertUserByEntraId reconstruyendo <oid>.<tid>.
+async function loadDbUserFromSupabase(): Promise<UserProfile | null> {
+  const info = await getSupabaseEntraId();
+  if (!info) return null;
+  const user = await apiClient.call<UserProfile>('upsertUserByEntraId', {
+    entraId: info.entraId,
+    name:    info.name,
+    email:   info.email,
+  });
+  return user;
+}
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -220,48 +234,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     config.BYPASS_AUTH ? MOCK_DB_USER : null,
   );
 
-  // ── Inicialización MSAL ──────────────────────────────────────────────────
+  // ── Inicialización: bifurca según el flag ────────────────────────────────
   React.useEffect(() => {
     if (config.BYPASS_AUTH) return;
 
     let cancel = false;
 
+    // ── Camino nuevo: Supabase Auth (flag on) ──────────────────────────────
+    if (config.USE_SUPABASE_AUTH) {
+      // Listener de cambios de sesión (login/logout/refresh) — Opción B
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (cancel) return;
+          void syncSupabaseSession(session);
+        },
+      );
+
+      // Carga inicial
+      (async () => {
+        const { data } = await supabase.auth.getSession();
+        if (!cancel) await syncSupabaseSession(data.session ?? null);
+      })();
+
+      return () => {
+        cancel = true;
+        authListener.subscription.unsubscribe();
+      };
+    }
+
+    // ── [MSAL-LEGACY] Camino viejo: MSAL (flag off) ────────────────────────
     (async () => {
       try {
         await initMSAL();
         const acc = ensureActiveAccount();
-
         if (cancel) return;
-
         setAccount(acc ?? null);
         setReady(true);
-
         if (acc) {
           try {
             const user = await loadDbUser(acc);
             if (!cancel) {
-              if (user.Is_Active === false) {
-                setBlocked(true);
-              } else {
-                setDbUser(user);
-              }
+              if (user.Is_Active === false) setBlocked(true);
+              else setDbUser(user);
             }
           } catch (err) {
             console.error('[AuthProvider] Error cargando usuario DB:', err);
           }
         }
-
         if (!cancel) setDbReady(true);
-
       } catch {
-        if (!cancel) {
-          setReady(true);
-          setDbReady(true);
-        }
+        if (!cancel) { setReady(true); setDbReady(true); }
       }
     })();
 
     return () => { cancel = true; };
+  }, []);
+
+  // Guarda el id de la sesión ya cargada, para no recargar en cada refresh de token.
+  const loadedUserIdRef = React.useRef<string | null>(null);
+
+  // Sincroniza el estado del provider con una sesión de Supabase Auth.
+  const syncSupabaseSession = React.useCallback(async (session: import('@supabase/supabase-js').Session | null) => {
+    setReady(true);
+
+    if (!session) {
+      loadedUserIdRef.current = null;
+      setAccount(null);
+      setDbUser(null);
+      setBlocked(false);
+      setDbReady(true);
+      return;
+    }
+
+    // Si ya cargamos el usuario para ESTA sesión, no recargamos.
+    // onAuthStateChange se dispara también en refresh de token / focus de pestaña,
+    // y no queremos flash en blanco ni una llamada extra al backend cada vez.
+    if (loadedUserIdRef.current === session.user.id) {
+      return;
+    }
+
+    // Reusamos AccountInfo mínimo para no romper el shape del contexto.
+    setAccount({
+      homeAccountId:  session.user.id,
+      environment:    'supabase',
+      tenantId:       (session.user.user_metadata?.custom_claims?.tid as string) ?? '',
+      username:       session.user.email ?? '',
+      localAccountId: session.user.id,
+      name:           (session.user.user_metadata?.full_name as string) ?? session.user.email ?? '',
+    } as AccountInfo);
+
+    setDbReady(false);
+    try {
+      const user = await loadDbUserFromSupabase();
+      if (user) {
+        loadedUserIdRef.current = session.user.id;   // marca esta sesión como cargada
+        if (user.Is_Active === false) { setBlocked(true); setDbUser(null); }
+        else { setBlocked(false); setDbUser(user); }
+      }
+    } catch (err) {
+      //console.error('[AuthProvider] Error cargando usuario DB (Supabase):', err);
+    } finally {
+      setDbReady(true);
+    }
   }, []);
 
   // ── Sign in ──────────────────────────────────────────────────────────────
@@ -274,6 +348,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // ── Camino nuevo: Supabase Auth ────────────────────────────────────────
+    if (config.USE_SUPABASE_AUTH) {
+      await signInWithSupabaseAzure();
+      // El redirect recarga la página; onAuthStateChange hará el resto al volver.
+      return;
+    }
+
+    // ── [MSAL-LEGACY] ──────────────────────────────────────────────────────
     const acc = await ensureLogin(mode);
     setAccount(acc);
     setReady(true);
@@ -303,6 +385,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // ── Camino nuevo: Supabase Auth ────────────────────────────────────────
+    if (config.USE_SUPABASE_AUTH) {
+      await signOutSupabase();
+      setAccount(null);
+      setDbUser(null);
+      setBlocked(false);
+      setReady(true);
+      setDbReady(true);
+      return;
+    }
+
+    // ── [MSAL-LEGACY] ──────────────────────────────────────────────────────
     await logout();
     setAccount(null);
     setDbUser(null);
@@ -322,7 +416,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshDbUser = React.useCallback(async () => {
     if (config.BYPASS_AUTH || !account) return;
     try {
-      const user = await loadDbUser(account);
+      // Bifurca igual que el resto: con el flag on, resuelve por oid.tid del
+      // token de Supabase; si no, por el account de MSAL.
+      const user = config.USE_SUPABASE_AUTH
+        ? await loadDbUserFromSupabase()
+        : await loadDbUser(account);
+      if (!user) return;
       if (user.Is_Active === false) {
         setBlocked(true);
         setDbUser(null);

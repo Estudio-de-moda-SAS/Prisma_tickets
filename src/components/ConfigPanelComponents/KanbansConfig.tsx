@@ -200,7 +200,7 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, tota
         </div>
 
         <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--txt-muted)', flexShrink: 0, opacity: 0.7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 4, padding: '2px 6px' }}>
-          {team.Board_Team_Code}
+          {team.Board_Team_Is_External ? 'externo · sin columnas' : team.Board_Team_Code}
         </span>
 
         {!team.Board_Team_Is_Active && (
@@ -263,7 +263,23 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, tota
       </div>
 
       {/* Panel expandido */}
-      {expanded && <ColumnConfigPanel teamId={team.Board_Team_ID} boardId={boardId} teamColor={color} />}
+      {expanded && (
+        team.Board_Team_Is_External ? (
+          <div style={{ margin: 12, display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 8, background: 'rgba(108,92,231,0.05)', border: '1px solid rgba(108,92,231,0.2)' }}>
+            <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>{'\uD83D\uDD17'}</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#6c5ce7', marginBottom: 2 }}>
+                Equipo externo — no maneja columnas
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+                Este equipo no tiene tablero Kanban dentro de PRISMA, así que no configura columnas ni su visibilidad. Solo abre su herramienta propia en una pestaña nueva.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ColumnConfigPanel teamId={team.Board_Team_ID} boardId={boardId} teamColor={color} />
+        )
+      )}
     </div>
   );
 }

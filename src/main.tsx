@@ -6,7 +6,9 @@ import { AuthProvider } from '@/auth/AuthProvider';
 import { GraphServicesProvider } from '@/graph/GraphServicesProvider';
 import App from '@/App';
 import './styles/globals.css';
-
+// TEMPORAL — solo para probar la Fase 1. Quitar después.
+import { supabase } from '@/lib/supabaseClient';
+(window as any).__sb = supabase;
 // Aplica el tema guardado antes del primer render para evitar flash
 const savedTheme = (() => {
   try {
