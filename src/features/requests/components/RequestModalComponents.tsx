@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { useTimerStore } from '@/store/timerStore';
 import {
 CheckCircle, Clock, Users, FileText, Image, File, Plus, Trash2
@@ -382,6 +383,7 @@ export function TemplateFormDataPanel({ formData, schema, snapshotSchema, onFiel
   accentColor:     string;
   onFieldChange?:  (key: string, value: unknown) => void;
 }) {
+  const isMobile = useIsMobile();
   // ── Tipos internos ──────────────────────────────────────────────────────────
 type FlatField = {
     key:         string;
@@ -390,6 +392,7 @@ type FlatField = {
     showInModal: boolean;
     fieldType?:  string;
     options?:    string[];
+    branchOptions?: { optionKey: string; label: string }[];  // solo multiconditional
   };
 
     const savedLabels: Record<string, string> = (() => {
@@ -411,6 +414,11 @@ function collectAllKeys(fields: unknown[]): Set<string> {
     if (field.type === 'conditional') {
       for (const k of collectAllKeys((field.trueBranch as unknown[]) ?? [])) keys.add(k);
       for (const k of collectAllKeys((field.falseBranch as unknown[]) ?? [])) keys.add(k);
+    }
+    if (field.type === 'multiconditional') {
+      for (const o of (field.options as Array<{ fields?: unknown[] }>) ?? []) {
+        for (const k of collectAllKeys(o.fields ?? [])) keys.add(k);
+      }
     }
   }
   return keys;
@@ -437,6 +445,22 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
         ? (field.trueBranch as unknown[]) ?? []
         : (field.falseBranch as unknown[]) ?? [];
       result.push(...collectVisibleLevel(activeBranch));
+    } else if (field.type === 'multiconditional') {
+      const opts = (field.options as Array<{ optionKey?: string; label?: string; fields?: unknown[] }>) ?? [];
+      if (showInModal && field.label) {
+        result.push({
+          key:           field.key as string,
+          label:         field.label as string,
+          guards:        [],
+          showInModal,
+          fieldType:     'multiconditional',
+          branchOptions: opts.map((o) => ({ optionKey: o.optionKey ?? '', label: o.label ?? '' })),
+        });
+      }
+      // Explorar la rama elegida
+      const chosen = formData[field.key as string];
+      const active = opts.find((o) => o.optionKey === chosen);
+      if (active) result.push(...collectVisibleLevel(active.fields ?? []));
     } else {
       if (showInModal && field.label) {
         result.push({
@@ -468,11 +492,38 @@ function collectAllWithMeta(fields: unknown[]): Map<string, { label: string; sho
       for (const [k, v] of collectAllWithMeta((field.trueBranch  as unknown[]) ?? [])) map.set(k, v);
       for (const [k, v] of collectAllWithMeta((field.falseBranch as unknown[]) ?? [])) map.set(k, v);
     }
+    if (field.type === 'multiconditional') {
+      for (const o of (field.options as Array<{ fields?: unknown[] }>) ?? []) {
+        for (const [k, v] of collectAllWithMeta(o.fields ?? [])) map.set(k, v);
+      }
+    }
   }
   return map;
 }
 
 const snapshotMeta = collectAllWithMeta(snapshotSchema ?? []);
+
+// Mapa optionKey → label de multiconditional (live gana; snapshot cubre ramas eliminadas)
+function collectOptionLabels(fields: unknown[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const f of fields) {
+    const field = f as Record<string, unknown>;
+    if (field.type === 'multiconditional') {
+      for (const o of (field.options as Array<{ optionKey?: string; label?: string; fields?: unknown[] }>) ?? []) {
+        if (o.optionKey) m.set(o.optionKey, o.label ?? o.optionKey);
+        for (const [k, v] of collectOptionLabels(o.fields ?? [])) m.set(k, v);
+      }
+    } else if (field.type === 'conditional') {
+      for (const [k, v] of collectOptionLabels((field.trueBranch  as unknown[]) ?? [])) m.set(k, v);
+      for (const [k, v] of collectOptionLabels((field.falseBranch as unknown[]) ?? [])) m.set(k, v);
+    }
+  }
+  return m;
+}
+const optionLabels = new Map([
+  ...collectOptionLabels(snapshotSchema ?? []),
+  ...collectOptionLabels(schema),
+]);
 
 const orphanFields: FlatField[] = Object.keys(formData)
   .filter((k) => !allLiveKeys.has(k) && k !== '__labels')
@@ -501,11 +552,14 @@ const orphanFields: FlatField[] = Object.keys(formData)
     if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
     if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
     if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
+    // Si es un optionKey de multiconditional, mostrar su label legible
+    const asOption = optionLabels.get(String(val));
+    if (asOption) return <span style={{ color: 'var(--txt)' }}>{asOption}</span>;
     // Respetar saltos de línea (campos textarea, datos migrados multilínea)
     return <span style={{ color: 'var(--txt)', whiteSpace: 'pre-wrap' }}>{String(val)}</span>;
   }
 
-function renderEditor(key: string, fieldType?: string, options?: string[]): React.ReactNode {
+function renderEditor(key: string, fieldType?: string, options?: string[], branchOptions?: { optionKey: string; label: string }[]): React.ReactNode {
     // Orphan (sin fieldType) o tipo no soportado → solo lectura
     if (!fieldType) return renderValue(key);
 
@@ -537,6 +591,33 @@ function renderEditor(key: string, fieldType?: string, options?: string[]): Reac
               {v === 'true' ? 'Sí' : 'No'}
             </button>
           ))}
+        </div>
+      );
+    }
+
+    /* ── Multi-condicional → botones de rama (valor = optionKey) ── */
+    if (fieldType === 'multiconditional') {
+      if (!branchOptions || branchOptions.length === 0) return renderValue(key);
+      return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {branchOptions.map((opt) => {
+            const active = current === opt.optionKey;
+            return (
+              <button
+                key={opt.optionKey}
+                onClick={() => onFieldChange!(key, opt.optionKey)}
+                style={{
+                  padding: '4px 12px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)',
+                  border: `1px solid ${active ? 'rgba(0,200,255,0.5)' : 'var(--border-subtle)'}`,
+                  background: active ? 'rgba(0,200,255,0.12)' : 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--txt-muted)',
+                }}
+              >
+                {opt.label || 'Opción'}
+              </button>
+            );
+          })}
         </div>
       );
     }
@@ -597,11 +678,11 @@ function renderEditor(key: string, fieldType?: string, options?: string[]): Reac
   return (
     <div>
 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-  {entries.map(({ key, label, fieldType, options }) => (
-    <div key={key} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+  {entries.map(({ key, label, fieldType, options, branchOptions }) => (
+    <div key={key} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '160px 1fr', gap: isMobile ? '4px' : '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', lineHeight: 1.5, paddingTop: 1 }}>{label}</span>
       <span style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.6, color: 'var(--txt)' }}>
-        {onFieldChange ? renderEditor(key, fieldType, options) : renderValue(key)}
+        {onFieldChange ? renderEditor(key, fieldType, options, branchOptions) : renderValue(key)}
       </span>
     </div>
   ))}

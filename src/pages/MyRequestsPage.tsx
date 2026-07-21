@@ -82,7 +82,7 @@ export function MisSolicitudesPage() {
       : () => Requests.fetchByRequestedBy(currentUser!.User_ID),
     enabled:              config.USE_MOCK || !!currentUser,
     staleTime:            config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    //refetchInterval:      config.USE_MOCK ? false : 20_000,
     refetchOnWindowFocus: !config.USE_MOCK,
     retry:                config.USE_MOCK ? false : 1,
   });

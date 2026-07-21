@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Upload, FileText, Image, File, CheckCircle, AlertCircle, Paperclip, Recycle, Ban, ListChecks } from 'lucide-react';
 import type { KanbanColumna, Request, CierreInfo } from '../types';
 import { useAcceptanceCriteria } from '../hooks/useAcceptanceCriteria';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 const MAX_FILES = 5;
 const MAX_IMAGE_SIZE_MB = 2;
@@ -85,6 +86,7 @@ export function ClosureModal({
   onCancel,
   isPending,
 }: Props) {
+  const isMobile = useIsMobile();
   const [mode,        setMode]        = useState<EvidenceMode>('new');
   const [note,        setNote]        = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -184,12 +186,13 @@ export function ClosureModal({
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current && !isPending) onCancel(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 150, padding: isMobile ? 0 : 24 }}
     >
       <div style={{
-        width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto',
+        width: '100%', maxWidth: 540,
+        maxHeight: isMobile ? '94dvh' : '90vh', overflowY: 'auto',
         background: 'var(--bg-panel)', border: `1px solid ${accentColor}40`,
-        borderRadius: 14, position: 'relative', boxShadow: `0 0 60px ${accentColor}18`,
+        borderRadius: isMobile ? '16px 16px 0 0' : 14, position: 'relative', boxShadow: `0 0 60px ${accentColor}18`,
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
 
@@ -236,7 +239,7 @@ export function ClosureModal({
               <label style={{ display: 'block', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)', marginBottom: 8 }}>
                 Tipo de evidencia
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 6 }}>
                 <ModeButton
                   active={mode === 'new'}
                   onClick={() => setMode('new')}

@@ -20,9 +20,8 @@ import type { Prioridad } from '@/features/requests/types';
 import { useRole } from '@/auth/roles';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
-import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
-import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
-import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
+import type { TemplateExtraField, ConditionalField, MultiConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField, isMultiConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
 
 type Step = 'equipo' | 'template' | 'form';
 
@@ -81,6 +80,11 @@ function cardStyle(accent: string): React.CSSProperties {
    Normalización legacy: convierte ramas objeto → array
    ============================================================ */
 function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
+  if (field.type === 'multiconditional') {
+    const mf = field as MultiConditionalField;
+    const opts = Array.isArray(mf.options) ? mf.options : [];
+    return { ...mf, options: opts.map((o) => ({ ...o, fields: Array.isArray(o.fields) ? o.fields.map(normalizeBranch) : [] })) };
+  }
   if (field.type !== 'conditional') return field;
   const cf = field as ConditionalField;
   const toArray = (v: unknown): TemplateExtraField[] => {
@@ -93,6 +97,22 @@ function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
 
 function normalizeSchema(schema: TemplateExtraField[]): TemplateExtraField[] {
   return (schema ?? []).map(normalizeBranch);
+}
+
+/* Quita campos desactivados (enabled === false) en cualquier nivel/rama.
+   Solo afecta la CAPTURA en creación — no la visualización de datos ya guardados. */
+function filterEnabled(fields: TemplateExtraField[]): TemplateExtraField[] {
+  return (fields ?? [])
+    .filter((f) => ((f as { enabled?: boolean }).enabled ?? true))
+    .map((f) => {
+      if (f.type === 'multiconditional') {
+        const mf = f as MultiConditionalField;
+        return { ...mf, options: mf.options.map((o) => ({ ...o, fields: filterEnabled(o.fields) })) };
+      }
+      if (f.type !== 'conditional') return f;
+      const cf = f as ConditionalField;
+      return { ...cf, trueBranch: filterEnabled(cf.trueBranch), falseBranch: filterEnabled(cf.falseBranch) };
+    });
 }
 function fillConditionalDefaults(
   fields: TemplateExtraField[],
@@ -107,6 +127,13 @@ function fillConditionalDefaults(
         if (!(cf.key in values)) defaults[cf.key] = 'false';
         collectDefaults(cf.trueBranch);
         collectDefaults(cf.falseBranch);
+      } else if (isMultiConditionalField(field)) {
+        // Sin default para el disparador (queda vacío hasta que el usuario elija).
+        // Solo recorremos la rama ACTIVA para defaults de condicionales anidados.
+        const mf = field as MultiConditionalField;
+        const chosen = values[mf.key];
+        const active = mf.options.find((o) => o.optionKey === chosen);
+        if (active) collectDefaults(active.fields);
       }
     }
   }
@@ -121,6 +148,7 @@ function validateExtraFields(
   fields: TemplateExtraField[],
   values: Record<string, string>,
 ): { valid: boolean; errorLabel: string | null } {
+// DESPUÉS
   for (const field of fields) {
     if (isConditionalField(field)) {
       const cf = field as ConditionalField;
@@ -131,6 +159,17 @@ function validateExtraFields(
 const activeBranch = triggerValue === 'true' ? cf.trueBranch : cf.falseBranch;
 const res = validateExtraFields(activeBranch, values);
 if (!res.valid) return res;
+    } else if (isMultiConditionalField(field)) {
+      const mf = field as MultiConditionalField;
+      const chosen = values[mf.key] ?? '';
+      const active = mf.options.find((o) => o.optionKey === chosen);
+      if (mf.required && !active) {
+        return { valid: false, errorLabel: mf.label };
+      }
+      if (active) {
+        const res = validateExtraFields(active.fields, values);
+        if (!res.valid) return res;
+      }
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -224,6 +263,77 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                     values={values}
                     onChange={onChange}
                     accent={isTrue ? '#00e5a0' : accent}
+                    focused={focused}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isMultiConditionalField(field)) {
+    const mf     = field as MultiConditionalField;
+    const chosen = values[mf.key] ?? '';
+    const active = mf.options.find((o) => o.optionKey === chosen) ?? null;
+
+    return (
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+            {mf.label}
+            {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {mf.options.map((opt) => {
+              const isSelected = chosen === opt.optionKey;
+              return (
+                <button
+                  key={opt.optionKey}
+                  type="button"
+                  onClick={() => onChange(mf.key, opt.optionKey)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
+                    border: `1px solid ${isSelected ? accent + '60' : 'var(--border-subtle)'}`,
+                    background: isSelected ? `${accent}12` : 'transparent',
+                    color: isSelected ? accent : 'var(--txt-muted)',
+                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: 0.5, transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${isSelected ? accent : 'var(--border)'}`,
+                    background: isSelected ? accent : 'transparent',
+                    transition: 'all 0.15s',
+                  }} />
+                  {opt.label || 'Opción'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {active && active.fields.some((f) => f.label.trim() !== '') && (
+          <div style={{
+            marginTop: 8, padding: '12px 14px', borderRadius: 8,
+            border: `1px solid ${accent}25`, background: `${accent}06`, position: 'relative',
+          }}>
+            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: accent }} />
+            <div style={{ paddingLeft: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {active.fields.map((branchField) => (
+                  <ExtraFieldRenderer
+                    key={branchField.key}
+                    field={branchField}
+                    values={values}
+                    onChange={onChange}
+                    accent={accent}
                     focused={focused}
                     onFocus={onFocus}
                     onBlur={onBlur}
@@ -568,7 +678,7 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
   const def          = getTemplateDefinition(templateId, allTemplates);
   const accent       = def.visual.accentColor;
-  const extraFields  = normalizeSchema(def.extraFields);
+  const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
 
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
@@ -1031,7 +1141,7 @@ useEffect(() => {
       if (acceptanceCriteria.length === 0) throw new Error('Debes definir al menos un criterio de aceptación.');
 
       const def          = getTemplateDefinition(selectedTemplateId, templates);
-      const extraFields  = normalizeSchema(def.extraFields);
+      const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
 
       const validation = validateExtraFields(extraFields, extraValues);
       if (!validation.valid) {

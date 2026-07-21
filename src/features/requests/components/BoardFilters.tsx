@@ -1011,8 +1011,15 @@ function FilterPanelPortal({
     function calc() {
       if (!triggerRef.current) return;
       const r = triggerRef.current.getBoundingClientRect();
+      const vw = window.innerWidth;
+      // Móvil: panel casi full-width, anclado al borde; desktop: 620px junto al trigger
+      if (vw <= 768) {
+        const panelWidth = vw - 16;
+        setPos({ top: r.bottom + 8, left: 8, width: panelWidth });
+        return;
+      }
       const panelWidth = Math.max(620, r.width);
-      const left = Math.min(r.left, window.innerWidth - panelWidth - 12);
+      const left = Math.min(r.left, vw - panelWidth - 12);
       setPos({ top: r.bottom + 8, left: Math.max(8, left), width: panelWidth });
     }
     calc();

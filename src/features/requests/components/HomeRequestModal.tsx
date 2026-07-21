@@ -15,6 +15,7 @@ import { ResolutionRatingModal } from './ResolutionRatingModal';
 import { config } from '@/config';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 const PRI_COLOR: Record<Prioridad, string> = {
   baja:    'var(--txt-muted)',
   media:   'var(--info)',
@@ -119,6 +120,11 @@ function TemplateFormDataPanel({
         for (const k of collectAllKeys((field.trueBranch as unknown[]) ?? [])) keys.add(k);
         for (const k of collectAllKeys((field.falseBranch as unknown[]) ?? [])) keys.add(k);
       }
+      if (field.type === 'multiconditional') {
+        for (const o of (field.options as Array<{ fields?: unknown[] }>) ?? []) {
+          for (const k of collectAllKeys(o.fields ?? [])) keys.add(k);
+        }
+      }
     }
     return keys;
   }
@@ -133,6 +139,11 @@ function TemplateFormDataPanel({
       if (field.type === 'conditional') {
         for (const [k, v] of collectAllWithMeta((field.trueBranch  as unknown[]) ?? [])) map.set(k, v);
         for (const [k, v] of collectAllWithMeta((field.falseBranch as unknown[]) ?? [])) map.set(k, v);
+      }
+      if (field.type === 'multiconditional') {
+        for (const o of (field.options as Array<{ fields?: unknown[] }>) ?? []) {
+          for (const [k, v] of collectAllWithMeta(o.fields ?? [])) map.set(k, v);
+        }
       }
     }
     return map;
@@ -154,6 +165,14 @@ function TemplateFormDataPanel({
           ? (field.trueBranch as unknown[]) ?? []
           : (field.falseBranch as unknown[]) ?? [];
         result.push(...collectVisibleLevel(activeBranch));
+      } else if (field.type === 'multiconditional') {
+        if (showInModal && field.label) {
+          result.push({ key: field.key as string, label: field.label as string, showInModal });
+        }
+        const chosen = formData[field.key as string];
+        const opts   = (field.options as Array<{ optionKey?: string; fields?: unknown[] }>) ?? [];
+        const active = opts.find((o) => o.optionKey === chosen);
+        if (active) result.push(...collectVisibleLevel(active.fields ?? []));
       } else {
         if (showInModal && field.label) {
           result.push({ key: field.key as string, label: field.label as string, showInModal });
@@ -162,6 +181,27 @@ function TemplateFormDataPanel({
     }
     return result;
   }
+
+  function collectOptionLabels(fields: unknown[]): Map<string, string> {
+    const m = new Map<string, string>();
+    for (const f of fields) {
+      const field = f as Record<string, unknown>;
+      if (field.type === 'multiconditional') {
+        for (const o of (field.options as Array<{ optionKey?: string; label?: string; fields?: unknown[] }>) ?? []) {
+          if (o.optionKey) m.set(o.optionKey, o.label ?? o.optionKey);
+          for (const [k, v] of collectOptionLabels(o.fields ?? [])) m.set(k, v);
+        }
+      } else if (field.type === 'conditional') {
+        for (const [k, v] of collectOptionLabels((field.trueBranch  as unknown[]) ?? [])) m.set(k, v);
+        for (const [k, v] of collectOptionLabels((field.falseBranch as unknown[]) ?? [])) m.set(k, v);
+      }
+    }
+    return m;
+  }
+  const optionLabels = new Map([
+    ...collectOptionLabels(snapshotSchema ?? []),
+    ...collectOptionLabels(schema),
+  ]);
 
   const schemaFields  = collectVisibleLevel(schema);
   const allLiveKeys   = collectAllKeys(schema);
@@ -193,6 +233,9 @@ function TemplateFormDataPanel({
     if (val === undefined || val === null) return <span style={{ color: 'var(--danger)' }}>No</span>;
     if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 600 }}>Sí</span>;
     if (val === 'false') return <span style={{ color: 'var(--danger)' }}>No</span>;
+    // Si es un optionKey de multiconditional, mostrar su label legible
+    const asOption = optionLabels.get(String(val));
+    if (asOption) return <span style={{ color: 'var(--txt)' }}>{asOption}</span>;
     // Respetar saltos de línea (campos textarea, datos migrados multilínea)
     return <span style={{ color: 'var(--txt)', whiteSpace: 'pre-wrap' }}>{String(val)}</span>;
   }
@@ -259,6 +302,7 @@ type Props = {
 };
 
 export function HomeRequestModal({ request, onClose }: Props) {
+  const isMobile    = useIsMobile();
   const boardId     = config.DEFAULT_BOARD_ID;
   const equipo      = request.equipo[0] ?? 'desarrollo';
 
@@ -347,13 +391,15 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 200, padding: isMobile ? 0 : 24 }}
     >
       <div style={{
-        width: '100%', maxWidth: 900, maxHeight: '90vh',
+        width: '100%', maxWidth: 900,
+        maxHeight: isMobile ? '92dvh' : '90vh',
         background: 'var(--bg-panel)',
         border: `1px solid ${isClienteReview ? 'rgba(52,211,153,0.35)' : 'var(--border)'}`,
-        borderRadius: 12, display: 'flex', flexDirection: 'column',
+        borderRadius: isMobile ? '16px 16px 0 0' : 12,
+        display: 'flex', flexDirection: 'column',
         overflow: 'hidden', position: 'relative',
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: isClienteReview ? 'linear-gradient(90deg, transparent, #34d399, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
@@ -397,10 +443,10 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
         )}
 
         {/* ── Cuerpo ── */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, overflow: isMobile ? 'auto' : 'hidden' }}>
 
           {/* Panel izquierdo */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 20, borderRight: '1px solid var(--border-subtle)' }}>
+          <div style={{ flex: isMobile ? '0 0 auto' : 1, overflowY: isMobile ? 'visible' : 'auto', padding: isMobile ? '18px 16px' : '22px 24px', display: 'flex', flexDirection: 'column', gap: 20, borderRight: isMobile ? 'none' : '1px solid var(--border-subtle)', borderBottom: isMobile ? '1px solid var(--border-subtle)' : 'none' }}>
 
             {request.isConfidential && (
               <div style={{ display: 'flex', gap: 10, padding: '11px 14px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.3)' }}>
@@ -435,7 +481,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
               <CriteriaReadonly requestId={request.id} />
             </FieldBlock>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 <FieldBlock label="Solicitante">
   {request.isLegacy && !request.solicitante ? (
     <TeamChip teamName={request.legacyRequester ?? 'Equipo no especificado'} />
@@ -511,7 +557,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
           </div>
 
           {/* Panel derecho — comentarios */}
-          <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: isMobile ? '70dvh' : undefined }}>
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
               <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent)', color: 'var(--accent)', cursor: 'default' }}>
                 Comentarios

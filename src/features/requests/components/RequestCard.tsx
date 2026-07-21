@@ -203,6 +203,12 @@ function collectAllKeysFromSchema(fields: SchemaField[]): Map<string, FlatCardFi
       for (const [k, v] of collectAllKeysFromSchema((field.trueBranch  as SchemaField[]) ?? [])) map.set(k, v);
       for (const [k, v] of collectAllKeysFromSchema((field.falseBranch as SchemaField[]) ?? [])) map.set(k, v);
     }
+    if (field.type === 'multiconditional') {
+      const opts = (field.options as Array<{ fields?: SchemaField[] }>) ?? [];
+      for (const o of opts) {
+        for (const [k, v] of collectAllKeysFromSchema(o.fields ?? [])) map.set(k, v);
+      }
+    }
   }
   return map;
 }
@@ -226,6 +232,14 @@ function flattenSchemaForCard(
         ? (field.trueBranch  as SchemaField[]) ?? []
         : (field.falseBranch as SchemaField[]) ?? [];
       result.push(...flattenSchemaForCard(branch, formData));
+    } else if (field.type === 'multiconditional') {
+      if (showInCard && field.label) {
+        result.push({ key: field.key as string, label: field.label as string, showInCard });
+      }
+      const chosen = formData[field.key as string];
+      const opts   = (field.options as Array<{ optionKey?: string; fields?: SchemaField[] }>) ?? [];
+      const active = opts.find((o) => o.optionKey === chosen);
+      if (active) result.push(...flattenSchemaForCard(active.fields ?? [], formData));
     } else {
       if (showInCard && field.label) {
         result.push({ key: field.key as string, label: field.label as string, showInCard });
@@ -233,6 +247,25 @@ function flattenSchemaForCard(
     }
   }
   return result;
+}
+
+// Mapa optionKey → label, recorriendo multiconditional en cualquier nivel.
+// Sirve para mostrar el label legible en vez del optionKey crudo.
+function collectOptionLabels(fields: SchemaField[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const field of fields) {
+    if (field.type === 'multiconditional') {
+      const opts = (field.options as Array<{ optionKey?: string; label?: string; fields?: SchemaField[] }>) ?? [];
+      for (const o of opts) {
+        if (o.optionKey) map.set(o.optionKey, o.label ?? o.optionKey);
+        for (const [k, v] of collectOptionLabels(o.fields ?? [])) map.set(k, v);
+      }
+    } else if (field.type === 'conditional') {
+      for (const [k, v] of collectOptionLabels((field.trueBranch  as SchemaField[]) ?? [])) map.set(k, v);
+      for (const [k, v] of collectOptionLabels((field.falseBranch as SchemaField[]) ?? [])) map.set(k, v);
+    }
+  }
+  return map;
 }
 
 const IconForm = () => (
@@ -284,11 +317,19 @@ const orphanFields: FlatCardField[] = Object.keys(formData)
 
   if (visible.length === 0) return null;
 
+  // Mapa optionKey → label (live gana; snapshot cubre ramas eliminadas)
+  const optionLabels = new Map([
+    ...collectOptionLabels(snapshotSchema),
+    ...collectOptionLabels(liveSchema),
+  ]);
+
   function formatValue(key: string): React.ReactNode {
     const val = formData[key];
     if (val === 'true')  return <span style={{ color: 'var(--success)', fontWeight: 700 }}>Sí</span>;
     if (val === 'false') return <span style={{ color: 'var(--txt-muted)' }}>No</span>;
-    const str = String(val);
+    // Si el valor es un optionKey de un multiconditional, mostrar su label
+    const asOption = optionLabels.get(String(val));
+    const str = asOption ?? String(val);
     return str.length > 22 ? str.slice(0, 22) + '…' : str;
   }
 

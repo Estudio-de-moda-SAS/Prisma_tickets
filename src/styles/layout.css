@@ -4,6 +4,7 @@
 .app-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh; /* móvil: descuenta la barra de URL del navegador */
   overflow: hidden;
 }
 
@@ -659,3 +660,105 @@
   border-color: var(--accent);
   box-shadow: 0 0 12px rgba(0, 200, 255, 0.15);
 }
+
+/* ============================================================
+   Responsive — móvil (≤768px)
+   ============================================================ */
+
+/* Hamburguesa: oculta en desktop, aparece en móvil */
+.topbar__hamburguesa {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--txt-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.topbar__hamburguesa:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+/* Backdrop: oculto por defecto (desktop) */
+.sidebar__backdrop { display: none; }
+
+@media (max-width: 640px) {
+  .app-layout__content { padding: 14px 14px; overflow-x: hidden; max-width: 100vw; }
+}
+  /* Sidebar → drawer off-canvas */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  /* En móvil el drawer siempre va ancho completo, aunque esté "collapsed" */
+  .sidebar--open,
+  .sidebar--collapsed {
+    width: var(--sidebar-w);
+    max-width: 82vw;
+  }
+
+  .sidebar--mobile-open { transform: translateX(0); }
+
+  .sidebar__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+  }
+  .sidebar__backdrop--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .topbar__hamburguesa { display: flex; }
+
+  /* Topbar compacto: liberamos ancho */
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .topbar__left {
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+  .topbar__title {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Fecha y badge de estado empujan los botones fuera → ocultos en móvil */
+  .topbar__date,
+  .topbar__status { display: none; }
+
+  .topbar__right {
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  /* "Reportar fallo" queda solo como ícono */
+  .topbar__bug-btn span { display: none; }
+
+  .app-layout__content {
+    padding: 14px 12px;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }

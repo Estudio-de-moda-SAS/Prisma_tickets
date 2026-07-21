@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
-import { useState } from 'react';
-import { NavLink, useNavigate, useMatch } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useMatch, useLocation } from 'react-router-dom';
 import {
   BarChart2, Home, LogOut, Plus, Star,
   LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink
@@ -14,6 +14,7 @@ import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { teamSidebarColors, getTeamIcon } from './siderbarConstants';
 import { config } from '@/config';
 import { SatisfactionModal } from './SatisfactionModal';
+import { useMobileNav } from '@/store/mobileNavStore';
 
 export function Sidebar() {
   const { account, signOut } = useAuth();
@@ -32,6 +33,17 @@ const activeTeamKey     = boardMatch?.params?.equipo
                        ?? tasksMatch?.params?.equipo
                        ?? teamReqMatch?.params?.equipo;
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const mobileNavOpen  = useMobileNav((s) => s.open);
+  const closeMobileNav = useMobileNav((s) => s.closeNav);
+
+  // Cierra el drawer al cambiar de ruta (o sea, después de tocar cualquier link).
+  // Toggle del submenú de equipo no cambia ruta → el drawer se queda abierto.
+  useEffect(() => {
+    closeMobileNav();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const [automatizacionesOpen, setAutomatizacionesOpen] = useState(false);
   const [satisfactionOpen,     setSatisfactionOpen]     = useState(false);
   const [teamSubOpen, setTeamSubOpen] = useState(true);
@@ -88,7 +100,11 @@ function handleEquipo(key: string) {
 
   return (
     <>
-      <aside className={['sidebar', sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed'].join(' ')}>
+      <div
+        className={['sidebar__backdrop', mobileNavOpen ? 'sidebar__backdrop--visible' : ''].join(' ')}
+        onClick={closeMobileNav}
+      />
+      <aside className={['sidebar', sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed', mobileNavOpen ? 'sidebar--mobile-open' : ''].join(' ')}>
         <div className="sidebar__accent-line" />
 
         {/* ── Logo ── */}

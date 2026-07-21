@@ -1,4 +1,4 @@
-import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
+import type { TemplateExtraField, ConditionalField, MultiConditionalField } from '@/features/requests/templates/types';
 
 export type AnnotatedField  = TemplateExtraField & { __editId: string };
 export type AnnotatedSchema = AnnotatedField[];
@@ -25,6 +25,14 @@ function annotateField(f: TemplateExtraField): AnnotatedField {
       falseBranch: cf.falseBranch.map(annotateField),
     } as AnnotatedField;
   }
+  if (f.type === 'multiconditional') {
+    const mf = f as MultiConditionalField;
+    return {
+      ...mf,
+      __editId: genEditId(),
+      options:  mf.options.map((o) => ({ ...o, fields: o.fields.map(annotateField) })),
+    } as AnnotatedField;
+  }
   return { ...f, __editId: genEditId() } as AnnotatedField;
 }
 
@@ -44,6 +52,13 @@ function stripField(f: TemplateExtraField | AnnotatedField): TemplateExtraField 
       falseBranch: stripEditIds(cf.falseBranch),
     };
   }
+  if (rest.type === 'multiconditional') {
+    const mf = rest as MultiConditionalField;
+    return {
+      ...mf,
+      options: mf.options.map((o) => ({ ...o, fields: stripEditIds(o.fields) })),
+    };
+  }
   return rest as TemplateExtraField;
 }
 
@@ -56,6 +71,10 @@ function flattenWithEditIds(schema: AnnotatedSchema): { __editId: string; key: s
         const cf = f as AnnotatedField & ConditionalField;
         walk((cf.trueBranch  ?? []) as AnnotatedSchema);
         walk((cf.falseBranch ?? []) as AnnotatedSchema);
+      }
+      if (f.type === 'multiconditional') {
+        const mf = f as AnnotatedField & MultiConditionalField;
+        for (const o of mf.options ?? []) walk((o.fields ?? []) as AnnotatedSchema);
       }
     }
   };
