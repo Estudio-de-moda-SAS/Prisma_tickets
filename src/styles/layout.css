@@ -689,9 +689,7 @@
 /* Backdrop: oculto por defecto (desktop) */
 .sidebar__backdrop { display: none; }
 
-@media (max-width: 640px) {
-  .app-layout__content { padding: 14px 14px; overflow-x: hidden; max-width: 100vw; }
-}
+@media (max-width: 639px) {
   /* Sidebar → drawer off-canvas */
   .sidebar {
     position: fixed;
@@ -761,4 +759,4 @@
     padding: 14px 12px;
     overflow-x: hidden;
     max-width: 100vw;
-  }
+  }}

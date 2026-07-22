@@ -16,7 +16,7 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** true cuando el viewport es < breakpoint (default 768px) */
-export function useIsMobile(breakpoint = 768): boolean {
+/** true cuando el viewport es < breakpoint (default 640px) */
+export function useIsMobile(breakpoint = 640): boolean {
   return useMediaQuery(`(max-width: ${breakpoint - 1}px)`);
 }

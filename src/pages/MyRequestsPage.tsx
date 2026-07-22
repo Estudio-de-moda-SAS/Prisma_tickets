@@ -10,6 +10,7 @@ import { KANBAN_COLUMNAS } from '@/features/requests/types';
 import type { Request, KanbanColumna, Prioridad } from '@/features/requests/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar:  'var(--txt-muted)',
@@ -162,6 +163,7 @@ export function MisSolicitudesPage() {
 }
 
 function RequestRow({ request: r }: { request: Request }) {
+  const isMobile       = useIsMobile();
   const prioColor      = PRIORIDAD_COLOR[r.prioridad];
   const colColor       = COL_COLOR[r.columna];
   const colBg          = COL_BG[r.columna];
@@ -171,7 +173,7 @@ function RequestRow({ request: r }: { request: Request }) {
     <div
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${prioColor}50`; e.currentTarget.style.transform = 'translateX(2px)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.transform = 'translateX(0)'; }}
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, display: 'grid', gridTemplateColumns: '3px 1fr auto', overflow: 'hidden', transition: 'border-color 0.15s, transform 0.15s', cursor: 'pointer' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, display: 'grid', gridTemplateColumns: isMobile ? '3px 1fr' : '3px 1fr auto', overflow: 'hidden', transition: 'border-color 0.15s, transform 0.15s', cursor: 'pointer' }}
     >
       <div style={{ background: prioColor, minHeight: '100%' }} />
 
@@ -220,7 +222,19 @@ function RequestRow({ request: r }: { request: Request }) {
         </div>
       </div>
 
-      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, minWidth: 110, borderLeft: '1px solid var(--border-subtle)' }}>
+      <div style={{
+        padding: isMobile ? '10px 14px 12px' : '12px 14px',
+        display: 'flex',
+        flexDirection: isMobile ? 'row' : 'column',
+        alignItems: isMobile ? 'center' : 'flex-end',
+        justifyContent: isMobile ? 'flex-start' : 'space-between',
+        gap: isMobile ? 12 : 8,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
+        minWidth: isMobile ? 0 : 110,
+        borderLeft: isMobile ? 'none' : '1px solid var(--border-subtle)',
+        borderTop: isMobile ? '1px solid var(--border-subtle)' : 'none',
+        gridColumn: isMobile ? '2 / 3' : undefined,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--txt-muted)' }}>
           <IconClock />{format(new Date(r.fechaApertura), 'd MMM yyyy', { locale: es })}
         </div>
@@ -228,7 +242,7 @@ function RequestRow({ request: r }: { request: Request }) {
           <IconUser /><span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
         </div>
         {r.equipo.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: 3, flexWrap: 'wrap' }}>
             {r.equipo.map((eq) => (
               <span key={eq} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--accent)', background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.15)', borderRadius: 3, padding: '2px 7px' }}>{eq}</span>
             ))}

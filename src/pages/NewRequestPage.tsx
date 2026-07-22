@@ -22,6 +22,7 @@ import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, ConditionalField, MultiConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField, isMultiConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 type Step = 'equipo' | 'template' | 'form';
 
@@ -509,16 +510,17 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void }) {
+  const isMobile = useIsMobile();
   const selectedTeam = teams.find((t) => t.Board_Team_ID === selectedTeamId) ?? null;
   const {  border: selBorder } = selectedTeam ? teamColors(selectedTeam.Board_Team_Color) : {  border: 'var(--accent)' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 18 : 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
         {teams.map((team, idx) => {
           const isAlone               = teams.length % 2 !== 0 && idx === teams.length - 1;
           const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
@@ -544,7 +546,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
                 cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', gap: 10,
-                ...(isAlone ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
+                ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
               }}
               onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
               onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
@@ -572,10 +574,10 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
         justifyContent: 'flex-end',
         alignItems: 'center',
         marginTop: 24,
-        marginLeft: -50,
-        marginRight: -50,
-        marginBottom: -32,
-        padding: '14px 50px',
+        marginLeft: isMobile ? -14 : -50,
+        marginRight: isMobile ? -14 : -50,
+        marginBottom: isMobile ? -24 : -32,
+        padding: isMobile ? '12px 14px' : '14px 50px',
         background: 'var(--bg-panel)',
         borderTop: `1px solid ${selectedTeamId !== null ? selBorder : 'transparent'}`,
         opacity: selectedTeamId !== null ? 1 : 0,
@@ -590,6 +592,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
 }
 
 function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: { templates: BoardTemplate[]; selectedBoardTeamId: number | null; selectedTemplateId: number | null; onSelect: (id: number) => void; onNext: () => void; onBack: () => void }) {
+  const isMobile = useIsMobile();
   const filtered = templates.filter((t) => t.Request_Template_Is_Active && (t.Request_Template_Teams?.length === 0 || (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId))));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -597,7 +600,7 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿Qué tipo de solicitud es?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>El tipo determina qué información adicional se necesita.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 16, flex: 1 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)'), gap: 16, flex: 1 }}>
         {filtered.map((t) => {
           const selected = selectedTemplateId === t.Request_Template_ID; const accent = t.Request_Template_Color ?? '#00c8ff'; const icon = t.Request_Template_Icon ?? '📋'; const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
           return (
@@ -670,6 +673,7 @@ function StepForm({
   isConfidential: boolean; setIsConfidential: (v: boolean) => void;
   error: string | null; isPending: boolean; isReady: boolean; onBack: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [focusedField, setFocusedField] = useState<string | null>(null);
 const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
 const priorityBtnRef = useRef<HTMLButtonElement>(null);
@@ -765,7 +769,8 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 if (r) {
   const estHeight = 460;
   const top = Math.max(8, Math.min(r.top, window.innerHeight - estHeight - 8));
-  setPriorityInfoPos({ top, left: r.right + 8 });
+  // Móvil: anclado al borde izquierdo; desktop: al lado del botón
+  setPriorityInfoPos({ top, left: window.innerWidth <= 639 ? 8 : r.right + 8 });
 }}}
   onMouseLeave={() => setPriorityInfoPos(null)}
   style={{
@@ -787,7 +792,8 @@ if (r) {
     top: priorityInfoPos.top,
     left: priorityInfoPos.left,
     zIndex: 9999,
-    width: 340,
+    width: isMobile ? 'calc(100vw - 16px)' : 340,
+    maxWidth: 340,
     borderRadius: 10,
     background: 'var(--bg-panel)',
     border: '1px solid var(--border-subtle)',
@@ -834,7 +840,7 @@ if (r) {
   </div>
 
   {/* Botones de prioridad (sin cambios) */}
-  <div style={{ display: 'flex', gap: 7 }}>
+  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
     {(Object.keys(PRIORIDADES) as Prioridad[]).map((key) => {
       const active = prioridad === key;
       return (
@@ -889,12 +895,13 @@ if (r) {
         alignItems: 'center',
         gap: 12,
         marginTop: 8,
-        marginLeft: -50,
-        marginRight: -50,
-        marginBottom: -32,
-        padding: '14px 50px',
+        marginLeft: isMobile ? -14 : -50,
+        marginRight: isMobile ? -14 : -50,
+        marginBottom: isMobile ? -24 : -32,
+        padding: isMobile ? '12px 14px' : '14px 50px',
         background: 'var(--bg-panel)',
         borderTop: `1px solid ${accent}25`,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
       }}>
         <button type="button" onClick={onBack} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -1051,6 +1058,7 @@ function SuccessScreen({
 }
 
 export function NuevaSolicitudPage() {
+  const isMobile     = useIsMobile();
   const navigate     = useNavigate();
   const qc           = useQueryClient();
   const { Requests } = useGraphServices();
@@ -1256,7 +1264,7 @@ function resetForCreateAnother(keepTeam: boolean) {
         ? visibleTeams.find((t) => t.Board_Team_ID === selectedTeamId)?.Board_Team_Name ?? null
         : null;
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: '0 28px 32px' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: isMobile ? '0 14px 24px' : '0 28px 32px' }}>
         <SuccessScreen
           onHome={() => navigate('/home')}
           onCreateAnother={(scope) => resetForCreateAnother(scope === 'same')}
@@ -1268,7 +1276,7 @@ function resetForCreateAnother(keepTeam: boolean) {
   }
   
   return (
-    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 50px 32px', width: '100%', margin: '0 auto' }}>
+    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: isMobile ? '0 14px 24px' : '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
 {step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (
