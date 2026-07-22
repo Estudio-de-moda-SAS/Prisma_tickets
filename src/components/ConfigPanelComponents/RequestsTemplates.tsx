@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { TemplateExtraField, FieldType, SimpleField, ConditionalField } from '@/features/requests/templates/types';
+import type { TemplateExtraField, FieldType, SimpleField, ConditionalField, MultiConditionalField, BranchOption } from '@/features/requests/templates/types';
 import {
   makeEmptySimpleField,
   makeEmptyConditionalField,
+  makeEmptyMultiConditionalField,
+  makeOptionKey,
   MAX_CONDITIONAL_DEPTH,
 } from '@/features/requests/templates/types';
 import type { BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
@@ -28,12 +30,13 @@ const FIELD_TYPES_FULL: { value: FieldType; label: string; icon: string }[] = [
   { value: 'radio',       label: 'Selección',     icon: '◉'  },
   { value: 'checkbox',    label: 'Casilla',       icon: '☑️' },
   { value: 'conditional', label: 'Condicional',   icon: '⑂'  },
+  { value: 'multiconditional', label: 'Multi-opción', icon: '⋔' },
 ];
 
 /** Tipos disponibles para ramas de un campo condicional (sin condicional si ya se llegó al límite) */
 function getBranchFieldTypes(currentDepth: number): { value: FieldType; label: string; icon: string }[] {
   if (currentDepth >= MAX_CONDITIONAL_DEPTH) {
-    return FIELD_TYPES_FULL.filter((f) => f.value !== 'conditional');
+    return FIELD_TYPES_FULL.filter((f) => f.value !== 'conditional' && f.value !== 'multiconditional');
   }
   return FIELD_TYPES_FULL;
 }
@@ -95,6 +98,18 @@ function TemplateRow({ template, onEdit, onDelete }: { template: BoardTemplate; 
    TemplateForm
    ============================================================ */
 function normalizeBranches(field: TemplateExtraField): TemplateExtraField {
+  if (field.type === 'multiconditional') {
+    const mf = field as MultiConditionalField;
+    const opts = Array.isArray(mf.options) ? mf.options : [];
+    return {
+      ...mf,
+      options: opts.map((o) => ({
+        ...o,
+        optionKey: o.optionKey ?? makeOptionKey(0),
+        fields: Array.isArray(o.fields) ? o.fields.map(normalizeBranches) : [makeEmptySimpleField(0)],
+      })),
+    };
+  }
   if (field.type !== 'conditional') return field;
   const cf = field as ConditionalField;
   const toArray = (v: unknown): TemplateExtraField[] => {
@@ -409,8 +424,9 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
   const [optionInput, setOptionInput] = useState('');
 
   const isConditional  = field.type === 'conditional';
+  const isMulti        = field.type === 'multiconditional';
   const needsOptions   = field.type === 'select' || field.type === 'radio';
-  const availableTypes = getBranchFieldTypes(depth);
+  const availableTypes = getBranchFieldTypes(depth)
 
   const depthColors  = ['#00c8ff', '#a29bfe', '#00e5a0', '#fdcb6e', '#fd79a8'];
   const depthColor   = depthColors[Math.min(depth, depthColors.length - 1)];
@@ -420,6 +436,7 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
   const showInModal = (field as { showInModal?: boolean }).showInModal ?? true;
   const showInCard  = (field as { showInCard?: boolean }).showInCard  ?? false;
   const showInTaskList = (field as { showInTaskList?: boolean }).showInTaskList ?? false;
+  const enabled     = (field as { enabled?: boolean }).enabled ?? true;
 
   function addOption() {
     const v = optionInput.trim();
@@ -457,12 +474,65 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
     onChange({ [branch]: current });
   }
 
+  // ── Handlers del multiconditional ──
+  function updateOptionLabel(optIdx: number, label: string) {
+    if (!isMulti) return;
+    const opts = [...(field as MultiConditionalField).options];
+    opts[optIdx] = { ...opts[optIdx], label };
+    onChange({ options: opts } as Partial<TemplateExtraField>);
+  }
+  function addOptionBranch() {
+    if (!isMulti) return;
+    const opts = (field as MultiConditionalField).options;
+    onChange({ options: [...opts, { optionKey: makeOptionKey(opts.length), label: '', fields: [makeEmptySimpleField(0)] }] } as Partial<TemplateExtraField>);
+  }
+  function removeOptionBranch(optIdx: number) {
+    if (!isMulti) return;
+    const opts = (field as MultiConditionalField).options;
+    if (opts.length <= 2) return; // mínimo 2 ramas
+    onChange({ options: opts.filter((_, i) => i !== optIdx) } as Partial<TemplateExtraField>);
+  }
+  function updateOptionField(optIdx: number, fieldIdx: number, patch: Partial<TemplateExtraField>) {
+    if (!isMulti) return;
+    const opts = [...(field as MultiConditionalField).options];
+    const fields = [...opts[optIdx].fields];
+    fields[fieldIdx] = { ...fields[fieldIdx], ...patch } as TemplateExtraField;
+    opts[optIdx] = { ...opts[optIdx], fields };
+    onChange({ options: opts } as Partial<TemplateExtraField>);
+  }
+  function addOptionField(optIdx: number) {
+    if (!isMulti) return;
+    const opts = [...(field as MultiConditionalField).options];
+    opts[optIdx] = { ...opts[optIdx], fields: [...opts[optIdx].fields, makeEmptySimpleField(opts[optIdx].fields.length)] };
+    onChange({ options: opts } as Partial<TemplateExtraField>);
+  }
+  function removeOptionField(optIdx: number, fieldIdx: number) {
+    if (!isMulti) return;
+    const opts = [...(field as MultiConditionalField).options];
+    if (opts[optIdx].fields.length <= 1) return;
+    opts[optIdx] = { ...opts[optIdx], fields: opts[optIdx].fields.filter((_, i) => i !== fieldIdx) };
+    onChange({ options: opts } as Partial<TemplateExtraField>);
+  }
+  function moveOptionField(optIdx: number, fieldIdx: number, dir: -1 | 1) {
+    if (!isMulti) return;
+    const opts = [...(field as MultiConditionalField).options];
+    const fields = [...opts[optIdx].fields];
+    const s = fieldIdx + dir;
+    if (s < 0 || s >= fields.length) return;
+    [fields[fieldIdx], fields[s]] = [fields[s], fields[fieldIdx]];
+    opts[optIdx] = { ...opts[optIdx], fields };
+    onChange({ options: opts } as Partial<TemplateExtraField>);
+  }
+
   function handleTypeChange(newType: FieldType) {
-    // Preservar showInModal y showInCard al cambiar tipo
-    const keepFlags = { showInModal, showInCard, showInTaskList };
+    // Preservar flags de comportamiento al cambiar tipo
+    const keepFlags = { showInModal, showInCard, showInTaskList, enabled };
     if (newType === 'conditional') {
       const emptyConditional = makeEmptyConditionalField(index);
       onChange({ ...emptyConditional, key: field.key || emptyConditional.key, label: field.label || emptyConditional.label, ...keepFlags } as Partial<TemplateExtraField>);
+    } else if (newType === 'multiconditional') {
+      const emptyMulti = makeEmptyMultiConditionalField(index);
+      onChange({ ...emptyMulti, key: field.key || emptyMulti.key, label: field.label || emptyMulti.label, ...keepFlags } as Partial<TemplateExtraField>);
     } else {
       const patch: Partial<SimpleField> = { type: newType as SimpleField['type'], key: field.key, label: field.label, required: field.required, collapsible: field.collapsible ?? false, placeholder: undefined, options: undefined, ...keepFlags };
       if (newType === 'checkbox') delete patch.placeholder;
@@ -474,7 +544,7 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
   const typeIcon  = FIELD_TYPES_FULL.find((f) => f.value === field.type)?.icon  ?? '';
 
   return (
-    <div style={{ borderRadius: 10, border: `1px solid ${expanded ? effectiveAccent + '35' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', transition: 'border-color 0.15s' }}>
+    <div style={{ borderRadius: 10, border: `1px solid ${!enabled ? 'var(--border-subtle)' : expanded ? effectiveAccent + '35' : 'var(--border-subtle)'}`, background: 'var(--bg-surface)', opacity: enabled ? 1 : 0.55, transition: 'border-color 0.15s, opacity 0.15s' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: expanded ? `${effectiveAccent}06` : 'transparent', borderBottom: expanded ? `1px solid ${effectiveAccent}15` : 'none' }}>
         <div style={{ width: 22, height: 22, borderRadius: 5, background: `${effectiveAccent}20`, border: `1px solid ${effectiveAccent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: effectiveAccent, flexShrink: 0 }}>{index + 1}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -484,6 +554,7 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
             {field.required    && <span>· requerido</span>}
             {field.collapsible && <span>· colapsable</span>}
             {/* Indicadores de visibilidad en el header colapsado */}
+            {!enabled     && <span style={{ color: '#ff4757', fontWeight: 700 }}>· desactivado</span>}
             {!showInModal && <span style={{ color: '#ff4757' }}>· oculto modal</span>}
             {showInCard   && <span style={{ color: '#00e5a0' }}>· en card</span>}
             {showInTaskList && <span style={{ color: '#fdcb6e' }}>· en listado</span>}
@@ -518,12 +589,12 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
             )}
           </div>
           <div>
-            <FieldLabel>{isConditional ? 'Pregunta (label del checkbox disparador) *' : 'Etiqueta *'}</FieldLabel>
+            <FieldLabel>{isConditional ? 'Pregunta (label del checkbox disparador) *' : isMulti ? 'Pregunta (label del disparador) *' : 'Etiqueta *'}</FieldLabel>
             <input value={field.label} onChange={(e) => onChange({ label: e.target.value })} onBlur={(e) => {
               const label = e.target.value;
               const key = label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
               onChange({ key: key || field.key });
-            }} placeholder={isConditional ? 'Ej: ¿Pertenece a CRM?' : 'Ej: Repositorio'} className="cpop-input" />
+            }} placeholder={isConditional ? 'Ej: ¿Pertenece a CRM?' : isMulti ? 'Ej: ¿Qué plataforma?' : 'Ej: Repositorio'} className="cpop-input" />
           </div>
           {!isConditional && (field.type === 'text' || field.type === 'textarea') && (
             <div>
@@ -531,7 +602,7 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
               <input value={(field as SimpleField).placeholder ?? ''} onChange={(e) => onChange({ placeholder: e.target.value })} placeholder="Ej: Pegá el nombre del repositorio..." className="cpop-input" />
             </div>
           )}
-          {!isConditional && field.type === 'checkbox' && (
+          {!isConditional && !isMulti && field.type === 'checkbox' && (
             <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${effectiveAccent}`, background: `${effectiveAccent}15`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5L8.5 2" stroke={effectiveAccent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -539,7 +610,7 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
               <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>{field.label || 'Etiqueta de la casilla'}</span>
             </div>
           )}
-          {!isConditional && needsOptions && (
+          {!isConditional && !isMulti && needsOptions && (
             <div>
               <FieldLabel>Opciones</FieldLabel>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 6 }}>
@@ -562,6 +633,18 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
 
           {/* ── Opciones de comportamiento (Requerido, Colapsable, Mostrar en modal, Mostrar en card) ── */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '10px 12px', borderRadius: 7, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)' }}>
+            {/* Activo / Desactivado — interruptor maestro del campo */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, width: '100%' }}>
+              <input type="checkbox" checked={enabled} onChange={(e) => onChange({ enabled: e.target.checked } as Partial<TemplateExtraField>)} style={{ accentColor: '#00e5a0', width: 13, height: 13 }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: enabled ? '#00e5a0' : '#ff4757', fontWeight: 600 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                {enabled ? 'Campo activo' : 'Campo desactivado (no se pedirá en solicitudes nuevas)'}
+              </span>
+            </label>
+
+            {/* Separador */}
+            <div style={{ width: '100%', height: 1, background: 'var(--border-subtle)', margin: '2px 0' }} />
+
             {/* Requerido */}
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11 }}>
               <input type="checkbox" checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} style={{ accentColor: effectiveAccent, width: 13, height: 13 }} />
@@ -643,6 +726,34 @@ function FieldEditor({ field, index, total, accentColor, depth, onChange, onRemo
                 onMove={(idx, dir) => moveBranchField('falseBranch', idx, dir)} />
             </div>
           )}
+
+          {isMulti && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(field as MultiConditionalField).options.map((opt, optIdx) => (
+                <MultiOptionEditor
+                  key={opt.optionKey}
+                  option={opt}
+                  optionIndex={optIdx}
+                  totalOptions={(field as MultiConditionalField).options.length}
+                  depth={depth}
+                  accentColor={accentColor}
+                  onLabelChange={(label) => updateOptionLabel(optIdx, label)}
+                  onRemoveOption={() => removeOptionBranch(optIdx)}
+                  onUpdateField={(fIdx, patch) => updateOptionField(optIdx, fIdx, patch)}
+                  onAddField={() => addOptionField(optIdx)}
+                  onRemoveField={(fIdx) => removeOptionField(optIdx, fIdx)}
+                  onMoveField={(fIdx, dir) => moveOptionField(optIdx, fIdx, dir)}
+                />
+              ))}
+              <button onClick={addOptionBranch}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', width: '100%', borderRadius: 8, border: `2px dashed ${accentColor}40`, background: `${accentColor}05`, color: accentColor, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = `${accentColor}10`; e.currentTarget.style.borderColor = `${accentColor}70`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = `${accentColor}05`; e.currentTarget.style.borderColor = `${accentColor}40`; }}>
+                <svg width="10" height="10" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4.5 1v7M1 4.5h7" strokeLinecap="round"/></svg>
+                + Agregar opción
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -680,8 +791,70 @@ function BranchEditor({ label, color, icon, fields, depth, onUpdate, onAdd, onRe
     </div>
   );
 }
-function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+/* ============================================================
+   MultiOptionEditor — una rama del campo multiconditional
+   ============================================================ */
+function MultiOptionEditor({ option, optionIndex, totalOptions, depth, onLabelChange, onRemoveOption, onUpdateField, onAddField, onRemoveField, onMoveField }: {
+  option:        BranchOption;
+  optionIndex:   number;
+  totalOptions:  number;
+  depth:         number;
+  accentColor:   string;
+  onLabelChange: (label: string) => void;
+  onRemoveOption: () => void;
+  onUpdateField: (fieldIdx: number, patch: Partial<TemplateExtraField>) => void;
+  onAddField:    () => void;
+  onRemoveField: (fieldIdx: number) => void;
+  onMoveField:   (fieldIdx: number, dir: -1 | 1) => void;
+}) {
+  const optionColors = ['#00c8ff', '#00e5a0', '#fdcb6e', '#a29bfe', '#fd79a8', '#74b9ff', '#ff7675'];
+  const color = optionColors[optionIndex % optionColors.length];
+
   return (
+    <div style={{ borderRadius: 8, border: `1px solid ${color}30` }}>
+      <div style={{ padding: '8px 12px', background: `${color}08`, borderBottom: `1px solid ${color}20`, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 5, background: `${color}20`, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color, flexShrink: 0 }}>{optionIndex + 1}</div>
+        <input
+          value={option.label}
+          onChange={(e) => onLabelChange(e.target.value)}
+          placeholder={`Nombre de la opción ${optionIndex + 1}…`}
+          className="cpop-input"
+          style={{ flex: 1, fontWeight: 600 }}
+        />
+        <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, background: `${color}15`, color, border: `1px solid ${color}30`, fontWeight: 700, flexShrink: 0 }}>{option.fields.length} campo{option.fields.length !== 1 ? 's' : ''}</span>
+        {totalOptions > 2 && (
+          <SmBtn color="#ff4757" onClick={onRemoveOption} title="Quitar opción">
+            <svg width="9" height="9" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l6 6M7 1L1 7"/></svg>
+          </SmBtn>
+        )}
+      </div>
+      <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {option.fields.map((f, idx) => (
+          <FieldEditor
+            key={`${optionIndex}-${idx}-${f.key}`}
+            field={f}
+            index={idx}
+            total={option.fields.length}
+            accentColor={color}
+            depth={depth + 1}
+            onChange={(patch) => onUpdateField(idx, patch)}
+            onRemove={() => onRemoveField(idx)}
+            onMove={(dir) => onMoveField(idx, dir)}
+          />
+        ))}
+        <button onClick={onAddField}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px', borderRadius: 7, width: '100%', border: `1px dashed ${color}40`, background: `${color}05`, color, fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = `${color}12`; e.currentTarget.style.borderColor = `${color}70`; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = `${color}05`; e.currentTarget.style.borderColor = `${color}40`; }}>
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4.5 1v7M1 4.5h7" strokeLinecap="round"/></svg>
+          + campo en "{option.label || `opción ${optionIndex + 1}`}"
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {  return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--accent)', flexShrink: 0 }}>{title}</span>

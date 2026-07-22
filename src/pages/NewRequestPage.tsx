@@ -20,9 +20,9 @@ import type { Prioridad } from '@/features/requests/types';
 import { useRole } from '@/auth/roles';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
-import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
-import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
-import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
+import type { TemplateExtraField, ConditionalField, MultiConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField, isMultiConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 type Step = 'equipo' | 'template' | 'form';
 
@@ -81,6 +81,11 @@ function cardStyle(accent: string): React.CSSProperties {
    Normalización legacy: convierte ramas objeto → array
    ============================================================ */
 function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
+  if (field.type === 'multiconditional') {
+    const mf = field as MultiConditionalField;
+    const opts = Array.isArray(mf.options) ? mf.options : [];
+    return { ...mf, options: opts.map((o) => ({ ...o, fields: Array.isArray(o.fields) ? o.fields.map(normalizeBranch) : [] })) };
+  }
   if (field.type !== 'conditional') return field;
   const cf = field as ConditionalField;
   const toArray = (v: unknown): TemplateExtraField[] => {
@@ -93,6 +98,22 @@ function normalizeBranch(field: TemplateExtraField): TemplateExtraField {
 
 function normalizeSchema(schema: TemplateExtraField[]): TemplateExtraField[] {
   return (schema ?? []).map(normalizeBranch);
+}
+
+/* Quita campos desactivados (enabled === false) en cualquier nivel/rama.
+   Solo afecta la CAPTURA en creación — no la visualización de datos ya guardados. */
+function filterEnabled(fields: TemplateExtraField[]): TemplateExtraField[] {
+  return (fields ?? [])
+    .filter((f) => ((f as { enabled?: boolean }).enabled ?? true))
+    .map((f) => {
+      if (f.type === 'multiconditional') {
+        const mf = f as MultiConditionalField;
+        return { ...mf, options: mf.options.map((o) => ({ ...o, fields: filterEnabled(o.fields) })) };
+      }
+      if (f.type !== 'conditional') return f;
+      const cf = f as ConditionalField;
+      return { ...cf, trueBranch: filterEnabled(cf.trueBranch), falseBranch: filterEnabled(cf.falseBranch) };
+    });
 }
 function fillConditionalDefaults(
   fields: TemplateExtraField[],
@@ -107,6 +128,13 @@ function fillConditionalDefaults(
         if (!(cf.key in values)) defaults[cf.key] = 'false';
         collectDefaults(cf.trueBranch);
         collectDefaults(cf.falseBranch);
+      } else if (isMultiConditionalField(field)) {
+        // Sin default para el disparador (queda vacío hasta que el usuario elija).
+        // Solo recorremos la rama ACTIVA para defaults de condicionales anidados.
+        const mf = field as MultiConditionalField;
+        const chosen = values[mf.key];
+        const active = mf.options.find((o) => o.optionKey === chosen);
+        if (active) collectDefaults(active.fields);
       }
     }
   }
@@ -121,6 +149,7 @@ function validateExtraFields(
   fields: TemplateExtraField[],
   values: Record<string, string>,
 ): { valid: boolean; errorLabel: string | null } {
+// DESPUÉS
   for (const field of fields) {
     if (isConditionalField(field)) {
       const cf = field as ConditionalField;
@@ -131,6 +160,17 @@ function validateExtraFields(
 const activeBranch = triggerValue === 'true' ? cf.trueBranch : cf.falseBranch;
 const res = validateExtraFields(activeBranch, values);
 if (!res.valid) return res;
+    } else if (isMultiConditionalField(field)) {
+      const mf = field as MultiConditionalField;
+      const chosen = values[mf.key] ?? '';
+      const active = mf.options.find((o) => o.optionKey === chosen);
+      if (mf.required && !active) {
+        return { valid: false, errorLabel: mf.label };
+      }
+      if (active) {
+        const res = validateExtraFields(active.fields, values);
+        if (!res.valid) return res;
+      }
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -224,6 +264,77 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                     values={values}
                     onChange={onChange}
                     accent={isTrue ? '#00e5a0' : accent}
+                    focused={focused}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isMultiConditionalField(field)) {
+    const mf     = field as MultiConditionalField;
+    const chosen = values[mf.key] ?? '';
+    const active = mf.options.find((o) => o.optionKey === chosen) ?? null;
+
+    return (
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+            {mf.label}
+            {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {mf.options.map((opt) => {
+              const isSelected = chosen === opt.optionKey;
+              return (
+                <button
+                  key={opt.optionKey}
+                  type="button"
+                  onClick={() => onChange(mf.key, opt.optionKey)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
+                    border: `1px solid ${isSelected ? accent + '60' : 'var(--border-subtle)'}`,
+                    background: isSelected ? `${accent}12` : 'transparent',
+                    color: isSelected ? accent : 'var(--txt-muted)',
+                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: 0.5, transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${isSelected ? accent : 'var(--border)'}`,
+                    background: isSelected ? accent : 'transparent',
+                    transition: 'all 0.15s',
+                  }} />
+                  {opt.label || 'Opción'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {active && active.fields.some((f) => f.label.trim() !== '') && (
+          <div style={{
+            marginTop: 8, padding: '12px 14px', borderRadius: 8,
+            border: `1px solid ${accent}25`, background: `${accent}06`, position: 'relative',
+          }}>
+            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: accent }} />
+            <div style={{ paddingLeft: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {active.fields.map((branchField) => (
+                  <ExtraFieldRenderer
+                    key={branchField.key}
+                    field={branchField}
+                    values={values}
+                    onChange={onChange}
+                    accent={accent}
                     focused={focused}
                     onFocus={onFocus}
                     onBlur={onBlur}
@@ -399,16 +510,17 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void }) {
+  const isMobile = useIsMobile();
   const selectedTeam = teams.find((t) => t.Board_Team_ID === selectedTeamId) ?? null;
   const {  border: selBorder } = selectedTeam ? teamColors(selectedTeam.Board_Team_Color) : {  border: 'var(--accent)' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 18 : 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
         {teams.map((team, idx) => {
           const isAlone               = teams.length % 2 !== 0 && idx === teams.length - 1;
           const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
@@ -434,7 +546,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
                 cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
                 position: 'relative', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column', gap: 10,
-                ...(isAlone ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
+                ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
               }}
               onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
               onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
@@ -462,10 +574,10 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
         justifyContent: 'flex-end',
         alignItems: 'center',
         marginTop: 24,
-        marginLeft: -50,
-        marginRight: -50,
-        marginBottom: -32,
-        padding: '14px 50px',
+        marginLeft: isMobile ? -14 : -50,
+        marginRight: isMobile ? -14 : -50,
+        marginBottom: isMobile ? -24 : -32,
+        padding: isMobile ? '12px 14px' : '14px 50px',
         background: 'var(--bg-panel)',
         borderTop: `1px solid ${selectedTeamId !== null ? selBorder : 'transparent'}`,
         opacity: selectedTeamId !== null ? 1 : 0,
@@ -480,6 +592,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
 }
 
 function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSelect, onNext, onBack }: { templates: BoardTemplate[]; selectedBoardTeamId: number | null; selectedTemplateId: number | null; onSelect: (id: number) => void; onNext: () => void; onBack: () => void }) {
+  const isMobile = useIsMobile();
   const filtered = templates.filter((t) => t.Request_Template_Is_Active && (t.Request_Template_Teams?.length === 0 || (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId))));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -487,7 +600,7 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿Qué tipo de solicitud es?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>El tipo determina qué información adicional se necesita.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 16, flex: 1 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)'), gap: 16, flex: 1 }}>
         {filtered.map((t) => {
           const selected = selectedTemplateId === t.Request_Template_ID; const accent = t.Request_Template_Color ?? '#00c8ff'; const icon = t.Request_Template_Icon ?? '📋'; const fieldCount = t.Request_Template_Form_Schema?.length ?? 0;
           return (
@@ -560,6 +673,7 @@ function StepForm({
   isConfidential: boolean; setIsConfidential: (v: boolean) => void;
   error: string | null; isPending: boolean; isReady: boolean; onBack: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [focusedField, setFocusedField] = useState<string | null>(null);
 const [priorityInfoPos, setPriorityInfoPos] = useState<{ top: number; left: number } | null>(null);
 const priorityBtnRef = useRef<HTMLButtonElement>(null);
@@ -568,7 +682,7 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
   const def          = getTemplateDefinition(templateId, allTemplates);
   const accent       = def.visual.accentColor;
-  const extraFields  = normalizeSchema(def.extraFields);
+  const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
 
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
@@ -655,7 +769,8 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 if (r) {
   const estHeight = 460;
   const top = Math.max(8, Math.min(r.top, window.innerHeight - estHeight - 8));
-  setPriorityInfoPos({ top, left: r.right + 8 });
+  // Móvil: anclado al borde izquierdo; desktop: al lado del botón
+  setPriorityInfoPos({ top, left: window.innerWidth <= 639 ? 8 : r.right + 8 });
 }}}
   onMouseLeave={() => setPriorityInfoPos(null)}
   style={{
@@ -677,7 +792,8 @@ if (r) {
     top: priorityInfoPos.top,
     left: priorityInfoPos.left,
     zIndex: 9999,
-    width: 340,
+    width: isMobile ? 'calc(100vw - 16px)' : 340,
+    maxWidth: 340,
     borderRadius: 10,
     background: 'var(--bg-panel)',
     border: '1px solid var(--border-subtle)',
@@ -724,7 +840,7 @@ if (r) {
   </div>
 
   {/* Botones de prioridad (sin cambios) */}
-  <div style={{ display: 'flex', gap: 7 }}>
+  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
     {(Object.keys(PRIORIDADES) as Prioridad[]).map((key) => {
       const active = prioridad === key;
       return (
@@ -779,12 +895,13 @@ if (r) {
         alignItems: 'center',
         gap: 12,
         marginTop: 8,
-        marginLeft: -50,
-        marginRight: -50,
-        marginBottom: -32,
-        padding: '14px 50px',
+        marginLeft: isMobile ? -14 : -50,
+        marginRight: isMobile ? -14 : -50,
+        marginBottom: isMobile ? -24 : -32,
+        padding: isMobile ? '12px 14px' : '14px 50px',
         background: 'var(--bg-panel)',
         borderTop: `1px solid ${accent}25`,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
       }}>
         <button type="button" onClick={onBack} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -941,6 +1058,7 @@ function SuccessScreen({
 }
 
 export function NuevaSolicitudPage() {
+  const isMobile     = useIsMobile();
   const navigate     = useNavigate();
   const qc           = useQueryClient();
   const { Requests } = useGraphServices();
@@ -1031,7 +1149,7 @@ useEffect(() => {
       if (acceptanceCriteria.length === 0) throw new Error('Debes definir al menos un criterio de aceptación.');
 
       const def          = getTemplateDefinition(selectedTemplateId, templates);
-      const extraFields  = normalizeSchema(def.extraFields);
+      const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
 
       const validation = validateExtraFields(extraFields, extraValues);
       if (!validation.valid) {
@@ -1146,7 +1264,7 @@ function resetForCreateAnother(keepTeam: boolean) {
         ? visibleTeams.find((t) => t.Board_Team_ID === selectedTeamId)?.Board_Team_Name ?? null
         : null;
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: '0 28px 32px' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: isMobile ? '0 14px 24px' : '0 28px 32px' }}>
         <SuccessScreen
           onHome={() => navigate('/home')}
           onCreateAnother={(scope) => resetForCreateAnother(scope === 'same')}
@@ -1158,7 +1276,7 @@ function resetForCreateAnother(keepTeam: boolean) {
   }
   
   return (
-    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '0 50px 32px', width: '100%', margin: '0 auto' }}>
+    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: isMobile ? '0 14px 24px' : '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
 {step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (

@@ -95,7 +95,7 @@ export function useBoardEquipo(equipo: Equipo) {
     staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: false,
-    refetchInterval:      config.USE_MOCK ? false : 180_000,
+    //refetchInterval:      config.USE_MOCK ? false : 0_0,
     retry:                config.USE_MOCK ? false : 1,
   });
 }
@@ -115,7 +115,7 @@ export function useBoardCompleto() {
 staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: false,
-    refetchInterval:      config.USE_MOCK ? false : 180_000,
+    //refetchInterval:      config.USE_MOCK ? false : 180_000,
     retry:                config.USE_MOCK ? false : 1,  });
 }
 /* ============================================================
@@ -153,7 +153,7 @@ export function useSinCategorizar() {
 staleTime:            config.USE_MOCK ? Infinity : 30_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: false,
-    refetchInterval:      config.USE_MOCK ? false : 180_000,
+    //refetchInterval:      config.USE_MOCK ? false : 180_000,
     retry:                config.USE_MOCK ? false : 1,  });
 }
 

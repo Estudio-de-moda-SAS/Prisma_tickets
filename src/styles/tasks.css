@@ -782,3 +782,77 @@
 .tasks-tr--skel {
   pointer-events: none;
 }
+
+/* ================================================================
+   Responsive — móvil (≤639px)
+   La tabla mantiene sus anchos (la summary depende de ellos) y se
+   navega por scroll horizontal. Se desactiva el congelado porque
+   las 3 columnas frozen suman 406px > ancho de pantalla.
+   ================================================================ */
+@media (max-width: 639px) {
+
+  /* ── Toolbar: apilado en dos filas ── */
+  .tasks-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .tasks-toolbar__left {
+    gap: 7px;
+  }
+  .tasks-toolbar__title {
+    font-size: 0.92rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tasks-toolbar__right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  /* El buscador ocupa la fila completa */
+  .tasks-search {
+    flex: 1 1 100%;
+  }
+  .tasks-search__input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* ── Scroll táctil suave ── */
+  .tasks-table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Congelado desactivado: las columnas frozen no caben en móvil ── */
+  .tasks-th--freeze-seq,
+  .tasks-td--freeze-seq,
+  .tasks-th--freeze-id,
+  .tasks-td--freeze-id,
+  .tasks-th--freeze-name,
+  .tasks-td--freeze-name {
+    position: static;
+    left: auto;
+  }
+  /* El header sigue pegado arriba al scrollear vertical */
+  .tasks-th {
+    position: sticky;
+    top: 0;
+  }
+  /* Sin congelado, el gradiente de profundidad no aplica */
+  .tasks-td--freeze-name::after,
+  .tasks-th--freeze-name::after {
+    display: none;
+  }
+  .tasks-td--freeze-name,
+  .tasks-th--freeze-name {
+    overflow: hidden;
+  }
+
+  /* ── Summary: oculta en móvil (ver nota) ── */
+  .tasks-summary {
+    display: none;
+  }
+}

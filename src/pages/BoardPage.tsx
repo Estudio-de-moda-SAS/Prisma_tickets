@@ -28,6 +28,7 @@ import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 /** Fallback estático — mismos IDs que la BD, por si columnMap no cargó aún */
 const COLUMN_ID_FALLBACK: Record<KanbanColumna, number> = {
   sin_categorizar:  1,
@@ -164,6 +165,7 @@ function KanbanZoomControl() {
 export function BoardPage() {
   const { equipo: equipoParam = 'desarrollo' } = useParams<{ equipo: string }>();
   const { setEquipoActivo }          = useBoardStore();
+  const isMobile                     = useIsMobile();
 
   // Sincroniza el store con la URL (para el sidebar)
   useEffect(() => {
@@ -342,7 +344,7 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
   />
   <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
   <BoardCustomizationTrigger boardId={equipoActivo} columns={boardColumns} />
-  <KanbanZoomControl />
+  {!isMobile && <KanbanZoomControl />}
   <MemberHoursBar
     filteredData={hoursData}
     groupedMembers={groupedMembers}

@@ -58,6 +58,7 @@ function NotFound({ onClose }: { onClose: () => void }) {
           background: 'var(--bg-panel)', border: '1px solid var(--border)',
           borderRadius: 12, padding: '32px 40px',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          margin: 16, maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box',
         }}
       >
         <span style={{ fontSize: 32 }}>🔍</span>
