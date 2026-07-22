@@ -23,6 +23,7 @@ import { isConditionalField } from '@/features/requests/templates/types';
 import { HomeAnnouncementsSection } from '@/components/layout/AnnouncementBanner';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
@@ -114,6 +115,7 @@ function CriteriaBadge({ summary }: { summary: Request['criteriaSummary'] }) {
    SprintBanner
    ══════════════════════════════════════════════════════════════ */
 function SprintBanner() {
+  const isMobile = useIsMobile();
   const { data: sprints = [], isLoading } = useSprints();
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
   const nextSprint   = useMemo(() => (activeSprint ? null : getNextSprint(sprints)), [sprints, activeSprint]);
@@ -128,19 +130,19 @@ function SprintBanner() {
     const upColor   = '#a78bfa';
     const startsLabel = daysUntil === 1 ? 'Inicia mañana' : `Inicia en ${daysUntil}d`;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(167,139,250,0.18)', boxShadow: '0 0 20px rgba(167,139,250,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(167,139,250,0.18)', boxShadow: '0 0 20px rgba(167,139,250,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #a78bfa, #a78bfa00)' }} />
         <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Clock size={15} style={{ color: upColor }} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: isMobile ? 1 : '0 0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Próximo sprint</span>
             <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(167,139,250,0.12)', color: upColor, border: '1px solid rgba(167,139,250,0.28)' }}>Próximo</span>
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{nextSprint.Sprint_Text}</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: isMobile ? '100%' : 0, order: isMobile ? 3 : 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
@@ -164,19 +166,19 @@ function SprintBanner() {
   const endFmt   = new Date(activeSprint!.Sprint_End_Date).toLocaleDateString('es-CO',   { day: 'numeric', month: 'short' });
   const uc = daysLeft <= 2 ? '#E05C5C' : daysLeft <= 4 ? '#EF9F27' : 'var(--accent)';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(0,200,255,0.18)', boxShadow: '0 0 20px rgba(0,200,255,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(0,200,255,0.18)', boxShadow: '0 0 20px rgba(0,200,255,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent), var(--accent)00)' }} />
       <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(0,200,255,0.10)', border: '1px solid rgba(0,200,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Zap size={15} style={{ color: 'var(--accent)' }} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: isMobile ? 1 : '0 0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Sprint activo</span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)' }}>En curso</span>
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{activeSprint!.Sprint_Text}</span>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: isMobile ? '100%' : 0, order: isMobile ? 3 : 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
@@ -209,9 +211,11 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
   const active = all.filter((r) => !DONE_COLUMNS.has(r.columna)).length;
   const done   = all.filter((r) =>  DONE_COLUMNS.has(r.columna)).length;
 
+  const isMobile = useIsMobile();
   return (
     <button onClick={onClick} style={{
-      flexShrink: 0, width: 200,
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
       background: isActive ? `linear-gradient(145deg, ${c.dot}16 0%, ${c.dot}07 100%)` : 'var(--surface-1)',
       border: `1px solid ${isActive ? c.dot + '55' : 'var(--border)'}`,
       borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
@@ -273,9 +277,11 @@ function EquipoTabExternal({ teamColor, teamIcon, description, label, url }: {
     if (hasUrl) window.open(url!, '_blank', 'noopener,noreferrer');
   }
 
+  const isMobile = useIsMobile();
   return (
     <button onClick={open} title={hasUrl ? `Abrir ${label}` : `${label} — sin URL configurada`} style={{
-      flexShrink: 0, width: 200,
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
       background: 'var(--surface-1)',
       border: `1px solid ${c.dot}30`,
       borderRadius: 12, padding: '14px 16px', cursor: hasUrl ? 'pointer' : 'not-allowed',
@@ -321,6 +327,7 @@ function EquipoTabExternal({ teamColor, teamIcon, description, label, url }: {
 function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
   r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null; sprints: Sprint[];
 }) {
+  const isMobile = useIsMobile();
   const inSprint = activeSprint && r.sprintId === activeSprint.Sprint_ID;
   const futureSprint = !inSprint && r.sprintId
     ? sprints.find(s =>
@@ -334,6 +341,55 @@ function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
         new Date(s.Sprint_End_Date).getTime() + 86_400_000 < Date.now()
       ) ?? null
     : null;
+  const sprintChip = inSprint
+    ? { text: activeSprint!.Sprint_Text, color: 'var(--accent)', bg: 'rgba(0,200,255,0.12)', border: 'rgba(0,200,255,0.28)' }
+    : futureSprint
+      ? { text: futureSprint.Sprint_Text, color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.28)' }
+      : pastSprint
+        ? { text: pastSprint.Sprint_Text, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.28)' }
+        : null;
+
+  if (isMobile) {
+    return (
+      <div
+        onClick={onClick}
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}
+      >
+        {/* Título + criteria */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 0, width: '100%' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--txt)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{r.titulo}</span>
+          <CriteriaBadge summary={r.criteriaSummary} />
+        </div>
+
+        {/* ID + hace */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', opacity: 0.85, fontFamily: 'monospace', letterSpacing: '0.3px' }}>{r.id}</span>
+          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>· {timeAgo(r.fechaApertura)}</span>
+        </div>
+
+        {/* Chips: prioridad, estado, sprint */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: PRIORIDAD_COLOR[r.prioridad] + '18', color: PRIORIDAD_COLOR[r.prioridad], border: `1px solid ${PRIORIDAD_COLOR[r.prioridad]}35` }}>
+            {r.prioridad.charAt(0).toUpperCase() + r.prioridad.slice(1)}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: (COLUMNA_COLOR[r.columna] ?? '#888') + '18', color: COLUMNA_COLOR[r.columna] ?? '#888', border: `1px solid ${(COLUMNA_COLOR[r.columna] ?? '#888')}35` }}>
+            {COLUMNA_LABEL[r.columna] ?? r.columna}
+          </span>
+          {sprintChip && (
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: sprintChip.bg, color: sprintChip.color, border: `1px solid ${sprintChip.border}`, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              {inSprint ? <Zap size={8} /> : <Clock size={8} />}{sprintChip.text}
+            </span>
+          )}
+        </div>
+
+        {/* Solicitante */}
+        <span style={{ fontSize: 11, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {r.isLegacy && !r.solicitante ? (r.legacyRequester ?? 'Equipo no especificado') : r.solicitante}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
@@ -421,6 +477,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function TabsScroller({ children }: { children: React.ReactNode }) {
   const scrollRef   = useRef<HTMLDivElement>(null);
+  const isMobile    = useIsMobile();
   const [canLeft,  setCanLeft]  = useState(false);
   const [canRight, setCanRight] = useState(false);
 
@@ -477,25 +534,28 @@ function TabsScroller({ children }: { children: React.ReactNode }) {
         opacity: canRight ? 1 : 0, transition: 'opacity 0.2s', pointerEvents: 'none',
       }} />
 
-      {/* Flecha izquierda */}
-      <button
-        onClick={() => scroll('left')}
-        style={btnStyle(canLeft, 'left')}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
-      >
-        <ChevronLeft size={14} />
-      </button>
+      {/* Flechas — solo desktop (en móvil se desliza con el dedo) */}
+      {!isMobile && (
+        <>
+          <button
+            onClick={() => scroll('left')}
+            style={btnStyle(canLeft, 'left')}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+          >
+            <ChevronLeft size={14} />
+          </button>
 
-      {/* Flecha derecha */}
-      <button
-        onClick={() => scroll('right')}
-        style={btnStyle(canRight, 'right')}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
-      >
-        <ChevronRight size={14} />
-      </button>
+          <button
+            onClick={() => scroll('right')}
+            style={btnStyle(canRight, 'right')}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+          >
+            <ChevronRight size={14} />
+          </button>
+        </>
+      )}
 
       {/* Contenedor scrollable (sin scrollbar) */}
       <div
@@ -504,6 +564,8 @@ function TabsScroller({ children }: { children: React.ReactNode }) {
           display: 'flex', gap: 10,
           overflowX: 'auto', scrollbarWidth: 'none',
           padding: '2px 4px',         /* espacio para el box-shadow de los tabs */
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
         }}
         /* webkit */
         onScroll={update}
@@ -529,6 +591,7 @@ function EquipoPanel({ equipo, teamColor, label, activeSprint, onRowClick }: {
   onVerMas:       () => void;
   canAccessBoard: boolean;
 }) {
+  const isMobile = useIsMobile();
   const c = teamColors(teamColor);
   const boardId = `home-${equipo}`;
 
@@ -630,17 +693,17 @@ assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
   const isFiltered = visible.length !== totalRaw;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative', minWidth: 0, maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`, borderRadius: '12px 12px 0 0', pointerEvents: 'none' }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
         <BoardFilters
           boardId={boardId}
           dynamicOptions={dynamicOptions}
           usePortal
         />
 
-        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '1 1 200px', minWidth: 0 }}>
           <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--txt-muted)', pointerEvents: 'none' }} />
           <input
             value={search}
@@ -668,14 +731,16 @@ assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
-        <span style={{ width: 150, flexShrink: 0 }}>ID</span>
-        <span style={{ flex: 1 }}>Asunto</span>
-        <span style={{ width: 110, flexShrink: 0 }}>Solicitante</span>
-        <span style={{ width: 80, textAlign: 'center' }}>Prioridad</span>
-        <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
-        <span style={{ width: 40, textAlign: 'right' }}>Hace</span>
-      </div>
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
+          <span style={{ width: 150, flexShrink: 0 }}>ID</span>
+          <span style={{ flex: 1 }}>Asunto</span>
+          <span style={{ width: 110, flexShrink: 0 }}>Solicitante</span>
+          <span style={{ width: 80, textAlign: 'center' }}>Prioridad</span>
+          <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
+          <span style={{ width: 40, textAlign: 'right' }}>Hace</span>
+        </div>
+      )}
 
       {isLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
@@ -715,6 +780,7 @@ export function HomePage() {
   const { account } = useAuth();
   const navigate    = useNavigate();
   const role        = useRole();
+  const isMobile    = useIsMobile();
   const userCanSeeBoard = canSeeBoard(role);
 
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
@@ -757,12 +823,12 @@ export function HomePage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '4px 30px 48px', margin: '0 auto', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 24, padding: isMobile ? '2px 2px 32px' : '4px 30px 48px', margin: '0 auto', width: '100%' }}>
 
       {/* Encabezado */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 24 : 32, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
             Bienvenido,{' '}
             <span style={{ color: 'var(--accent)', textShadow: '0 0 28px rgba(0,200,255,0.35)' }}>{firstName}</span>
           </h1>
@@ -771,10 +837,10 @@ export function HomePage() {
           </p>
         </div>
               <HomeAnnouncementsSection />
-        <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, alignItems: 'stretch' }}>
           <button
             onClick={() => navigate('/new')}
-            style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)', flexShrink: 0, whiteSpace: 'nowrap' }}
+            style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 14, padding: isMobile ? '14px 20px' : '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: isMobile ? 15 : 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)', flexShrink: 0, whiteSpace: 'nowrap' }}
             onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.20)', borderColor: 'rgba(0,200,255,0.80)', transform: 'translateY(-2px)' })}
             onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.12)', borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(0)' })}
           >

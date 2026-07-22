@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useBoardStore } from '@/store/boardStore';
+import { useMobileNav } from '@/store/mobileNavStore';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { teamColors } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
@@ -11,7 +12,7 @@ import { NotificationBell } from './NotificationBell';
 import { BugReportModal } from './BugReportModal';
 import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
-import { Bug } from 'lucide-react';
+import { Bug, Menu } from 'lucide-react';
 
 // ─── Controla qué roles ven el botón de reportar fallo ───────────────────────
 // 'all' | 'admin' | 'ti' — cambia en una línea
@@ -23,6 +24,7 @@ type TopbarProps = { titulo: string };
 export function Topbar({ titulo }: TopbarProps) {
   const { account }      = useAuth();
   const { equipoActivo } = useBoardStore();
+  const openMobileNav    = useMobileNav((s) => s.openNav);
   const { pathname }     = useLocation();
   const { data: currentUser } = useCurrentUser();
 
@@ -53,6 +55,14 @@ export function Topbar({ titulo }: TopbarProps) {
     <>
       <header className="topbar">
         <div className="topbar__left">
+          <button
+            className="topbar__hamburguesa"
+            onClick={openMobileNav}
+            aria-label="Abrir menú"
+            title="Menú"
+          >
+            <Menu size={18} />
+          </button>
           <h1 className="topbar__title">{titulo}</h1>
 
           <div

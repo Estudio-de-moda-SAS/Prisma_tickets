@@ -759,20 +759,52 @@
   color:        var(--txt);
 }
 /* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .filter-panel {
     min-width:  calc(100vw - 24px);
     max-width:  calc(100vw - 24px);
     left:       -8px;
   }
+
+  /* La fila se apila: cada control en su propia línea */
+  .filter-row {
+    flex-wrap:   wrap;
+    align-items: stretch;
+    gap:         8px;
+    padding:     10px 14px;
+  }
   .filter-row__conj {
     width:           100%;
     justify-content: flex-start;
   }
+  /* Campo, operador y valor ocupan el ancho completo, uno debajo del otro */
+  .filter-select-wrap,
+  .filter-value-wrap {
+    flex:      1 1 100%;
+    min-width: 0;
+  }
   .filter-select,
   .filter-input {
     min-width: 0;
+    width:     100%;
     flex:      1;
+  }
+  .filter-select--field,
+  .filter-select--operator,
+  .filter-select--value {
+    max-width: none;
+  }
+  /* Botón eliminar: no ocupa fila propia, se ancla arriba a la derecha */
+  .filter-row__delete {
+    position: absolute;
+    right:    10px;
+    top:      10px;
+  }
+  .filter-row {
+    position: relative;
+  }
+  .filter-assignee-wrap {
+    flex: 1 1 100%;
   }
   .filter-panel__legend {
     gap: 10px;

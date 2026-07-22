@@ -36,6 +36,7 @@ import { CopyLinkButton, TemplateFormDataPanel, DividirTooltip, DropdownPanel, D
   PersonChip, TimerOrInputBlock, TeamChip, SubTeamGroup, Checkmark, HorasInput, initials, fmtRelative, fmtBytes,
   fmtHours, fileIcon, useDropdown, AcceptanceCriteriaPanel
 } from './RequestModalComponents';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
@@ -159,6 +160,7 @@ export function RequestModal({
   request, equipo, onClose, onMove, onMoveWithClosure, onOpenRequest, readOnly = false,
   backLabel, onBack, onDeleted,
 }: Props) {
+  const isMobile = useIsMobile();
   const { Requests }     = useGraphServices();
   const { mutate: mover }    = useMoveRequest(equipo);
   const { mutate: update }   = useUpdateRequest(equipo);
@@ -537,10 +539,11 @@ const [ratingResolverIds, setRatingResolverIds] = useState<number[]>([]);
       <div
         ref={overlayRef}
 onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex, padding: 24 }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', zIndex, padding: isMobile ? 0 : 24 }}
       >
         <div style={{
-          width: '100%', maxWidth: 900, maxHeight: '90vh',
+          width: '100%', maxWidth: 900,
+          maxHeight: isMobile ? '94dvh' : '90vh',
           background: 'var(--bg-panel)',
           border: `1px solid ${
             isSubRequest      ? 'rgba(167,139,250,0.35)' :
@@ -548,7 +551,8 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             isClienteReview   ? 'rgba(52,211,153,0.35)'  :
             'var(--border)'
           }`,
-          borderRadius: 12, display: 'flex', flexDirection: 'column',
+          borderRadius: isMobile ? '16px 16px 0 0' : 12,
+          display: 'flex', flexDirection: 'column',
           overflow: 'hidden', position: 'relative',
         }}>
           {/* Barra de color superior */}
@@ -790,10 +794,10 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
             )}
 
             {/* ── Cuerpo ── */}
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, overflow: isMobile ? 'auto' : 'hidden' }}>
 
             {/* Panel izquierdo */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: '1px solid var(--border-subtle)' }}>
+            <div style={{ flex: isMobile ? '0 0 auto' : 1, overflowY: isMobile ? 'visible' : 'auto', padding: isMobile ? '18px 16px' : '24px 28px', display: 'flex', flexDirection: 'column', gap: 24, borderRight: isMobile ? 'none' : '1px solid var(--border-subtle)', borderBottom: isMobile ? '1px solid var(--border-subtle)' : 'none' }}>
 
               {/* Banner solicitud padre */}
               {isSubRequest && !readOnly && (
@@ -926,12 +930,12 @@ style={{
     <div
       onClick={(e) => e.stopPropagation()}
       style={{
-        width: "70%",
+        width: isMobile ? "92%" : "70%",
         maxWidth: 900,
         background: "var(--bg-panel)",
         border: "1px solid var(--border)",
         borderRadius: 10,
-        padding: 20,
+        padding: isMobile ? 14 : 20,
       }}
     >
       <div
@@ -1005,7 +1009,7 @@ style={{
                 <AcceptanceCriteriaPanel requestId={requestId} readOnly={readOnly} currentUserId={currentUser?.User_ID} />
               </FieldBlock>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 <FieldBlock label="Solicitante">
   {effectiveRequest.isLegacy && !effectiveRequest.solicitante
     ? <TeamChip teamName={effectiveRequest.legacyRequester ?? 'Equipo no especificado'} />
@@ -1281,7 +1285,7 @@ onToggleAssignee={(userId) => {
 </FieldBlock>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                 <FieldBlock label="Fecha de apertura">
                   <span style={{ fontSize: 13, color: 'var(--txt)' }}>{fmtColombia(effectiveRequest.fechaApertura)}</span>
                 </FieldBlock>
@@ -1409,7 +1413,7 @@ onToggleAssignee={(userId) => {
 </div>
 
             {/* Panel derecho */}
-            <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: isMobile ? '70dvh' : undefined }}>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
                 {([
                   { key: 'comments',    label: 'Comentarios', icon: null,                   count: comments.length },
