@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
-import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { useTimerStore } from '@/store/timerStore';
 import {
 CheckCircle, Clock, Users, FileText, Image, File, Plus, Trash2
 } from 'lucide-react';
 import type { Equipo } from '../types';
+import { getOptionColor } from '@/features/requests/templates/types';
 import { useAcceptanceCriteria, useUpdateCriteriaStatus, useCreateCriteria, useDeleteCriteria, useUpdateCriteriaTitle } from '@/features/requests/hooks/useAcceptanceCriteria';
 import type { AcceptanceCriteria } from '@/types/commons';
 
@@ -383,7 +383,6 @@ export function TemplateFormDataPanel({ formData, schema, snapshotSchema, onFiel
   accentColor:     string;
   onFieldChange?:  (key: string, value: unknown) => void;
 }) {
-  const isMobile = useIsMobile();
   // ── Tipos internos ──────────────────────────────────────────────────────────
 type FlatField = {
     key:         string;
@@ -393,6 +392,7 @@ type FlatField = {
     fieldType?:  string;
     options?:    string[];
     branchOptions?: { optionKey: string; label: string }[];  // solo multiconditional
+    enabled?:    boolean;
   };
 
     const savedLabels: Record<string, string> = (() => {
@@ -431,11 +431,12 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
     const field = f as Record<string, unknown>;
     if (!field.key) continue;
     const showInModal = (field.showInModal as boolean | undefined) ?? true;
+    const enabled     = (field.enabled as boolean | undefined) ?? true;
 
     if (field.type === 'conditional') {
       // Mostrar el campo condicional en sí solo si showInModal: true
       if (showInModal && field.label) {
-        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal, fieldType: 'conditional' });
+        result.push({ key: field.key as string, label: field.label as string, guards: [], showInModal, enabled, fieldType: 'conditional' });
       }
       // SIEMPRE explorar la rama activa (independientemente de showInModal del padre)
       // para recolectar hijos que sí sean visibles
@@ -454,6 +455,7 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
           guards:        [],
           showInModal,
           fieldType:     'multiconditional',
+          enabled,
           branchOptions: opts.map((o) => ({ optionKey: o.optionKey ?? '', label: o.label ?? '' })),
         });
       }
@@ -468,6 +470,7 @@ function collectVisibleLevel(fields: unknown[]): FlatField[] {
           label:     field.label as string,
           guards:    [],
           showInModal,
+          enabled,
           fieldType: field.type as string | undefined,
           options:   Array.isArray(field.options) ? field.options as string[] : undefined,
         });
@@ -537,11 +540,13 @@ const orphanFields: FlatField[] = Object.keys(formData)
   })
   .filter((f) => f.showInModal); // respetar showInModal del snapshot
 
-  const entries = [...schemaFields, ...orphanFields].filter(({ key, showInModal }) => {
+  const entries = [...schemaFields, ...orphanFields].filter(({ key, showInModal, enabled }) => {
   if (key === '__labels') return false;
   if (!showInModal) return false;
   const val = formData[key];
   if (val === 'true' || val === 'false') return true;
+  // Campo desactivado con showInModal: true → visible aunque no tenga dato
+  if (enabled === false) return true;
   return val !== undefined && val !== '' && val !== null;
 });
   if (entries.length === 0) return null;
@@ -600,8 +605,9 @@ function renderEditor(key: string, fieldType?: string, options?: string[], branc
       if (!branchOptions || branchOptions.length === 0) return renderValue(key);
       return (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {branchOptions.map((opt) => {
-            const active = current === opt.optionKey;
+          {branchOptions.map((opt, optIdx) => {
+            const active   = current === opt.optionKey;
+            const optColor = getOptionColor(optIdx);
             return (
               <button
                 key={opt.optionKey}
@@ -609,9 +615,9 @@ function renderEditor(key: string, fieldType?: string, options?: string[], branc
                 style={{
                   padding: '4px 12px', borderRadius: 5, fontSize: 11, fontWeight: 700,
                   cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)',
-                  border: `1px solid ${active ? 'rgba(0,200,255,0.5)' : 'var(--border-subtle)'}`,
-                  background: active ? 'rgba(0,200,255,0.12)' : 'transparent',
-                  color: active ? 'var(--accent)' : 'var(--txt-muted)',
+                  border: `1px solid ${active ? optColor + '80' : optColor + '25'}`,
+                  background: active ? `${optColor}18` : 'transparent',
+                  color: active ? optColor : 'var(--txt-muted)',
                 }}
               >
                 {opt.label || 'Opción'}
@@ -678,15 +684,25 @@ function renderEditor(key: string, fieldType?: string, options?: string[], branc
   return (
     <div>
 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-  {entries.map(({ key, label, fieldType, options, branchOptions }) => (
-    <div key={key} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '160px 1fr', gap: isMobile ? '4px' : '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', lineHeight: 1.5, paddingTop: 1 }}>{label}</span>
+  {entries.map(({ key, label, fieldType, options, branchOptions, enabled }) => {
+    const isDisabled = enabled === false;
+    const raw        = formData[key];
+    const isEmpty    = raw === undefined || raw === null || raw === '';
+    return (
+    <div key={key} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '6px 16px', alignItems: 'start', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: 'var(--txt-muted)', lineHeight: 1.5, paddingTop: 1 }}>
+        {label}
+        {isDisabled}
+      </span>
       <span style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.6, color: 'var(--txt)' }}>
-        {onFieldChange ? renderEditor(key, fieldType, options, branchOptions) : renderValue(key)}
+        {onFieldChange && fieldType
+          ? renderEditor(key, fieldType, options, branchOptions)
+          : (isEmpty ? <span style={{ color: 'var(--txt-muted)' }}>—</span> : renderValue(key))}
       </span>
     </div>
-  ))}
-</div>
+    );
+  })}
+  </div>
     </div>
   );
 }

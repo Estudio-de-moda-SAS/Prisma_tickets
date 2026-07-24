@@ -758,8 +758,25 @@
   border-color: rgba(0,0,0,0.12);
   color:        var(--txt);
 }
+/* El wrap debe poder encoger dentro de la fila flex */
+.filter-row .filter-select-wrap {
+  min-width: 0;
+}
+
+.filter-select--field {
+  min-width:     120px;
+  max-width:     200px;
+  flex-shrink:   1;
+  text-overflow: ellipsis;
+  overflow:      hidden;
+  white-space:   nowrap;
+}
+.filter-select--operator { min-width: 132px; flex-shrink: 0; }
+.filter-select--value    { min-width: 140px; width: 100%;    }
+.filter-select--subfield { min-width: 140px; }
+
 /* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .filter-panel {
     min-width:  calc(100vw - 24px);
     max-width:  calc(100vw - 24px);
@@ -791,8 +808,11 @@
   }
   .filter-select--field,
   .filter-select--operator,
-  .filter-select--value {
-    max-width: none;
+  .filter-select--value,
+  .filter-select--subfield {
+    max-width:   none;
+    min-width:   0;
+    flex-shrink: 1;
   }
   /* Botón eliminar: no ocupa fila propia, se ancla arriba a la derecha */
   .filter-row__delete {
@@ -811,19 +831,3 @@
   }
 }
 
-/* El wrap debe poder encoger dentro de la fila flex */
-.filter-row .filter-select-wrap {
-  min-width: 0;
-}
-
-.filter-select--field {
-  min-width:     120px;
-  max-width:     200px;
-  flex-shrink:   1;
-  text-overflow: ellipsis;
-  overflow:      hidden;
-  white-space:   nowrap;
-}
-.filter-select--operator { min-width: 132px; flex-shrink: 0; }
-.filter-select--value    { min-width: 140px; width: 100%;    }
-.filter-select--subfield { min-width: 140px; }

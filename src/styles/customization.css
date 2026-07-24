@@ -419,8 +419,49 @@
 }
 
 /* Responsive */
-@media (max-width: 520px) {
-  .cp-panel { width: calc(100vw - 32px); }
+@media (max-width: 639px) {
+  .cp-panel {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 100px);
+  }
+  .cp-panel__body {
+    max-height: none;
+    padding: 12px 14px;
+  }
+  .cp-panel__header {
+    padding: 12px 14px 10px;
+  }
+
+  /* 5 columnas de temas quedan ilegibles en móvil */
+  .cp-theme-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cp-tabs {
+    padding: 8px;
+  }
+  .cp-tab {
+    padding: 7px 6px;
+    font-size: 10px;
+  }
+
+  /* Área táctil más cómoda en los emojis */
+  .cp-emoji-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .cp-colorpicker__grad {
+    height: 110px;
+  }
+  .cp-colorpicker__presets {
+    gap: 6px;
+  }
+  .cp-colorpicker__preset {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 /* ============================================================

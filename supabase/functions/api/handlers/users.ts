@@ -5,8 +5,12 @@ export const userHandlers: Record<string, ActionHandler> = {
     const { entraId } = payload as { entraId: string };
     const { data, error } = await supabase
       .from('TBL_Users').select('User_ID, User_Name, User_Email, User_Role')
-      .eq('User_EntraID', entraId).single();
+      .eq('User_EntraID', entraId)
+      .order('User_ID', { ascending: true })
+      .limit(1)
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!data) throw new Error(`USER_NOT_FOUND: ${entraId}`);
     return data;
   },
 
@@ -24,73 +28,29 @@ export const userHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
-  upsertUserByEntraId: async (payload, { supabase }) => {
+upsertUserByEntraId: async (payload, { supabase }) => {
     const p = payload as { entraId: string; name: string; email: string };
 
-    const { data: existing, error: findErr } = await supabase
+    const { data: userId, error: rpcErr } = await supabase.rpc('upsert_user_by_entra_id', {
+      p_entra_id: p.entraId,
+      p_name:     p.name  ?? '',
+      p_email:    p.email ?? '',
+    });
+    if (rpcErr) throw new Error(`[upsertUserByEntraId] ${rpcErr.message}`);
+    if (!userId) throw new Error('[upsertUserByEntraId] no se resolvió User_ID');
+
+    const { data, error } = await supabase
       .from('TBL_Users')
-      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )')
-      .eq('User_EntraID', p.entraId)
-      .maybeSingle();
-    if (findErr) throw new Error(findErr.message);
-
-    if (existing) {
-      const teamId = (existing as any).Team_ID;
-      let teamData = null;
-      if (teamId) {
-        const { data: t } = await supabase
-          .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
-        teamData = t;
-      }
-      return { ...existing, team: teamData };
-    }
-
-    const normalizedEmail = p.email.toLowerCase().trim();
-    const { data: preReg, error: preRegErr } = await supabase
-      .from('TBL_Users')
-      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active"')
-      .eq('User_EntraID', '')
-      .ilike('User_Email', normalizedEmail)
-      .maybeSingle();
-    if (preRegErr) throw new Error(preRegErr.message);
-
-    if (preReg) {
-      const { data: linked, error: linkErr } = await supabase
-        .from('TBL_Users')
-        .update({
-          User_EntraID: p.entraId,
-          User_Name:    p.name.slice(0, 150),
-        })
-        .eq('User_ID', (preReg as any).User_ID)
-        .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )')
-        .single();
-      if (linkErr) throw new Error(linkErr.message);
-
-      const teamId = (linked as any).Team_ID;
-      let teamData = null;
-      if (teamId) {
-        const { data: t } = await supabase
-          .from('TBL_Teams').select('Team_Code, Team_Name').eq('Team_ID', teamId).single();
-        teamData = t;
-      }
-      return { ...(linked as any), team: teamData };
-    }
-
-    const { data, error: insertErr } = await supabase
-      .from('TBL_Users')
-      .insert({
-        User_EntraID:    p.entraId,
-        User_Name:       p.name.slice(0, 150),
-        User_Email:      normalizedEmail,
-        User_Avatar_url: '',
-        User_Role:       'member',
-        Is_New:          true,
-        User_Created_At: new Date().toISOString(),
-      })
-      .select('User_ID, User_Name, User_Email, User_Role, Department_ID, Team_ID, Is_New, "Is_Active", department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code )')
+      .select(`
+        User_ID, User_Name, User_Email, User_Avatar_url, User_Role,
+        Department_ID, Team_ID, Is_New, "Is_Active",
+        department:TBL_Departments!Department_ID ( Department_ID, Department_Name, Department_Code ),
+        team:TBL_Teams!Team_ID ( Team_ID, Team_Name, Team_Code )
+      `)
+      .eq('User_ID', userId)
       .single();
-    if (insertErr) throw new Error(insertErr.message);
-    return { ...(data as any), team: null };
+    if (error) throw new Error(`[upsertUserByEntraId] ${error.message}`);
+    return data;
   },
 
   fetchMembersBySubTeams: async (payload, { supabase }) => {
@@ -150,6 +110,15 @@ export const userHandlers: Record<string, ActionHandler> = {
       `)
       .single();
     if (error) throw new Error(error.message);
+
+    // Identidad primaria del pre-registro: sin EntraID todavía, se completa
+    // en el primer login. Sin esto la RPC no puede resolverlo por identidad.
+    await supabase.from('TBL_User_Identities').insert({
+      Identity_User_ID:    (data as any).User_ID,
+      Identity_Email:      normalizedEmail,
+      Identity_Is_Primary: true,
+    });
+
     return data;
   },
 

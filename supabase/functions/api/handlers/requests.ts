@@ -8,7 +8,7 @@ import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail, mayb
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
 // @ts-ignore
-import { BASE_SELECT, BASE_SELECT_LIGHT, STATS_SELECT } from '../shared/selects.ts';
+import { BASE_SELECT, BASE_SELECT_LIGHT, DETAIL_SELECT, STATS_SELECT } from '../shared/selects.ts';
 
 const HISTORIAL_COLUMN_ID     = 9;
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
@@ -117,7 +117,7 @@ fetchByTeamCode: async (payload, { supabase }) => {
     // huérfano) es "no encontrado", no un error 500. Devolvemos null y el
     // frontend decide qué mostrar.
     const { data, error } = await supabase
-      .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', id).maybeSingle();
+      .from('TBL_Requests').select(DETAIL_SELECT).eq('Request_ID', id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) console.log(`[fetchById] no encontrado: ${id}`);
     return data;

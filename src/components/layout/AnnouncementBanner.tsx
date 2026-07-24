@@ -1,4 +1,5 @@
 import { useState }                    from 'react';
+import { useIsMobile }                 from '@/components/hooks/useMediaQuery';
 import {
   useAnnouncements,
   ANNOUNCEMENT_TYPE_STYLE,
@@ -9,6 +10,7 @@ import {
 
 /* ── Strip horizontal (entre Topbar y contenido) ── */
 export function AnnouncementBanner() {
+  const isMobile                        = useIsMobile();
   const { data: list = [] }             = useAnnouncements('banner');
   const [dismissed, setDismissed]       = useState<string[]>(() => getDismissed());
 
@@ -26,18 +28,24 @@ export function AnnouncementBanner() {
         const s = ANNOUNCEMENT_TYPE_STYLE[a.type] ?? ANNOUNCEMENT_TYPE_STYLE.info;
         return (
           <div key={a.id} style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '7px 20px',
+            display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 10,
+            padding: isMobile ? '9px 12px' : '7px 20px',
             background: s.bg,
             borderBottom: `1px solid ${s.border}`,
           }}>
-            <span style={{ fontSize: 13, flexShrink: 0, lineHeight: 1 }}>{s.icon}</span>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+            <span style={{ fontSize: 13, flexShrink: 0, lineHeight: isMobile ? 1.4 : 1 }}>{s.icon}</span>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: isMobile ? 4 : 8, flexWrap: 'wrap', minWidth: 0 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: s.color, flexShrink: 0 }}>
                 {a.title}
               </span>
               {a.body && (
-                <span style={{ fontSize: 12, color: 'var(--txt-muted)', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 640 }}>
+                <span style={{
+                  fontSize: 12,
+                  color: 'var(--txt-muted)',
+                  ...(isMobile
+                    ? { whiteSpace: 'normal', lineHeight: 1.45, overflowWrap: 'anywhere' }
+                    : { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 640 }),
+                }}>
                   {a.body}
                 </span>
               )}

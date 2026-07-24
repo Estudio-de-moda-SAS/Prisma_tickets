@@ -277,12 +277,41 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 640px) {
+@media (max-width: 639px) {
+  /* La página scrollea si la card no cabe (pantallas cortas / landscape) */
+  .lp-root {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding: 24px 0 32px;
+  }
+
   .lp-card { flex-direction: column; width: 92vw; min-height: unset; }
-  .lp-card__brand { padding: 36px 32px 28px; }
+  .lp-card__brand { padding: 32px 24px 24px; }
   .lp-card__brand::after { display: none; }
   .lp-brand__tagline, .lp-brand__features { display: none; }
-  .lp-card__auth { width: auto; padding: 32px 32px 40px; }
+  .lp-card__auth { width: auto; padding: 28px 24px 34px; }
+
+  .lp-brand__logo {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+  .lp-brand__name { font-size: 26px; }
+  .lp-brand__text { margin-bottom: 20px; }
+  .lp-brand__divider { margin-bottom: 18px; }
+
+  .lp-auth__header { margin-bottom: 26px; }
+  .lp-auth__title { font-size: 23px; }
+  .lp-auth__btn { padding: 15px 18px; }
+
+  /* El footer deja de flotar: fluye al final para no tapar la card */
+  .lp-footer {
+    position: static;
+    margin-top: 20px;
+    text-align: center;
+  }
 }
 
 /* ══════════════════════════════════════════════

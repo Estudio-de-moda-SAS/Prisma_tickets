@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Clock, Play, Pause, Save, ExternalLink, X, GripHorizontal } from 'lucide-react';
 import { useTimerStore, type TimerEntry } from '@/store/timerStore';
 import { useUpdateRequest } from '@/features/requests/hooks/UseUpdateRequest';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import type { Request } from '@/features/requests/types';
 import type { Location } from 'react-router-dom';
 const POS_KEY = 'prisma-timer-pos';
@@ -26,6 +27,7 @@ function fmt(s: number) {
 }
 
 export function FloatingTimer() {
+  const isMobile   = useIsMobile();
   const lastId     = useTimerStore((s) => s.lastId);
   const entry      = useTimerStore((s) => (lastId ? s.entries[lastId] : undefined));
   const checkpoint = useTimerStore((s) => s.checkpoint);
@@ -98,13 +100,16 @@ export function FloatingTimer() {
   const running = !!entry.startedAt;
   const positionStyle: React.CSSProperties = pos
     ? { top: pos.y, left: pos.x }
-    : { bottom: 20, right: 20 };
+    : isMobile
+      ? { bottom: 12, right: 12 }
+      : { bottom: 20, right: 20 };
 
   return (
     <div
       ref={shellRef}
       style={{
-        position: 'fixed', ...positionStyle, zIndex: 300, width: 280,
+        position: 'fixed', ...positionStyle, zIndex: 300,
+        width: isMobile ? 'min(280px, calc(100vw - 24px))' : 280,
         background: 'var(--bg-panel)',
         border: `1px solid ${running ? 'rgba(0,200,255,0.4)' : 'var(--border)'}`,
         borderRadius: 12, boxShadow: '0 16px 48px rgba(0,0,0,0.5)',

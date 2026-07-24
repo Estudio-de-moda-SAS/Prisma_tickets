@@ -46,12 +46,22 @@ export async function sendEventEmail(
       return;
     }
 
-    // 2. Destinatarios con correo válido
-    const { data: users } = await supabase
-      .from('TBL_Users')
-      .select('User_ID, User_Email')
+    // 2. Destinatarios: TODAS las identidades notificables de cada usuario.
+    //    Un mismo User_ID puede tener N correos registrados; la vista ya
+    //    filtra usuarios inactivos e identidades con Identity_Notify = false.
+    const { data: rows } = await supabase
+      .from('VW_User_Notification_Emails')
+      .select('User_ID, Identity_Email')
       .in('User_ID', params.userIds);
-    const recipients = (users ?? []).filter((u: any) => !!u.User_Email) as Recipient[];
+
+    const seen = new Set<string>();
+    const recipients: Recipient[] = [];
+    for (const row of (rows ?? []) as { User_ID: number; Identity_Email: string }[]) {
+      const addr = (row.Identity_Email ?? '').trim().toLowerCase();
+      if (!addr || seen.has(addr)) continue;
+      seen.add(addr);
+      recipients.push({ User_ID: row.User_ID, User_Email: addr });
+    }
     if (recipients.length === 0) return;
 
     const subject = renderTemplate((tpl as any).Email_Template_Subject,   params.vars);
@@ -68,7 +78,7 @@ export async function sendEventEmail(
           .from('TBL_Email_Logs')
           .select('Email_Log_Provider_Msg_ID, Email_Log_References')
           .eq('Email_Log_Request_ID', params.requestId)
-          .eq('Email_Log_Sent_To', r.User_ID)
+          .eq('Email_Log_Sent_To_Address', r.User_Email)
           .not('Email_Log_Provider_Msg_ID', 'is', null)
           .order('Email_Log_Sent_At', { ascending: false })
           .limit(1)
@@ -127,6 +137,7 @@ const rawText = await res.text();
       await supabase.from('TBL_Email_Logs').insert({
         Email_Log_Request_ID:      params.requestId,
         Email_Log_Sent_To:         r.User_ID,
+        Email_Log_Sent_To_Address: r.User_Email,
         Email_Log_Template_Name:   (tpl as any).Email_Template_Name,
         Email_Log_Event_Key:       params.eventKey,   // estable aunque renombren el template
         Email_Log_Subject_Sent:    subject,

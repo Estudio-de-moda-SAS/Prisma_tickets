@@ -5,6 +5,7 @@ import {
   makeEmptyConditionalField,
   makeEmptyMultiConditionalField,
   makeOptionKey,
+  getOptionColor,
   MAX_CONDITIONAL_DEPTH,
 } from '@/features/requests/templates/types';
 import type { BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
@@ -807,8 +808,8 @@ function MultiOptionEditor({ option, optionIndex, totalOptions, depth, onLabelCh
   onRemoveField: (fieldIdx: number) => void;
   onMoveField:   (fieldIdx: number, dir: -1 | 1) => void;
 }) {
-  const optionColors = ['#00c8ff', '#00e5a0', '#fdcb6e', '#a29bfe', '#fd79a8', '#74b9ff', '#ff7675'];
-  const color = optionColors[optionIndex % optionColors.length];
+  const color = getOptionColor(optionIndex);
+
 
   return (
     <div style={{ borderRadius: 8, border: `1px solid ${color}30` }}>

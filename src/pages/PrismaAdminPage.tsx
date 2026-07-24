@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { AssignBugModal } from '@/features/requests/components/AssignBugModal';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import '@/styles/stats.css';
 
 /* ============================================================
@@ -102,6 +103,7 @@ function scoreColor(s: number) {
    Página principal
    ============================================================ */
 export function PrismaAdminPage() {
+const isMobile = useIsMobile();
 const [tab, setTab] = useState<'bugs' | 'satisfaction' | 'resolution'>('bugs');
   /* Bug state */
   const [bugs,        setBugs]        = useState<BugReport[]>([]);
@@ -216,7 +218,7 @@ async function changeStatus(bug: BugReport, targetStatus: BugStatus) {
   };
 
   return (
-<div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+<div style={{ padding: isMobile ? '18px 12px' : '28px 32px', display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 24 }}>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -247,6 +249,8 @@ async function changeStatus(bug: BugReport, targetStatus: BugStatus) {
       <div style={{
         display: 'flex', gap: 4, background: 'var(--bg-surface)',
         padding: 4, borderRadius: 10, border: '1px solid var(--border-subtle)',
+        overflowX: isMobile ? 'auto' : 'visible',
+        scrollbarWidth: 'none',
       }}>
         <TabBtn active={tab === 'bugs'} onClick={() => setTab('bugs')} badge={bugStats.total}>
           🐛 Bug Reports
@@ -320,11 +324,13 @@ async function changeStatus(bug: BugReport, targetStatus: BugStatus) {
 function TabBtn({ active, onClick, badge, children }: {
   active: boolean; onClick: () => void; badge: number; children: React.ReactNode;
 }) {
+  const isMobile = useIsMobile();
   return (
     <button
       onClick={onClick}
       style={{
-        flex: 1, padding: '9px 16px', borderRadius: 7, border: 'none', cursor: 'pointer',
+        flex: isMobile ? '0 0 auto' : 1, whiteSpace: 'nowrap',
+        padding: isMobile ? '9px 12px' : '9px 16px', borderRadius: 7, border: 'none', cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         background: active ? 'var(--accent)' : 'transparent',
         color: active ? '#000' : 'var(--txt-muted)',
@@ -397,10 +403,11 @@ function BugReportsTab({
     { label: 'Críticos',    value: stats.critico,     color: '#ff4757',         bg: 'rgba(255,71,87,0.06)'    },
   ];
 
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14}}>
       {/* Stats cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: 8 }}>
         {statCards.map((s) => (
           <div key={s.label} style={{
             padding: '10px 8px', borderRadius: 8, textAlign: 'center',
@@ -601,11 +608,12 @@ function SatisfactionTab({ ratings, loading, error, stats, onRetry }: {
   stats: { total: number; avg: number; dist: { score: number; count: number }[]; withComment: number };
   onRetry: () => void;
 }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Overview cards */}
       {!loading && !error && stats.total > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '200px 1fr', gap: 12 }}>
           {/* Average */}
           <div style={{
             padding: '20px 16px', borderRadius: 10, textAlign: 'center',

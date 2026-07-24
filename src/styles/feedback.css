@@ -408,3 +408,52 @@
   background: rgba(180, 120, 10, 0.06);
   border-color: rgba(180, 120, 10, 0.15);
 }
+/* ============================================================
+   Responsive — móvil (≤639px)
+   ============================================================ */
+@media (max-width: 639px) {
+  /* Bottom sheet, coherente con el resto de modales de PRISMA */
+  .feedback-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .feedback-modal {
+    max-width: 100%;
+    max-height: 94dvh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+  }
+  .feedback-modal--satisfaction {
+    max-width: 100%;
+  }
+
+  /* Severidad: 2x2 en vez de 4 en fila */
+  .feedback-modal__severity-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .feedback-modal__severity-btn {
+    padding: 9px 6px;
+  }
+
+  /* Estrellas con área táctil más cómoda */
+  .feedback-modal__star {
+    padding: 6px;
+  }
+
+  /* Botones de acción a lo ancho */
+  .feedback-modal__actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .feedback-modal__btn {
+    width: 100%;
+    padding: 11px 16px;
+  }
+
+  .feedback-modal__body {
+    padding: 14px;
+  }
+  .feedback-modal__success {
+    padding: 28px 20px;
+  }
+}
