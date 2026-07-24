@@ -1609,3 +1609,127 @@
   border-left: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
+
+/* ============================================================
+   Responsive — móvil (≤639px)
+   ============================================================ */
+@media (max-width: 639px) {
+
+  /* ── Panel: ocupa toda la pantalla ── */
+  .cpanel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* La nav pasa de columna lateral a barra horizontal arriba */
+  .cpanel__layout {
+    flex-direction: column;
+  }
+  .cpanel__nav {
+    width: 100%;
+    flex-shrink: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: center;
+  }
+  .cpanel__nav::-webkit-scrollbar { display: none; }
+
+  /* El header de la nav y las etiquetas de grupo estorban en horizontal */
+  .cpanel__nav-header,
+  .cpanel__nav-group-label {
+    display: none;
+  }
+  .cpanel__nav-group {
+    flex-direction: row;
+    gap: 6px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  .cpanel__nav-group--separated {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    border-left: 1px solid var(--border-subtle);
+    padding-left: 8px;
+    margin-left: 2px;
+  }
+  .cpanel__nav-item {
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 7px 11px;
+  }
+
+  .cpanel__content-header {
+    padding: 14px 16px 12px;
+  }
+  .cpanel__content-body {
+    padding: 16px;
+  }
+  .cpanel__content-title {
+    font-size: 14px;
+  }
+
+  /* ── Wizard de exportación ── */
+  .exports-columns__grid {
+    min-height: 0;
+  }
+  .exports-columns__panel {
+    max-height: 320px;
+  }
+  .exports-stepper__label {
+    display: none;   /* solo los círculos numerados */
+  }
+  .exports-format__cards {
+    flex-direction: column;
+  }
+  .exports-daterange {
+    flex-wrap: wrap;
+  }
+  .exports-history__row {
+    grid-template-columns: auto 1fr;
+  }
+  .exports-history__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-top: 4px;
+  }
+  .exports-meta {
+    gap: 12px;
+  }
+
+  /* ── Modal de rename ── */
+  .trename-backdrop {
+    padding: 12px;
+  }
+  .trename-header,
+  .trename-body,
+  .trename-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .trename-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .trename-row code {
+    max-width: 100%;
+  }
+  .trename-footer {
+    flex-direction: column-reverse;
+  }
+  .trename-btn {
+    width: 100%;
+  }
+
+  /* Tooltips de la nav: en táctil no aplican y se posicionan mal */
+  .cpanel-tooltip {
+    display: none;
+  }
+}

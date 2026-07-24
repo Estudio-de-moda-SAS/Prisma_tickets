@@ -86,6 +86,12 @@ closure:TBL_Request_Closure (
   )
 `.trim();
 
+export const DETAIL_SELECT = `${BASE_SELECT},
+  criteria:TBL_Acceptance_Criteria (
+    Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At
+  )
+`.trim();
+
 export const BASE_SELECT_LIGHT = `
   Request_ID,
   Request_Board_Column_ID,
