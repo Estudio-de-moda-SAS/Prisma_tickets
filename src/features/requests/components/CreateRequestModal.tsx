@@ -167,39 +167,72 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
   teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void;
 }) {
   const isMobile = useIsMobile();
+
+  // Agrupar por departamento (teams ya viene ordenado por Sort_Order).
+  // "Sin departamento" al final. Labels solo si hay 2+ departamentos.
+  const grupos = (() => {
+    const byDept = new Map<number | null, { deptName: string; teams: BoardTeam[] }>();
+    for (const t of teams) {
+      const id   = t.department?.Department_ID ?? null;
+      const name = t.department?.Department_Name ?? 'Sin departamento';
+      if (!byDept.has(id)) byDept.set(id, { deptName: name, teams: [] });
+      byDept.get(id)!.teams.push(t);
+    }
+    return [...byDept.entries()].sort((a, b) => {
+      if (a[0] === null) return 1;
+      if (b[0] === null) return -1;
+      return a[1].teams[0].Board_Team_Sort_Order - b[1].teams[0].Board_Team_Sort_Order;
+    });
+  })();
+  const showGroupLabels = grupos.length > 1;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ marginBottom: 20, flexShrink: 0 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 4 }}>¿A qué equipo va dirigida?</h3>
         <p style={{ fontSize: 12, color: 'var(--txt-muted)' }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10, flex: 1, overflowY: 'auto' }}>
-        {teams.map((team) => {
-          const selected            = selectedTeamId === team.Board_Team_ID;
-          const { dot, glow, border } = teamColors(team.Board_Team_Color);
-          const Icon = getTeamIcon(team.Board_Team_Icon);
-          return (
-            <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
-              style={{ padding: '16px', borderRadius: 8, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
-              onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
-              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
-              {selected && (
-                <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-              )}
-              <div style={{ width: 32, height: 32, borderRadius: 7, background: selected ? `${dot}20` : 'var(--bg-panel)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon size={14} style={{ opacity: selected ? 1 : 0.6 }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto' }}>
+        {grupos.map(([deptId, grupo]) => (
+          <div key={deptId ?? 'no-dept'}>
+            {showGroupLabels && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0, fontFamily: 'var(--font-display)' }}>
+                  {deptId === null ? 'Sin departamento' : grupo.deptName}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
               </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 2 }}>{team.Board_Team_Name}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: dot, opacity: selected ? 1 : 0.45 }}>{team.Board_Team_Code}</div>
-              </div>
-            </button>
-          );
-        })}
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+              {grupo.teams.map((team) => {
+                const selected              = selectedTeamId === team.Board_Team_ID;
+                const { dot, glow, border } = teamColors(team.Board_Team_Color);
+                const Icon = getTeamIcon(team.Board_Team_Icon);
+                return (
+                  <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
+                    style={{ padding: '16px', borderRadius: 8, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
+                    onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
+                    onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
+                    {selected && (
+                      <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    )}
+                    <div style={{ width: 32, height: 32, borderRadius: 7, background: selected ? `${dot}20` : 'var(--bg-panel)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={14} style={{ opacity: selected ? 1 : 0.6 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 2 }}>{team.Board_Team_Name}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: dot, opacity: selected ? 1 : 0.45 }}>{team.Board_Team_Code}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, flexShrink: 0 }}>
         <button type="button" onClick={onNext} disabled={selectedTeamId === null}
@@ -785,11 +818,13 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const { data: teams        = [] } = useBoardTeams(boardId);
   const { data: allTemplates = [] } = useBoardTemplates(boardId);
   const role        = useRole();
-  const visibleTeams = teams.filter((t) =>
-    t.Board_Team_Is_Active !== false &&
-    !t.Board_Team_Is_External &&
-    (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  const visibleTeams = teams
+    .filter((t) =>
+      t.Board_Team_Is_Active !== false &&
+      !t.Board_Team_Is_External &&
+      (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
+    )
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
    const [step,                setStep]               = useState<Step>(defaultTeamId !== undefined ? 'template' : 'equipo');

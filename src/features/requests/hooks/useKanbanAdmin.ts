@@ -17,6 +17,7 @@ export type KanbanTeam = {
   Board_Team_External_URL:  string | null;
   Board_Team_Is_Active:     boolean;
   Board_Team_Sort_Order:    number;
+  Department_ID:            number | null;
 };
 
 export type ColumnWithConfig = {
@@ -50,8 +51,11 @@ const keys = {
 export function useCreateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean }) =>      apiClient.call<KanbanTeam>('createKanbanTeam', d),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.teams() }),
+mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null }) =>      apiClient.call<KanbanTeam>('createKanbanTeam', d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.teams() });
+      qc.refetchQueries({ queryKey: ['myBoardTeams'], exact: false });
+    },
   });
 }
 
@@ -61,9 +65,12 @@ mutationFn: (d: { name: string; code: string; color: string; description: string
 export function useUpdateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string }) =>
+    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null }) =>
       apiClient.call('updateKanbanTeam', d),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.teams() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.teams() });
+      qc.refetchQueries({ queryKey: ['myBoardTeams'], exact: false });
+    },
   });
 }
 
@@ -240,27 +247,13 @@ export function useReorderBoardTeam() {
     mutationFn: (d: { teamId: number; direction: 'up' | 'down' }) =>
       apiClient.call('reorderBoardTeam', d),
 
-onMutate: async (d) => {
-      await qc.cancelQueries({ queryKey: ['boardTeams'] });
-      const snapshots = qc.getQueriesData<KanbanTeam[]>({ queryKey: ['boardTeams'], exact: false });
-      qc.setQueriesData<KanbanTeam[]>(
-        { queryKey: ['boardTeams'], exact: false },
-        (prev) => {
-          if (!prev) return prev;
-          const arr = [...prev];
-          const idx = arr.findIndex((t) => t.Board_Team_ID === d.teamId);
-          if (idx === -1) return prev;
-          const si = d.direction === 'up' ? idx - 1 : idx + 1;
-          if (si < 0 || si >= arr.length) return prev;
-          [arr[idx], arr[si]] = [arr[si], arr[idx]];
-          return arr;
-        },
-      );
-      return { snapshots };
-    },
-
-    onError: (_e, _v, ctx) => {
-      ctx?.snapshots?.forEach(([key, data]) => qc.setQueryData(key, data));
+    // Sin optimistic: el reorder es scoped por departamento en el back
+    // (permuta Sort_Order entre vecinos del grupo). Con staleTime: Infinity,
+    // invalidar no basta — hay que forzar el refetch para que la UI muestre
+    // el orden real de inmediato (si no, opera sobre cache viejo → saltos).
+    onSettled: async () => {
+      await qc.refetchQueries({ queryKey: ['boardTeams'], exact: false });
+      await qc.refetchQueries({ queryKey: ['myBoardTeams'], exact: false });
     },
   });
 }

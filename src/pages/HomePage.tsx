@@ -4,7 +4,8 @@ import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink } from 'lucide-
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
-import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -786,11 +787,14 @@ export function HomePage() {
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: currentUser } = useCurrentUser();
+  const { data: boardTeams = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
   const { data: sprints    = [] } = useSprints();
-  const visibleTeams = boardTeams.filter((t) =>
-    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  // boardTeams ya viene filtrado server-side por acceso (depto + grants + admin-only).
+  // Acá solo descartamos inactivos, igual que el sidebar.
+  const visibleTeams = boardTeams
+    .filter((t) => t.Board_Team_Is_Active)
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
 
   // Equipos que sí tienen board (los externos no cuentan como seleccionables)
   const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External);

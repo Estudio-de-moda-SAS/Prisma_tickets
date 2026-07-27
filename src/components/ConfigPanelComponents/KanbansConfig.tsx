@@ -12,10 +12,12 @@ import { config } from '@/config';
 import {
   useBoardTeams
 } from '@/features/requests/hooks/useBoardMetadata';
+import { useDepartmentsWithTeams, useDepartments } from '@/features/requests/hooks/useDepartments';
 
 export function KanbanSection() {
   const boardId = config.DEFAULT_BOARD_ID;
   const { data: teams = [], isLoading } = useBoardTeams(boardId);
+  const { data: departments = [] } = useDepartments();
   const createKanbanTeam  = useCreateKanbanTeam();
   const updateKanbanTeam  = useUpdateKanbanTeam();
   const createBoardColumn = useCreateBoardColumn(boardId);
@@ -52,6 +54,7 @@ export function KanbanSection() {
           isExternal:  team.Board_Team_Is_External ?? false,
           externalUrl: team.Board_Team_External_URL ?? '',
           isActive:    team.Board_Team_Is_Active ?? true,
+          departmentId: (team as KanbanTeam).Department_ID ?? null,
         } : undefined}
         saving={createKanbanTeam.isPending || updateKanbanTeam.isPending}
         onSave={(data) => {
@@ -102,20 +105,65 @@ export function KanbanSection() {
           <p>No hay kanbans configurados.</p>
         </div>
       )}
-      {teams.map((team, idx) => (
-        <KanbanTeamCard
-          key={team.Board_Team_ID}
-          team={team as KanbanTeam}
-          boardId={boardId}
-          expanded={expandedId === team.Board_Team_ID}
-          onToggle={() => setExpandedId(expandedId === team.Board_Team_ID ? null : team.Board_Team_ID)}
-          onEdit={() => { setExpandedId(null); setEditTeamId(team.Board_Team_ID); }}
-          index={idx}
-          total={teams.length}
-          onMoveUp={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'up' })}
-          onMoveDown={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'down' })}
-        />
-      ))}
+      {(() => {
+        // Agrupar kanbans por departamento, respetando el orden global de Sort_Order.
+        // Los sin departamento van a un grupo "Sin departamento (solo admins)" al final.
+        const deptName = (id: number | null) =>
+          id === null ? null : (departments.find((d) => d.Department_ID === id)?.Department_Name ?? `Depto #${id}`);
+
+        const byDept = new Map<number | null, KanbanTeam[]>();
+        for (const t of teams as KanbanTeam[]) {
+          const key = t.Department_ID ?? null;
+          if (!byDept.has(key)) byDept.set(key, []);
+          byDept.get(key)!.push(t);
+        }
+        // Ordenar dentro de cada grupo por Sort_Order (no depender solo del back)
+        for (const list of byDept.values()) {
+          list.sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
+        }
+
+        // Orden de grupos: por el menor Sort_Order de cada grupo; "sin depto" siempre al final.
+        const groups = [...byDept.entries()].sort((a, b) => {
+          if (a[0] === null) return 1;
+          if (b[0] === null) return -1;
+          const minA = Math.min(...a[1].map((t) => t.Board_Team_Sort_Order));
+          const minB = Math.min(...b[1].map((t) => t.Board_Team_Sort_Order));
+          return minA - minB;
+        });
+
+        return groups.map(([deptId, groupTeams]) => (
+          <div key={deptId ?? 'no-dept'} style={{ marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 6px' }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+                color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0,
+              }}>
+                {deptName(deptId) ?? 'Sin departamento · solo admins'}
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', flexShrink: 0 }}>
+                {groupTeams.length}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {groupTeams.map((team, idx) => (
+                <KanbanTeamCard
+                  key={team.Board_Team_ID}
+                  team={team}
+                  boardId={boardId}
+                  expanded={expandedId === team.Board_Team_ID}
+                  onToggle={() => setExpandedId(expandedId === team.Board_Team_ID ? null : team.Board_Team_ID)}
+                  onEdit={() => { setExpandedId(null); setEditTeamId(team.Board_Team_ID); }}
+                  index={idx}
+                  total={groupTeams.length}
+                  onMoveUp={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'up' })}
+                  onMoveDown={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'down' })}
+                />
+              ))}
+            </div>
+          </div>
+        ));
+      })()}
 
       <AddBtn label="Nuevo kanban" onClick={() => { setEditTeamId(null); setShowNewTeam(true); }} />
 
@@ -314,11 +362,12 @@ function IconPicker({ value, onChange }: { value: string; onChange: (v: string) 
 }
 /* ── KanbanTeamForm ── */
 function KanbanTeamForm({ initial, saving, onSave, onCancel }: {
-  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean };
+  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null };
   saving?:  boolean;
-  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean }) => void;
+  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null }) => void;
   onCancel: () => void;
 }) {
+  const { data: departments = [] } = useDepartmentsWithTeams();
   const [name,        setName]        = useState(initial?.name        ?? '');
   const [code,        setCode]        = useState(initial?.code        ?? '');
   const [color,       setColor]       = useState(initial?.color       ?? '#00c8ff');
@@ -328,6 +377,7 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
   const [isExternal,  setIsExternal]  = useState(initial?.isExternal  ?? false);
   const [externalUrl, setExternalUrl] = useState(initial?.externalUrl ?? '');
   const [isActive,    setIsActive]    = useState(initial?.isActive    ?? true);
+  const [departmentId, setDepartmentId] = useState<number | null>(initial?.departmentId ?? null);
   const canSave = name.trim().length > 0 && code.trim().length > 0 && (!isExternal || externalUrl.trim().length > 0);
 
   function handleNameChange(val: string) {
@@ -368,6 +418,23 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
       <div>
         <FieldLabel>Descripción</FieldLabel>
         <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción breve del equipo…" className="cpop-input" />
+      </div>
+
+      <div>
+        <FieldLabel>Departamento</FieldLabel>
+        <select
+          className="cpop-input"
+          value={departmentId ?? ''}
+          onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : null)}
+        >
+          <option value="">Sin departamento (solo admins)</option>
+          {departments.map((d) => (
+            <option key={d.Department_ID} value={d.Department_ID}>{d.Department_Name}</option>
+          ))}
+        </select>
+        <p style={{ fontSize: 10, color: 'var(--txt-muted)', margin: '6px 0 0', lineHeight: 1.5 }}>
+          Define a qué departamento pertenece este kanban. Todos los miembros de ese departamento lo verán automáticamente. Sin departamento, solo lo ven los administradores. Para dar acceso a personas puntuales de otro departamento, usá los kanbans visibles en la ficha del usuario.
+        </p>
       </div>
 
       <div>
@@ -462,7 +529,7 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
         <button
-          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly, isExternal, externalUrl: isExternal ? externalUrl.trim() : '', isActive })}
+          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly, isExternal, externalUrl: isExternal ? externalUrl.trim() : '', isActive, departmentId })}
           disabled={!canSave || saving}
           className={`cpop-btn-save${!canSave || saving ? ' cpop-btn-save--disabled' : ''}`}
         >

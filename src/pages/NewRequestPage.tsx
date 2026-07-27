@@ -519,57 +519,93 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
   const selectedTeam = teams.find((t) => t.Board_Team_ID === selectedTeamId) ?? null;
   const {  border: selBorder } = selectedTeam ? teamColors(selectedTeam.Board_Team_Color) : {  border: 'var(--accent)' };
 
+  // Agrupar por departamento (respetando el orden global ya aplicado en teams).
+  // "Sin departamento" (kanbans solo-admin) va al final. Los labels de grupo
+  // solo se muestran si hay 2+ departamentos, igual que el sidebar.
+  const grupos = (() => {
+    const byDept = new Map<number | null, { deptName: string; teams: BoardTeam[] }>();
+    for (const t of teams) {
+      const id   = t.department?.Department_ID ?? null;
+      const name = t.department?.Department_Name ?? 'Sin departamento';
+      if (!byDept.has(id)) byDept.set(id, { deptName: name, teams: [] });
+      byDept.get(id)!.teams.push(t);
+    }
+    return [...byDept.entries()].sort((a, b) => {
+      if (a[0] === null) return 1;
+      if (b[0] === null) return -1;
+      return a[1].teams[0].Board_Team_Sort_Order - b[1].teams[0].Board_Team_Sort_Order;
+    });
+  })();
+  const showGroupLabels = grupos.length > 1;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: 32 }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 18 : 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 8 }}>¿A qué equipo va dirigida?</h2>
         <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.6 }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14, flex: 1, alignContent: 'start' }}>
-        {teams.map((team, idx) => {
-          const isAlone               = teams.length % 2 !== 0 && idx === teams.length - 1;
-          const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
-          const selected              = !isExternal && selectedTeamId === team.Board_Team_ID;
-          const { dot, glow, border } = teamColors(team.Board_Team_Color);
-          const Icon = getTeamIcon(team.Board_Team_Icon);
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, flex: 1, alignContent: 'start' }}>
+        {grupos.map(([deptId, grupo]) => (
+          <div key={deptId ?? 'no-dept'}>
+            {showGroupLabels && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0, fontFamily: 'var(--font-display)' }}>
+                  {deptId === null ? 'Sin departamento' : grupo.deptName}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14 }}>
+              {grupo.teams.map((team, idx) => {
+                const isAlone               = grupo.teams.length % 2 !== 0 && idx === grupo.teams.length - 1;
+                const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
+                const selected              = !isExternal && selectedTeamId === team.Board_Team_ID;
+                const { dot, glow, border } = teamColors(team.Board_Team_Color);
+                const Icon = getTeamIcon(team.Board_Team_Icon);
 
-          return (
-            <button
-              key={team.Board_Team_ID}
-              type="button"
-              onClick={() => {
-                if (isExternal) {
-                  window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
-                  return;
-                }
-                onSelect(team.Board_Team_ID);
-              }}
-              style={{
-                padding: '22px 20px', borderRadius: 10,
-                border: `1.5px solid ${selected ? border : 'var(--border)'}`,
-                background: selected ? glow : 'var(--bg-panel)',
-                cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                position: 'relative', overflow: 'hidden',
-                display: 'flex', flexDirection: 'column', gap: 10,
-                ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
-              }}
-              onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
-              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
-              {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-              {isExternal && <div style={{ position: 'absolute', top: 12, right: 14, width: 22, height: 22, borderRadius: 6, background: `${dot}18`, border: `1px solid ${dot}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Abre en herramienta externa"><ExternalLink size={12} style={{ color: dot }} /></div>}
-<div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
-</div>              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
-<div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-  <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
-  <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65 }}>
-{team.Board_Team_Description ?? (isExternal ? 'Herramienta externa del equipo' : team.Board_Team_Code)}  </div>
-</div>              </div>
-            </button>
-          );
-        })}
+                return (
+                  <button
+                    key={team.Board_Team_ID}
+                    type="button"
+                    onClick={() => {
+                      if (isExternal) {
+                        window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
+                        return;
+                      }
+                      onSelect(team.Board_Team_ID);
+                    }}
+                    style={{
+                      padding: '22px 20px', borderRadius: 10,
+                      border: `1.5px solid ${selected ? border : 'var(--border)'}`,
+                      background: selected ? glow : 'var(--bg-panel)',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                      position: 'relative', overflow: 'hidden',
+                      display: 'flex', flexDirection: 'column', gap: 10,
+                      ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
+                    }}
+                    onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
+                    onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
+                    {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+                    {isExternal && <div style={{ position: 'absolute', top: 12, right: 14, width: 22, height: 22, borderRadius: 6, background: `${dot}18`, border: `1px solid ${dot}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Abre en herramienta externa"><ExternalLink size={12} style={{ color: dot }} /></div>}
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
+                        <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65 }}>
+                          {team.Board_Team_Description ?? (isExternal ? 'Herramienta externa del equipo' : team.Board_Team_Code)}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{
         position: 'sticky',
@@ -1074,9 +1110,9 @@ export function NuevaSolicitudPage() {
   const { data: teams      = [] } = useBoardTeams(boardId);
   const { data: templates  = [] } = useBoardTemplates(boardId);
   const role        = useRole();
-  const visibleTeams = teams.filter((t) =>
-    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  const visibleTeams = teams
+    .filter((t) => t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only))
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
 
   const [step,               setStep]               = useState<Step>('equipo');
   const [selectedTeamId,     setSelectedTeamId]     = useState<number | null>(null);

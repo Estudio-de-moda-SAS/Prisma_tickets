@@ -89,42 +89,69 @@ function getNavDescription(key: Section): string {
     return <span style={{ fontSize: 10, color: 'var(--txt-muted)', paddingLeft: 2 }}>Cargando…</span>;
   }
 
+  // Agrupar por departamento (teams ya viene ordenado por Sort_Order).
+  // "Sin departamento" al final. Labels solo si hay 2+ departamentos.
+  const byDept = new Map<number | null, { deptName: string; teams: BoardTeam[] }>();
+  for (const t of teams) {
+    const id   = t.department?.Department_ID ?? null;
+    const name = t.department?.Department_Name ?? 'Sin departamento';
+    if (!byDept.has(id)) byDept.set(id, { deptName: name, teams: [] });
+    byDept.get(id)!.teams.push(t);
+  }
+  const grupos = [...byDept.entries()].sort((a, b) => {
+    if (a[0] === null) return 1;
+    if (b[0] === null) return -1;
+    return a[1].teams[0].Board_Team_Sort_Order - b[1].teams[0].Board_Team_Sort_Order;
+  });
+  const showGroupLabels = grupos.length > 1;
+
+  const renderTeam = (team: BoardTeam) => {
+    const active = team.Board_Team_Code === equipoActivo;
+    const color  = team.Board_Team_Color || TEAM_CODE_COLORS[team.Board_Team_Code] || '#00c8ff';
+    return (
+      <button
+        key={team.Board_Team_ID}
+        onClick={() => onSelect(team.Board_Team_Code)}            style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 8px', borderRadius: 7, border: 'none',
+          background: active ? `${color}18` : 'transparent',
+          outline: active ? `1px solid ${color}35` : 'none',
+          cursor: 'pointer', transition: 'all 0.12s', width: '100%', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = active ? `${color}18` : 'transparent'; }}
+      >
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0,
+          boxShadow: active ? `0 0 7px ${color}` : 'none', transition: 'box-shadow 0.2s',
+        }} />
+        <span style={{
+          flex: 1, fontSize: 11.5, fontWeight: active ? 700 : 400,
+          color: active ? color : 'var(--txt-muted)', transition: 'color 0.12s', lineHeight: 1.3,
+        }}>
+          {team.Board_Team_Name}
+        </span>
+        {active && (
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M1 4.5l2.5 2.5L8 1.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {teams.map((team) => {
-        const active = team.Board_Team_Code === equipoActivo;
-        const color  = team.Board_Team_Color || TEAM_CODE_COLORS[team.Board_Team_Code] || '#00c8ff';
-        return (
-          <button
-            key={team.Board_Team_ID}
-            onClick={() => onSelect(team.Board_Team_Code)}            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '7px 8px', borderRadius: 7, border: 'none',
-              background: active ? `${color}18` : 'transparent',
-              outline: active ? `1px solid ${color}35` : 'none',
-              cursor: 'pointer', transition: 'all 0.12s', width: '100%', textAlign: 'left',
-            }}
-            onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = active ? `${color}18` : 'transparent'; }}
-          >
-            <span style={{
-              width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0,
-              boxShadow: active ? `0 0 7px ${color}` : 'none', transition: 'box-shadow 0.2s',
-            }} />
-            <span style={{
-              flex: 1, fontSize: 11.5, fontWeight: active ? 700 : 400,
-              color: active ? color : 'var(--txt-muted)', transition: 'color 0.12s', lineHeight: 1.3,
-            }}>
-              {team.Board_Team_Name}
+      {grupos.map(([deptId, grupo]) => (
+        <div key={deptId ?? 'no-dept'} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {showGroupLabels && (
+            <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', opacity: 0.7, padding: '6px 8px 2px' }}>
+              {deptId === null ? 'Sin departamento' : grupo.deptName}
             </span>
-            {active && (
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M1 4.5l2.5 2.5L8 1.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </button>
-        );
-      })}
+          )}
+          {grupo.teams.map(renderTeam)}
+        </div>
+      ))}
     </div>
   );
 }
