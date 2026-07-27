@@ -12,7 +12,8 @@ import { NotificationBell } from './NotificationBell';
 import { BugReportModal } from './BugReportModal';
 import { useLocation } from 'react-router-dom';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
-import { Bug, Menu } from 'lucide-react';
+import { Bug, Menu, Download } from 'lucide-react';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 // ─── Controla qué roles ven el botón de reportar fallo ───────────────────────
 // 'all' | 'admin' | 'ti' — cambia en una línea
@@ -29,6 +30,7 @@ export function Topbar({ titulo }: TopbarProps) {
   const { data: currentUser } = useCurrentUser();
 
   const [bugOpen, setBugOpen] = useState(false);
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const activeTeam = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
@@ -86,6 +88,20 @@ export function Topbar({ titulo }: TopbarProps) {
         <div className="topbar__right">
           <span className="topbar__date">{hoy}</span>
           <div className="topbar__divider" />
+
+          {canInstall && (
+            <>
+              <button
+                className="topbar__install-btn"
+                onClick={() => { void promptInstall(); }}
+                title="Instalar PRISMA como aplicación"
+              >
+                <Download size={13} />
+                <span>Instalar app</span>
+              </button>
+              <div className="topbar__divider" />
+            </>
+          )}
 
           {showBugBtn && (
             <>

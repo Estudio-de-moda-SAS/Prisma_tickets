@@ -18,7 +18,7 @@ import { useRole } from '@/auth/roles';
 import { config } from '@/config';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, MultiConditionalField } from '@/features/requests/templates/types';
-import { isConditionalField, isMultiConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
+import { isConditionalField, isMultiConditionalField, makeEmptySimpleField, getOptionColor } from '@/features/requests/templates/types';
 import type { ConditionalField } from '@/features/requests/templates/types';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
@@ -474,8 +474,9 @@ return (
   if (isMultiConditionalField(field)) {
     const mf     = field as MultiConditionalField;
     const chosen = values[mf.key] ?? '';
-    const active = mf.options.find((o) => o.optionKey === chosen) ?? null;
-
+    const active      = mf.options.find((o) => o.optionKey === chosen) ?? null;
+    const activeIndex = mf.options.findIndex((o) => o.optionKey === chosen);
+    const activeColor = activeIndex >= 0 ? getOptionColor(activeIndex) : accent;
     return (
       <div style={{ marginBottom: 4 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -484,8 +485,9 @@ return (
             {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {mf.options.map((opt) => {
+            {mf.options.map((opt, optIdx) => {
               const isSelected = chosen === opt.optionKey;
+              const optColor   = getOptionColor(optIdx);
               return (
                 <button
                   key={opt.optionKey}
@@ -494,17 +496,19 @@ return (
                   style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
-                    border: `1px solid ${isSelected ? accent + '60' : 'var(--border-subtle)'}`,
-                    background: isSelected ? `${accent}12` : 'transparent',
-                    color: isSelected ? accent : 'var(--txt-muted)',
+                    border: `1px solid ${isSelected ? optColor + '60' : optColor + '25'}`,
+                    background: isSelected ? `${optColor}12` : 'transparent',
+                    color: isSelected ? optColor : 'var(--txt-muted)',
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
                     letterSpacing: 0.5, transition: 'all 0.15s',
                   }}
+                  onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}55`; e.currentTarget.style.color = optColor; } }}
+                  onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}25`; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
                 >
                   <div style={{
                     width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${isSelected ? accent : 'var(--border)'}`,
-                    background: isSelected ? accent : 'transparent',
+                    border: `2px solid ${isSelected ? optColor : optColor + '50'}`,
+                    background: isSelected ? optColor : 'transparent',
                     transition: 'all 0.15s',
                   }} />
                   {opt.label || 'Opción'}
@@ -517,9 +521,9 @@ return (
         {active && active.fields.some((f) => f.label.trim() !== '') && (
           <div style={{
             marginTop: 8, padding: '12px 14px', borderRadius: 8,
-            border: `1px solid ${accent}25`, background: `${accent}06`, position: 'relative',
+            border: `1px solid ${activeColor}25`, background: `${activeColor}06`, position: 'relative',
           }}>
-            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: accent }} />
+            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: activeColor }} />
             <div style={{ paddingLeft: 8 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {active.fields.map((branchField) => (
@@ -528,7 +532,7 @@ return (
                     field={branchField}
                     values={values}
                     onChange={onChange}
-                    accent={accent}
+                    accent={activeColor}
                   />
                 ))}
               </div>

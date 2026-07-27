@@ -38,11 +38,11 @@ export function AppLayout() {
 
   return (
     <>
-  <NotificationPermissionPrompt />
       <div className="app-layout">
         <Sidebar />
         <div className="app-layout__main">
           <Topbar titulo={titulo} />
+          <NotificationPermissionPrompt />
           <AnnouncementBanner />
           <main className={`app-layout__content${isFullBleed ? ' app-layout__content--full-bleed' : ''}`}>
             <Outlet />

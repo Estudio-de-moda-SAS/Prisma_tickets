@@ -80,10 +80,10 @@ function ActivityDot({ notifications }: { notifications: Notification[] }) {
 
 function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, minWidth: 0 }}>
       <span style={{ color: 'var(--txt-muted)', flexShrink: 0, display: 'flex', alignItems: 'center' }}>{icon}</span>
-      <span style={{ color: 'var(--txt-muted)', flexShrink: 0, minWidth: 68, fontSize: 10, letterSpacing: 0.3 }}>{label}</span>
-      <span style={{ color: 'var(--txt)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{children}</span>
+      <span title={label} style={{ color: 'var(--txt-muted)', flexShrink: 1, minWidth: 68, maxWidth: 110, fontSize: 10, letterSpacing: 0.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+      <span style={{ color: 'var(--txt)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{children}</span>
     </div>
   );
 }

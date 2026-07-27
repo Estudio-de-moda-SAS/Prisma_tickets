@@ -19,21 +19,21 @@ const MOCK_USER: UserProfile = {
 };
 
 export function useCurrentUser() {
-  const { account, ready, dbReady, dbUser } = useAuth();
+  const { account, ready, dbReady, dbUser, dbError } = useAuth();
 
   return useQuery<UserProfile>({
-    queryKey: ['currentUser', account?.homeAccountId ?? 'anonymous'],
+    // dbUser?.User_ID en la key: cuando el usuario se resuelve tarde, la key
+    // cambia y la query se rehace en vez de quedar cacheada en error.
+    queryKey: ['currentUser', account?.homeAccountId ?? 'anonymous', dbUser?.User_ID ?? 'none'],
     queryFn: () => {
       if (config.USE_MOCK) return Promise.resolve(MOCK_USER);
-      // AuthProvider ya resolvió el usuario (por oid.tid con Supabase Auth,
-      // o por homeAccountId con MSAL). Reusamos ese dbUser en vez de volver
-      // a llamar upsertUserByEntraId — así evitamos crear duplicados cuando
-      // el flag está on y account.homeAccountId es el sub de Supabase.
       if (dbUser) return Promise.resolve(dbUser);
-      throw new Error('[useCurrentUser] dbUser aún no disponible');
+      // Falla explícita en vez de pending eterno.
+      return Promise.reject(new Error(dbError ?? 'No se pudo resolver tu usuario en PRISMA.'));
     },
-    enabled:   config.USE_MOCK || (ready && dbReady && !!dbUser),
+    // Habilitada apenas la auth terminó, con o sin dbUser.
+    enabled:   config.USE_MOCK || (ready && dbReady),
     staleTime: Infinity,
-    retry:     1,
+    retry:     false,
   });
 }

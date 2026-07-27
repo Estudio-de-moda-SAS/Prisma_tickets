@@ -134,6 +134,14 @@ export function makeEmptyConditionalField(index: number): ConditionalField {
   };
 }
 
+/** Paleta de colores para las ramas de un campo multiconditional */
+export const MULTI_OPTION_COLORS = ['#00c8ff', '#00e5a0', '#fdcb6e', '#a29bfe', '#fd79a8', '#74b9ff', '#ff7675'];
+
+/** Color de una rama según su posición (cicla si hay más ramas que colores) */
+export function getOptionColor(index: number): string {
+  return MULTI_OPTION_COLORS[index % MULTI_OPTION_COLORS.length];
+}
+
 /** Genera un optionKey estable y único para una rama de multiconditional */
 export function makeOptionKey(index: number): string {
   return `opt_${index}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

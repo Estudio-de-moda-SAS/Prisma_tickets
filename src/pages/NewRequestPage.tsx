@@ -21,7 +21,8 @@ import { useRole } from '@/auth/roles';
 import { PRIORIDADES } from '@/features/requests/types';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
 import type { TemplateExtraField, ConditionalField, MultiConditionalField } from '@/features/requests/templates/types';
-import { isConditionalField, isMultiConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
+import { isConditionalField, isMultiConditionalField, makeEmptySimpleField, getOptionColor } from '@/features/requests/templates/types';
+import { Upload, X, FileText, Image, File as FileIcon2, Plus, Trash2, ShieldAlert, Lock, ExternalLink } from 'lucide-react';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 type Step = 'equipo' | 'template' | 'form';
@@ -280,8 +281,9 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
   if (isMultiConditionalField(field)) {
     const mf     = field as MultiConditionalField;
     const chosen = values[mf.key] ?? '';
-    const active = mf.options.find((o) => o.optionKey === chosen) ?? null;
-
+    const active      = mf.options.find((o) => o.optionKey === chosen) ?? null;
+    const activeIndex = mf.options.findIndex((o) => o.optionKey === chosen);
+    const activeColor = activeIndex >= 0 ? getOptionColor(activeIndex) : accent;
     return (
       <div style={{ marginBottom: 4 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -290,8 +292,9 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
             {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {mf.options.map((opt) => {
+            {mf.options.map((opt, optIdx) => {
               const isSelected = chosen === opt.optionKey;
+              const optColor   = getOptionColor(optIdx);
               return (
                 <button
                   key={opt.optionKey}
@@ -300,17 +303,19 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                   style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
-                    border: `1px solid ${isSelected ? accent + '60' : 'var(--border-subtle)'}`,
-                    background: isSelected ? `${accent}12` : 'transparent',
-                    color: isSelected ? accent : 'var(--txt-muted)',
+                    border: `1px solid ${isSelected ? optColor + '60' : optColor + '25'}`,
+                    background: isSelected ? `${optColor}12` : 'transparent',
+                    color: isSelected ? optColor : 'var(--txt-muted)',
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
                     letterSpacing: 0.5, transition: 'all 0.15s',
                   }}
+                  onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}55`; e.currentTarget.style.color = optColor; } }}
+                  onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}25`; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
                 >
                   <div style={{
                     width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${isSelected ? accent : 'var(--border)'}`,
-                    background: isSelected ? accent : 'transparent',
+                    border: `2px solid ${isSelected ? optColor : optColor + '50'}`,
+                    background: isSelected ? optColor : 'transparent',
                     transition: 'all 0.15s',
                   }} />
                   {opt.label || 'Opción'}
@@ -323,9 +328,9 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
         {active && active.fields.some((f) => f.label.trim() !== '') && (
           <div style={{
             marginTop: 8, padding: '12px 14px', borderRadius: 8,
-            border: `1px solid ${accent}25`, background: `${accent}06`, position: 'relative',
+            border: `1px solid ${activeColor}25`, background: `${activeColor}06`, position: 'relative',
           }}>
-            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: accent }} />
+            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: activeColor }} />
             <div style={{ paddingLeft: 8 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {active.fields.map((branchField) => (
@@ -334,7 +339,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                     field={branchField}
                     values={values}
                     onChange={onChange}
-                    accent={accent}
+                    accent={activeColor}
                     focused={focused}
                     onFocus={onFocus}
                     onBlur={onBlur}
@@ -1064,7 +1069,7 @@ export function NuevaSolicitudPage() {
   const { Requests } = useGraphServices();
   const boardId      = config.DEFAULT_BOARD_ID;
 
-  const { data: currentUser }     = useCurrentUser();
+  const { data: currentUser, isError: userError, error: userErrorObj, refetch: refetchUser } = useCurrentUser();
   const columnMap                 = useColumnMap(boardId);
   const { data: teams      = [] } = useBoardTeams(boardId);
   const { data: templates  = [] } = useBoardTemplates(boardId);
@@ -1256,6 +1261,35 @@ function resetForCreateAnother(keepTeam: boolean) {
       setSelectedTemplateId(null);
       setStep('equipo');
     }
+  }
+
+  if (userError) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 28px', textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,71,87,0.08)', border: '1.5px solid rgba(255,71,87,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ShieldAlert size={28} style={{ color: '#ff4757' }} />
+        </div>
+        <div style={{ maxWidth: 420 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 10 }}>
+            No pudimos cargar tu usuario
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--txt-muted)', lineHeight: 1.7 }}>
+            {userErrorObj instanceof Error ? userErrorObj.message : 'Error desconocido.'}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.6, marginTop: 12, opacity: 0.75 }}>
+            Si el problema persiste, contactá al equipo de TI con este mensaje.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" onClick={() => void refetchUser()} style={{ padding: '10px 24px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg, var(--accent-2), var(--accent))', color: 'white', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', cursor: 'pointer' }}>
+            Reintentar
+          </button>
+          <button type="button" onClick={() => navigate('/home')} style={{ padding: '10px 24px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', cursor: 'pointer' }}>
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (submitted) {

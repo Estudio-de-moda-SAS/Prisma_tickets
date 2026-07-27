@@ -1,5 +1,13 @@
 /* src/styles/notifications.css */
 
+/* Alias: este archivo usa nombres que no existen en variables.css.
+   Mapeamos aca en vez de tocar 15 reglas sueltas. */
+:root {
+  --text-muted:     var(--txt-muted);
+  --text-primary:   var(--txt);
+  --border-default: var(--border);
+  --txt-base:       var(--txt);
+}
 /* ── Campana ─────────────────────────────────────────── */
 .notif-bell {
   position:        relative;
@@ -46,7 +54,7 @@
   line-height:      17px;
   text-align:       center;
   pointer-events:   none;
-  box-shadow:       0 0 0 2px var(--bg-base);
+  box-shadow:       0 0 0 2px var(--bg-panel);
 }
 
 /* ── Panel ───────────────────────────────────────────── */
@@ -302,6 +310,7 @@
   padding: 10px 16px;
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;   /* hijo de .app-layout__main (flex column) */
 }
 
 .notif-prompt__icon { color: var(--accent); flex-shrink: 0; }
@@ -359,4 +368,81 @@
 .notif-prompt__never:hover {
   color: var(--txt-base);
   text-decoration: underline;
+}
+
+/* ============================================================
+   Responsive — móvil (≤639px)
+   ============================================================ */
+@media (max-width: 639px) {
+  /* Panel anclado a ambos bordes. El componente fija `right` inline segun
+     la campana, que no es el ultimo elemento del topbar (el avatar va
+     despues) -> sin el !important el panel se sale por la izquierda. */
+  .notif-panel {
+    left: 8px;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    max-height: 70dvh;
+  }
+
+  .notif-panel__header {
+    padding: 12px 14px;
+  }
+
+  /* Sin hover en táctil: el botón de marcar leída debe verse siempre */
+  .notif-item__read-btn {
+    opacity: 1;
+    width: 26px;
+    height: 26px;
+  }
+
+  .notif-item {
+    padding: 12px 12px 12px 20px;
+  }
+
+  /* Título de notificación: 2 líneas en vez de cortarse */
+  .notif-item__title {
+    white-space: normal;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Banner de permiso: apilado */
+  .notif-prompt {
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 10px;
+  }
+  .notif-prompt__text {
+    flex: 1 1 100%;
+    order: 1;
+  }
+  .notif-prompt__icon {
+    order: 0;
+  }
+  .notif-prompt__close {
+    order: 0;
+    margin-left: auto;
+  }
+  .notif-prompt__btn {
+    order: 2;
+    flex: 1;
+  }
+  .notif-prompt__never {
+    order: 3;
+  }
+
+  /* Banner dentro del panel */
+  .notif-panel__enable {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .notif-panel__enable-text {
+    flex: 1 1 100%;
+  }
+  .notif-panel__enable-btn {
+    width: 100%;
+  }
 }

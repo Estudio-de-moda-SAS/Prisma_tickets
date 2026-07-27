@@ -23,6 +23,7 @@ const CONTACT_EMAIL = 'ti@empresa.com';
 export type AuthCtx = {
   ready:         boolean;
   dbReady:       boolean;
+  dbError:       string | null;
   account:       AccountInfo | null;
   dbUser:        UserProfile | null;
   getToken:      () => Promise<string>;
@@ -292,6 +293,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Guarda el id de la sesión ya cargada, para no recargar en cada refresh de token.
   const loadedUserIdRef = React.useRef<string | null>(null);
+  // Deduplica llamadas concurrentes: onAuthStateChange(INITIAL_SESSION) y el
+  // getSession() manual disparan syncSupabaseSession en paralelo. Sin esto,
+  // ambas pasan el guard (que aún vale null) y ejecutan el upsert dos veces.
+  const inFlightRef = React.useRef<{ id: string; promise: Promise<void> } | null>(null);
+  const [dbError, setDbError] = React.useState<string | null>(null);
 
   // Sincroniza el estado del provider con una sesión de Supabase Auth.
   const syncSupabaseSession = React.useCallback(async (session: import('@supabase/supabase-js').Session | null) => {
@@ -303,6 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setDbUser(null);
       setBlocked(false);
       setDbReady(true);
+      setDbError(null);
       return;
     }
 
@@ -310,6 +317,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // onAuthStateChange se dispara también en refresh de token / focus de pestaña,
     // y no queremos flash en blanco ni una llamada extra al backend cada vez.
     if (loadedUserIdRef.current === session.user.id) {
+      return;
+    }
+
+    // Si ya hay una carga en vuelo para esta misma sesión, esperala en vez de
+    // lanzar una segunda.
+    if (inFlightRef.current?.id === session.user.id) {
+      await inFlightRef.current.promise;
       return;
     }
 
@@ -324,17 +338,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } as AccountInfo);
 
     setDbReady(false);
-    try {
-      const user = await loadDbUserFromSupabase();
-      if (user) {
-        loadedUserIdRef.current = session.user.id;   // marca esta sesión como cargada
+    setDbError(null);
+
+    const task = (async () => {
+      try {
+        const user = await loadDbUserFromSupabase();
+        if (!user) {
+          // getSupabaseEntraId() devolvió null: faltan los claims oid/tid.
+          // Antes esto caía en silencio y dejaba la app cargando para siempre.
+          throw new Error(
+            'No se pudieron leer los datos de tu cuenta Microsoft (claims oid/tid ausentes).',
+          );
+        }
+        loadedUserIdRef.current = session.user.id;
         if (user.Is_Active === false) { setBlocked(true); setDbUser(null); }
         else { setBlocked(false); setDbUser(user); }
+      } catch (err) {
+        console.error('[AuthProvider] Error cargando usuario DB (Supabase):', err);
+        setDbUser(null);
+        setDbError(err instanceof Error ? err.message : 'Error resolviendo tu usuario.');
+      } finally {
+        setDbReady(true);
       }
-    } catch (err) {
-      //console.error('[AuthProvider] Error cargando usuario DB (Supabase):', err);
-    } finally {
-      setDbReady(true);
+    })();
+
+    inFlightRef.current = { id: session.user.id, promise: task };
+    try { await task; } finally {
+      if (inFlightRef.current?.id === session.user.id) inFlightRef.current = null;
     }
   }, []);
 
@@ -382,6 +412,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setDbUser(null);
       setBlocked(false);
       setDbReady(true);
+      setDbError(null);
       return;
     }
 
@@ -435,8 +466,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [account]);
 
   const value = React.useMemo<AuthCtx>(
-    () => ({ ready, dbReady, account, dbUser, getToken, signIn, signOut, refreshDbUser }),
-    [ready, dbReady, account, dbUser, getToken, signIn, signOut, refreshDbUser],
+    () => ({ ready, dbReady, dbError, account, dbUser, getToken, signIn, signOut, refreshDbUser }),
+    [ready, dbReady, dbError, account, dbUser, getToken, signIn, signOut, refreshDbUser],
   );
 
   // Si el usuario está bloqueado, mostramos la pantalla de acceso suspendido

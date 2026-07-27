@@ -451,6 +451,7 @@
   margin: 0;
   line-height: 1.5;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -501,10 +502,53 @@
 
 /* ── Responsive ─────────────────────────────────────────────── */
 
-@media (max-width: 720px) {
-  .client-requests             { padding: 16px; }
+@media (max-width: 639px) {
+  .client-requests             { padding: 16px 12px; }
   .client-requests__title      { font-size: 18px; }
   .client-requests__toolbar    { flex-direction: column; align-items: stretch; }
   .client-request-card__head   { gap: 4px; }
   .client-request-card__status { margin-left: 0; }
+
+  /* Header: el CTA a lo ancho debajo del título */
+  .client-requests__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .client-requests__cta {
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* El buscador deja de forzar 220px mínimo */
+  .client-requests__search {
+    min-width: 0;
+    width: 100%;
+  }
+  .client-requests__select {
+    flex: 1;
+    min-width: 0;
+  }
+  .client-requests__filter-group {
+    width: 100%;
+  }
+
+  /* Tabs: fila única deslizable en vez de envolverse */
+  .client-requests__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .client-requests__tabs::-webkit-scrollbar { display: none; }
+  .client-requests__tab {
+    flex-shrink: 0;
+    padding: 8px 11px;
+  }
+
+  /* Sin hover en táctil: el desplazamiento lateral estorba */
+  .client-request-card:hover {
+    transform: none;
+  }
+  .client-request-card__chevron {
+    margin-right: 10px;
+  }
 }
