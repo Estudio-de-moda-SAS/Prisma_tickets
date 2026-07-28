@@ -1,6 +1,6 @@
 // src/pages/integrations/SolviRequestPage.tsx
 import { useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, } from 'react-router';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { config } from '@/config';
@@ -8,6 +8,7 @@ import { compressImage } from '@/lib/compressImage';
 import { Upload, X, FileText, Image, File as FileIcon2, Plus, ShieldAlert } from 'lucide-react';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { RichTextEditor } from '@/features/requests/components/RichTextEditor';
+import { useSolviActionsTickets } from '@/features/requests/hooks/useSolviActions';
 
 /* ============================================================
    SOLVI — Página de creación de solicitud (integración externa)
@@ -61,17 +62,15 @@ const FALLBACK_ACCENT = '#00b894';
 export function SolviRequestPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const location = useLocation();
   const { data: currentUser, isError: userError } = useCurrentUser();
   const { data: teams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const solviController = useSolviActionsTickets(currentUser!)
 
   // Equipo SOLVI por su clave de integración: robusto venga de redirect,
   // sidebar o URL directa. De ahí sale el color definido al crear el kanban.
   const solviTeam = teams.find((t) => t.Board_Team_Integration_Key === 'solvi') ?? null;
   const ACCENT = solviTeam?.Board_Team_Color ?? FALLBACK_ACCENT;
 
-  // teamId llega por state al redirigir desde NewRequestPage (equipo SOLVI).
-  const teamId = (location.state as { teamId?: number } | null)?.teamId ?? null;
 
   const [titulo,       setTitulo]       = useState('');
   const [descripcion,  setDescripcion]  = useState('');
@@ -119,7 +118,7 @@ export function SolviRequestPage() {
   //   - currentUser.User_ID / .User_Name / .Department_ID → solicitante
   //   - teamId                    → equipo SOLVI (Board_Team_ID) que originó el flujo
   // ═══════════════════════════════════════════════════════════════════════
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent, titulo: string, descripcion: string) {
     e.preventDefault();
     if (!titulo.trim())  { setError('El asunto es obligatorio.'); return; }
     if (!currentUser)    { setError('Cargando datos del usuario...'); return; }
@@ -127,24 +126,15 @@ export function SolviRequestPage() {
     setIsPending(true);
 
     try {
-      // TODO: reemplazar este stub por la mutación real contra TBL_Ticket_Solvi.
-      //
-      // const created = await apiClient.call('createSolviTicket', {
-      //   titulo:      titulo.trim(),
-      //   descripcion: descripcion.trim(),
-      //   requestedBy: currentUser.User_ID,
-      //   teamId,
-      // });
-      //
-      // for (const file of pendingFiles) {
-      //   const processed = await compressImage(file);
-      //   // ... subir a Storage y registrar en TBL_Ticket_Attachments_Solvi
-      // }
-      //
-      // Por ahora solo validamos el flujo del front.
-      // (compressImage se referencia acá para dejar el patrón listo)
+
+      const created = await solviController.saveTicket(titulo, descripcion)
+
+      if(!created){
+        alert("Algo ha salido mal")
+        throw Error("Algo ha salido mal")
+      }
+
       void compressImage;
-      console.warn('[SOLVI] submit sin conectar — falta cablear el guardado a TBL_Ticket_Solvi.');
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al crear la solicitud.');
@@ -188,7 +178,7 @@ export function SolviRequestPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: isMobile ? '0 14px 24px' : '0 50px 32px', width: '100%', margin: '0 auto' }}>
+    <form onSubmit={(e: any) => handleSubmit(e, titulo, descripcion)} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: isMobile ? '0 14px 24px' : '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 22 }}>🔌</span>
