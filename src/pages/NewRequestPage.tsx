@@ -1,6 +1,6 @@
 // src/pages/NewRequestPage.tsx
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { requestKeys } from '@/features/requests/hooks/useRequests';
@@ -1153,6 +1153,15 @@ function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(n
 
 function goToTemplate() {
   if (selectedTeamId === null) return;
+  // Equipo de integración (SOLVI, etc.): no usa el flujo de PRISMA. Se opera en
+  // su propia app y tiene su propia página de creación. Redirigimos allí.
+  const team = teams.find((t) => t.Board_Team_ID === selectedTeamId);
+  if (team?.Board_Team_Is_Integration && team.Board_Team_Integration_Key) {
+    navigate(`/integracion/${team.Board_Team_Integration_Key}`, {
+      state: { teamId: team.Board_Team_ID },
+    });
+    return;
+  }
   const filtered = templates.filter(
     (t) =>
       t.Request_Template_Is_Active &&
@@ -1171,6 +1180,13 @@ function setExtraValue(key: string, value: string) { setExtraValues((prev) => ({
 // Auto-selección de template único
 useEffect(() => {
   if (step !== 'template' || selectedTeamId === null) return;
+  const team = teams.find((t) => t.Board_Team_ID === selectedTeamId);
+  if (team?.Board_Team_Is_Integration && team.Board_Team_Integration_Key) {
+    navigate(`/integracion/${team.Board_Team_Integration_Key}`, {
+      state: { teamId: team.Board_Team_ID },
+    });
+    return;
+  }
   const filtered = templates.filter(
     (t) =>
       t.Request_Template_Is_Active &&
@@ -1181,7 +1197,7 @@ useEffect(() => {
     setSelectedTemplateId(filtered[0].Request_Template_ID);
     setStep('form');
   }
-}, [step, selectedTeamId, templates]);
+}, [step, selectedTeamId, templates, teams, navigate]);
   const { mutate: crear, isPending } = useMutation({
     mutationFn: async () => {
       if (!currentUser || !columnMap || !selectedTemplateId) throw new Error('Datos incompletos');

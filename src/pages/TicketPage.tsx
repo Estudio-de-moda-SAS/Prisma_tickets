@@ -1,6 +1,6 @@
 // src/pages/TicketPage.tsx
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import type { Location } from 'react-router-dom';import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
+import { useParams, useNavigate, useLocation } from 'react-router';
+import type { Location } from 'react-router';import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
 import { HomeRequestModal } from '@/features/requests/components/HomeRequestModal';
 import { RequestModal } from '@/features/requests/components/RequestModal';
 import { useBoardStore } from '@/store/boardStore';

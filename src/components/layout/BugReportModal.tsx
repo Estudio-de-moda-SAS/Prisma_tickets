@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Bug, ChevronDown } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { apiClient } from '@/lib/apiClient';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 

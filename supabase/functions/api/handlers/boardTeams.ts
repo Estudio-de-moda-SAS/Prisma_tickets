@@ -4,7 +4,7 @@ import { resolveVisibleBoardIds } from '../shared/boardAccess.ts';
 
 // Select reutilizado: board team + su departamento (para agrupar en el sidebar).
 const BOARD_TEAM_SELECT =
-  'Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Sort_Order, Department_ID, department:TBL_Departments!Department_ID ( Department_ID, Department_Name )';
+  'Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Is_Integration, Board_Team_Integration_Key, Board_Team_Sort_Order, Department_ID, department:TBL_Departments!Department_ID ( Department_ID, Department_Name )';
 
 export const boardTeamHandlers: Record<string, ActionHandler> = {
   fetchAllTeams: async (_payload, { supabase }) => {
@@ -28,16 +28,23 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
   },
 
   createKanbanTeam: async (payload, { supabase }) => {
-    const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId } = payload as {
+    const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       name: string; code: string; color: string; description: string;
       icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
-      departmentId?: number | null;
+      departmentId?: number | null; isIntegration?: boolean; integrationKey?: string | null;
     };
 
-    const external = isExternal ?? false;
+    const integration = isIntegration ?? false;
+    // Un equipo de integración nunca es externo (excluyentes en el modelo).
+    const external = integration ? false : (isExternal ?? false);
     const cleanUrl = external ? (externalUrl?.trim() || null) : null;
     if (external && !cleanUrl) {
       throw new Error('Un equipo externo requiere un link de destino.');
+    }
+    // La clave de integración ('solvi', etc.) solo aplica a equipos integrados.
+    const cleanIntegrationKey = integration ? (integrationKey?.trim() || null) : null;
+    if (integration && !cleanIntegrationKey) {
+      throw new Error('Un equipo de integración requiere una clave de integración.');
     }
 
     // Siguiente posición: max actual + 1 (los nuevos van al final)
@@ -61,27 +68,36 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
         Board_Team_Is_External:    external,
         Board_Team_External_URL:   cleanUrl,
+        Board_Team_Is_Integration: integration,
+        Board_Team_Integration_Key: cleanIntegrationKey,
         Board_Team_Sort_Order:     nextOrder,
         Board_Team_Is_Active:      isActive ?? true,
         Department_ID:             departmentId ?? null,
       })
-      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Sort_Order, Department_ID')
+      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Integration, Board_Team_Integration_Key, Board_Team_Sort_Order, Department_ID')
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
 
   updateKanbanTeam: async (payload, { supabase }) => {
-    const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId } = payload as {
+    const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       id: number; name: string; code: string; color: string; description: string;
       icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
-      departmentId?: number | null;
+      departmentId?: number | null; isIntegration?: boolean; integrationKey?: string | null;
     };
 
-    const external = isExternal ?? false;
+    const integration = isIntegration ?? false;
+    // Un equipo de integración nunca es externo (excluyentes en el modelo).
+    const external = integration ? false : (isExternal ?? false);
     const cleanUrl = external ? (externalUrl?.trim() || null) : null;
     if (external && !cleanUrl) {
       throw new Error('Un equipo externo requiere un link de destino.');
+    }
+    // La clave de integración ('solvi', etc.) solo aplica a equipos integrados.
+    const cleanIntegrationKey = integration ? (integrationKey?.trim() || null) : null;
+    if (integration && !cleanIntegrationKey) {
+      throw new Error('Un equipo de integración requiere una clave de integración.');
     }
 
     const { error } = await supabase
@@ -95,6 +111,8 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
         Board_Team_Is_External:    external,
         Board_Team_External_URL:   cleanUrl,
+        Board_Team_Is_Integration: integration,
+        Board_Team_Integration_Key: cleanIntegrationKey,
         Board_Team_Is_Active:      isActive ?? true,
         Department_ID:             departmentId ?? null,
       })

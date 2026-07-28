@@ -15,6 +15,8 @@ export type KanbanTeam = {
   Board_Team_Is_Admin_Only: boolean;
   Board_Team_Is_External:   boolean;
   Board_Team_External_URL:  string | null;
+  Board_Team_Is_Integration: boolean;
+  Board_Team_Integration_Key: string | null;
   Board_Team_Is_Active:     boolean;
   Board_Team_Sort_Order:    number;
   Department_ID:            number | null;
@@ -51,7 +53,7 @@ const keys = {
 export function useCreateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null }) =>      apiClient.call<KanbanTeam>('createKanbanTeam', d),
+mutationFn: (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null; isIntegration: boolean; integrationKey: string | null }) =>      apiClient.call<KanbanTeam>('createKanbanTeam', d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.teams() });
       qc.refetchQueries({ queryKey: ['myBoardTeams'], exact: false });
@@ -65,7 +67,7 @@ mutationFn: (d: { name: string; code: string; color: string; description: string
 export function useUpdateKanbanTeam() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null }) =>
+    mutationFn: (d: { id: number; name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null; isIntegration: boolean; integrationKey: string | null }) =>
       apiClient.call('updateKanbanTeam', d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.teams() });

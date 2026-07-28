@@ -8,6 +8,7 @@ import { useBoardTeams, useLabelsByTeamId } from '@/features/requests/hooks/useB
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 type BugLite = { Report_ID: string; Title: string; Severity: 'bajo' | 'medio' | 'alto' | 'critico' | null};
 
@@ -27,6 +28,7 @@ export function AssignBugModal({ bug, assignedBy, onClose, onAssigned }: {
   onClose: () => void;
   onAssigned: () => void;
 }) {
+  const isMobile = useIsMobile();
   const boardId = config.DEFAULT_BOARD_ID;
   const { data: teams = [] }   = useBoardTeams(boardId);
   const { data: sprints = [] } = useSprints();
@@ -45,7 +47,7 @@ const [score, setScore] = useState<number | null>(null);
   const groupedMembers = useSubTeamMembersGrouped(subTeams);
   const { data: labels = [] } = useLabelsByTeamId(boardId, teamId);
 
-  const visibleTeams = teams.filter((t: any) => t.Board_Team_Is_Active !== false && !t.Board_Team_Is_External);
+  const visibleTeams = teams.filter((t: any) => t.Board_Team_Is_Active !== false && !t.Board_Team_Is_External && !t.Board_Team_Is_Integration);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -89,8 +91,8 @@ const [score, setScore] = useState<number | null>(null);
 
   return createPortal(
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 520, maxHeight: '88vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 200, padding: isMobile ? 0 : 24 }}>
+      <div style={{ width: '100%', maxWidth: 520, maxHeight: isMobile ? '94dvh' : '88vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: isMobile ? '16px 16px 0 0' : 12, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #ff4757, transparent)' }} />
 
         {/* Header */}
@@ -232,10 +234,10 @@ const [score, setScore] = useState<number | null>(null);
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 12, cursor: 'pointer' }}>Cancelar</button>
+        <div style={{ padding: isMobile ? '12px 16px' : '14px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0, flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+          <button onClick={onClose} style={{ padding: isMobile ? '11px 16px' : '8px 16px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 12, cursor: 'pointer', width: isMobile ? '100%' : undefined }}>Cancelar</button>
           <button onClick={handleSubmit} disabled={!canSubmit}
-            style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: canSubmit ? 'var(--accent)' : 'var(--bg-surface)', color: canSubmit ? '#000' : 'var(--txt-muted)', fontSize: 12, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
+            style={{ padding: isMobile ? '11px 18px' : '8px 18px', borderRadius: 6, border: 'none', background: canSubmit ? 'var(--accent)' : 'var(--bg-surface)', color: canSubmit ? '#000' : 'var(--txt-muted)', fontSize: 12, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed', width: isMobile ? '100%' : undefined }}>
             {submitting ? 'Creando…' : 'Asignar y crear'}
           </button>
         </div>

@@ -1,8 +1,9 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import type { Location } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router";
+import type { Location } from "react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
-import { useRole, canSeeBoard } from "@/auth/roles";
+import { useRole, canSeeBoard, canSeeStats } from "@/auth/roles";
+import { useMyBoardTeams } from "@/features/requests/hooks/useBoardMetadata";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BoardPage } from "@/pages/BoardPage";
 import { HomePage } from "@/pages/HomePage";
@@ -18,7 +19,9 @@ import { OnboardingPage } from '@/pages/OnBoardingPage';
 import { TicketPage } from "@/pages/TicketPage";
 import { PrismaAdminPage } from '@/pages/PrismaAdminPage';
 import { TasksPage } from '@/pages/TasksPage';
-
+import { SolviRequestPage } from '@/pages/integrations/SolviRequestPage';
+import { SolviTicketsPage } from '@/pages/integrations/SolviTicketsPage';
+import { SolviTicketModal } from '@/features/requests/components/SolviTicketModal';
 // ─── Scroll helper ────────────────────────────────────────────────────────────
 
 function ScrollToSection() {
@@ -73,6 +76,16 @@ function RequireTI({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RequireStats({ children }: { children: React.ReactNode }) {
+  const { dbReady, dbUser } = useAuth();
+  const role = useRole();
+  const { data: myTeams = [] } = useMyBoardTeams(dbUser?.User_ID ?? null);
+  if (!dbReady) return null;
+  // Opción B: admin/ti_member siempre; cualquiera con ≥1 kanban asignado también.
+  if (!canSeeStats(role, myTeams.length > 0)) return <Navigate to="/home" replace />;
+  return <>{children}</>;
+}
+
 function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { dbReady } = useAuth();
   const role = useRole();
@@ -85,12 +98,27 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
 // Se renderiza ENCIMA de la página de fondo cuando hay backgroundLocation.
 // Las rutas aquí NO tienen AppLayout — el modal ya usa position:fixed.
 
+function SolviTicketOverlay() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { ticketId } = useParams();
+  const state = location.state as { backgroundLocation?: Location } | null;
+  const id = Number(ticketId);
+  if (!Number.isFinite(id)) return null;
+  const close = () => {
+    if (state?.backgroundLocation) navigate(-1);
+    else navigate('/integracion/solvi/tickets', { replace: true });
+  };
+  return <SolviTicketModal ticketId={id} onClose={close} />;
+}
+
 function TicketOverlayRoutes() {
   return (
     <Routes>
-      <Route path="/ticket/:ticketId"                 element={<TicketPage />} />
-      <Route path="/board/:equipo/ticket/:ticketId"   element={<TicketPage />} />
-      <Route path="/tasks/:equipo/ticket/:ticketId"   element={<TicketPage />} />
+      <Route path="/ticket/:ticketId"                    element={<TicketPage />} />
+      <Route path="/board/:equipo/ticket/:ticketId"      element={<TicketPage />} />
+      <Route path="/tasks/:equipo/ticket/:ticketId"      element={<TicketPage />} />
+      <Route path="/integracion/solvi/tickets/:ticketId" element={<SolviTicketOverlay />} />
     </Routes>
   );
 }
@@ -159,10 +187,13 @@ export default function App() {
           />
 
           <Route path="new"            element={<NuevaSolicitudPage />} />
+          <Route path="integracion/solvi" element={<SolviRequestPage />} />
+          <Route path="integracion/solvi/tickets" element={<RequireTI><SolviTicketsPage /></RequireTI>} />
+          <Route path="integracion/solvi/tickets/:ticketId" element={<SolviTicketOverlay />} />
           <Route path="my-requests"    element={<MisSolicitudesPage />} />
           <Route path="mis-solicitudes" element={<ClientRequestsPage />} />
 
-          <Route path="stats" element={<RequireTI><StatsPage /></RequireTI>} />
+          <Route path="stats" element={<RequireStats><StatsPage /></RequireStats>} />
 
           <Route path="requests/team/:equipo" element={<RequireAdmin><TeamRequestsPage /></RequireAdmin>} />
           <Route path="requests"              element={<RequireAdmin><RequestsPage /></RequireAdmin>} />

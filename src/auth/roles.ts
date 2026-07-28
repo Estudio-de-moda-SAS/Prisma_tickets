@@ -47,8 +47,9 @@ export function canSeeConfig(resolved: ResolvedRole): boolean {
   return resolved.role === 'admin';
 }
 
-export function canSeeStats(resolved: ResolvedRole): boolean {
-  return resolved.role === 'admin' || resolved.role === 'ti_member';
+export function canSeeStats(resolved: ResolvedRole, hasKanbanTeams = false): boolean {
+  // admin y ti_member siempre; cualquier otro (client) entra si tiene ≥1 kanban asignado.
+  return resolved.role === 'admin' || resolved.role === 'ti_member' || hasKanbanTeams;
 }
 
 export function canSeeAutomations(resolved: ResolvedRole): boolean {

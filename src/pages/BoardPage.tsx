@@ -1,6 +1,6 @@
 // src/pages/BoardPage.tsx
 import { useMemo, useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router';
 import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
 import { useSearchStore } from '@/store/searchStore';
 import { useBoardEquipo, useHistorialLoadMore, useSearchRequests } from '@/features/requests/hooks/useRequests';

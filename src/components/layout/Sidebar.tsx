@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import { useState, useEffect, useMemo } from 'react';
-import { NavLink, useNavigate, useMatch, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useMatch, useLocation } from 'react-router';
 import {
   BarChart2, Home, LogOut, Plus, Star,
   LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink
@@ -59,7 +59,6 @@ const activeTeamKey     = boardMatch?.params?.equipo
   const isTIMember    = role.role === 'ti_member';
   const isRegularUser = !isAdmin && !isTIMember;
   const showConfig    = canSeeConfig(role);
-  const showStats     = canSeeStats(role);
   const showAuto      = canSeeAutomations(role);
 
   const initiales =
@@ -103,13 +102,18 @@ const activeTeamKey     = boardMatch?.params?.equipo
 
   const showBoardSection = grupos.length > 0;
   const showGroupLabels  = grupos.length > 1; // label de depto solo con 2+ grupos
+  // Opción B: admin/ti_member siempre; cualquiera con ≥1 kanban asignado también.
+  const showStats        = canSeeStats(role, myBoardTeams.length > 0);
 
-function handleEquipo(key: string) {
+function handleEquipo(team: MyBoardTeam) {
+  const key = team.Board_Team_Code;
+  const isIntegration = !!team.Board_Team_Is_Integration && !!team.Board_Team_Integration_Key;
   if (activeTeamKey === key) {
-    setTeamSubOpen(v => !v);   // ya estamos en este board → solo colapsa/expande
+    setTeamSubOpen(v => !v);   // ya estamos en este equipo → solo colapsa/expande
   } else {
     setEquipoActivo(key);
-    navigate(`/board/${key}`);
+    // Los equipos de integración no tienen board: su entrada es el listado propio.
+    navigate(isIntegration ? `/integracion/${team.Board_Team_Integration_Key}/tickets` : `/board/${key}`);
     setTeamSubOpen(true);
   }
 }
@@ -139,6 +143,7 @@ function handleEquipo(key: string) {
     const label      = team.Board_Team_Name;
     const c          = teamSidebarColors(team.Board_Team_Color);
     const isExternal = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
+    const isIntegration = !!team.Board_Team_Is_Integration && !!team.Board_Team_Integration_Key;
     const ia         = !isExternal && activeTeamKey === key;
     const Icon       = getTeamIcon(team.Board_Team_Icon);
 
@@ -150,7 +155,7 @@ function handleEquipo(key: string) {
               window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
               return;
             }
-            handleEquipo(key);
+            handleEquipo(team);
           }}
           title={sidebarAbierto ? undefined : (isExternal ? `${label} (herramienta externa)` : label)}
           className="sidebar__nav-item sidebar__nav-item--team"
@@ -173,25 +178,28 @@ function handleEquipo(key: string) {
               '--team-border': c.border,
             } as React.CSSProperties}
           >
-            <NavLink
-              to={`/board/${key}`}
-              end
-              className={({ isActive: active }) =>
-                ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
-              }
-            >
-              <LayoutGrid size={12} />
-              <span>Board</span>
-            </NavLink>
+            {/* Board: solo equipos kanban (no integraciones) */}
+            {!isIntegration && (
+              <NavLink
+                to={`/board/${key}`}
+                end
+                className={({ isActive: active }) =>
+                  ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+                }
+              >
+                <LayoutGrid size={12} />
+                <span>Board</span>
+              </NavLink>
+            )}
 
             <NavLink
-              to={`/tasks/${key}`}
+              to={isIntegration ? `/integracion/${team.Board_Team_Integration_Key}/tickets` : `/tasks/${key}`}
               className={({ isActive: active }) =>
                 ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
               }
             >
               <LayoutList size={12} />
-              <span>Listado de Tareas</span>
+              <span>Listado</span>
             </NavLink>
 
             <NavLink

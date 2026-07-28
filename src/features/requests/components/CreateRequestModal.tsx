@@ -822,6 +822,7 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
     .filter((t) =>
       t.Board_Team_Is_Active !== false &&
       !t.Board_Team_Is_External &&
+      !t.Board_Team_Is_Integration &&
       (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
     )
     .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);

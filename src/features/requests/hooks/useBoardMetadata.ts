@@ -16,6 +16,8 @@ export type BoardTeam = {
   Board_Team_Is_Admin_Only: boolean;
   Board_Team_Is_External:   boolean;
   Board_Team_External_URL:  string | null;
+  Board_Team_Is_Integration: boolean;
+  Board_Team_Integration_Key: string | null;
   Board_Team_Sort_Order:    number;
   Board_Team_Is_Active:     boolean;
   Department_ID:            number | null;
