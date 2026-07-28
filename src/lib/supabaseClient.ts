@@ -25,6 +25,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession:      true,   // guarda la sesión (localStorage) entre recargas
     autoRefreshToken:    true,    // renueva el JWT automáticamente
     detectSessionInUrl:  true,    // procesa el retorno del redirect de OAuth
+    flowType:            'pkce',  // explícito: no dependemos del default de la lib
   },
-  
 });

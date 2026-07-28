@@ -1,5 +1,5 @@
 import { useAuth } from '@/auth/AuthProvider';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
 import '@/styles/LoginPage.css';
 import { usePublicAnnouncements } from '@/features/requests/hooks/useAnnouncements';
 

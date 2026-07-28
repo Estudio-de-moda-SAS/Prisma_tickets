@@ -2,19 +2,26 @@ export function _isConditional(f: unknown): boolean {
   return !!f && typeof f === 'object' && (f as { type?: string }).type === 'conditional';
 }
 
+export function _isMultiConditional(f: unknown): boolean {
+  return !!f && typeof f === 'object' && (f as { type?: string }).type === 'multiconditional';
+}
+
 export function _collectSchemaKeys(schema: unknown[]): string[] {
   const out: string[] = [];
   const walk = (arr: unknown[]) => {
     for (const f of arr ?? []) {
       if (!f || typeof f !== 'object') continue;
-      const node = f as { key?: string; trueBranch?: unknown[]; falseBranch?: unknown[] };
+      const node = f as { key?: string; trueBranch?: unknown[]; falseBranch?: unknown[]; options?: { fields?: unknown[] }[] };
       if (node.key) out.push(node.key);
       if (_isConditional(node)) {
         walk(node.trueBranch  ?? []);
         walk(node.falseBranch ?? []);
       }
+      if (_isMultiConditional(node)) {
+        for (const o of node.options ?? []) walk(o?.fields ?? []);
+      }
     }
-  };
+  };;
   walk(schema);
   return out;
 }
@@ -29,6 +36,13 @@ export function _renameKeysInSchema(schema: unknown[], renames: Record<string, s
     if (_isConditional(node)) {
       node['trueBranch']  = _renameKeysInSchema((node['trueBranch']  as unknown[]) ?? [], renames);
       node['falseBranch'] = _renameKeysInSchema((node['falseBranch'] as unknown[]) ?? [], renames);
+    }
+    if (_isMultiConditional(node)) {
+      const opts = (node['options'] as Array<Record<string, unknown>>) ?? [];
+      node['options'] = opts.map((o) => ({
+        ...o,
+        fields: _renameKeysInSchema((o['fields'] as unknown[]) ?? [], renames),
+      }));
     }
     return node;
   });

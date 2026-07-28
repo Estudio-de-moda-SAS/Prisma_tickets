@@ -17,17 +17,23 @@ import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
 import { useRole } from '@/auth/roles';
 import { config } from '@/config';
 import type { BoardTeam, BoardTemplate } from '@/features/requests/hooks/useBoardMetadata';
-import type { TemplateExtraField} from '@/features/requests/templates/types';
-import { isConditionalField, makeEmptySimpleField } from '@/features/requests/templates/types';
+import type { TemplateExtraField, MultiConditionalField } from '@/features/requests/templates/types';
+import { isConditionalField, isMultiConditionalField, makeEmptySimpleField, getOptionColor } from '@/features/requests/templates/types';
 import type { ConditionalField } from '@/features/requests/templates/types';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { useSubTeams } from '@/features/requests/hooks/useSubTeams';
 import { useUsers } from '@/features/requests/hooks/useUsers';
 import type { Prioridad } from '../types';
 import type { SubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 /* ── Normaliza ramas legacy (objeto → array) ── */
 function normalizeBranch(field: import('@/features/requests/templates/types').TemplateExtraField): import('@/features/requests/templates/types').TemplateExtraField {
+  if (field.type === 'multiconditional') {
+    const mf = field as MultiConditionalField;
+    const opts = Array.isArray(mf.options) ? mf.options : [];
+    return { ...mf, options: opts.map((o) => ({ ...o, fields: Array.isArray(o.fields) ? o.fields.map(normalizeBranch) : [] })) };
+  }
   if (field.type !== 'conditional') return field;
   const cf = field as ConditionalField;
   const toArray = (v: unknown): import('@/features/requests/templates/types').TemplateExtraField[] => {
@@ -36,6 +42,21 @@ function normalizeBranch(field: import('@/features/requests/templates/types').Te
     return [makeEmptySimpleField(0)];
   };
   return { ...cf, trueBranch: toArray(cf.trueBranch), falseBranch: toArray(cf.falseBranch) };
+}
+
+/* Quita campos desactivados (enabled === false) en cualquier nivel/rama. */
+function filterEnabled(fields: TemplateExtraField[]): TemplateExtraField[] {
+  return (fields ?? [])
+    .filter((f) => ((f as { enabled?: boolean }).enabled ?? true))
+    .map((f) => {
+      if (f.type === 'multiconditional') {
+        const mf = f as MultiConditionalField;
+        return { ...mf, options: mf.options.map((o) => ({ ...o, fields: filterEnabled(o.fields) })) };
+      }
+      if (f.type !== 'conditional') return f;
+      const cf = f as ConditionalField;
+      return { ...cf, trueBranch: filterEnabled(cf.trueBranch), falseBranch: filterEnabled(cf.falseBranch) };
+    });
 }
 
 type Step = 'equipo' | 'template' | 'form';
@@ -145,39 +166,73 @@ function StepIndicator({ step }: { step: Step }) {
 function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: {
   teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void;
 }) {
+  const isMobile = useIsMobile();
+
+  // Agrupar por departamento (teams ya viene ordenado por Sort_Order).
+  // "Sin departamento" al final. Labels solo si hay 2+ departamentos.
+  const grupos = (() => {
+    const byDept = new Map<number | null, { deptName: string; teams: BoardTeam[] }>();
+    for (const t of teams) {
+      const id   = t.department?.Department_ID ?? null;
+      const name = t.department?.Department_Name ?? 'Sin departamento';
+      if (!byDept.has(id)) byDept.set(id, { deptName: name, teams: [] });
+      byDept.get(id)!.teams.push(t);
+    }
+    return [...byDept.entries()].sort((a, b) => {
+      if (a[0] === null) return 1;
+      if (b[0] === null) return -1;
+      return a[1].teams[0].Board_Team_Sort_Order - b[1].teams[0].Board_Team_Sort_Order;
+    });
+  })();
+  const showGroupLabels = grupos.length > 1;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ marginBottom: 20, flexShrink: 0 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 4 }}>¿A qué equipo va dirigida?</h3>
         <p style={{ fontSize: 12, color: 'var(--txt-muted)' }}>Seleccioná el equipo que va a atender esta solicitud.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, flex: 1, overflowY: 'auto' }}>
-        {teams.map((team) => {
-          const selected            = selectedTeamId === team.Board_Team_ID;
-          const { dot, glow, border } = teamColors(team.Board_Team_Color);
-          const Icon = getTeamIcon(team.Board_Team_Icon);
-          return (
-            <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
-              style={{ padding: '16px', borderRadius: 8, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
-              onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
-              onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
-              {selected && (
-                <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-              )}
-              <div style={{ width: 32, height: 32, borderRadius: 7, background: selected ? `${dot}20` : 'var(--bg-panel)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon size={14} style={{ opacity: selected ? 1 : 0.6 }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto' }}>
+        {grupos.map(([deptId, grupo]) => (
+          <div key={deptId ?? 'no-dept'}>
+            {showGroupLabels && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0, fontFamily: 'var(--font-display)' }}>
+                  {deptId === null ? 'Sin departamento' : grupo.deptName}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
               </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 2 }}>{team.Board_Team_Name}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: dot, opacity: selected ? 1 : 0.45 }}>{team.Board_Team_Code}</div>
-              </div>
-            </button>
-          );
-        })}
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 10 }}>
+              {grupo.teams.map((team) => {
+                const selected              = selectedTeamId === team.Board_Team_ID;
+                const { dot, glow, border } = teamColors(team.Board_Team_Color);
+                const Icon = getTeamIcon(team.Board_Team_Icon);
+                return (
+                  <button key={team.Board_Team_ID} type="button" onClick={() => onSelect(team.Board_Team_ID)}
+                    style={{ padding: '16px', borderRadius: 8, border: `1.5px solid ${selected ? border : 'var(--border)'}`, background: selected ? glow : 'var(--bg-surface)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
+                    onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
+                    onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-surface)'; }}}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
+                    {selected && (
+                      <div style={{ position: 'absolute', top: 10, right: 12, width: 18, height: 18, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    )}
+                    <div style={{ width: 32, height: 32, borderRadius: 7, background: selected ? `${dot}20` : 'var(--bg-panel)', border: `1px solid ${selected ? border : 'var(--border-subtle)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={14} style={{ opacity: selected ? 1 : 0.6 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 2 }}>{team.Board_Team_Name}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: dot, opacity: selected ? 1 : 0.45 }}>{team.Board_Team_Code}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, flexShrink: 0 }}>
         <button type="button" onClick={onNext} disabled={selectedTeamId === null}
@@ -205,13 +260,14 @@ function StepTemplate({ templates, selectedBoardTeamId, selectedTemplateId, onSe
      (selectedBoardTeamId !== null && t.Request_Template_Teams?.includes(selectedBoardTeamId)))
   );
 
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ marginBottom: 20, flexShrink: 0 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--txt)', marginBottom: 4 }}>¿Qué tipo de solicitud es?</h3>
         <p style={{ fontSize: 12, color: 'var(--txt-muted)' }}>El tipo determina qué información adicional se necesita.</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)', gap: 10, flex: 1, overflowY: 'auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (filtered.length <= 2 ? `repeat(${filtered.length}, 1fr)` : 'repeat(3, 1fr)'), gap: 10, flex: 1, overflowY: 'auto' }}>
         {filtered.map((t) => {
           const selected   = selectedTemplateId === t.Request_Template_ID;
           const accent     = t.Request_Template_Color ?? '#00c8ff';
@@ -447,6 +503,79 @@ return (
 );
   }
 
+  // ── Campo multi-condicional ───────────────────────────────
+  if (isMultiConditionalField(field)) {
+    const mf     = field as MultiConditionalField;
+    const chosen = values[mf.key] ?? '';
+    const active      = mf.options.find((o) => o.optionKey === chosen) ?? null;
+    const activeIndex = mf.options.findIndex((o) => o.optionKey === chosen);
+    const activeColor = activeIndex >= 0 ? getOptionColor(activeIndex) : accent;
+    return (
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+            {mf.label}
+            {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {mf.options.map((opt, optIdx) => {
+              const isSelected = chosen === opt.optionKey;
+              const optColor   = getOptionColor(optIdx);
+              return (
+                <button
+                  key={opt.optionKey}
+                  type="button"
+                  onClick={() => onChange(mf.key, opt.optionKey)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
+                    border: `1px solid ${isSelected ? optColor + '60' : optColor + '25'}`,
+                    background: isSelected ? `${optColor}12` : 'transparent',
+                    color: isSelected ? optColor : 'var(--txt-muted)',
+                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: 0.5, transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}55`; e.currentTarget.style.color = optColor; } }}
+                  onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}25`; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
+                >
+                  <div style={{
+                    width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${isSelected ? optColor : optColor + '50'}`,
+                    background: isSelected ? optColor : 'transparent',
+                    transition: 'all 0.15s',
+                  }} />
+                  {opt.label || 'Opción'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {active && active.fields.some((f) => f.label.trim() !== '') && (
+          <div style={{
+            marginTop: 8, padding: '12px 14px', borderRadius: 8,
+            border: `1px solid ${activeColor}25`, background: `${activeColor}06`, position: 'relative',
+          }}>
+            <div style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: activeColor }} />
+            <div style={{ paddingLeft: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {active.fields.map((branchField) => (
+                  <ExtraFieldRenderer
+                    key={branchField.key}
+                    field={branchField}
+                    values={values}
+                    onChange={onChange}
+                    accent={activeColor}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // ── Campos simples ────────────────────────────────────────
   const value = values[field.key] ?? '';
   const [collapsed, setCollapsed] = useState(field.collapsible ?? false);
@@ -613,6 +742,12 @@ function validateExtraFields(
       // Validar la rama activa recursivamente (ramas ya son arrays)
 const activeBranch = triggerValue === 'true' ? field.trueBranch : field.falseBranch;
 if (!validateExtraFields(activeBranch, values)) return false;
+    } else if (isMultiConditionalField(field)) {
+      const mf = field as MultiConditionalField;
+      const chosen = values[mf.key] ?? '';
+      const active = mf.options.find((o) => o.optionKey === chosen);
+      if (mf.required && !active) return false;
+      if (active && !validateExtraFields(active.fields, values)) return false;
     } else {
       if (field.required) {
         if (field.type === 'checkbox') {
@@ -675,6 +810,7 @@ function useDropdown() {
 
 // DESPUÉS
 export function CreateRequestModal({ onClose, onCreated, parentId = null, parentTitle, parentIsConfidential = false, defaultTeamId, defaultColumnSlug }: Props) {  const overlayRef = useRef<HTMLDivElement>(null);
+  const isMobile   = useIsMobile();
   const boardId    = config.DEFAULT_BOARD_ID;
   const { data: currentUser }      = useCurrentUser();
   const { data: users        = [] } = useUsers();
@@ -682,11 +818,14 @@ export function CreateRequestModal({ onClose, onCreated, parentId = null, parent
   const { data: teams        = [] } = useBoardTeams(boardId);
   const { data: allTemplates = [] } = useBoardTemplates(boardId);
   const role        = useRole();
-  const visibleTeams = teams.filter((t) =>
-    t.Board_Team_Is_Active !== false &&
-    !t.Board_Team_Is_External &&
-    (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  const visibleTeams = teams
+    .filter((t) =>
+      t.Board_Team_Is_Active !== false &&
+      !t.Board_Team_Is_External &&
+      !t.Board_Team_Is_Integration &&
+      (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
+    )
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
   const columnMap                   = useColumnMap(boardId);
   const { mutate: createRequest, isPending: creating } = useCreateRequest();
    const [step,                setStep]               = useState<Step>(defaultTeamId !== undefined ? 'template' : 'equipo');
@@ -751,7 +890,7 @@ const [labelSearch, setLabelSearch] = useState('');
       )
     : [];
   const showFormBack = defaultTeamId !== undefined ? filteredTemplatesForTeam.length > 1 : true;  // Normaliza ramas legacy (objeto → array) para templates guardados con el formato anterior
-  const normalizedExtraFields = templateDef?.extraFields.map(normalizeBranch) ?? [];
+  const normalizedExtraFields = filterEnabled(templateDef?.extraFields.map(normalizeBranch) ?? []);
   const accent        = templateDef?.visual.accentColor ?? 'var(--accent)';
   const assignedUsers = users.filter((u) => assigneeIds.includes(u.User_ID));
   const selectedSprint = sprints.find((s) => s.Sprint_ID === selectedSprintId) ?? null;
@@ -819,6 +958,11 @@ function goToTemplate() {
       Object.assign(map, flattenSchemaLabels((f as ConditionalField).trueBranch));
       Object.assign(map, flattenSchemaLabels((f as ConditionalField).falseBranch));
     }
+    if (isMultiConditionalField(f)) {
+      for (const o of (f as MultiConditionalField).options) {
+        Object.assign(map, flattenSchemaLabels(o.fields));
+      }
+    }
   }
   return map;
 }
@@ -874,8 +1018,8 @@ const groupedMembers = useSubTeamMembersGrouped(subTeams);
 
   return (
     <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: step === 'form' ? 780 : 680, maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      style={{ position: 'fixed', inset: 0, background: 'rgba(59,130,246,0.04)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', zIndex: 150, padding: isMobile ? 0 : 24 }}>
+      <div style={{ width: '100%', maxWidth: step === 'form' ? 780 : 680, maxHeight: isMobile ? '94dvh' : '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: isMobile ? '16px 16px 0 0' : 12, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: parentId ? 'linear-gradient(90deg, transparent, #a78bfa, transparent)' : 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
 
         {/* Header */}
@@ -976,7 +1120,7 @@ const groupedMembers = useSubTeamMembersGrouped(subTeams);
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 <div>
   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
     <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--txt-muted)' }}>

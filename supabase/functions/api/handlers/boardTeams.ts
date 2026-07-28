@@ -1,10 +1,18 @@
 import type { ActionHandler } from '../shared/types.ts';
+// @ts-ignore
+import { resolveVisibleBoardIds } from '../shared/boardAccess.ts';
+
+// Select reutilizado: board team + su departamento (para agrupar en el sidebar).
+const BOARD_TEAM_SELECT =
+  'Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Is_Integration, Board_Team_Integration_Key, Board_Team_Sort_Order, Department_ID, department:TBL_Departments!Department_ID ( Department_ID, Department_Name )';
 
 export const boardTeamHandlers: Record<string, ActionHandler> = {
   fetchAllTeams: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Board_Teams')
-.select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Sort_Order')
+      .select(BOARD_TEAM_SELECT)
+      .order('Board_Team_Sort_Order', { ascending: true })
+      .order('Board_Team_ID', { ascending: true });
     if (error) throw new Error(error.message);
     return data;
   },
@@ -19,16 +27,24 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
-createKanbanTeam: async (payload, { supabase }) => {
-const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive } = payload as {
+  createKanbanTeam: async (payload, { supabase }) => {
+    const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       name: string; code: string; color: string; description: string;
       icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
+      departmentId?: number | null; isIntegration?: boolean; integrationKey?: string | null;
     };
 
-    const external = isExternal ?? false;
+    const integration = isIntegration ?? false;
+    // Un equipo de integración nunca es externo (excluyentes en el modelo).
+    const external = integration ? false : (isExternal ?? false);
     const cleanUrl = external ? (externalUrl?.trim() || null) : null;
     if (external && !cleanUrl) {
       throw new Error('Un equipo externo requiere un link de destino.');
+    }
+    // La clave de integración ('solvi', etc.) solo aplica a equipos integrados.
+    const cleanIntegrationKey = integration ? (integrationKey?.trim() || null) : null;
+    if (integration && !cleanIntegrationKey) {
+      throw new Error('Un equipo de integración requiere una clave de integración.');
     }
 
     // Siguiente posición: max actual + 1 (los nuevos van al final)
@@ -52,25 +68,36 @@ const { name, code, color, description, icon, isAdminOnly, isExternal, externalU
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
         Board_Team_Is_External:    external,
         Board_Team_External_URL:   cleanUrl,
+        Board_Team_Is_Integration: integration,
+        Board_Team_Integration_Key: cleanIntegrationKey,
         Board_Team_Sort_Order:     nextOrder,
         Board_Team_Is_Active:      isActive ?? true,
+        Department_ID:             departmentId ?? null,
       })
-      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Sort_Order')
+      .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Integration, Board_Team_Integration_Key, Board_Team_Sort_Order, Department_ID')
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
 
-updateKanbanTeam: async (payload, { supabase }) => {
-    const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive } = payload as {
+  updateKanbanTeam: async (payload, { supabase }) => {
+    const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       id: number; name: string; code: string; color: string; description: string;
       icon?: string; isAdminOnly?: boolean; isExternal?: boolean; externalUrl?: string; isActive?: boolean;
+      departmentId?: number | null; isIntegration?: boolean; integrationKey?: string | null;
     };
 
-    const external = isExternal ?? false;
+    const integration = isIntegration ?? false;
+    // Un equipo de integración nunca es externo (excluyentes en el modelo).
+    const external = integration ? false : (isExternal ?? false);
     const cleanUrl = external ? (externalUrl?.trim() || null) : null;
     if (external && !cleanUrl) {
       throw new Error('Un equipo externo requiere un link de destino.');
+    }
+    // La clave de integración ('solvi', etc.) solo aplica a equipos integrados.
+    const cleanIntegrationKey = integration ? (integrationKey?.trim() || null) : null;
+    if (integration && !cleanIntegrationKey) {
+      throw new Error('Un equipo de integración requiere una clave de integración.');
     }
 
     const { error } = await supabase
@@ -84,45 +111,128 @@ updateKanbanTeam: async (payload, { supabase }) => {
         Board_Team_Is_Admin_Only:  isAdminOnly ?? false,
         Board_Team_Is_External:    external,
         Board_Team_External_URL:   cleanUrl,
+        Board_Team_Is_Integration: integration,
+        Board_Team_Integration_Key: cleanIntegrationKey,
         Board_Team_Is_Active:      isActive ?? true,
+        Department_ID:             departmentId ?? null,
       })
       .eq('Board_Team_ID', id);
     if (error) throw new Error(error.message);
     return { ok: true };
   },
-    
-reorderBoardTeam: async (payload, { supabase }) => {
+
+  reorderBoardTeam: async (payload, { supabase }) => {
     const { teamId, direction } = payload as { teamId: number; direction: 'up' | 'down' };
 
-    // Orden determinista: Sort_Order y, ante empates, ID
-    const { data: teams, error: teamsErr } = await supabase
+    // El kanban que se mueve — necesitamos su departamento para el scope.
+    const { data: moving, error: movErr } = await supabase
+      .from('TBL_Board_Teams')
+      .select('Board_Team_ID, Board_Team_Sort_Order, Department_ID')
+      .eq('Board_Team_ID', teamId)
+      .single();
+    if (movErr) throw new Error(movErr.message);
+    if (!moving) return { ok: true };
+
+    // Kanbans del MISMO departamento (null incluido), ordenados.
+    // El swap solo ocurre entre vecinos de este subconjunto.
+    let scopeQuery = supabase
       .from('TBL_Board_Teams')
       .select('Board_Team_ID, Board_Team_Sort_Order')
       .order('Board_Team_Sort_Order', { ascending: true })
       .order('Board_Team_ID', { ascending: true });
-    if (teamsErr) throw new Error(teamsErr.message);
 
-    const sorted = [...(teams as { Board_Team_ID: number; Board_Team_Sort_Order: number }[])];
-    const idx = sorted.findIndex((t) => t.Board_Team_ID === teamId);
+    scopeQuery = moving.Department_ID === null
+      ? scopeQuery.is('Department_ID', null)
+      : scopeQuery.eq('Department_ID', moving.Department_ID);
+
+    const { data: scope, error: scopeErr } = await scopeQuery;
+    if (scopeErr) throw new Error(scopeErr.message);
+
+    const list = (scope ?? []) as { Board_Team_ID: number; Board_Team_Sort_Order: number }[];
+    const idx  = list.findIndex((t) => t.Board_Team_ID === teamId);
     if (idx === -1) return { ok: true };
 
     const si = direction === 'up' ? idx - 1 : idx + 1;
-    if (si < 0 || si >= sorted.length) return { ok: true };
+    if (si < 0 || si >= list.length) return { ok: true }; // ya está en el extremo de su grupo
 
-    // Intercambio de posiciones en el array
-    [sorted[idx], sorted[si]] = [sorted[si], sorted[idx]];
-
-    // Renormalización: reescribe 1..N en todas las filas que cambiaron
-    await Promise.all(
-      sorted.map((t, i) =>
-        t.Board_Team_Sort_Order === i + 1
-          ? Promise.resolve()
-          : supabase
-              .from('TBL_Board_Teams')
-              .update({ Board_Team_Sort_Order: i + 1 })
-              .eq('Board_Team_ID', t.Board_Team_ID)
-      )
-    );
+    // Permutamos SOLO los valores de Sort_Order entre los dos vecinos del grupo.
+    // El orden global se mantiene coherente; el resto de departamentos no se toca.
+    const a = list[idx];
+    const b = list[si];
+    await Promise.all([
+      supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: b.Board_Team_Sort_Order }).eq('Board_Team_ID', a.Board_Team_ID),
+      supabase.from('TBL_Board_Teams').update({ Board_Team_Sort_Order: a.Board_Team_Sort_Order }).eq('Board_Team_ID', b.Board_Team_ID),
+    ]);
     return { ok: true };
+  },
+
+  /* ============================================================
+     VISIBILIDAD DE BOARDS — pass de acceso por usuario
+     ============================================================ */
+
+  // Boards visibles para UN usuario, ya filtrados por su nivel de acceso.
+  fetchMyBoardTeams: async (payload, { supabase }) => {
+    const { userId } = payload as { userId: number };
+    if (!userId) return [];
+
+    const visibleIds = await resolveVisibleBoardIds(supabase, userId);
+
+    // [] → restringido a nada: devolvemos vacío sin pegarle a la DB.
+    if (visibleIds !== null && visibleIds.length === 0) return [];
+
+    let query = supabase
+      .from('TBL_Board_Teams')
+      .select(BOARD_TEAM_SELECT)
+      .order('Board_Team_Sort_Order', { ascending: true })
+      .order('Board_Team_ID', { ascending: true });
+
+    // null → sin restricción (admin): no filtramos por ID.
+    if (visibleIds !== null) {
+      query = query.in('Board_Team_ID', visibleIds);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  // Grants actuales de un usuario. Alimenta el multi-select del UserEditForm.
+  fetchUserBoardAccess: async (payload, { supabase }) => {
+    const { userId } = payload as { userId: number };
+    if (!userId) return [];
+    const { data, error } = await supabase
+      .from('TBL_Board_Team_Access')
+      .select('Board_Team_ID')
+      .eq('User_ID', userId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: { Board_Team_ID: number }) => r.Board_Team_ID);
+  },
+
+  // Reemplaza el set completo de grants de un usuario (delete-all + insert).
+  setUserBoardAccess: async (payload, { supabase }) => {
+    const { userId, boardTeamIds, actorId } = payload as {
+      userId: number; boardTeamIds: number[]; actorId?: number | null;
+    };
+    if (!userId) throw new Error('[setUserBoardAccess] userId requerido');
+
+    const { error: delErr } = await supabase
+      .from('TBL_Board_Team_Access')
+      .delete()
+      .eq('User_ID', userId);
+    if (delErr) throw new Error(delErr.message);
+
+    if (Array.isArray(boardTeamIds) && boardTeamIds.length > 0) {
+      const rows = boardTeamIds.map((bid) => ({
+        User_ID:       userId,
+        Board_Team_ID: bid,
+        Granted_By:    actorId ?? null,
+      }));
+      const { error: insErr } = await supabase
+        .from('TBL_Board_Team_Access')
+        .insert(rows);
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    return { ok: true, count: boardTeamIds?.length ?? 0 };
   },
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useBoardStore } from '@/store/boardStore';
+import { useMobileNav } from '@/store/mobileNavStore';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { teamColors } from '@/components/layout/siderbarConstants';
 import { config } from '@/config';
@@ -9,9 +10,10 @@ import { es } from 'date-fns/locale';
 
 import { NotificationBell } from './NotificationBell';
 import { BugReportModal } from './BugReportModal';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
-import { Bug } from 'lucide-react';
+import { Bug, Menu, Download } from 'lucide-react';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 // ─── Controla qué roles ven el botón de reportar fallo ───────────────────────
 // 'all' | 'admin' | 'ti' — cambia en una línea
@@ -23,10 +25,12 @@ type TopbarProps = { titulo: string };
 export function Topbar({ titulo }: TopbarProps) {
   const { account }      = useAuth();
   const { equipoActivo } = useBoardStore();
+  const openMobileNav    = useMobileNav((s) => s.openNav);
   const { pathname }     = useLocation();
   const { data: currentUser } = useCurrentUser();
 
   const [bugOpen, setBugOpen] = useState(false);
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const activeTeam = boardTeams.find((t) => t.Board_Team_Code === equipoActivo);
@@ -53,6 +57,14 @@ export function Topbar({ titulo }: TopbarProps) {
     <>
       <header className="topbar">
         <div className="topbar__left">
+          <button
+            className="topbar__hamburguesa"
+            onClick={openMobileNav}
+            aria-label="Abrir menú"
+            title="Menú"
+          >
+            <Menu size={18} />
+          </button>
           <h1 className="topbar__title">{titulo}</h1>
 
           <div
@@ -76,6 +88,20 @@ export function Topbar({ titulo }: TopbarProps) {
         <div className="topbar__right">
           <span className="topbar__date">{hoy}</span>
           <div className="topbar__divider" />
+
+          {canInstall && (
+            <>
+              <button
+                className="topbar__install-btn"
+                onClick={() => { void promptInstall(); }}
+                title="Instalar PRISMA como aplicación"
+              >
+                <Download size={13} />
+                <span>Instalar app</span>
+              </button>
+              <div className="topbar__divider" />
+            </>
+          )}
 
           {showBugBtn && (
             <>

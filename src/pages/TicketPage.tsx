@@ -1,6 +1,6 @@
 // src/pages/TicketPage.tsx
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import type { Location } from 'react-router-dom';import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
+import { useParams, useNavigate, useLocation } from 'react-router';
+import type { Location } from 'react-router';import { useTicketResolver } from '@/features/requests/hooks/useTicketResolver';
 import { HomeRequestModal } from '@/features/requests/components/HomeRequestModal';
 import { RequestModal } from '@/features/requests/components/RequestModal';
 import { useBoardStore } from '@/store/boardStore';
@@ -58,6 +58,7 @@ function NotFound({ onClose }: { onClose: () => void }) {
           background: 'var(--bg-panel)', border: '1px solid var(--border)',
           borderRadius: 12, padding: '32px 40px',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          margin: 16, maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box',
         }}
       >
         <span style={{ fontSize: 32 }}>🔍</span>

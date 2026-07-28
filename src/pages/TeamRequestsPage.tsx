@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, ChevronDown, ArrowRight, Clock, User, Inbox, UserCheck, Search, X, Users, Layers, Tag } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import type { Request, KanbanColumna, Prioridad } from '@/features/requests/types';
 import { RequestModal } from '@/features/requests/components/RequestModal';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar:  'var(--txt-muted)',
@@ -76,6 +77,7 @@ function fmtD(iso: string | null) {
 }
 
 export function TeamRequestsPage() {
+  const isMobile                = useIsMobile();
   const { equipo: equipoParam } = useParams<{ equipo: string }>();
   const navigate                = useNavigate();
   const { Requests }            = useGraphServices();
@@ -114,7 +116,7 @@ export function TeamRequestsPage() {
       : () => Requests.fetchByRequestedBy(currentUser!.User_ID),
     enabled:  config.USE_MOCK || !!currentUser,
     staleTime: config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    //refetchInterval:      config.USE_MOCK ? false : 20_000,
     refetchOnWindowFocus: !config.USE_MOCK,
   });
 
@@ -130,7 +132,7 @@ export function TeamRequestsPage() {
       : () => Requests.fetchByAssignedTo(currentUser!.User_ID),
     enabled:  config.USE_MOCK || !!currentUser,
     staleTime: config.USE_MOCK ? Infinity : 15_000,
-    refetchInterval:      config.USE_MOCK ? false : 20_000,
+    //refetchInterval:      config.USE_MOCK ? false : 20_000,
     refetchOnWindowFocus: !config.USE_MOCK,
   });
 
@@ -302,7 +304,7 @@ export function TeamRequestsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, margin: '0 auto', width: '100%', padding: '4px 30px 48px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 20, margin: '0 auto', width: '100%', padding: isMobile ? '4px 12px 40px' : '4px 30px 48px' }}>
 
       <button onClick={() => navigate('/')}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
@@ -781,6 +783,7 @@ function TabBtn({ active, label, count, color, bg, onClick }: { active: boolean;
 }
 
 function RequestRow({ request: r, onClick }: { request: Request; onClick: () => void }) {
+  const isMobile = useIsMobile();
   const [hovered, setHovered] = useState(false);
   const prioColor = PRIORIDAD_COLOR[r.prioridad];
   const colColor  = COL_COLOR[r.columna];
@@ -788,7 +791,7 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
 
   return (
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ background: hovered ? 'var(--bg-hover)' : 'var(--bg-card)', border: `1px solid ${hovered ? `${prioColor}45` : 'var(--border-subtle)'}`, borderRadius: 8, display: 'grid', gridTemplateColumns: '3px 1fr auto', overflow: 'hidden', transform: hovered ? 'translateX(3px)' : 'translateX(0)', transition: 'all 0.15s ease', cursor: 'pointer' }}>
+      style={{ background: hovered ? 'var(--bg-hover)' : 'var(--bg-card)', border: `1px solid ${hovered ? `${prioColor}45` : 'var(--border-subtle)'}`, borderRadius: 8, display: 'grid', gridTemplateColumns: isMobile ? '3px 1fr' : '3px 1fr auto', overflow: 'hidden', transform: (hovered && !isMobile) ? 'translateX(3px)' : 'translateX(0)', transition: 'all 0.15s ease', cursor: 'pointer' }}>
       <div style={{ background: prioColor, minHeight: '100%' }} />
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -818,14 +821,26 @@ function RequestRow({ request: r, onClick }: { request: Request; onClick: () => 
           {r.assignees?.length > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--txt-muted)' }}><ArrowRight size={11} />{r.assignees[0].userName}</span>}
         </div>
       </div>
-      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, minWidth: 120, borderLeft: '1px solid var(--border-subtle)' }}>
+      <div style={{
+        padding: isMobile ? '10px 14px 12px' : '12px 14px',
+        display: 'flex',
+        flexDirection: isMobile ? 'row' : 'column',
+        alignItems: isMobile ? 'center' : 'flex-end',
+        justifyContent: isMobile ? 'flex-start' : 'space-between',
+        gap: isMobile ? 12 : 8,
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
+        minWidth: isMobile ? 0 : 120,
+        borderLeft: isMobile ? 'none' : '1px solid var(--border-subtle)',
+        borderTop: isMobile ? '1px solid var(--border-subtle)' : 'none',
+        gridColumn: isMobile ? '2 / 3' : undefined,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--txt-muted)' }}>
           <Clock size={11} />{format(new Date(r.fechaApertura), 'd MMM yyyy', { locale: es })}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--txt-muted)' }}>
           <User size={10} /><span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.solicitante}</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: 3, flexWrap: 'wrap' }}>
           {r.equipo.map((eq) => (
             <span key={eq} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--accent)', background: 'rgba(0,200,255,0.07)', border: '1px solid rgba(0,200,255,0.15)', borderRadius: 3, padding: '2px 7px' }}>{EQUIPOS[eq] ?? eq}</span>          ))}
         </div>

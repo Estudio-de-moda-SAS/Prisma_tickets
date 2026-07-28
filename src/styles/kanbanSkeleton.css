@@ -227,3 +227,30 @@
   height: 100%;
   border-radius: 2px;
 }
+
+/* ============================================================
+   Responsive — móvil (≤639px)
+   Espeja el comportamiento de .kanban en móvil para que no haya
+   salto visual al terminar la carga.
+   ============================================================ */
+@media (max-width: 639px) {
+  .sk-board {
+    height: calc(100dvh - 168px);
+    gap: 0;
+  }
+
+  /* Una sola columna a ancho completo, como el kanban real */
+  .sk-col {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  .sk-col--narrow {
+    flex: 1 1 100%;
+  }
+
+  /* Solo se muestra la primera columna; las demás se ocultan */
+  .sk-col:not(:first-child) {
+    display: none;
+  }
+}

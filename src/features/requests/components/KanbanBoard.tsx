@@ -2,7 +2,8 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCenter,
@@ -10,7 +11,7 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { CreateRequestModal } from './CreateRequestModal';
@@ -29,6 +30,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useHistorialCount } from '../hooks/useRequests';
 import { useBoardStore } from '@/store/boardStore';
 import { config } from '@/config';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import type { Notification } from '@/types/commons';
 
 
@@ -69,6 +71,8 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
   const [pendingClosure, setPendingClosure] = useState<PendingClosure | null>(null);
 
   const [createModalOpen, setCreateModalOpen] = useState<string | null>(null);
+  const [mobileColIndex,  setMobileColIndex]  = useState(0);
+  const isMobile = useIsMobile();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
   const { kanbanZoom }  = useBoardStore();
@@ -165,7 +169,10 @@ const { data: historialCount } = useHistorialCount(equipo);
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Desktop: arrastrás con mouse tras mover 6px
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // Móvil: mantené presionado 200ms para arrastrar; una deslizada normal = scroll
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   );
 
   /* ── Apertura externa del modal (desde búsqueda) ── */
@@ -320,6 +327,30 @@ const { data: historialCount } = useHistorialCount(equipo);
     ? columnSlugs
     : Object.keys(board);
 
+  // Índice de columna visible en móvil, siempre dentro de rango
+  const clampedColIndex = Math.min(mobileColIndex, Math.max(0, renderSlugs.length - 1));
+
+  // Fábrica única de columna — reusada por desktop (map) y móvil (una sola)
+  const renderColumn = (col: string) => (
+    <KanbanColumn
+      key={col}
+      id={col}
+      boardId={equipo}
+      titulo={columnLabels[col] ?? col}
+      color={columnColors[col]}
+      titleColor={columnTitleColors[col]}
+      requests={board[col] ?? []}
+      totalCount={col === 'historial' ? historialCount?.total : undefined}
+      isOver={overColumn === col}
+      onCardClick={(card) => setModal(card.id)}
+      onAddClick={(col) => setCreateModalOpen(col)}
+      unreadByRequestId={unreadByRequestId}
+      onLoadMore={col === 'historial' ? onLoadMoreHistorial : undefined}
+      hasMore={col === 'historial' ? historialHasMore : undefined}
+      isLoadingMore={col === 'historial' ? historialLoading : undefined}
+    />
+  );
+
   return (
     <>
       <DndContext
@@ -329,36 +360,34 @@ const { data: historialCount } = useHistorialCount(equipo);
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div
-          ref={scrollRef}
-          className="kanban"
-          style={{
-            ...kanbanStyle,
-            zoom:   kanbanZoom,
-            height: `calc((100vh - 120px) / ${kanbanZoom})`,
-          }}
-          {...scrollHandlers}
-        >
-{renderSlugs.map((col) => (
-            <KanbanColumn
-              key={col}
-              id={col}
-              boardId={equipo}
-              titulo={columnLabels[col] ?? col}
-              color={columnColors[col]}
-              titleColor={columnTitleColors[col]}
-              requests={board[col] ?? []}
-              totalCount={col === 'historial' ? historialCount?.total : undefined}
-              isOver={overColumn === col}
-              onCardClick={(card) => setModal(card.id)}
-              onAddClick={(col) => setCreateModalOpen(col)}
-              unreadByRequestId={unreadByRequestId}
-              onLoadMore={col === 'historial' ? onLoadMoreHistorial : undefined}
-              hasMore={col === 'historial' ? historialHasMore : undefined}
-              isLoadingMore={col === 'historial' ? historialLoading : undefined}
+        {isMobile ? (
+          <div className="kanban-mobile">
+            <MobileColumnSelector
+              slugs={renderSlugs}
+              labels={columnLabels}
+              colors={columnColors}
+              board={board}
+              activeIndex={clampedColIndex}
+              onSelect={setMobileColIndex}
             />
-          ))}
+            <div className="kanban kanban--mobile" style={kanbanStyle}>
+              {renderSlugs[clampedColIndex] && renderColumn(renderSlugs[clampedColIndex])}
+            </div>
           </div>
+        ) : (
+          <div
+            ref={scrollRef}
+            className="kanban"
+            style={{
+              ...kanbanStyle,
+              zoom:   kanbanZoom,
+              height: `calc((100vh - 120px) / ${kanbanZoom})`,
+            }}
+            {...scrollHandlers}
+          >
+            {renderSlugs.map(renderColumn)}
+          </div>
+        )}
 
         <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
           {activeCard && (
@@ -428,5 +457,74 @@ onMove={(id, columna) => onMove(id, columna)}
         />
       )}
     </>
+  );
+}
+
+/* ============================================================
+   Selector de columna para móvil — pills + flechas prev/next
+   ============================================================ */
+function MobileColumnSelector({
+  slugs, labels, colors, board, activeIndex, onSelect,
+}: {
+  slugs:       string[];
+  labels:      Record<string, string>;
+  colors:      Record<string, string | undefined>;
+  board:       BoardData;
+  activeIndex: number;
+  onSelect:    (i: number) => void;
+}) {
+  const pillsRef = useRef<HTMLDivElement>(null);
+
+  const go = (dir: -1 | 1) => {
+    const next = Math.min(Math.max(activeIndex + dir, 0), slugs.length - 1);
+    onSelect(next);
+  };
+
+  // Centra la pill activa cuando cambia
+  useEffect(() => {
+    const el = pillsRef.current?.querySelector('[data-active="true"]') as HTMLElement | null;
+    el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [activeIndex]);
+
+  return (
+    <div className="kanban-mobile__selector">
+      <button
+        className="kanban-mobile__arrow"
+        onClick={() => go(-1)}
+        disabled={activeIndex === 0}
+        aria-label="Columna anterior"
+      >
+        {'\u2039'}
+      </button>
+
+      <div className="kanban-mobile__pills" ref={pillsRef}>
+        {slugs.map((slug, i) => {
+          const active = i === activeIndex;
+          const color  = colors[slug];
+          const count  = board[slug]?.length ?? 0;
+          return (
+            <button
+              key={slug}
+              data-active={active}
+              className={['kanban-mobile__pill', active ? 'kanban-mobile__pill--active' : ''].join(' ')}
+              style={active && color ? { borderColor: `${color}80`, color } : undefined}
+              onClick={() => onSelect(i)}
+            >
+              {labels[slug] ?? slug}
+              <span className="kanban-mobile__pill-count">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        className="kanban-mobile__arrow"
+        onClick={() => go(1)}
+        disabled={activeIndex === slugs.length - 1}
+        aria-label="Columna siguiente"
+      >
+        {'\u203A'}
+      </button>
+    </div>
   );
 }

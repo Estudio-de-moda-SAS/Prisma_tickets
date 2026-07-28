@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { CierreInfo, ClientFeedback, Equipo, SubmitClientFeedbackPayload } from '../types';
 import { useSubmitClientFeedback } from '../hooks/useClientFeedback';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 const ACCENT = '#34d399'; // verde de cliente_review
 
@@ -218,6 +219,7 @@ export function ClientReviewBanner({
   enRevisionQasColumnId,
   onFeedbackSubmitted,
 }: Props) {
+  const isMobile = useIsMobile();
   const [decision,      setDecision]      = useState<'approved' | 'rejected' | null>(null);
   const [feedbackNote,  setFeedbackNote]  = useState('');
   const [submitted,     setSubmitted]     = useState(false);
@@ -267,7 +269,7 @@ if (decision === 'rejected' && !feedbackNote.trim()) {
       {/* Barra superior de identificación */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 9,
-        padding: '10px 24px',
+        padding: isMobile ? '10px 14px' : '10px 24px',
         borderBottom: `1px solid ${ACCENT}20`,
         background: `${ACCENT}08`,
       }}>
@@ -287,7 +289,7 @@ if (decision === 'rejected' && !feedbackNote.trim()) {
         </span>
       </div>
 
-      <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ padding: isMobile ? '16px 14px' : '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Título de la solicitud */}
         <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4 }}>
@@ -347,7 +349,7 @@ if (decision === 'rejected' && !feedbackNote.trim()) {
             </span>
 
             {/* Botones Aprobar / Rechazar */}
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
               <button
                 onClick={() => { setDecision('approved'); setError(''); }}
                 style={{

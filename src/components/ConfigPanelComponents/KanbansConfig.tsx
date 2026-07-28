@@ -12,10 +12,20 @@ import { config } from '@/config';
 import {
   useBoardTeams
 } from '@/features/requests/hooks/useBoardMetadata';
+import { useDepartmentsWithTeams, useDepartments } from '@/features/requests/hooks/useDepartments';
+
+// Catálogo de integraciones disponibles. Cada equipo de tipo "integración"
+// se gestiona en otra aplicación pero permite crear/ver sus tickets desde
+// PRISMA. La clave enruta al formulario y backend propios de esa integración.
+// Para sumar una nueva: agregá su entrada acá y su página en el front.
+const INTEGRATIONS: { key: string; label: string; description: string }[] = [
+  { key: 'solvi', label: 'SOLVI', description: 'Gestión de tickets SOLVI — se opera en su app, creable desde PRISMA.' },
+];
 
 export function KanbanSection() {
   const boardId = config.DEFAULT_BOARD_ID;
   const { data: teams = [], isLoading } = useBoardTeams(boardId);
+  const { data: departments = [] } = useDepartments();
   const createKanbanTeam  = useCreateKanbanTeam();
   const updateKanbanTeam  = useUpdateKanbanTeam();
   const createBoardColumn = useCreateBoardColumn(boardId);
@@ -52,6 +62,9 @@ export function KanbanSection() {
           isExternal:  team.Board_Team_Is_External ?? false,
           externalUrl: team.Board_Team_External_URL ?? '',
           isActive:    team.Board_Team_Is_Active ?? true,
+          departmentId: (team as KanbanTeam).Department_ID ?? null,
+          isIntegration:  (team as KanbanTeam).Board_Team_Is_Integration ?? false,
+          integrationKey: (team as KanbanTeam).Board_Team_Integration_Key ?? null,
         } : undefined}
         saving={createKanbanTeam.isPending || updateKanbanTeam.isPending}
         onSave={(data) => {
@@ -102,20 +115,65 @@ export function KanbanSection() {
           <p>No hay kanbans configurados.</p>
         </div>
       )}
-      {teams.map((team, idx) => (
-        <KanbanTeamCard
-          key={team.Board_Team_ID}
-          team={team as KanbanTeam}
-          boardId={boardId}
-          expanded={expandedId === team.Board_Team_ID}
-          onToggle={() => setExpandedId(expandedId === team.Board_Team_ID ? null : team.Board_Team_ID)}
-          onEdit={() => { setExpandedId(null); setEditTeamId(team.Board_Team_ID); }}
-          index={idx}
-          total={teams.length}
-          onMoveUp={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'up' })}
-          onMoveDown={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'down' })}
-        />
-      ))}
+      {(() => {
+        // Agrupar kanbans por departamento, respetando el orden global de Sort_Order.
+        // Los sin departamento van a un grupo "Sin departamento (solo admins)" al final.
+        const deptName = (id: number | null) =>
+          id === null ? null : (departments.find((d) => d.Department_ID === id)?.Department_Name ?? `Depto #${id}`);
+
+        const byDept = new Map<number | null, KanbanTeam[]>();
+        for (const t of teams as KanbanTeam[]) {
+          const key = t.Department_ID ?? null;
+          if (!byDept.has(key)) byDept.set(key, []);
+          byDept.get(key)!.push(t);
+        }
+        // Ordenar dentro de cada grupo por Sort_Order (no depender solo del back)
+        for (const list of byDept.values()) {
+          list.sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
+        }
+
+        // Orden de grupos: por el menor Sort_Order de cada grupo; "sin depto" siempre al final.
+        const groups = [...byDept.entries()].sort((a, b) => {
+          if (a[0] === null) return 1;
+          if (b[0] === null) return -1;
+          const minA = Math.min(...a[1].map((t) => t.Board_Team_Sort_Order));
+          const minB = Math.min(...b[1].map((t) => t.Board_Team_Sort_Order));
+          return minA - minB;
+        });
+
+        return groups.map(([deptId, groupTeams]) => (
+          <div key={deptId ?? 'no-dept'} style={{ marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 6px' }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
+                color: deptId === null ? 'var(--txt-muted)' : 'var(--accent)', flexShrink: 0,
+              }}>
+                {deptName(deptId) ?? 'Sin departamento · solo admins'}
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', flexShrink: 0 }}>
+                {groupTeams.length}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {groupTeams.map((team, idx) => (
+                <KanbanTeamCard
+                  key={team.Board_Team_ID}
+                  team={team}
+                  boardId={boardId}
+                  expanded={expandedId === team.Board_Team_ID}
+                  onToggle={() => setExpandedId(expandedId === team.Board_Team_ID ? null : team.Board_Team_ID)}
+                  onEdit={() => { setExpandedId(null); setEditTeamId(team.Board_Team_ID); }}
+                  index={idx}
+                  total={groupTeams.length}
+                  onMoveUp={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'up' })}
+                  onMoveDown={() => reorderTeam.mutate({ teamId: team.Board_Team_ID, direction: 'down' })}
+                />
+              ))}
+            </div>
+          </div>
+        ));
+      })()}
 
       <AddBtn label="Nuevo kanban" onClick={() => { setEditTeamId(null); setShowNewTeam(true); }} />
 
@@ -215,6 +273,12 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, tota
           </span>
         )}
 
+        {(team as KanbanTeam).Board_Team_Is_Integration && (
+          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(0,184,148,0.12)', border: '1px solid rgba(0,184,148,0.35)', color: '#00b894', flexShrink: 0 }}>
+            🔌 Integración
+          </span>
+        )}
+
         {team.Board_Team_Is_Admin_Only && (
           <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', color: '#ff4757', flexShrink: 0 }}>
             🔒 Solo admins
@@ -276,6 +340,18 @@ function KanbanTeamCard({ team, boardId, expanded, onToggle, onEdit, index, tota
               </div>
             </div>
           </div>
+        ) : (team as KanbanTeam).Board_Team_Is_Integration ? (
+          <div style={{ margin: 12, display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 8, background: 'rgba(0,184,148,0.05)', border: '1px solid rgba(0,184,148,0.2)' }}>
+            <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>{'\uD83D\uDD0C'}</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#00b894', marginBottom: 2 }}>
+                Equipo de integración — no maneja columnas
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5 }}>
+                Este equipo se gestiona en otra aplicación. PRISMA solo permite crear y ver sus tickets, así que no configura columnas Kanban ni su visibilidad.
+              </div>
+            </div>
+          </div>
         ) : (
           <ColumnConfigPanel teamId={team.Board_Team_ID} boardId={boardId} teamColor={color} />
         )
@@ -314,21 +390,33 @@ function IconPicker({ value, onChange }: { value: string; onChange: (v: string) 
 }
 /* ── KanbanTeamForm ── */
 function KanbanTeamForm({ initial, saving, onSave, onCancel }: {
-  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean };
+  initial?: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null; isIntegration: boolean; integrationKey: string | null };
   saving?:  boolean;
-  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean }) => void;
+  onSave:   (d: { name: string; code: string; color: string; description: string; icon: string; isAdminOnly: boolean; isExternal: boolean; externalUrl: string; isActive: boolean; departmentId: number | null; isIntegration: boolean; integrationKey: string | null }) => void;
   onCancel: () => void;
 }) {
+  const { data: departments = [] } = useDepartmentsWithTeams();
   const [name,        setName]        = useState(initial?.name        ?? '');
   const [code,        setCode]        = useState(initial?.code        ?? '');
   const [color,       setColor]       = useState(initial?.color       ?? '#00c8ff');
   const [description, setDescription] = useState(initial?.description ?? '');
 const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️');
   const [isAdminOnly, setIsAdminOnly] = useState(initial?.isAdminOnly ?? false);
-  const [isExternal,  setIsExternal]  = useState(initial?.isExternal  ?? false);
   const [externalUrl, setExternalUrl] = useState(initial?.externalUrl ?? '');
   const [isActive,    setIsActive]    = useState(initial?.isActive    ?? true);
-  const canSave = name.trim().length > 0 && code.trim().length > 0 && (!isExternal || externalUrl.trim().length > 0);
+  const [departmentId, setDepartmentId] = useState<number | null>(initial?.departmentId ?? null);
+  // Tipo de equipo como valor único (excluyente): kanban | external | integration.
+  const [kind, setKind] = useState<'kanban' | 'external' | 'integration'>(
+    initial?.isIntegration ? 'integration' : initial?.isExternal ? 'external' : 'kanban',
+  );
+  const [integrationKey, setIntegrationKey] = useState<string | null>(initial?.integrationKey ?? null);
+  const isExternal    = kind === 'external';
+  const isIntegration = kind === 'integration';
+  const canSave =
+    name.trim().length > 0 &&
+    code.trim().length > 0 &&
+    (!isExternal    || externalUrl.trim().length > 0) &&
+    (!isIntegration || integrationKey !== null);
 
   function handleNameChange(val: string) {
     setName(val);
@@ -371,6 +459,23 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
       </div>
 
       <div>
+        <FieldLabel>Departamento</FieldLabel>
+        <select
+          className="cpop-input"
+          value={departmentId ?? ''}
+          onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : null)}
+        >
+          <option value="">Sin departamento (solo admins)</option>
+          {departments.map((d) => (
+            <option key={d.Department_ID} value={d.Department_ID}>{d.Department_Name}</option>
+          ))}
+        </select>
+        <p style={{ fontSize: 10, color: 'var(--txt-muted)', margin: '6px 0 0', lineHeight: 1.5 }}>
+          Define a qué departamento pertenece este kanban. Todos los miembros de ese departamento lo verán automáticamente. Sin departamento, solo lo ven los administradores. Para dar acceso a personas puntuales de otro departamento, usá los kanbans visibles en la ficha del usuario.
+        </p>
+      </div>
+
+      <div>
         <FieldLabel>Ícono del equipo</FieldLabel>
         <IconPicker value={icon} onChange={setIcon} />
       </div>
@@ -395,23 +500,55 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
         </label>
       </div>
 
-      {/* Tipo de equipo: interno (Kanban) vs externo (link) */}
+      {/* Tipo de equipo: kanban | externo | simple (excluyentes) */}
       <div>
         <FieldLabel>Tipo de equipo</FieldLabel>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${isExternal ? 'rgba(108,92,231,0.35)' : 'var(--border-subtle)'}`, background: isExternal ? 'rgba(108,92,231,0.05)' : 'transparent', transition: 'all 0.15s' }}>
-          <input type="checkbox" checked={isExternal} onChange={(e) => setIsExternal(e.target.checked)} style={{ accentColor: '#6c5ce7', width: 14, height: 14 }} />
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: isExternal ? '#6c5ce7' : 'var(--txt-muted)' }}>
-              {isExternal ? '🔗 Equipo externo (sin Kanban)' : '🗂️ Equipo con Kanban propio'}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2, lineHeight: 1.5 }}>
-              {isExternal
-                ? 'Al seleccionarlo (en el sidebar o al crear una solicitud) se abre una herramienta externa en una pestaña nueva, en vez de un tablero.'
-                : 'El equipo tendrá su propio tablero Kanban dentro de PRISMA.'}
-            </div>
-          </div>
-        </label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {([
+            { val: 'kanban',   color: 'var(--accent)', icon: '🗂️', title: 'Equipo con Kanban propio',        desc: 'El equipo tendrá su propio tablero Kanban dentro de PRISMA.' },
+            { val: 'external', color: '#6c5ce7',       icon: '🔗', title: 'Equipo externo (sin Kanban)',      desc: 'Al seleccionarlo se abre una herramienta externa en una pestaña nueva, en vez de un tablero.' },
+            { val: 'integration', color: '#00b894',    icon: '🔌', title: 'Equipo de integración',            desc: 'Se opera en otra aplicación (como SOLVI), pero permite crear y ver sus tickets desde PRISMA.' },
+          ] as const).map((opt) => {
+            const active = kind === opt.val;
+            return (
+              <label key={opt.val} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${active ? opt.color + '5a' : 'var(--border-subtle)'}`, background: active ? `${opt.color}0d` : 'transparent', transition: 'all 0.15s' }}>
+                <input type="radio" name="team-kind" checked={active} onChange={() => setKind(opt.val)} style={{ accentColor: opt.color, width: 14, height: 14 }} />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: active ? opt.color : 'var(--txt-muted)' }}>
+                    {opt.icon} {opt.title}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2, lineHeight: 1.5 }}>
+                    {opt.desc}
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
       </div>
+
+{isIntegration && (
+        <div>
+          <FieldLabel>Integración *</FieldLabel>
+          <select
+            className="cpop-input"
+            value={integrationKey ?? ''}
+            onChange={(e) => setIntegrationKey(e.target.value || null)}
+          >
+            <option value="">Seleccioná una integración…</option>
+            {INTEGRATIONS.map((it) => (
+              <option key={it.key} value={it.key}>
+                {it.label}
+              </option>
+            ))}
+          </select>
+          {integrationKey && (
+            <p style={{ fontSize: 10, color: 'var(--txt-muted)', margin: '6px 0 0', lineHeight: 1.5 }}>
+              {INTEGRATIONS.find((it) => it.key === integrationKey)?.description}
+            </p>
+          )}
+        </div>
+      )}
 
       {isExternal && (
         <div>
@@ -462,7 +599,7 @@ const [icon,        setIcon]        = useState(initial?.icon        ?? '🗂️'
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
         <button
-          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly, isExternal, externalUrl: isExternal ? externalUrl.trim() : '', isActive })}
+          onClick={() => canSave && !saving && onSave({ name: name.trim(), code: code.trim(), color, description: description.trim(), icon, isAdminOnly, isExternal, externalUrl: isExternal ? externalUrl.trim() : '', isActive, departmentId, isIntegration, integrationKey: isIntegration ? integrationKey : null })}
           disabled={!canSave || saving}
           className={`cpop-btn-save${!canSave || saving ? ' cpop-btn-save--disabled' : ''}`}
         >

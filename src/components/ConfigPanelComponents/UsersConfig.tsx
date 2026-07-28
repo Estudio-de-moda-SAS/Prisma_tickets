@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useQueryClient } from '@tanstack/react-query';
 import { SmBtn, FieldLabel } from '../ConfigPanel';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 
 type ManagedUser = {
   User_ID:       number;
@@ -18,6 +19,16 @@ type ManagedUser = {
   team:       { Team_ID: number; Team_Name: string; Team_Code: string } | null;
 };
 
+type Identity = {
+  Identity_ID:         number;
+  Identity_Email:      string;
+  Identity_EntraID:    string | null;
+  Identity_Is_Primary: boolean;
+  Identity_Notify:     boolean;
+};
+
+const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
 export function UserList() {
   const qc = useQueryClient();
   const { dbUser, refreshDbUser } = useAuth();
@@ -27,6 +38,8 @@ export function UserList() {
   const [search,      setSearch]      = useState('');
   const [showPreReg,  setShowPreReg]  = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [showDupes,   setShowDupes]   = useState(false);
+  const [linkGroup,   setLinkGroup]   = useState<ManagedUser[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -98,6 +111,38 @@ async function handleUpdate(updated: ManagedUser) {
 
   const inactiveCount = users.filter((u) => u.Is_Active === false).length;
 
+  // Candidatos a vinculación: mismo nombre normalizado, correos distintos.
+  // Es una SUGERENCIA — nunca se fusiona solo. Dos homónimos reales pueden
+  // caer acá y por eso la vinculación exige confirmación explícita.
+  const dupeGroups = (() => {
+    const map = new Map<string, ManagedUser[]>();
+    for (const u of users) {
+      if (u.Is_Active === false || !u.User_Name?.trim()) continue;
+      const k = normName(u.User_Name);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(u);
+    }
+    return [...map.values()]
+      .filter((g) => g.length > 1 &&
+        new Set(g.map((u) => u.User_Email.toLowerCase())).size > 1)
+      .map((g) => [...g].sort((a, b) => {
+        // Canónico sugerido: onboarding completo y con departamento, luego el más antiguo.
+        const score = (u: ManagedUser) => (u.Is_New ? 0 : 2) + (u.Department_ID !== null ? 1 : 0);
+        return score(b) - score(a) || a.User_ID - b.User_ID;
+      }));
+  })();
+
+  async function handleLinked(canonicalId: number, absorbedIds: number[]) {
+    setUsers((prev) => prev.map((u) =>
+      absorbedIds.includes(u.User_ID) ? { ...u, Is_Active: false } : u));
+    setLinkGroup(null);
+    qc.invalidateQueries({ queryKey: ['allUsers'] });
+    if (dbUser && (canonicalId === dbUser.User_ID || absorbedIds.includes(dbUser.User_ID))) {
+      await refreshDbUser();
+      qc.invalidateQueries({ queryKey: ['currentUser'] });
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -115,6 +160,17 @@ async function handleUpdate(updated: ManagedUser) {
 
   if (showPreReg) {
     return <PreRegisterForm onSave={handlePreRegister} onCancel={() => setShowPreReg(false)} />;
+  }
+
+  if (linkGroup) {
+    return (
+      <LinkIdentityForm
+        group={linkGroup}
+        actorId={dbUser?.User_ID ?? 0}
+        onDone={handleLinked}
+        onCancel={() => setLinkGroup(null)}
+      />
+    );
   }
 
   return (
@@ -148,7 +204,7 @@ async function handleUpdate(updated: ManagedUser) {
 
       <div style={{ display: 'flex', gap: 6 }}>
         <button
-          onClick={() => setShowInactive(false)}
+          onClick={() => { setShowInactive(false); setShowDupes(false); }}
           style={{
             padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
             border: `1px solid ${!showInactive ? 'rgba(0,229,160,0.4)' : 'var(--border-subtle)'}`,
@@ -159,7 +215,7 @@ async function handleUpdate(updated: ManagedUser) {
           Activos ({users.filter((u) => u.Is_Active !== false).length})
         </button>
         <button
-          onClick={() => setShowInactive(true)}
+          onClick={() => { setShowInactive(true); setShowDupes(false); }}
           style={{
             padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
             border: `1px solid ${showInactive ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)'}`,
@@ -169,16 +225,66 @@ async function handleUpdate(updated: ManagedUser) {
         >
           Inactivos ({inactiveCount})
         </button>
+        <button
+          onClick={() => { setShowDupes(true); }}
+          style={{
+            padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            border: `1px solid ${showDupes ? 'rgba(253,203,110,0.45)' : 'var(--border-subtle)'}`,
+            background: showDupes ? 'rgba(253,203,110,0.08)' : 'transparent',
+            color: showDupes ? '#fdcb6e' : 'var(--txt-muted)', transition: 'all 0.12s',
+          }}
+        >
+          Posibles duplicados ({dupeGroups.length})
+        </button>
       </div>
 
-      {filtered.length === 0 && (
+      {showDupes && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(253,203,110,0.06)', border: '1px solid rgba(253,203,110,0.22)', fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.55 }}>
+            Usuarios con el mismo nombre y correos distintos. Puede ser una persona con dos cuentas
+            {'\u2014'} o dos personas homónimas. Revisá antes de vincular: la acción no se deshace desde acá.
+          </div>
+
+          {dupeGroups.length === 0 && (
+            <div className="cpanel__empty">
+              <span style={{ fontSize: 28, opacity: 0.4 }}>{'\u2705'}</span>
+              <p>No hay candidatos a vinculación.</p>
+            </div>
+          )}
+
+          {dupeGroups.map((g) => (
+            <div key={g[0].User_ID} style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{g[0].User_Name}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.3)', color: '#fdcb6e' }}>
+                  {g.length} cuentas
+                </span>
+                <div style={{ flex: 1 }} />
+                <button onClick={() => setLinkGroup(g)}
+                  style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.35)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
+                  Vincular
+                </button>
+              </div>
+              {g.map((u) => (
+                <div key={u.User_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--txt-muted)', paddingLeft: 2 }}>
+                  <span style={{ opacity: 0.5 }}>#{u.User_ID}</span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.User_Email}</span>
+                  <span style={{ opacity: 0.7, flexShrink: 0 }}>{u.department?.Department_Name ?? 'sin depto'}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!showDupes && filtered.length === 0 && (
         <div className="cpanel__empty">
           <span style={{ fontSize: 28, opacity: 0.4 }}>👤</span>
           <p>{search ? 'Sin resultados.' : showInactive ? 'No hay usuarios inactivos.' : 'No hay usuarios registrados.'}</p>
         </div>
       )}
 
-      {sortedKeys.map((key) => (
+      {!showDupes && sortedKeys.map((key) => (
         <div key={key}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{
@@ -339,6 +445,14 @@ function UserEditForm({ user, onSave, onCancel }: {
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState(false);
+  const [identities,   setIdentities]   = useState<Identity[]>([]);
+  // Grants de kanbans (solo aplican a TI member). null = aún no cargó el picker.
+  const [boardGrants,  setBoardGrants]  = useState<number[] | null>(null);
+
+  useEffect(() => {
+    apiClient.call<Identity[]>('fetchUserIdentities', { userId: user.User_ID })
+      .then(setIdentities).catch(() => setIdentities([]));
+  }, [user.User_ID]);
 
   useEffect(() => {
     apiClient.call<Department[]>('getDepartments', {}).then(setDepartments).catch(() => {}).finally(() => setLoadingDepts(false));
@@ -350,10 +464,20 @@ function UserEditForm({ user, onSave, onCancel }: {
     apiClient.call<Team[]>('getTeamsByDepartment', { departmentId }).then(setTeams).catch(() => setTeams([])).finally(() => setLoadingTeams(false));
   }, [departmentId]);
 
+  // Los grants de kanbans aplican a cualquier member (admin ve todo).
+  const isMemberEdit = role === 'member';
+
   async function handleSave() {
     setSaving(true); setError(false);
     try {
       const updated = await apiClient.call<ManagedUser>('updateUser', { userId: user.User_ID, role, departmentId, teamId, isNew });
+      // Grants solo si el usuario editado es member y el picker ya cargó.
+      if (isMemberEdit && boardGrants !== null) {
+        await apiClient.call('setUserBoardAccess', {
+          userId:       user.User_ID,
+          boardTeamIds: boardGrants,
+        });
+      }
       onSave(updated);
     } catch { setError(true); } finally { setSaving(false); }
   }
@@ -364,6 +488,22 @@ function UserEditForm({ user, onSave, onCancel }: {
         <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>← Volver</button>
         <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{user.User_Name}</span><div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{user.User_Email}</div></div>
       </div>
+      {identities.length > 1 && (
+        <div>
+          <FieldLabel>Correos vinculados ({identities.length})</FieldLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {identities.map((i) => (
+              <div key={i.Identity_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.Identity_Email}</span>
+                {i.Identity_Is_Primary && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(0,200,255,0.12)', border: '1px solid rgba(0,200,255,0.3)', color: 'var(--accent)', flexShrink: 0 }}>PRINCIPAL</span>}
+                <span style={{ fontSize: 9, color: i.Identity_Notify ? '#00e5a0' : 'var(--txt-muted)', flexShrink: 0 }}>
+                  {i.Identity_Notify ? 'notifica' : 'sin notificar'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div>
         <FieldLabel>Rol de acceso</FieldLabel>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -404,6 +544,7 @@ function UserEditForm({ user, onSave, onCancel }: {
           </div>
         </label>
       </div>
+      {isMemberEdit && <BoardAccessPicker userId={user.User_ID} onChange={setBoardGrants} />}
       {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>Error al guardar. Intenta de nuevo.</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
@@ -517,6 +658,167 @@ function PreRegisterForm({ onSave, onCancel }: {
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
         <button onClick={handleSave} disabled={!canSave} className={`cpop-btn-save${!canSave ? ' cpop-btn-save--disabled' : ''}`}>{saving ? 'Registrando…' : 'PRE-REGISTRAR'}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   LinkIdentityForm — vinculación manual de cuentas
+   ============================================================ */
+function LinkIdentityForm({ group, actorId, onDone, onCancel }: {
+  group:    ManagedUser[];
+  actorId:  number;
+  onDone:   (canonicalId: number, absorbedIds: number[]) => void;
+  onCancel: () => void;
+}) {
+  const [canonicalId, setCanonicalId] = useState<number>(group[0].User_ID);
+  const [confirmText, setConfirmText] = useState('');
+  const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
+
+  const absorbed = group.filter((u) => u.User_ID !== canonicalId);
+  const canSave  = confirmText.trim().toUpperCase() === 'VINCULAR' && !saving && absorbed.length > 0;
+
+  async function handleSave() {
+    if (!canSave) return;
+    setSaving(true); setError(null);
+    try {
+      for (const u of absorbed) {
+        await apiClient.call('linkUserIdentity', {
+          canonicalUserId: canonicalId,
+          absorbedUserId:  u.User_ID,
+          actorId,
+        });
+      }
+      onDone(canonicalId, absorbed.map((u) => u.User_ID));
+    } catch (err) {
+      setError((err as Error).message ?? 'Error al vincular las cuentas.');
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--txt-muted)', fontSize: 11, cursor: 'pointer' }}>{'\u2190'} Volver</button>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Vincular cuentas</span>
+          <div style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{group[0].User_Name}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 14px', borderRadius: 8, background: 'rgba(255,71,87,0.06)', border: '1px solid rgba(255,71,87,0.28)', display: 'flex', gap: 10 }}>
+        <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.2 }}>{'\u26A0'}</span>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.6 }}>
+          Los tickets, comentarios, adjuntos, cierres y notificaciones de las cuentas absorbidas
+          pasan a la cuenta principal. Las absorbidas quedan desactivadas y sus correos se conservan
+          como identidades secundarias {'\u2014'} van a recibir notificaciones igual.
+          <strong style={{ color: '#ff4757' }}> Esta acción no se deshace desde el panel.</strong>
+        </p>
+      </div>
+
+      <div>
+        <FieldLabel>Cuenta principal (canónica)</FieldLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {group.map((u) => {
+            const sel = canonicalId === u.User_ID;
+            return (
+              <button key={u.User_ID} type="button" onClick={() => setCanonicalId(u.User_ID)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, textAlign: 'left', cursor: 'pointer', border: `1px solid ${sel ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`, background: sel ? 'rgba(0,200,255,0.07)' : 'transparent', transition: 'all 0.15s' }}>
+                <div style={{ width: 15, height: 15, borderRadius: '50%', flexShrink: 0, border: `2px solid ${sel ? 'var(--accent)' : 'var(--border)'}`, background: sel ? 'var(--accent)' : 'transparent' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: sel ? 'var(--accent)' : 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {u.User_Email}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--txt-muted)', marginTop: 2 }}>
+                    #{u.User_ID} {'\u00B7'} {u.department?.Department_Name ?? 'sin departamento'}
+                    {u.team ? ` \u00B7 ${u.team.Team_Name}` : ''}
+                    {u.Is_New ? ' \u00B7 onboarding pendiente' : ''}
+                  </div>
+                </div>
+                {sel && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, padding: '2px 7px', borderRadius: 4, background: 'rgba(0,200,255,0.14)', border: '1px solid rgba(0,200,255,0.3)', color: 'var(--accent)', flexShrink: 0 }}>PRINCIPAL</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <FieldLabel>Escribí VINCULAR para confirmar</FieldLabel>
+        <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
+          placeholder="VINCULAR" className="cpop-input" autoComplete="off" />
+        <p style={{ fontSize: 10, color: 'var(--txt-muted)', margin: '5px 0 0', paddingLeft: 2 }}>
+          Se absorberán {absorbed.length} cuenta{absorbed.length === 1 ? '' : 's'}: {absorbed.map((u) => `#${u.User_ID}`).join(', ')}
+        </p>
+      </div>
+
+      {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>{error}</div>}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
+        <button onClick={handleSave} disabled={!canSave} className={`cpop-btn-save${!canSave ? ' cpop-btn-save--disabled' : ''}`}>
+          {saving ? 'Vinculando\u2026' : 'VINCULAR'}
+        </button>
+      </div>
+    </div>
+  );
+}
+/* ============================================================
+   BoardAccessPicker — grants de kanbans para un usuario TI member
+   Solo se muestra para dept TI + rol member. Admin ve todo,
+   cliente va por departamento: ninguno necesita config manual.
+   ============================================================ */
+function BoardAccessPicker({ userId, onChange }: { userId: number; onChange: (ids: number[]) => void }) {
+  const { data: allBoards = [] } = useBoardTeams(0);
+  const [selected, setSelected] = useState<number[] | null>(null);
+  const [loading,  setLoading]  = useState(true);
+
+  // Solo kanbans internos, activos (los externos no son "boards visibles").
+  const boards = allBoards
+    .filter((b) => b.Board_Team_Is_Active && !b.Board_Team_Is_External)
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
+
+  useEffect(() => {
+    apiClient.call<number[]>('fetchUserBoardAccess', { userId })
+      .then((ids) => { setSelected(ids); onChange(ids); })
+      .catch(() => { setSelected([]); onChange([]); })
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  function toggle(boardId: number) {
+    setSelected((prev) => {
+      const cur = prev ?? [];
+      const next = cur.includes(boardId)
+        ? cur.filter((id) => id !== boardId)
+        : [...cur, boardId];
+      onChange(next);
+      return next;
+    });
+  }
+
+  if (loading) {
+    return <div style={{ height: 80, borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />;
+  }
+
+  return (
+    <div>
+      <FieldLabel>Kanbans visibles</FieldLabel>
+      <div style={{ padding: '9px 12px', borderRadius: 8, background: 'rgba(0,200,255,0.05)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 10.5, color: 'var(--txt-muted)', lineHeight: 1.5, marginBottom: 8 }}>
+        El usuario ya ve automáticamente los kanbans de su departamento. Acá le das acceso <strong>extra</strong> a kanbans puntuales de otros departamentos. Dejalo vacío si solo debe ver los suyos.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {boards.map((b) => {
+          const on = (selected ?? []).includes(b.Board_Team_ID);
+          return (
+            <label key={b.Board_Team_ID}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${on ? 'rgba(0,200,255,0.35)' : 'var(--border-subtle)'}`, background: on ? 'rgba(0,200,255,0.06)' : 'var(--bg-surface)', transition: 'all 0.12s' }}>
+              <input type="checkbox" checked={on} onChange={() => toggle(b.Board_Team_ID)} style={{ accentColor: 'var(--accent)', width: 14, height: 14 }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: b.Board_Team_Color, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12, fontWeight: on ? 600 : 500, color: on ? 'var(--accent)' : 'var(--txt)' }}>{b.Board_Team_Name}</span>
+            </label>
+          );
+        })}
       </div>
     </div>
   );

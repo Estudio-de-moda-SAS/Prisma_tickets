@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink, LayoutList } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
-import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useSolviTicketsPreview } from '@/features/requests/hooks/useSolviTickets';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -23,6 +25,7 @@ import { isConditionalField } from '@/features/requests/templates/types';
 import { HomeAnnouncementsSection } from '@/components/layout/AnnouncementBanner';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
+import { useIsMobile } from '@/components/hooks/useMediaQuery';
 
 /* ══════════════════════════════════════════════════════════════
    Constantes de presentación
@@ -114,6 +117,7 @@ function CriteriaBadge({ summary }: { summary: Request['criteriaSummary'] }) {
    SprintBanner
    ══════════════════════════════════════════════════════════════ */
 function SprintBanner() {
+  const isMobile = useIsMobile();
   const { data: sprints = [], isLoading } = useSprints();
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
   const nextSprint   = useMemo(() => (activeSprint ? null : getNextSprint(sprints)), [sprints, activeSprint]);
@@ -128,19 +132,19 @@ function SprintBanner() {
     const upColor   = '#a78bfa';
     const startsLabel = daysUntil === 1 ? 'Inicia mañana' : `Inicia en ${daysUntil}d`;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(167,139,250,0.18)', boxShadow: '0 0 20px rgba(167,139,250,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(167,139,250,0.18)', boxShadow: '0 0 20px rgba(167,139,250,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, #a78bfa, #a78bfa00)' }} />
         <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Clock size={15} style={{ color: upColor }} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: isMobile ? 1 : '0 0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Próximo sprint</span>
             <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(167,139,250,0.12)', color: upColor, border: '1px solid rgba(167,139,250,0.28)' }}>Próximo</span>
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{nextSprint.Sprint_Text}</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: isMobile ? '100%' : 0, order: isMobile ? 3 : 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
@@ -164,19 +168,19 @@ function SprintBanner() {
   const endFmt   = new Date(activeSprint!.Sprint_End_Date).toLocaleDateString('es-CO',   { day: 'numeric', month: 'short' });
   const uc = daysLeft <= 2 ? '#E05C5C' : daysLeft <= 4 ? '#EF9F27' : 'var(--accent)';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(0,200,255,0.18)', boxShadow: '0 0 20px rgba(0,200,255,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16, padding: '12px 18px', borderRadius: 10, background: 'var(--surface-1)', border: '1px solid rgba(0,200,255,0.18)', boxShadow: '0 0 20px rgba(0,200,255,0.06)', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--accent), var(--accent)00)' }} />
       <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(0,200,255,0.10)', border: '1px solid rgba(0,200,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Zap size={15} style={{ color: 'var(--accent)' }} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: isMobile ? 1 : '0 0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', letterSpacing: '0.9px', textTransform: 'uppercase' }}>Sprint activo</span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 10, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.28)' }}>En curso</span>
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.3px' }}>{activeSprint!.Sprint_Text}</span>
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: isMobile ? '100%' : 0, order: isMobile ? 3 : 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <CalendarDays size={11} style={{ color: 'var(--txt-muted)' }} />
@@ -195,9 +199,6 @@ function SprintBanner() {
 /* ══════════════════════════════════════════════════════════════
    EquipoTab
    ══════════════════════════════════════════════════════════════ */
-/* ══════════════════════════════════════════════════════════════
-   EquipoTab
-   ══════════════════════════════════════════════════════════════ */
 function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, isAdminOnly, onClick }: {
   equipo: string; teamColor: string; teamIcon: string; description: string;
   label: string; isActive: boolean; isAdminOnly?: boolean; onClick: () => void;
@@ -209,9 +210,11 @@ function EquipoTab({ equipo, teamColor, teamIcon, description, label, isActive, 
   const active = all.filter((r) => !DONE_COLUMNS.has(r.columna)).length;
   const done   = all.filter((r) =>  DONE_COLUMNS.has(r.columna)).length;
 
+  const isMobile = useIsMobile();
   return (
     <button onClick={onClick} style={{
-      flexShrink: 0, width: 200,
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
       background: isActive ? `linear-gradient(145deg, ${c.dot}16 0%, ${c.dot}07 100%)` : 'var(--surface-1)',
       border: `1px solid ${isActive ? c.dot + '55' : 'var(--border)'}`,
       borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
@@ -273,9 +276,11 @@ function EquipoTabExternal({ teamColor, teamIcon, description, label, url }: {
     if (hasUrl) window.open(url!, '_blank', 'noopener,noreferrer');
   }
 
+  const isMobile = useIsMobile();
   return (
     <button onClick={open} title={hasUrl ? `Abrir ${label}` : `${label} — sin URL configurada`} style={{
-      flexShrink: 0, width: 200,
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
       background: 'var(--surface-1)',
       border: `1px solid ${c.dot}30`,
       borderRadius: 12, padding: '14px 16px', cursor: hasUrl ? 'pointer' : 'not-allowed',
@@ -321,6 +326,7 @@ function EquipoTabExternal({ teamColor, teamIcon, description, label, url }: {
 function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
   r: Request; isLast: boolean; onClick: () => void; activeSprint: Sprint | null; sprints: Sprint[];
 }) {
+  const isMobile = useIsMobile();
   const inSprint = activeSprint && r.sprintId === activeSprint.Sprint_ID;
   const futureSprint = !inSprint && r.sprintId
     ? sprints.find(s =>
@@ -334,6 +340,55 @@ function TicketRow({ r, isLast, onClick, activeSprint, sprints }: {
         new Date(s.Sprint_End_Date).getTime() + 86_400_000 < Date.now()
       ) ?? null
     : null;
+  const sprintChip = inSprint
+    ? { text: activeSprint!.Sprint_Text, color: 'var(--accent)', bg: 'rgba(0,200,255,0.12)', border: 'rgba(0,200,255,0.28)' }
+    : futureSprint
+      ? { text: futureSprint.Sprint_Text, color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.28)' }
+      : pastSprint
+        ? { text: pastSprint.Sprint_Text, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.28)' }
+        : null;
+
+  if (isMobile) {
+    return (
+      <div
+        onClick={onClick}
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}
+      >
+        {/* Título + criteria */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 0, width: '100%' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--txt)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{r.titulo}</span>
+          <CriteriaBadge summary={r.criteriaSummary} />
+        </div>
+
+        {/* ID + hace */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', opacity: 0.85, fontFamily: 'monospace', letterSpacing: '0.3px' }}>{r.id}</span>
+          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>· {timeAgo(r.fechaApertura)}</span>
+        </div>
+
+        {/* Chips: prioridad, estado, sprint */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: PRIORIDAD_COLOR[r.prioridad] + '18', color: PRIORIDAD_COLOR[r.prioridad], border: `1px solid ${PRIORIDAD_COLOR[r.prioridad]}35` }}>
+            {r.prioridad.charAt(0).toUpperCase() + r.prioridad.slice(1)}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase', whiteSpace: 'nowrap', background: (COLUMNA_COLOR[r.columna] ?? '#888') + '18', color: COLUMNA_COLOR[r.columna] ?? '#888', border: `1px solid ${(COLUMNA_COLOR[r.columna] ?? '#888')}35` }}>
+            {COLUMNA_LABEL[r.columna] ?? r.columna}
+          </span>
+          {sprintChip && (
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.4px', textTransform: 'uppercase', background: sprintChip.bg, color: sprintChip.color, border: `1px solid ${sprintChip.border}`, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              {inSprint ? <Zap size={8} /> : <Clock size={8} />}{sprintChip.text}
+            </span>
+          )}
+        </div>
+
+        {/* Solicitante */}
+        <span style={{ fontSize: 11, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {r.isLegacy && !r.solicitante ? (r.legacyRequester ?? 'Equipo no especificado') : r.solicitante}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
@@ -421,6 +476,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function TabsScroller({ children }: { children: React.ReactNode }) {
   const scrollRef   = useRef<HTMLDivElement>(null);
+  const isMobile    = useIsMobile();
   const [canLeft,  setCanLeft]  = useState(false);
   const [canRight, setCanRight] = useState(false);
 
@@ -477,25 +533,28 @@ function TabsScroller({ children }: { children: React.ReactNode }) {
         opacity: canRight ? 1 : 0, transition: 'opacity 0.2s', pointerEvents: 'none',
       }} />
 
-      {/* Flecha izquierda */}
-      <button
-        onClick={() => scroll('left')}
-        style={btnStyle(canLeft, 'left')}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
-      >
-        <ChevronLeft size={14} />
-      </button>
+      {/* Flechas — solo desktop (en móvil se desliza con el dedo) */}
+      {!isMobile && (
+        <>
+          <button
+            onClick={() => scroll('left')}
+            style={btnStyle(canLeft, 'left')}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+          >
+            <ChevronLeft size={14} />
+          </button>
 
-      {/* Flecha derecha */}
-      <button
-        onClick={() => scroll('right')}
-        style={btnStyle(canRight, 'right')}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
-      >
-        <ChevronRight size={14} />
-      </button>
+          <button
+            onClick={() => scroll('right')}
+            style={btnStyle(canRight, 'right')}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--txt-muted)'; }}
+          >
+            <ChevronRight size={14} />
+          </button>
+        </>
+      )}
 
       {/* Contenedor scrollable (sin scrollbar) */}
       <div
@@ -504,6 +563,8 @@ function TabsScroller({ children }: { children: React.ReactNode }) {
           display: 'flex', gap: 10,
           overflowX: 'auto', scrollbarWidth: 'none',
           padding: '2px 4px',         /* espacio para el box-shadow de los tabs */
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
         }}
         /* webkit */
         onScroll={update}
@@ -529,6 +590,7 @@ function EquipoPanel({ equipo, teamColor, label, activeSprint, onRowClick }: {
   onVerMas:       () => void;
   canAccessBoard: boolean;
 }) {
+  const isMobile = useIsMobile();
   const c = teamColors(teamColor);
   const boardId = `home-${equipo}`;
 
@@ -630,17 +692,17 @@ assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
   const isFiltered = visible.length !== totalRaw;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative', minWidth: 0, maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`, borderRadius: '12px 12px 0 0', pointerEvents: 'none' }} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
         <BoardFilters
           boardId={boardId}
           dynamicOptions={dynamicOptions}
           usePortal
         />
 
-        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '1 1 200px', minWidth: 0 }}>
           <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--txt-muted)', pointerEvents: 'none' }} />
           <input
             value={search}
@@ -668,14 +730,16 @@ assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
-        <span style={{ width: 150, flexShrink: 0 }}>ID</span>
-        <span style={{ flex: 1 }}>Asunto</span>
-        <span style={{ width: 110, flexShrink: 0 }}>Solicitante</span>
-        <span style={{ width: 80, textAlign: 'center' }}>Prioridad</span>
-        <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
-        <span style={{ width: 40, textAlign: 'right' }}>Hace</span>
-      </div>
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
+          <span style={{ width: 150, flexShrink: 0 }}>ID</span>
+          <span style={{ flex: 1 }}>Asunto</span>
+          <span style={{ width: 110, flexShrink: 0 }}>Solicitante</span>
+          <span style={{ width: 80, textAlign: 'center' }}>Prioridad</span>
+          <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
+          <span style={{ width: 40, textAlign: 'right' }}>Hace</span>
+        </div>
+      )}
 
       {isLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
@@ -715,28 +779,38 @@ export function HomePage() {
   const { account } = useAuth();
   const navigate    = useNavigate();
   const role        = useRole();
+  const isMobile    = useIsMobile();
   const userCanSeeBoard = canSeeBoard(role);
 
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: currentUser } = useCurrentUser();
+  const { data: boardTeams = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
   const { data: sprints    = [] } = useSprints();
-  const visibleTeams = boardTeams.filter((t) =>
-    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  // boardTeams ya viene filtrado server-side por acceso (depto + grants + admin-only).
+  // Acá solo descartamos inactivos, igual que el sidebar.
+  const visibleTeams = boardTeams
+    .filter((t) => t.Board_Team_Is_Active)
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
 
   // Equipos que sí tienen board (los externos no cuentan como seleccionables)
-  const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External);
+  const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External && !t.Board_Team_Is_Integration);
 
   // Auto-selección del primer equipo real cuando cargan los datos (o si el activo dejó de ser válido)
   useEffect(() => {
     if (selectableTeams.length === 0) return;
-    const stillValid = activeEquipo !== null && selectableTeams.some((t) => t.Board_Team_Code === activeEquipo);
+    // Un equipo de integración (SOLVI) es un activeEquipo válido aunque no esté
+    // en selectableTeams (no tiene board, pero sí panel propio).
+    const isValidIntegration = activeEquipo !== null && visibleTeams.some(
+      (t) => t.Board_Team_Code === activeEquipo && t.Board_Team_Is_Integration,
+    );
+    const stillValid = (activeEquipo !== null && selectableTeams.some((t) => t.Board_Team_Code === activeEquipo)) || isValidIntegration;
     if (!stillValid) {
       setActiveEquipo(selectableTeams[0].Board_Team_Code);
     }
-  }, [selectableTeams, activeEquipo]);
+  }, [selectableTeams, visibleTeams, activeEquipo]);
+  
 
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
@@ -757,12 +831,12 @@ export function HomePage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '4px 30px 48px', margin: '0 auto', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 18 : 24, padding: isMobile ? '2px 2px 32px' : '4px 30px 48px', margin: '0 auto', width: '100%' }}>
 
       {/* Encabezado */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 24 : 32, fontWeight: 700, color: 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
             Bienvenido,{' '}
             <span style={{ color: 'var(--accent)', textShadow: '0 0 28px rgba(0,200,255,0.35)' }}>{firstName}</span>
           </h1>
@@ -771,10 +845,10 @@ export function HomePage() {
           </p>
         </div>
               <HomeAnnouncementsSection />
-        <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, alignItems: 'stretch' }}>
           <button
             onClick={() => navigate('/new')}
-            style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)', flexShrink: 0, whiteSpace: 'nowrap' }}
+            style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start', gap: 14, padding: isMobile ? '14px 20px' : '16px 32px', border: '1.5px solid rgba(0,200,255,0.55)', borderRadius: 12, background: 'rgba(0,200,255,0.12)', color: 'var(--accent)', cursor: 'pointer', fontSize: isMobile ? 15 : 16, fontWeight: 700, letterSpacing: '0.4px', boxShadow: '0 0 28px rgba(0,200,255,0.18), 0 0 0 4px rgba(0,200,255,0.06)', transition: 'all 0.18s ease', fontFamily: 'var(--font-display)', flexShrink: 0, whiteSpace: 'nowrap' }}
             onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.20)', borderColor: 'rgba(0,200,255,0.80)', transform: 'translateY(-2px)' })}
             onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLElement).style, { background: 'rgba(0,200,255,0.12)', borderColor: 'rgba(0,200,255,0.55)', transform: 'translateY(0)' })}
           >
@@ -798,6 +872,16 @@ export function HomePage() {
               description={team.Board_Team_Description ?? ''}
               url={team.Board_Team_External_URL ?? null}
             />
+          ) : team.Board_Team_Is_Integration ? (
+            <EquipoTabIntegration
+              key={team.Board_Team_Code}
+              label={team.Board_Team_Name}
+              teamColor={team.Board_Team_Color}
+              teamIcon={team.Board_Team_Icon ?? '🗂️'}
+              description={team.Board_Team_Description ?? ''}
+              isActive={activeEquipo === team.Board_Team_Code}
+              onClick={() => setActiveEquipo(team.Board_Team_Code)}
+            />
           ) : (
             <EquipoTab
               key={team.Board_Team_Code}
@@ -815,22 +899,259 @@ export function HomePage() {
       </TabsScroller>
 
       {/* Panel principal */}
-      {activeEquipo && (
-        <EquipoPanel
-          key={activeEquipo}
-          equipo={activeEquipo}
-          teamColor={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Color ?? '#00c8ff'}
-          label={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Name ?? activeEquipo}
-          activeSprint={activeSprint}
-          onRowClick={handleRowClick}
-          onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
-          canAccessBoard={userCanSeeBoard}
-        />
-      )}
+      {activeEquipo && (() => {
+        const teamActivo = visibleTeams.find((t) => t.Board_Team_Code === activeEquipo);
+        if (teamActivo?.Board_Team_Is_Integration) {
+          return (
+            <SolviPanel
+              key={activeEquipo}
+              teamColor={teamActivo.Board_Team_Color ?? '#00b894'}
+              label={teamActivo.Board_Team_Name}
+              onVerTodos={() => navigate(`/integracion/${teamActivo.Board_Team_Integration_Key}/tickets`)}
+            />
+          );
+        }
+        return (
+          <EquipoPanel
+            key={activeEquipo}
+            equipo={activeEquipo}
+            teamColor={teamActivo?.Board_Team_Color ?? '#00c8ff'}
+            label={teamActivo?.Board_Team_Name ?? activeEquipo}
+            activeSprint={activeSprint}
+            onRowClick={handleRowClick}
+            onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
+            canAccessBoard={userCanSeeBoard}
+          />
+        );
+      })()}
 
       {selectedRequest && (
         <HomeRequestModal request={selectedRequest} onClose={handleModalClose} />
       )}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SolviPanel — panel del equipo de integración SOLVI en el home.
+   No usa TBL_Requests: lee TBL_Ticket_Solvi (máx. 200) vía su hook.
+   Tabla compacta con estilo del home; "Ver todos" → página completa.
+   ══════════════════════════════════════════════════════════════ */
+function solviEstadoChip(estado: string | null, accent: string) {
+  const e = (estado ?? '').toLowerCase();
+  let color = 'var(--txt-muted)';
+  if (e.includes('cerrado') || e.includes('resuelto')) color = '#4CAF50';
+  else if (e.includes('proceso') || e.includes('progreso')) color = '#f59e0b';
+  else if (e.includes('abierto') || e.includes('nuevo')) color = accent;
+  return { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const, background: color + '18', color, border: `1px solid ${color}35` };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SolviPanel — panel del equipo de integración SOLVI en el home.
+   No usa TBL_Requests: lee TBL_Ticket_Solvi (máx. 200) vía su hook.
+   Réplica de la estética de EquipoPanel (misma barra, buscador,
+   headers y filas), con columnas propias de SOLVI y "Ver todos".
+   ══════════════════════════════════════════════════════════════ */
+
+function SolviPanel({ teamColor, label, onVerTodos }: {
+  teamColor: string; label: string; onVerTodos: () => void;
+}) {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const c = teamColors(teamColor);
+  const { data: tickets = [], isLoading, isError } = useSolviTicketsPreview(200);
+  const [search, setSearch] = useState('');
+
+  const openTicket = (id: number) =>
+    navigate(`/integracion/solvi/tickets/${id}`, { state: { backgroundLocation: location } });
+
+  const visible = useMemo(() => {
+    if (!search.trim()) return tickets;
+    const q = search.toLowerCase();
+    return tickets.filter((t) =>
+      t.ticket_solvi_titulo?.toLowerCase().includes(q) ||
+      String(t.ticket_solvi_id).includes(q) ||
+      (t.ticket_solvi_solicitante ?? '').toLowerCase().includes(q),
+    );
+  }, [tickets, search]);
+
+  const totalRaw   = tickets.length;
+  const isFiltered = visible.length !== totalRaw;
+
+  function fmt(s: string | null) {
+    if (!s) return '—';
+    const d = new Date(/Z|[+-]\d{2}:\d{2}$/.test(s) ? s : `${s}Z`);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative', minWidth: 0, maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`, borderRadius: '12px 12px 0 0', pointerEvents: 'none' }} />
+
+      {/* Barra superior */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
+        {/* Badge de integración en lugar del botón Filtros */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, padding: '6px 10px', borderRadius: 7, background: `${c.dot}12`, border: `1px solid ${c.dot}30`, color: c.dot, letterSpacing: '0.5px', textTransform: 'uppercase', flexShrink: 0 }}>
+          <LayoutList size={12} /> Integración
+        </span>
+
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '1 1 200px', minWidth: 0 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--txt-muted)', pointerEvents: 'none' }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título, ID o solicitante…"
+            style={{ width: '100%', paddingLeft: 32, paddingRight: search ? 30 : 12, paddingTop: 7, paddingBottom: 7, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = c.dot + '60'; }}
+            onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--txt-muted)', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}>
+              <X size={11} />
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {!isLoading && totalRaw > 0 && (
+            <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>
+              {isFiltered
+                ? <><strong style={{ color: c.dot }}>{visible.length}</strong> de {totalRaw}</>
+                : <><strong style={{ color: c.dot }}>{totalRaw}</strong>{totalRaw >= 200 ? '+' : ''} tickets</>}
+            </span>
+          )}
+          <button onClick={onVerTodos} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7, border: `1px solid ${c.dot}45`, background: `${c.dot}12`, color: c.dot, fontSize: 11, fontWeight: 700, letterSpacing: '0.3px', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Ver todos <ChevronRight size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Fila de headers de columnas */}
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
+          <span style={{ width: 70, flexShrink: 0 }}>ID</span>
+          <span style={{ flex: 1 }}>Asunto</span>
+          <span style={{ width: 130, flexShrink: 0 }}>Solicitante</span>
+          <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
+          <span style={{ width: 56, textAlign: 'right' }}>Apertura</span>
+        </div>
+      )}
+
+      {/* Cuerpo */}
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
+          <svg style={{ animation: 'spin 1s linear infinite' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Cargando tickets de {label}…
+        </div>
+      ) : isError ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '36px 18px', fontSize: 12, color: '#ff4757' }}>
+          No se pudieron cargar los tickets de {label}.
+        </div>
+      ) : visible.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.3, color: 'var(--txt-muted)' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>
+            {search ? 'Sin resultados para la búsqueda' : `No hay tickets en ${label}`}
+          </span>
+          {search && (
+            <button onClick={() => setSearch('')} style={{ fontSize: 11, color: c.dot, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              Limpiar búsqueda
+            </button>
+          )}
+        </div>
+      ) : (
+        <div style={{ maxHeight: 440, overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
+          {visible.map((t, i) => (
+            isMobile ? (
+              <div key={t.ticket_solvi_id} onClick={() => openTicket(t.ticket_solvi_id)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderBottom: i === visible.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.035)', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: c.dot, opacity: 0.85, fontFamily: 'monospace', letterSpacing: '0.3px' }}>{t.ticket_solvi_id}</span>
+                  <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>· {fmt(t.ticket_solvi_fechaapertura)}</span>
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{t.ticket_solvi_titulo || '(Sin título)'}</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                  {t.ticket_solvi_estado && <span style={solviEstadoChip(t.ticket_solvi_estado, c.dot)}>{t.ticket_solvi_estado}</span>}
+                  <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{t.ticket_solvi_solicitante ?? '—'}</span>
+                </div>
+              </div>
+            ) : (
+              <div key={t.ticket_solvi_id} onClick={() => openTicket(t.ticket_solvi_id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderBottom: i === visible.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.035)', transition: 'background 0.12s', cursor: 'pointer' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <span style={{ width: 70, fontSize: 10, fontWeight: 700, color: c.dot, opacity: 0.85, fontFamily: 'monospace', flexShrink: 0, letterSpacing: '0.3px' }}>{t.ticket_solvi_id}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--txt)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{t.ticket_solvi_titulo || '(Sin título)'}</span>
+                <span style={{ width: 130, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.ticket_solvi_solicitante ?? '—'}</span>
+                <div style={{ width: 110, display: 'flex', justifyContent: 'center' }}>
+                  {t.ticket_solvi_estado ? <span style={solviEstadoChip(t.ticket_solvi_estado, c.dot)}>{t.ticket_solvi_estado}</span> : <span style={{ opacity: 0.4 }}>—</span>}
+                </div>
+                <span style={{ width: 56, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, textAlign: 'right' }}>{fmt(t.ticket_solvi_fechaapertura)}</span>
+              </div>
+            )
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EquipoTabIntegration — tab de un equipo de integración (SOLVI).
+   Se comporta como EquipoTab (click activa el panel abajo, resalta
+   si está activo) pero SIN contadores de board: muestra un CTA,
+   porque sus tickets no viven en TBL_Requests.
+   ══════════════════════════════════════════════════════════════ */
+function EquipoTabIntegration({ teamColor, teamIcon, description, label, isActive, onClick }: {
+  teamColor: string; teamIcon: string; description: string;
+  label: string; isActive: boolean; onClick: () => void;
+}) {
+  const c    = teamColors(teamColor);
+  const Icon = getTeamIcon(teamIcon);
+  const isMobile = useIsMobile();
+  return (
+    <button onClick={onClick} style={{
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
+      background: isActive ? `linear-gradient(145deg, ${c.dot}16 0%, ${c.dot}07 100%)` : 'var(--surface-1)',
+      border: `1px solid ${isActive ? c.dot + '55' : 'var(--border)'}`,
+      borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+      transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', position: 'relative', overflow: 'hidden',
+      boxShadow: isActive ? `0 0 0 1px ${c.dot}18, 0 6px 20px ${c.dot}18` : 'none',
+    }}
+      onMouseEnter={(e) => { if (!isActive) { const el = e.currentTarget as HTMLElement; el.style.borderColor = c.dot + '40'; el.style.background = `linear-gradient(145deg, ${c.dot}0A 0%, ${c.dot}03 100%)`; el.style.transform = 'translateY(-1px)'; }}}
+      onMouseLeave={(e) => { if (!isActive) { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.background = 'var(--surface-1)'; el.style.transform = 'translateY(0)'; }}}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isActive ? 3 : 2, background: isActive ? `linear-gradient(90deg, ${c.dot}, ${c.dot}88)` : `linear-gradient(90deg, ${c.dot}00, ${c.dot}35, ${c.dot}00)`, transition: 'height 0.2s' }} />
+      {isActive && <div style={{ position: 'absolute', top: -40, right: -20, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${c.dot}20 0%, transparent 70%)`, pointerEvents: 'none' }} />}
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, height: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: isActive ? c.dot + '22' : c.dot + '14', border: `1px solid ${c.dot + (isActive ? '40' : '25')}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+            <Icon size={14} style={{ color: c.dot }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? c.dot : 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', transition: 'color 0.2s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }} title={label}>{label}</span>
+        </div>
+        <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${c.dot}18`, border: `1px solid ${c.dot}35`, color: c.dot, letterSpacing: '0.5px', flexShrink: 0 }}>INTEG.</span>
+      </div>
+
+      {/* Descripción */}
+      <div style={{ height: 33, overflow: 'hidden', margin: '0 0 12px', textAlign: 'left' }}>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {description || 'Gestión de tickets de la aplicación integrada.'}
+        </p>
+      </div>
+
+      {/* Footer: CTA en vez de contadores */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, borderTop: `1px solid ${isActive ? c.dot + '20' : 'rgba(255,255,255,0.05)'}`, transition: 'border-color 0.2s' }}>
+        <LayoutList size={12} style={{ color: c.dot, flexShrink: 0 }} />
+        <span style={{ fontSize: 10, fontWeight: 600, color: c.dot, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+          {isActive ? 'Mostrando tickets' : 'Ver tickets'}
+        </span>
+      </div>
+    </button>
   );
 }

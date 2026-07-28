@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, BellRing, Check, CheckCheck, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNotifications } from '@/features/requests/hooks/useNotifications';
@@ -59,7 +59,7 @@ export function NotificationBell({ userId }: Props) {
   }, [markRead, navigate]);
 
   const { permission, requestPermission } = useBrowserNotifications(notifications, {
-    icon:       '/favicon.ico', // cámbialo por el logo de PRISMA en /public si quieres
+    icon:       '/prisma-192.png', // cámbialo por el logo de PRISMA en /public si quieres
     onActivate: activateNotification,
   });
 
@@ -186,7 +186,7 @@ const NotificationPanel = forwardRef<HTMLDivElement, PanelProps>(
           <div className="notif-panel__enable">
             <BellRing size={16} className="notif-panel__enable-icon" />
             <span className="notif-panel__enable-text">
-              Recibe avisos en el escritorio aunque estés en otra ventana.
+              Mostramos avisos del sistema mientras PRISMA esté abierto.
             </span>
             <button className="notif-panel__enable-btn" onClick={onEnableBrowser}>
               Activar

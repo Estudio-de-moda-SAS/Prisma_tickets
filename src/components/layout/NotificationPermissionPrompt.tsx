@@ -34,8 +34,8 @@ export function NotificationPermissionPrompt() {
     <div className="notif-prompt" role="alert">
       <BellRing size={18} className="notif-prompt__icon" />
       <div className="notif-prompt__text">
-        <strong>Activa las notificaciones de escritorio</strong>
-        <span>Te avisamos de nuevos tickets y asignaciones aunque estés en otra ventana.</span>
+        <strong>Activa las notificaciones</strong>
+        <span>Te avisamos de nuevos tickets y asignaciones mientras PRISMA esté abierto.</span>
       </div>
 
       <button className="notif-prompt__btn" onClick={handleEnable}>

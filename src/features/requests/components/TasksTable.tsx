@@ -1,6 +1,6 @@
 // src/features/requests/components/TasksTable.tsx
 import { useState, useMemo, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import {
   LayoutList, Search, ChevronUp, ChevronDown, ChevronsUpDown,
 } from 'lucide-react';
@@ -359,7 +359,7 @@ function TaskTableRow({ row, index, teamCode, taskListFields }: {
       </td>
 
       {/* Estado */}
-      <td className="tasks-td">
+      <td className="tasks-td tasks-td--c">
         {row.column
           ? <span className={`tasks-status ${statusCls(row.column.Board_Column_Slug)}`}>{row.column.Board_Column_Name}</span>
           : <span className="tasks-empty-cell">—</span>}
@@ -552,7 +552,7 @@ function TasksTableSkeleton() {
               <th className="tasks-th tasks-th--freeze-id">ID</th>
               <th className="tasks-th tasks-th--freeze-name">Nombre</th>
               <th className="tasks-th tasks-th--nosort">Asignado</th>
-              <th className="tasks-th">Estado</th>
+              <th className="tasks-th tasks-th--c">Estado</th>
               <th className="tasks-th tasks-th--nosort">Etiquetas</th>
               <th className="tasks-th tasks-th--nosort">Sprint</th>
               <th className="tasks-th tasks-th--nosort">Equipo sol.</th>
@@ -587,8 +587,8 @@ function TasksTableSkeleton() {
                   <div className="tasks-skel" style={{ width: 110, height: 26, borderRadius: 20 }} />
                 </td>
                 {/* Estado */}
-                <td className="tasks-td">
-                  <div className="tasks-skel" style={{ width: 88, height: 22, borderRadius: 20 }} />
+                <td className="tasks-td tasks-td--c">
+                  <div className="tasks-skel" style={{ width: 88, height: 22, borderRadius: 20, margin: '0 auto' }} />
                 </td>
                 {/* Etiquetas */}
                 <td className="tasks-td">
@@ -955,7 +955,7 @@ if (isLoading) return <TasksTableSkeleton />;
               </th>
               <Th k="Request_Title"           label="Nombre"      cls="tasks-th--freeze-name" />
               <th className="tasks-th tasks-th--nosort">Asignado</th>
-              <Th k="status"                  label="Estado"      />
+              <Th k="status"                  label="Estado"      cls="tasks-th--c" />
               <th className="tasks-th tasks-th--nosort">Etiquetas</th>
               <th className="tasks-th tasks-th--nosort">Sprint</th>
               <th className="tasks-th tasks-th--nosort">Equipo sol.</th>
