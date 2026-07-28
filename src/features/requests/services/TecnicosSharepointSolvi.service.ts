@@ -152,5 +152,17 @@ export class UsuariosSPService {
     }
   }
 
+  async update(id: string, changed: Partial<Omit<UsuariosSP, 'ID'>>) {
+    await this.ensureIds()
+    await this.graph.patch<any>(
+      `/sites/${this.siteId}/lists/${this.listId}/items/${id}/fields`,
+      changed
+    );
+    const res = await this.graph.get<any>(
+      `/sites/${this.siteId}/lists/${this.listId}/items/${id}?$expand=fields`
+    );
+    return this.toModel(res);
+  }
+
 }
 

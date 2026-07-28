@@ -64,7 +64,7 @@ export function SolviRequestPage() {
   const navigate = useNavigate();
   const { data: currentUser, isError: userError } = useCurrentUser();
   const { data: teams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
-  const solviController = useSolviActionsTickets(currentUser!)
+  const solviController = useSolviActionsTickets(currentUser)
 
   // Equipo SOLVI por su clave de integración: robusto venga de redirect,
   // sidebar o URL directa. De ahí sale el color definido al crear el kanban.
@@ -91,33 +91,6 @@ export function SolviRequestPage() {
   }
   function removeFile(idx: number) { setPendingFiles(pendingFiles.filter((_, i) => i !== idx)); }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // TODO [SOLVI] — CONECTAR GUARDADO AQUÍ
-  // ───────────────────────────────────────────────────────────────────────
-  // Este submit debe persistir el ticket en TBL_Ticket_Solvi (NO en
-  // TBL_Requests). El formulario solo captura título, descripción y adjuntos;
-  // el resto de campos de SOLVI (estado, resolutor, categoría, ANS, etc.) se
-  // gestionan en la app de SOLVI.
-  //
-  // Mapeo esperado a columnas de TBL_Ticket_Solvi:
-  //   titulo            → ticket_solvi_titulo (not null)
-  //   descripcion       → ticket_solvi_descripcion
-  //   currentUser       → ticket_solvi_solicitante / ticket_solvi_correo_solicitante
-  //   ticket_solvi_fuente → marcar origen 'PRISMA' (o lo que definan)
-  //
-  // Adjuntos → TBL_Ticket_Attachments_Solvi (id_ticket = ticket creado),
-  // subiendo a Storage como en el flujo de PRISMA (compressImage + upload).
-  //
-  // Sugerencia: crear un handler nuevo en el Edge Function, p. ej.
-  //   apiClient.call('createSolviTicket', { titulo, descripcion, requestedBy, ... })
-  // que haga el insert en TBL_Ticket_Solvi y devuelva el ticket_solvi_id.
-  //
-  // Datos disponibles acá:
-  //   - titulo, descripcion       → campos del form
-  //   - pendingFiles              → adjuntos
-  //   - currentUser.User_ID / .User_Name / .Department_ID → solicitante
-  //   - teamId                    → equipo SOLVI (Board_Team_ID) que originó el flujo
-  // ═══════════════════════════════════════════════════════════════════════
   async function handleSubmit(e: React.FormEvent, titulo: string, descripcion: string) {
     e.preventDefault();
     if (!titulo.trim())  { setError('El asunto es obligatorio.'); return; }
@@ -127,7 +100,7 @@ export function SolviRequestPage() {
 
     try {
 
-      const created = await solviController.saveTicket(titulo, descripcion)
+      const created = await solviController.saveTicket(titulo, descripcion, pendingFiles)
 
       if(!created){
         alert("Algo ha salido mal")
