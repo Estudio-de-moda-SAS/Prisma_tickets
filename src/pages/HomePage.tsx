@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink, LayoutList } from 'lucide-react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
-import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useSolviTicketsPreview } from '@/features/requests/hooks/useSolviTickets';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -194,9 +196,6 @@ function SprintBanner() {
     </div>
   );
 }
-/* ══════════════════════════════════════════════════════════════
-   EquipoTab
-   ══════════════════════════════════════════════════════════════ */
 /* ══════════════════════════════════════════════════════════════
    EquipoTab
    ══════════════════════════════════════════════════════════════ */
@@ -786,23 +785,32 @@ export function HomePage() {
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: currentUser } = useCurrentUser();
+  const { data: boardTeams = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
   const { data: sprints    = [] } = useSprints();
-  const visibleTeams = boardTeams.filter((t) =>
-    t.Board_Team_Is_Active && (role.role === 'admin' || !t.Board_Team_Is_Admin_Only)
-  );
+  // boardTeams ya viene filtrado server-side por acceso (depto + grants + admin-only).
+  // Acá solo descartamos inactivos, igual que el sidebar.
+  const visibleTeams = boardTeams
+    .filter((t) => t.Board_Team_Is_Active)
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
 
   // Equipos que sí tienen board (los externos no cuentan como seleccionables)
-  const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External);
+  const selectableTeams = visibleTeams.filter((t) => !t.Board_Team_Is_External && !t.Board_Team_Is_Integration);
 
   // Auto-selección del primer equipo real cuando cargan los datos (o si el activo dejó de ser válido)
   useEffect(() => {
     if (selectableTeams.length === 0) return;
-    const stillValid = activeEquipo !== null && selectableTeams.some((t) => t.Board_Team_Code === activeEquipo);
+    // Un equipo de integración (SOLVI) es un activeEquipo válido aunque no esté
+    // en selectableTeams (no tiene board, pero sí panel propio).
+    const isValidIntegration = activeEquipo !== null && visibleTeams.some(
+      (t) => t.Board_Team_Code === activeEquipo && t.Board_Team_Is_Integration,
+    );
+    const stillValid = (activeEquipo !== null && selectableTeams.some((t) => t.Board_Team_Code === activeEquipo)) || isValidIntegration;
     if (!stillValid) {
       setActiveEquipo(selectableTeams[0].Board_Team_Code);
     }
-  }, [selectableTeams, activeEquipo]);
+  }, [selectableTeams, visibleTeams, activeEquipo]);
+  
 
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
@@ -864,6 +872,16 @@ export function HomePage() {
               description={team.Board_Team_Description ?? ''}
               url={team.Board_Team_External_URL ?? null}
             />
+          ) : team.Board_Team_Is_Integration ? (
+            <EquipoTabIntegration
+              key={team.Board_Team_Code}
+              label={team.Board_Team_Name}
+              teamColor={team.Board_Team_Color}
+              teamIcon={team.Board_Team_Icon ?? '🗂️'}
+              description={team.Board_Team_Description ?? ''}
+              isActive={activeEquipo === team.Board_Team_Code}
+              onClick={() => setActiveEquipo(team.Board_Team_Code)}
+            />
           ) : (
             <EquipoTab
               key={team.Board_Team_Code}
@@ -881,22 +899,259 @@ export function HomePage() {
       </TabsScroller>
 
       {/* Panel principal */}
-      {activeEquipo && (
-        <EquipoPanel
-          key={activeEquipo}
-          equipo={activeEquipo}
-          teamColor={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Color ?? '#00c8ff'}
-          label={visibleTeams.find((t) => t.Board_Team_Code === activeEquipo)?.Board_Team_Name ?? activeEquipo}
-          activeSprint={activeSprint}
-          onRowClick={handleRowClick}
-          onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
-          canAccessBoard={userCanSeeBoard}
-        />
-      )}
+      {activeEquipo && (() => {
+        const teamActivo = visibleTeams.find((t) => t.Board_Team_Code === activeEquipo);
+        if (teamActivo?.Board_Team_Is_Integration) {
+          return (
+            <SolviPanel
+              key={activeEquipo}
+              teamColor={teamActivo.Board_Team_Color ?? '#00b894'}
+              label={teamActivo.Board_Team_Name}
+              onVerTodos={() => navigate(`/integracion/${teamActivo.Board_Team_Integration_Key}/tickets`)}
+            />
+          );
+        }
+        return (
+          <EquipoPanel
+            key={activeEquipo}
+            equipo={activeEquipo}
+            teamColor={teamActivo?.Board_Team_Color ?? '#00c8ff'}
+            label={teamActivo?.Board_Team_Name ?? activeEquipo}
+            activeSprint={activeSprint}
+            onRowClick={handleRowClick}
+            onVerMas={() => navigate(`/requests/team/${activeEquipo}`)}
+            canAccessBoard={userCanSeeBoard}
+          />
+        );
+      })()}
 
       {selectedRequest && (
         <HomeRequestModal request={selectedRequest} onClose={handleModalClose} />
       )}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SolviPanel — panel del equipo de integración SOLVI en el home.
+   No usa TBL_Requests: lee TBL_Ticket_Solvi (máx. 200) vía su hook.
+   Tabla compacta con estilo del home; "Ver todos" → página completa.
+   ══════════════════════════════════════════════════════════════ */
+function solviEstadoChip(estado: string | null, accent: string) {
+  const e = (estado ?? '').toLowerCase();
+  let color = 'var(--txt-muted)';
+  if (e.includes('cerrado') || e.includes('resuelto')) color = '#4CAF50';
+  else if (e.includes('proceso') || e.includes('progreso')) color = '#f59e0b';
+  else if (e.includes('abierto') || e.includes('nuevo')) color = accent;
+  return { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, letterSpacing: '0.3px', textTransform: 'uppercase' as const, whiteSpace: 'nowrap' as const, background: color + '18', color, border: `1px solid ${color}35` };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SolviPanel — panel del equipo de integración SOLVI en el home.
+   No usa TBL_Requests: lee TBL_Ticket_Solvi (máx. 200) vía su hook.
+   Réplica de la estética de EquipoPanel (misma barra, buscador,
+   headers y filas), con columnas propias de SOLVI y "Ver todos".
+   ══════════════════════════════════════════════════════════════ */
+
+function SolviPanel({ teamColor, label, onVerTodos }: {
+  teamColor: string; label: string; onVerTodos: () => void;
+}) {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const c = teamColors(teamColor);
+  const { data: tickets = [], isLoading, isError } = useSolviTicketsPreview(200);
+  const [search, setSearch] = useState('');
+
+  const openTicket = (id: number) =>
+    navigate(`/integracion/solvi/tickets/${id}`, { state: { backgroundLocation: location } });
+
+  const visible = useMemo(() => {
+    if (!search.trim()) return tickets;
+    const q = search.toLowerCase();
+    return tickets.filter((t) =>
+      t.ticket_solvi_titulo?.toLowerCase().includes(q) ||
+      String(t.ticket_solvi_id).includes(q) ||
+      (t.ticket_solvi_solicitante ?? '').toLowerCase().includes(q),
+    );
+  }, [tickets, search]);
+
+  const totalRaw   = tickets.length;
+  const isFiltered = visible.length !== totalRaw;
+
+  function fmt(s: string | null) {
+    if (!s) return '—';
+    const d = new Date(/Z|[+-]\d{2}:\d{2}$/.test(s) ? s : `${s}Z`);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 12, position: 'relative', minWidth: 0, maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c.dot}, ${c.dot}00)`, borderRadius: '12px 12px 0 0', pointerEvents: 'none' }} />
+
+      {/* Barra superior */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', background: `linear-gradient(90deg, ${c.dot}07 0%, transparent 55%)`, borderRadius: '12px 12px 0 0', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
+        {/* Badge de integración en lugar del botón Filtros */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, padding: '6px 10px', borderRadius: 7, background: `${c.dot}12`, border: `1px solid ${c.dot}30`, color: c.dot, letterSpacing: '0.5px', textTransform: 'uppercase', flexShrink: 0 }}>
+          <LayoutList size={12} /> Integración
+        </span>
+
+        <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '1 1 200px', minWidth: 0 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--txt-muted)', pointerEvents: 'none' }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título, ID o solicitante…"
+            style={{ width: '100%', paddingLeft: 32, paddingRight: search ? 30 : 12, paddingTop: 7, paddingBottom: 7, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 12, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = c.dot + '60'; }}
+            onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--txt-muted)', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}>
+              <X size={11} />
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {!isLoading && totalRaw > 0 && (
+            <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>
+              {isFiltered
+                ? <><strong style={{ color: c.dot }}>{visible.length}</strong> de {totalRaw}</>
+                : <><strong style={{ color: c.dot }}>{totalRaw}</strong>{totalRaw >= 200 ? '+' : ''} tickets</>}
+            </span>
+          )}
+          <button onClick={onVerTodos} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7, border: `1px solid ${c.dot}45`, background: `${c.dot}12`, color: c.dot, fontSize: 11, fontWeight: 700, letterSpacing: '0.3px', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Ver todos <ChevronRight size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Fila de headers de columnas */}
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10, fontWeight: 600, color: 'var(--txt-muted)', letterSpacing: '0.8px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.012)' }}>
+          <span style={{ width: 70, flexShrink: 0 }}>ID</span>
+          <span style={{ flex: 1 }}>Asunto</span>
+          <span style={{ width: 130, flexShrink: 0 }}>Solicitante</span>
+          <span style={{ width: 110, textAlign: 'center' }}>Estado</span>
+          <span style={{ width: 56, textAlign: 'right' }}>Apertura</span>
+        </div>
+      )}
+
+      {/* Cuerpo */}
+      {isLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px', fontSize: 12, color: 'var(--txt-muted)' }}>
+          <svg style={{ animation: 'spin 1s linear infinite' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Cargando tickets de {label}…
+        </div>
+      ) : isError ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '36px 18px', fontSize: 12, color: '#ff4757' }}>
+          No se pudieron cargar los tickets de {label}.
+        </div>
+      ) : visible.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '36px 18px' }}>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.3, color: 'var(--txt-muted)' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <span style={{ fontSize: 12, color: 'var(--txt-muted)' }}>
+            {search ? 'Sin resultados para la búsqueda' : `No hay tickets en ${label}`}
+          </span>
+          {search && (
+            <button onClick={() => setSearch('')} style={{ fontSize: 11, color: c.dot, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              Limpiar búsqueda
+            </button>
+          )}
+        </div>
+      ) : (
+        <div style={{ maxHeight: 440, overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
+          {visible.map((t, i) => (
+            isMobile ? (
+              <div key={t.ticket_solvi_id} onClick={() => openTicket(t.ticket_solvi_id)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderBottom: i === visible.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.035)', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: c.dot, opacity: 0.85, fontFamily: 'monospace', letterSpacing: '0.3px' }}>{t.ticket_solvi_id}</span>
+                  <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>· {fmt(t.ticket_solvi_fechaapertura)}</span>
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{t.ticket_solvi_titulo || '(Sin título)'}</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                  {t.ticket_solvi_estado && <span style={solviEstadoChip(t.ticket_solvi_estado, c.dot)}>{t.ticket_solvi_estado}</span>}
+                  <span style={{ fontSize: 11, color: 'var(--txt-muted)' }}>{t.ticket_solvi_solicitante ?? '—'}</span>
+                </div>
+              </div>
+            ) : (
+              <div key={t.ticket_solvi_id} onClick={() => openTicket(t.ticket_solvi_id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderBottom: i === visible.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.035)', transition: 'background 0.12s', cursor: 'pointer' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <span style={{ width: 70, fontSize: 10, fontWeight: 700, color: c.dot, opacity: 0.85, fontFamily: 'monospace', flexShrink: 0, letterSpacing: '0.3px' }}>{t.ticket_solvi_id}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--txt)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{t.ticket_solvi_titulo || '(Sin título)'}</span>
+                <span style={{ width: 130, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.ticket_solvi_solicitante ?? '—'}</span>
+                <div style={{ width: 110, display: 'flex', justifyContent: 'center' }}>
+                  {t.ticket_solvi_estado ? <span style={solviEstadoChip(t.ticket_solvi_estado, c.dot)}>{t.ticket_solvi_estado}</span> : <span style={{ opacity: 0.4 }}>—</span>}
+                </div>
+                <span style={{ width: 56, fontSize: 11, color: 'var(--txt-muted)', flexShrink: 0, textAlign: 'right' }}>{fmt(t.ticket_solvi_fechaapertura)}</span>
+              </div>
+            )
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EquipoTabIntegration — tab de un equipo de integración (SOLVI).
+   Se comporta como EquipoTab (click activa el panel abajo, resalta
+   si está activo) pero SIN contadores de board: muestra un CTA,
+   porque sus tickets no viven en TBL_Requests.
+   ══════════════════════════════════════════════════════════════ */
+function EquipoTabIntegration({ teamColor, teamIcon, description, label, isActive, onClick }: {
+  teamColor: string; teamIcon: string; description: string;
+  label: string; isActive: boolean; onClick: () => void;
+}) {
+  const c    = teamColors(teamColor);
+  const Icon = getTeamIcon(teamIcon);
+  const isMobile = useIsMobile();
+  return (
+    <button onClick={onClick} style={{
+      flexShrink: 0, width: isMobile ? '80vw' : 200,
+      scrollSnapAlign: 'center',
+      background: isActive ? `linear-gradient(145deg, ${c.dot}16 0%, ${c.dot}07 100%)` : 'var(--surface-1)',
+      border: `1px solid ${isActive ? c.dot + '55' : 'var(--border)'}`,
+      borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+      transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', position: 'relative', overflow: 'hidden',
+      boxShadow: isActive ? `0 0 0 1px ${c.dot}18, 0 6px 20px ${c.dot}18` : 'none',
+    }}
+      onMouseEnter={(e) => { if (!isActive) { const el = e.currentTarget as HTMLElement; el.style.borderColor = c.dot + '40'; el.style.background = `linear-gradient(145deg, ${c.dot}0A 0%, ${c.dot}03 100%)`; el.style.transform = 'translateY(-1px)'; }}}
+      onMouseLeave={(e) => { if (!isActive) { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--border)'; el.style.background = 'var(--surface-1)'; el.style.transform = 'translateY(0)'; }}}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isActive ? 3 : 2, background: isActive ? `linear-gradient(90deg, ${c.dot}, ${c.dot}88)` : `linear-gradient(90deg, ${c.dot}00, ${c.dot}35, ${c.dot}00)`, transition: 'height 0.2s' }} />
+      {isActive && <div style={{ position: 'absolute', top: -40, right: -20, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${c.dot}20 0%, transparent 70%)`, pointerEvents: 'none' }} />}
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, height: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: isActive ? c.dot + '22' : c.dot + '14', border: `1px solid ${c.dot + (isActive ? '40' : '25')}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+            <Icon size={14} style={{ color: c.dot }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? c.dot : 'var(--txt)', fontFamily: 'var(--font-display)', letterSpacing: '0.5px', textTransform: 'uppercase', transition: 'color 0.2s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }} title={label}>{label}</span>
+        </div>
+        <span style={{ fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: `${c.dot}18`, border: `1px solid ${c.dot}35`, color: c.dot, letterSpacing: '0.5px', flexShrink: 0 }}>INTEG.</span>
+      </div>
+
+      {/* Descripción */}
+      <div style={{ height: 33, overflow: 'hidden', margin: '0 0 12px', textAlign: 'left' }}>
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {description || 'Gestión de tickets de la aplicación integrada.'}
+        </p>
+      </div>
+
+      {/* Footer: CTA en vez de contadores */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 10, borderTop: `1px solid ${isActive ? c.dot + '20' : 'rgba(255,255,255,0.05)'}`, transition: 'border-color 0.2s' }}>
+        <LayoutList size={12} style={{ color: c.dot, flexShrink: 0 }} />
+        <span style={{ fontSize: 10, fontWeight: 600, color: c.dot, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+          {isActive ? 'Mostrando tickets' : 'Ver tickets'}
+        </span>
+      </div>
+    </button>
   );
 }

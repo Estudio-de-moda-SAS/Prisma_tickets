@@ -10,7 +10,12 @@ import {
   logout,
 } from './msal';
 import { apiClient } from '@/lib/apiClient';
-import { getSupabaseEntraId, signInWithSupabaseAzure, signOutSupabase } from './supabaseAuth';
+import {
+  getSupabaseEntraId,
+  getSupabaseProviderToken,
+  signInWithSupabaseAzure,
+  signOutSupabase,
+} from './supabaseAuth';
 import type { UserProfile } from '@/types/commons';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -439,6 +444,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Get token ────────────────────────────────────────────────────────────
   const getToken = React.useCallback(async (): Promise<string> => {
     if (config.BYPASS_AUTH) return 'bypass-dev-token';
+    if (config.USE_SUPABASE_AUTH) {
+      return getSupabaseProviderToken();
+    }
     if (!isLoggedIn()) throw new Error('No hay sesión iniciada.');
     return getAccessToken({ interactionMode: 'popup', forceSilent: false });
   }, []);

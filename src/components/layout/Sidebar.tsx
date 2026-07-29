@@ -1,20 +1,27 @@
 // src/components/layout/Sidebar.tsx
-import { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useMatch, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { NavLink, useNavigate, useMatch, useLocation } from 'react-router';
 import {
   BarChart2, Home, LogOut, Plus, Star,
   LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
-import { useRole, canSeeBoard, canSeeConfig, canSeeStats, canSeeAutomations } from '@/auth/roles';
+import { useRole, canSeeConfig, canSeeStats, canSeeAutomations } from '@/auth/roles';
 import { useBoardStore } from '@/store/boardStore';
 import { ConfigPanelTrigger } from '@/components/ConfigPanel';
-import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useMyBoardTeams, type MyBoardTeam } from '@/features/requests/hooks/useBoardMetadata';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { teamSidebarColors, getTeamIcon } from './siderbarConstants';
-import { config } from '@/config';
 import { SatisfactionModal } from './SatisfactionModal';
 import { useMobileNav } from '@/store/mobileNavStore';
+
+/* Grupo de boards bajo un mismo departamento, para el render del sidebar. */
+type BoardGroup = {
+  departmentId:   number | null;
+  departmentName: string;
+  teams:          MyBoardTeam[];
+};
 
 export function Sidebar() {
   const { account, signOut } = useAuth();
@@ -51,9 +58,7 @@ const activeTeamKey     = boardMatch?.params?.equipo
   const isAdmin       = role.role === 'admin';
   const isTIMember    = role.role === 'ti_member';
   const isRegularUser = !isAdmin && !isTIMember;
-  const showBoard     = canSeeBoard(role);
   const showConfig    = canSeeConfig(role);
-  const showStats     = canSeeStats(role);
   const showAuto      = canSeeAutomations(role);
 
   const initiales =
@@ -64,17 +69,51 @@ const activeTeamKey     = boardMatch?.params?.equipo
       .join('')
       .toUpperCase() ?? 'U';
 
-  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
-  const equiposVisibles = (isAdmin || isTIMember)
-    ? boardTeams.filter((t) => t.Board_Team_Is_Active && (isAdmin || !t.Board_Team_Is_Admin_Only))
-    : [];
-  
-function handleEquipo(key: string) {
+  /* ── Boards visibles: ya vienen filtrados server-side por acceso ── */
+  const { data: currentUser } = useCurrentUser();
+  const { data: myBoardTeams = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
+
+  /* ── Agrupación por departamento ──
+     Filtramos inactivos/admin-only (visual), ordenamos por Sort_Order,
+     y agrupamos. Un board sin Team_ID (legacy) cae en un grupo "General". */
+  const grupos = useMemo<BoardGroup[]>(() => {
+    const visibles = myBoardTeams
+      .filter((t) => t.Board_Team_Is_Active && (isAdmin || !t.Board_Team_Is_Admin_Only))
+      .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
+
+    const byDept = new Map<number | null, BoardGroup>();
+    for (const t of visibles) {
+      const deptId   = t.department?.Department_ID ?? null;
+      const deptName = t.department?.Department_Name ?? 'General';
+      if (!byDept.has(deptId)) {
+        byDept.set(deptId, { departmentId: deptId, departmentName: deptName, teams: [] });
+      }
+      byDept.get(deptId)!.teams.push(t);
+    }
+
+    // Orden de grupos: por el Sort_Order de su primer board (respeta la config).
+    // El grupo "sin departamento" (General) siempre va al final.
+    return [...byDept.values()].sort((a, b) => {
+      if (a.departmentId === null) return 1;
+      if (b.departmentId === null) return -1;
+      return a.teams[0].Board_Team_Sort_Order - b.teams[0].Board_Team_Sort_Order;
+    });
+  }, [myBoardTeams, isAdmin]);
+
+  const showBoardSection = grupos.length > 0;
+  const showGroupLabels  = grupos.length > 1; // label de depto solo con 2+ grupos
+  // Opción B: admin/ti_member siempre; cualquiera con ≥1 kanban asignado también.
+  const showStats        = canSeeStats(role, myBoardTeams.length > 0);
+
+function handleEquipo(team: MyBoardTeam) {
+  const key = team.Board_Team_Code;
+  const isIntegration = !!team.Board_Team_Is_Integration && !!team.Board_Team_Integration_Key;
   if (activeTeamKey === key) {
-    setTeamSubOpen(v => !v);   // ya estamos en este board → solo colapsa/expande
+    setTeamSubOpen(v => !v);   // ya estamos en este equipo → solo colapsa/expande
   } else {
     setEquipoActivo(key);
-    navigate(`/board/${key}`);
+    // Los equipos de integración no tienen board: su entrada es el listado propio.
+    navigate(isIntegration ? `/integracion/${team.Board_Team_Integration_Key}/tickets` : `/board/${key}`);
     setTeamSubOpen(true);
   }
 }
@@ -95,6 +134,86 @@ function handleEquipo(key: string) {
     }
     return (
       <span className={['sidebar__nav-sep', top ? 'sidebar__nav-sep--top' : ''].join(' ')} />
+    );
+  }
+
+  /* ── Render de un board individual (reusado en cada grupo) ── */
+  function renderTeam(team: MyBoardTeam) {
+    const key        = team.Board_Team_Code;
+    const label      = team.Board_Team_Name;
+    const c          = teamSidebarColors(team.Board_Team_Color);
+    const isExternal = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
+    const isIntegration = !!team.Board_Team_Is_Integration && !!team.Board_Team_Integration_Key;
+    const ia         = !isExternal && activeTeamKey === key;
+    const Icon       = getTeamIcon(team.Board_Team_Icon);
+
+    return (
+      <div key={key} className="sidebar__nav-group">
+        <button
+          onClick={() => {
+            if (isExternal) {
+              window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
+              return;
+            }
+            handleEquipo(team);
+          }}
+          title={sidebarAbierto ? undefined : (isExternal ? `${label} (herramienta externa)` : label)}
+          className="sidebar__nav-item sidebar__nav-item--team"
+          style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
+        >
+          <Icon size={16} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
+          {sidebarAbierto && (
+            <span style={{ color: ia ? c.dot : undefined, flex: 1, minWidth: 0 }}>{label}</span>
+          )}
+          {isExternal && sidebarAbierto && (
+            <ExternalLink size={12} style={{ opacity: 0.45, flexShrink: 0 }} />
+          )}
+        </button>
+        {!isExternal && ia && sidebarAbierto && teamSubOpen && (
+          <div
+            className="sidebar__nav-sub sidebar__nav-sub--team"
+            style={{
+              '--team-color':  c.dot,
+              '--team-glow':   c.glow,
+              '--team-border': c.border,
+            } as React.CSSProperties}
+          >
+            {/* Board: solo equipos kanban (no integraciones) */}
+            {!isIntegration && (
+              <NavLink
+                to={`/board/${key}`}
+                end
+                className={({ isActive: active }) =>
+                  ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+                }
+              >
+                <LayoutGrid size={12} />
+                <span>Board</span>
+              </NavLink>
+            )}
+
+            <NavLink
+              to={isIntegration ? `/integracion/${team.Board_Team_Integration_Key}/tickets` : `/tasks/${key}`}
+              className={({ isActive: active }) =>
+                ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <LayoutList size={12} />
+              <span>Listado</span>
+            </NavLink>
+
+            <NavLink
+              to={`/requests/team/${key}`}
+              className={({ isActive: active }) =>
+                ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <ClipboardList size={12} />
+              <span>Solicitudes</span>
+            </NavLink>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -161,84 +280,17 @@ function handleEquipo(key: string) {
 
 
           {/* ── EQUIPOS ── */}
-          {showBoard && equiposVisibles.length > 0 && (
+          {showBoardSection && (
             <>
-              <NavLabel top>Equipos</NavLabel>
+              {grupos.map((grupo, gi) => (
+                <div key={grupo.departmentId ?? `grupo-${gi}`}>
+                  {showGroupLabels
+                    ? <NavLabel top={gi === 0}>{grupo.departmentName}</NavLabel>
+                    : gi === 0 && <NavLabel top>Equipos</NavLabel>}
+                  {grupo.teams.map(renderTeam)}
+                </div>
+              ))}
 
-              {equiposVisibles.map((team) => {
-                const key        = team.Board_Team_Code;
-                const label      = team.Board_Team_Name;
-                const c          = teamSidebarColors(team.Board_Team_Color);
-                const isExternal = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
-                const ia         = !isExternal && activeTeamKey === key;
-                const Icon       = getTeamIcon(team.Board_Team_Icon);
-
-                return (
-                  <div key={key} className="sidebar__nav-group">
-                    <button
-                      onClick={() => {
-                        if (isExternal) {
-                          window.open(team.Board_Team_External_URL!, '_blank', 'noopener,noreferrer');
-                          return;
-                        }
-                        handleEquipo(key);
-                      }}
-                      title={sidebarAbierto ? undefined : (isExternal ? `${label} (herramienta externa)` : label)}
-                      className="sidebar__nav-item sidebar__nav-item--team"
-                      style={ia ? { background: c.glow, borderColor: c.border, color: c.dot } : {}}
-                    >
-                      <Icon size={16} style={{ opacity: ia ? 1 : 0.55, flexShrink: 0, transition: 'opacity 0.12s' }} />
-                      {sidebarAbierto && (
-                        <span style={{ color: ia ? c.dot : undefined, flex: 1, minWidth: 0 }}>{label}</span>
-                      )}
-                      {isExternal && sidebarAbierto && (
-                        <ExternalLink size={12} style={{ opacity: 0.45, flexShrink: 0 }} />
-                      )}
-                    </button>
-                                        {!isExternal && ia && sidebarAbierto && teamSubOpen && (
-                      <div
-                        className="sidebar__nav-sub sidebar__nav-sub--team"
-                        style={{
-                          '--team-color':  c.dot,
-                          '--team-glow':   c.glow,
-                          '--team-border': c.border,
-                        } as React.CSSProperties}
-                      >
-                        <NavLink
-                          to={`/board/${key}`} // ← CAMBIO: era to="/" end
-                          end
-                          className={({ isActive: active }) =>
-                            ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
-                          }
-                        >
-                          <LayoutGrid size={12} />
-                          <span>Board</span>
-                        </NavLink>
-
-<NavLink
-  to={`/tasks/${key}`}
-  className={({ isActive: active }) =>
-    ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
-  }
->
-  <LayoutList size={12} />
-  <span>Listado de Tareas</span>
-</NavLink>
-
-                        <NavLink
-                          to={`/requests/team/${key}`}
-                          className={({ isActive: active }) =>
-                            ['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join(' ')
-                          }
-                        >
-                          <ClipboardList size={12} />
-                          <span>Solicitudes</span>
-                        </NavLink>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
               <NavLabel> </NavLabel>
               <NavLabel>Usuario</NavLabel>
 

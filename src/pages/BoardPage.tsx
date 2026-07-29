@@ -1,12 +1,13 @@
 // src/pages/BoardPage.tsx
 import { useMemo, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router';
 import { useBoardStore, ZOOM_MIN, ZOOM_MAX } from '@/store/boardStore';
 import { useSearchStore } from '@/store/searchStore';
 import { useBoardEquipo, useHistorialLoadMore, useSearchRequests } from '@/features/requests/hooks/useRequests';
 import { useMoveRequest } from '@/features/requests/hooks/useMoveRequests';
 import { useColumnMap } from '@/features/requests/hooks/useColumnMap';
 import { useUsers } from '@/features/requests/hooks/useUsers';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useSubTeams }              from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { useSprints } from '@/features/requests/hooks/useSprints';
@@ -25,7 +26,7 @@ import type { KanbanColumna, Request, BoardData } from '@/features/requests/type
 import type { TemplateExtraField, ConditionalField } from '@/features/requests/templates/types';
 import { isConditionalField } from '@/features/requests/templates/types';
 import KanbanSkeleton from '@/features/requests/components/KanbanSkeleton';
-import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useBoardTeams, useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useTeamColumnConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { sprintYear } from '@/features/requests/hooks/useSprints';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
@@ -186,6 +187,16 @@ const { data: boardTeams = [], isLoading: teamsLoading } = useBoardTeams(config.
     return team?.Board_Team_ID ?? null;
   }, [boardTeams, equipoActivo]);
 const { data: columnConfig = [], isPending: columnConfigPending } = useTeamColumnConfig(config.DEFAULT_BOARD_ID, boardTeamId);
+
+// ── Guard de acceso: ¿este board está en MI lista visible? ──
+// Solo decide cuando la query terminó (isSuccess); mientras carga, no redirige.
+const { data: currentUser } = useCurrentUser();
+const { data: myBoardTeams, isSuccess: myBoardsResolved } =
+  useMyBoardTeams(currentUser?.User_ID ?? null);
+const hasBoardAccess = useMemo(() => {
+  if (!myBoardsResolved) return null; // aún cargando → indeterminado
+  return (myBoardTeams ?? []).some((t) => t.Board_Team_Code === equipoActivo);
+}, [myBoardsResolved, myBoardTeams, equipoActivo]);
 // Columnas reales, visibles y ordenadas — para el panel y el conteo de horas
   const boardColumns = useMemo(
     () =>
@@ -330,6 +341,11 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     const inBoard = Object.values(data ?? {}).flat().some((r) => r.id === id);
     if (!inBoard) setExternalModalId(id);
     else setExternalModalId(null);
+  }
+
+  // Board fuera de mi acceso → a Home. Escribir la URL a mano no basta.
+  if (hasBoardAccess === false) {
+    return <Navigate to="/home" replace />;
   }
 
   return (

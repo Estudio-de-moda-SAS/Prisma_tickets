@@ -5,12 +5,21 @@
 
 import { supabase } from '@/lib/supabaseClient';
 
+const SUPABASE_AZURE_SCOPES = [
+  'openid',
+  'email',
+  'profile',
+  'offline_access',
+  'User.Read',
+  'Sites.ReadWrite.All',
+].join(' ');
+
 /** Inicia el flujo de login con Microsoft a través de Supabase Auth. */
 export async function signInWithSupabaseAzure(): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'azure',
     options: {
-      scopes:     'openid email profile',
+      scopes:     SUPABASE_AZURE_SCOPES,
       redirectTo: window.location.origin,
     },
   });
@@ -22,6 +31,23 @@ export async function getSupabaseSession() {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   return data.session;
+}
+
+/**
+ * Devuelve el token OAuth emitido por Microsoft para llamar a Graph.
+ * No usar session.access_token aquí: ese JWT es de Supabase, no de Graph.
+ */
+export async function getSupabaseProviderToken(): Promise<string> {
+  const session = await getSupabaseSession();
+  const providerToken = session?.provider_token;
+
+  if (!providerToken) {
+    throw new Error(
+      'La sesión actual no incluye provider_token de Microsoft. Cerrá sesión y volvé a ingresar para consentir los scopes de Graph.',
+    );
+  }
+
+  return providerToken;
 }
 
 /** Cierra la sesión de Supabase Auth. */

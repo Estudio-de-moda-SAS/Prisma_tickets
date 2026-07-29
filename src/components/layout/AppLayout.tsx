@@ -1,7 +1,7 @@
 // src/components/layout/AppLayout.tsx
 
 import * as React from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useBoardTheme } from '@/store/useBoardTheme';
@@ -18,6 +18,7 @@ const TITULOS: Record<string, string> = {
   '/requests':     'Requests',
   '/my-requests':  'Mis Solicitudes',
   '/stats':        'Estadísticas',
+  '/integracion/solvi/tickets': 'Tickets SOLVI',
 };
 
 export function AppLayout() {
@@ -26,7 +27,7 @@ export function AppLayout() {
   const navigate     = useNavigate();
   const titulo       = TITULOS[pathname] ?? 'Prisma Tickets';
 
-  const isFullBleed = /^\/tasks\//.test(pathname);
+  const isFullBleed = /^\/tasks\//.test(pathname) || /^\/integracion\/[^/]+\/tickets/.test(pathname);
 
   const { data: currentUser, isLoading } = useCurrentUser();
 

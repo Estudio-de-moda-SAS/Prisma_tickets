@@ -1,7 +1,7 @@
 // src/pages/ClientRequestsPage.tsx
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import {
   Inbox, Search, Filter, Clock, AlertCircle, ChevronRight, Plus, X,
   CheckCircle2, Loader2,
