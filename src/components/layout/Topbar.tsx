@@ -10,7 +10,7 @@ import { es } from 'date-fns/locale';
 
 import { NotificationBell } from './NotificationBell';
 import { BugReportModal } from './BugReportModal';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { Bug, Menu, Download } from 'lucide-react';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';

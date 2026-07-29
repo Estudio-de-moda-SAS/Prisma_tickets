@@ -1,13 +1,13 @@
 // src/components/layout/FloatingTimer.tsx
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Clock, Play, Pause, Save, ExternalLink, X, GripHorizontal } from 'lucide-react';
 import { useTimerStore, type TimerEntry } from '@/store/timerStore';
 import { useUpdateRequest } from '@/features/requests/hooks/UseUpdateRequest';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import type { Request } from '@/features/requests/types';
-import type { Location } from 'react-router-dom';
+import type { Location } from 'react-router';
 const POS_KEY = 'prisma-timer-pos';
 const MARGIN  = 8;
 

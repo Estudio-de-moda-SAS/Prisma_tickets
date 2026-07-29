@@ -14,7 +14,9 @@ import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStat
 import { isBlockedLabelName } from '@/features/requests/hooks/useStatsData';
 import { useLabelsByTeamId, useLabelsByBoardId } from '@/features/requests/hooks/useLabels';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
-import { useBoardTeams }       from '@/features/requests/hooks/useBoardMetadata';
+import { useBoardTeams, useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
+import { useRole } from '@/auth/roles';
 import { useStatsStartConfig } from '@/features/requests/hooks/useKanbanAdmin';
 import { config }          from '@/config';
 import '@/styles/stats.css';
@@ -540,14 +542,28 @@ const sprintIds    = useStatsUIStore(s => s.sprintIds);
   const markTeamPicked   = useStatsUIStore(s => s.markTeamPicked);
   const markSprintPicked = useStatsUIStore(s => s.markSprintPicked);
   
-  const { data: boardTeams = [] }  = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: currentUser } = useCurrentUser();
+  const role = useRole();
+  const isAdmin = role.role === 'admin';
+  const { data: allTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
+  const { data: myTeams  = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
+  // Opción B: admin ve todos los equipos; el resto solo los kanbans que tiene asignados.
+  // Se excluyen externos e integraciones: no tienen tablero Kanban ni métricas.
+  const boardTeams = useMemo(
+    () => (isAdmin ? allTeams : myTeams).filter(
+      (t) => !t.Board_Team_Is_External && !t.Board_Team_Is_Integration,
+    ),
+    [isAdmin, allTeams, myTeams],
+  );
   const { data: statsStartConfig } = useStatsStartConfig(config.DEFAULT_BOARD_ID);
   const { data: allBoardLabels = [] } = useLabelsByBoardId(config.DEFAULT_BOARD_ID);
   const labelMap = useMemo(() => new Map(allBoardLabels.map(l => [l.Label_ID, l])), [allBoardLabels]);
   const teamColorMap = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Color])), [boardTeams]);
   const teamNameMap  = useMemo(() => Object.fromEntries(boardTeams.map(t => [t.Board_Team_Code, t.Board_Team_Name])),  [boardTeams]);
 
-  const isGlobal = teamTab === GLOBAL_KEY;
+  // Con un solo equipo la vista "global" (que agrega varios) no aporta: se oculta.
+  const canSeeGlobal = boardTeams.length > 1;
+  const isGlobal = canSeeGlobal && teamTab === GLOBAL_KEY;
 
   const isCombined = !isGlobal && selectedTeams.length >= 2;
   const stats = useStatsData(sprintIds, boardTeams, userFilter, isGlobal ? null : teamTab, statsStartConfig ?? undefined, isGlobal ? [] : selectedTeams);
@@ -609,10 +625,19 @@ useEffect(() => {
 
   // Auto-selecciona primer equipo al cargar
 useEffect(() => {
-    if (boardTeams.length === 0 || teamPicked) return;
-    markTeamPicked();
-    setTeamTab(boardTeams[0].Board_Team_Code);
-  }, [boardTeams, teamPicked, markTeamPicked, setTeamTab]);
+    if (boardTeams.length === 0) return;
+    // El tab guardado puede apuntar a un equipo que el usuario ya no ve
+    // (p. ej. cambió su acceso). Si el tab actual no es válido, reseteamos
+    // al primer equipo disponible. 'global' solo es válido con 2+ equipos.
+    const validCodes = boardTeams.map(t => t.Board_Team_Code);
+    const tabIsValid =
+      (teamTab === GLOBAL_KEY && boardTeams.length > 1) ||
+      validCodes.includes(teamTab);
+    if (!tabIsValid) {
+      setTeamTab(boardTeams[0].Board_Team_Code);
+    }
+    if (!teamPicked) markTeamPicked();
+  }, [boardTeams, teamTab, teamPicked, markTeamPicked, setTeamTab]);
   
   // Resetear userFilter al cambiar de equipo (evita filtros huérfanos)
   const prevTeamTab = useRef(teamTab);
@@ -659,13 +684,15 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
             </button>
           );
         })}
-        <button
-          className={['stats-primary-tab', isGlobal ? 'stats-primary-tab--active' : ''].join(' ')}
-          style={{ '--tab-color': 'var(--txt-muted)' } as React.CSSProperties}
-          onClick={() => setTeamTab(GLOBAL_KEY)}>
-          <Globe size={12} />
-          Global
-        </button>
+        {canSeeGlobal && (
+          <button
+            className={['stats-primary-tab', isGlobal ? 'stats-primary-tab--active' : ''].join(' ')}
+            style={{ '--tab-color': 'var(--txt-muted)' } as React.CSSProperties}
+            onClick={() => setTeamTab(GLOBAL_KEY)}>
+            <Globe size={12} />
+            Global
+          </button>
+        )}
       </div>
 
       {/* ═══ Control bar ════════════════════════════════════════ */}

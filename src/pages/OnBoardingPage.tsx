@@ -1,7 +1,7 @@
 // src/pages/OnboardingPage.tsx
 
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 import { useAuth } from '@/auth/AuthProvider';

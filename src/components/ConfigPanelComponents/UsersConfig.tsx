@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useQueryClient } from '@tanstack/react-query';
 import { SmBtn, FieldLabel } from '../ConfigPanel';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 
 type ManagedUser = {
   User_ID:       number;
@@ -445,6 +446,8 @@ function UserEditForm({ user, onSave, onCancel }: {
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState(false);
   const [identities,   setIdentities]   = useState<Identity[]>([]);
+  // Grants de kanbans (solo aplican a TI member). null = aún no cargó el picker.
+  const [boardGrants,  setBoardGrants]  = useState<number[] | null>(null);
 
   useEffect(() => {
     apiClient.call<Identity[]>('fetchUserIdentities', { userId: user.User_ID })
@@ -461,10 +464,20 @@ function UserEditForm({ user, onSave, onCancel }: {
     apiClient.call<Team[]>('getTeamsByDepartment', { departmentId }).then(setTeams).catch(() => setTeams([])).finally(() => setLoadingTeams(false));
   }, [departmentId]);
 
+  // Los grants de kanbans aplican a cualquier member (admin ve todo).
+  const isMemberEdit = role === 'member';
+
   async function handleSave() {
     setSaving(true); setError(false);
     try {
       const updated = await apiClient.call<ManagedUser>('updateUser', { userId: user.User_ID, role, departmentId, teamId, isNew });
+      // Grants solo si el usuario editado es member y el picker ya cargó.
+      if (isMemberEdit && boardGrants !== null) {
+        await apiClient.call('setUserBoardAccess', {
+          userId:       user.User_ID,
+          boardTeamIds: boardGrants,
+        });
+      }
       onSave(updated);
     } catch { setError(true); } finally { setSaving(false); }
   }
@@ -531,6 +544,7 @@ function UserEditForm({ user, onSave, onCancel }: {
           </div>
         </label>
       </div>
+      {isMemberEdit && <BoardAccessPicker userId={user.User_ID} onChange={setBoardGrants} />}
       {error && <div style={{ padding: '8px 12px', borderRadius: 7, background: 'rgba(255,71,87,0.1)', border: '1px solid rgba(255,71,87,0.3)', fontSize: 12, color: '#ff4757' }}>Error al guardar. Intenta de nuevo.</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <button onClick={onCancel} className="cpop-btn-cancel">Cancelar</button>
@@ -745,6 +759,66 @@ function LinkIdentityForm({ group, actorId, onDone, onCancel }: {
         <button onClick={handleSave} disabled={!canSave} className={`cpop-btn-save${!canSave ? ' cpop-btn-save--disabled' : ''}`}>
           {saving ? 'Vinculando\u2026' : 'VINCULAR'}
         </button>
+      </div>
+    </div>
+  );
+}
+/* ============================================================
+   BoardAccessPicker — grants de kanbans para un usuario TI member
+   Solo se muestra para dept TI + rol member. Admin ve todo,
+   cliente va por departamento: ninguno necesita config manual.
+   ============================================================ */
+function BoardAccessPicker({ userId, onChange }: { userId: number; onChange: (ids: number[]) => void }) {
+  const { data: allBoards = [] } = useBoardTeams(0);
+  const [selected, setSelected] = useState<number[] | null>(null);
+  const [loading,  setLoading]  = useState(true);
+
+  // Solo kanbans internos, activos (los externos no son "boards visibles").
+  const boards = allBoards
+    .filter((b) => b.Board_Team_Is_Active && !b.Board_Team_Is_External)
+    .sort((a, b) => a.Board_Team_Sort_Order - b.Board_Team_Sort_Order);
+
+  useEffect(() => {
+    apiClient.call<number[]>('fetchUserBoardAccess', { userId })
+      .then((ids) => { setSelected(ids); onChange(ids); })
+      .catch(() => { setSelected([]); onChange([]); })
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  function toggle(boardId: number) {
+    setSelected((prev) => {
+      const cur = prev ?? [];
+      const next = cur.includes(boardId)
+        ? cur.filter((id) => id !== boardId)
+        : [...cur, boardId];
+      onChange(next);
+      return next;
+    });
+  }
+
+  if (loading) {
+    return <div style={{ height: 80, borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }} />;
+  }
+
+  return (
+    <div>
+      <FieldLabel>Kanbans visibles</FieldLabel>
+      <div style={{ padding: '9px 12px', borderRadius: 8, background: 'rgba(0,200,255,0.05)', border: '1px solid rgba(0,200,255,0.2)', fontSize: 10.5, color: 'var(--txt-muted)', lineHeight: 1.5, marginBottom: 8 }}>
+        El usuario ya ve automáticamente los kanbans de su departamento. Acá le das acceso <strong>extra</strong> a kanbans puntuales de otros departamentos. Dejalo vacío si solo debe ver los suyos.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {boards.map((b) => {
+          const on = (selected ?? []).includes(b.Board_Team_ID);
+          return (
+            <label key={b.Board_Team_ID}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${on ? 'rgba(0,200,255,0.35)' : 'var(--border-subtle)'}`, background: on ? 'rgba(0,200,255,0.06)' : 'var(--bg-surface)', transition: 'all 0.12s' }}>
+              <input type="checkbox" checked={on} onChange={() => toggle(b.Board_Team_ID)} style={{ accentColor: 'var(--accent)', width: 14, height: 14 }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: b.Board_Team_Color, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12, fontWeight: on ? 600 : 500, color: on ? 'var(--accent)' : 'var(--txt)' }}>{b.Board_Team_Name}</span>
+            </label>
+          );
+        })}
       </div>
     </div>
   );

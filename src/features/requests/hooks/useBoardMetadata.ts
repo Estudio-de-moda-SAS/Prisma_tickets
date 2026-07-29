@@ -16,8 +16,20 @@ export type BoardTeam = {
   Board_Team_Is_Admin_Only: boolean;
   Board_Team_Is_External:   boolean;
   Board_Team_External_URL:  string | null;
+  Board_Team_Is_Integration: boolean;
+  Board_Team_Integration_Key: string | null;
   Board_Team_Sort_Order:    number;
   Board_Team_Is_Active:     boolean;
+  Department_ID:            number | null;
+  department?: { Department_ID: number; Department_Name: string } | null;
+};
+
+/**
+ * BoardTeam + su departamento, que trae fetchMyBoardTeams para armar los
+ * grupos del sidebar. El join puede venir null: kanban sin departamento.
+ */
+export type MyBoardTeam = BoardTeam & {
+  department: { Department_ID: number; Department_Name: string } | null;
 };
 
 export type BoardLabel = {
@@ -122,6 +134,24 @@ export function useBoardTeams(boardId: number) {
   return useQuery<BoardTeam[]>({
     queryKey:  ['boardTeams', boardId],
     queryFn:   () => apiClient.call<BoardTeam[]>('fetchAllTeams', {}),
+    staleTime: Infinity,
+    retry:     1,
+  });
+}
+
+/**
+ * Boards visibles para UN usuario, ya filtrados server-side por su nivel
+ * de acceso (admin → todos · grants → esos · TI sin grants → todos ·
+ * cliente → los de su depto). Lo consume el sidebar.
+ *
+ * Devuelve [] cuando el usuario no tiene ningún board visible → el sidebar
+ * cae a la vista limpia (solo Home / Nueva Solicitud / Mis Solicitudes).
+ */
+export function useMyBoardTeams(userId: number | null | undefined) {
+  return useQuery<MyBoardTeam[]>({
+    queryKey:  ['myBoardTeams', userId ?? null],
+    queryFn:   () => apiClient.call<MyBoardTeam[]>('fetchMyBoardTeams', { userId }),
+    enabled:   userId != null,
     staleTime: Infinity,
     retry:     1,
   });
