@@ -675,7 +675,20 @@ assignee: users.map((u) => ({ value: u.User_Name, label: u.User_Name })),
   const [search, setSearch] = useState('');
 
   const allRequests = useMemo(
-    () => (filteredBoard ? boardToFlat(filteredBoard).filter((r) => r.columna !== 'historial') : []),
+    () => {
+      if (!filteredBoard) return [];
+      const toTime = (iso: string) =>
+        new Date(iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z').getTime();
+      const isHecho = (r: Request) => r.columna === 'hecho';
+      return boardToFlat(filteredBoard)
+        .filter((r) => r.columna !== 'historial')
+        .sort((a, b) => {
+          const ha = isHecho(a) ? 1 : 0;
+          const hb = isHecho(b) ? 1 : 0;
+          if (ha !== hb) return ha - hb;                            // las "hecho" al final
+          return toTime(b.fechaApertura) - toTime(a.fechaApertura); // dentro del grupo: recientes primero
+        });
+    },
     [filteredBoard],
   );
   const visible = useMemo(() => {
@@ -814,6 +827,15 @@ export function HomePage() {
 
   const activeSprint = useMemo(() => getActiveSprint(sprints), [sprints]);
 
+  // Si el equipo activo es de integración (SOLVI), ocultamos el banner de
+  // sprint para no confundir: esos tickets no viven en TBL_Requests ni en sprints.
+  const activeTeamIsIntegration = useMemo(
+    () => visibleTeams.some(
+      (t) => t.Board_Team_Code === activeEquipo && t.Board_Team_Is_Integration,
+    ),
+    [visibleTeams, activeEquipo],
+  );
+
   const userName  = account?.name ?? '';
   const firstName = config.USE_MOCK ? 'Juan' : (userName.split(' ')[0] ?? 'Usuario');
 
@@ -857,7 +879,7 @@ export function HomePage() {
             </div>
             Crear nueva solicitud
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}><SprintBanner /></div>
+          {!activeTeamIsIntegration && <div style={{ flex: 1, minWidth: 0 }}><SprintBanner /></div>}
         </div>
       </div>
       {/* Tabs de equipo */}

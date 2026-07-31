@@ -1,11 +1,12 @@
 // src/features/requests/components/HomeRequestModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ShieldAlert, Send, Trash2, Users } from 'lucide-react';
+import { X, ShieldAlert, Send, Trash2, Users, Plus, Pencil, Check } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
 import { useSprints } from '@/features/requests/hooks/useSprints';
-import { useAcceptanceCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
+import { useAcceptanceCriteria, useCreateCriteria, useUpdateCriteriaTitle, useDeleteCriteria } from '@/features/requests/hooks/useAcceptanceCriteria';
+import { useUpdateRequest } from '@/features/requests/hooks/UseUpdateRequest';
 import { useComments, useCreateComment, useDeleteComment } from '@/features/requests/hooks/useComments';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useClientFeedback } from '@/features/requests/hooks/useClientFeedback';
@@ -293,6 +294,113 @@ function CriteriaReadonly({ requestId }: { requestId: string }) {
   );
 }
 
+/* ── CriteriaEditable — el solicitante gestiona criterios (sin aceptar/rechazar) ── */
+function CriteriaEditable({ requestId }: { requestId: string }) {
+  const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
+  const { mutate: createCriteria, isPending: creating } = useCreateCriteria(requestId);
+  const { mutate: updateTitle }    = useUpdateCriteriaTitle(requestId);
+  const { mutate: deleteCriteria } = useDeleteCriteria(requestId);
+
+  const [newTitle,  setNewTitle]  = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText,  setEditText]  = useState('');
+
+  const accepted = criteria.filter((c) => c.status === 'accepted').length;
+  const total    = criteria.length;
+
+  const STATUS_COLOR: Record<string, string> = { pending: 'var(--txt-muted)', accepted: 'var(--success)', rejected: 'var(--danger)' };
+  const STATUS_LABEL: Record<string, string> = { pending: 'Pendiente', accepted: 'Aceptado', rejected: 'Rechazado' };
+
+  function handleAdd() {
+    const t = newTitle.trim();
+    if (!t || creating) return;
+    createCriteria({ title: t }, { onSuccess: () => setNewTitle('') });
+  }
+
+  function startEdit(id: number, title: string) { setEditingId(id); setEditText(title); }
+  function commitEdit() {
+    const t = editText.trim();
+    if (editingId !== null && t) updateTitle({ criteriaId: editingId, title: t });
+    setEditingId(null);
+    setEditText('');
+  }
+
+  if (isLoading) return <div style={{ fontSize: 11, color: 'var(--txt-muted)', opacity: 0.6 }}>Cargando…</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {total > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+          <div style={{ flex: 1, height: 4, borderRadius: 3, background: 'var(--bg-surface)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ height: '100%', width: `${Math.round((accepted / total) * 100)}%`, borderRadius: 3, background: 'var(--success)', transition: 'width 0.3s ease' }} />
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt-muted)', minWidth: 40, textAlign: 'right' }}>{accepted}/{total}</span>
+        </div>
+      )}
+
+      {criteria.map((c) => {
+        const isEditing = editingId === c.criteriaId;
+        const isPending = c.status === 'pending';
+        const color     = STATUS_COLOR[c.status] ?? 'var(--txt-muted)';
+        return (
+          <div key={c.criteriaId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: color }} />
+            {isEditing ? (
+              <input
+                autoFocus
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitEdit(); } if (e.key === 'Escape') { setEditingId(null); setEditText(''); } }}
+                onBlur={commitEdit}
+                style={{ flex: 1, background: 'var(--bg-panel)', border: '1px solid rgba(0,200,255,0.4)', borderRadius: 5, padding: '4px 8px', fontSize: 12, color: 'var(--txt)', outline: 'none', fontFamily: 'var(--font-body)' }}
+              />
+            ) : (
+              <span style={{ flex: 1, fontSize: 12, color: 'var(--txt)', lineHeight: 1.4 }}>{c.title}</span>
+            )}
+            {!isEditing && !isPending && (
+              <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 5px', borderRadius: 3, color, background: `${color}10`, border: `1px solid ${color}25`, flexShrink: 0, whiteSpace: 'nowrap' }}>{STATUS_LABEL[c.status]}</span>
+            )}
+            {!isEditing && isPending && (
+              <>
+                <button onClick={() => startEdit(c.criteriaId, c.title)} title="Editar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.6, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                  <Pencil size={12} />
+                </button>
+                <button onClick={() => deleteCriteria({ criteriaId: c.criteriaId })} title="Eliminar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.6, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = 'var(--txt-muted)'; }}>
+                  <Trash2 size={12} />
+                </button>
+              </>
+            )}
+            {isEditing && (
+              <button onMouseDown={(e) => { e.preventDefault(); commitEdit(); }} title="Guardar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', padding: 2, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <Check size={13} />
+              </button>
+            )}
+          </div>
+        );
+      })}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+        <input
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+          placeholder="Agregar criterio de aceptación…"
+          style={{ flex: 1, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: 'var(--txt)', outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color 0.15s' }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+          onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!newTitle.trim() || creating}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', borderRadius: 6, border: `1px solid ${newTitle.trim() ? 'transparent' : 'var(--border-subtle)'}`, background: newTitle.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', color: newTitle.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: newTitle.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, fontFamily: 'var(--font-display)' }}
+        >
+          <Plus size={12} />Agregar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════
    HomeRequestModal
    ══════════════════════════════════════════════════════════════ */
@@ -305,6 +413,7 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const isMobile    = useIsMobile();
   const boardId     = config.DEFAULT_BOARD_ID;
   const equipo      = request.equipo[0] ?? 'desarrollo';
+  const { mutate: update } = useUpdateRequest(equipo);
 
   const { data: sprints  = [] } = useSprints();
 
@@ -325,6 +434,28 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const isClienteReview = request.columna === 'cliente_review';
 
   const [_commentText, setCommentText] = useState('');
+
+  /* ── Estado de edición (solo aplica cuando canEdit) ── */
+  const [tituloLocal, setTituloLocal] = useState(request.titulo ?? '');
+  const [descLocal,   setDescLocal]   = useState(request.descripcion ?? '');
+  const [saveStatus,  setSaveStatus]  = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setTituloLocal(request.titulo ?? '');
+    setDescLocal(request.descripcion ?? '');
+  }, [request.id]);
+
+  function debouncedSave(patch: { titulo?: string; descripcion?: string }, delay = 800) {
+    setSaveStatus('saving');
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      update({ id: request.id, patch }, {
+        onSuccess: () => { setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 2000); },
+        onError:   () => setSaveStatus('idle'),
+      });
+    }, delay);
+  }
 
   const canComment = !!currentUser && (
     currentUser.User_ID === request.solicitanteId ||
@@ -387,6 +518,19 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const selectedSprint   = sprints.find((s) => s.Sprint_ID === request.sprintId) ?? null;
   const colColor         = COL_COLOR[request.columna] ?? 'var(--txt-muted)';
 const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
+
+  /* ── ¿Puede editar? Solo el solicitante y solo mientras siga sin categorizar.
+     Se ancla a freshRequest (fuente autoritativa de la columna). Mientras el
+     detalle carga → read-only por defecto, para evitar el flash "editable" con el
+     dato del board, que en el primer open puede venir desactualizado. En USE_MOCK
+     no hay fetch, así que caemos al prop. ── */
+  const editSource = config.USE_MOCK ? request : freshRequest;
+  const canEdit =
+    !!editSource &&
+    editSource.columna === 'sin_categorizar' &&
+    !!currentUser &&
+    currentUser.User_ID === request.solicitanteId;
+
   return (
     <div
       ref={overlayRef}
@@ -408,9 +552,16 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
           <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--txt-muted)', letterSpacing: 1, userSelect: 'all' }}>{request.id}</span>
           <CopyLinkButton ticketId={request.id} />
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--txt-muted)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            Solo lectura
-          </span>
+          {!canEdit && (
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--txt-muted)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              Solo lectura
+            </span>
+          )}
+          {canEdit && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 8px', borderRadius: 4, color: 'var(--accent)', background: 'rgba(0,200,255,0.1)', border: '1px solid rgba(0,200,255,0.3)' }}>
+              <Pencil size={9} />Editable
+            </span>
+          )}
           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.8, padding: '2px 8px', borderRadius: 4, color: colColor, background: `${colColor}18`, border: `1px solid ${colColor}35` }}>
             {KANBAN_COLUMNAS[request.columna]}
           </span>
@@ -419,7 +570,25 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
               <ShieldAlert size={9} />Confidencial
             </span>
           )}
-          <div style={{ marginLeft: 'auto' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canEdit && saveStatus !== 'idle' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, letterSpacing: 0.3, color: saveStatus === 'saved' ? 'var(--success)' : 'var(--txt-muted)', pointerEvents: 'none', userSelect: 'none' }}>
+                {saveStatus === 'saving' && (
+                  <>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }}>
+                      <path d="M12 2a10 10 0 0 1 10 10" />
+                    </svg>
+                    Guardando…
+                  </>
+                )}
+                {saveStatus === 'saved' && (
+                  <>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Guardado
+                  </>
+                )}
+              </span>
+            )}
             <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <X size={14} />
             </button>
@@ -456,17 +625,50 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
             )}
 
             <FieldBlock label="Nombre de la solicitud">
-              <div style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', fontFamily: 'var(--font-body)' }}>{request.titulo}</span>
-              </div>
+              {canEdit ? (
+                <input
+                  value={tituloLocal}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTituloLocal(val);
+                    const trimmed = val.trim();
+                    if (trimmed && trimmed !== effectiveRequest.titulo) debouncedSave({ titulo: trimmed });
+                  }}
+                  placeholder="Nombre de la solicitud"
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--txt)', fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-body)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+                  onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+                />
+              ) : (
+                <div style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', fontFamily: 'var(--font-body)' }}>{request.titulo}</span>
+                </div>
+              )}
             </FieldBlock>
 
             <FieldBlock label="Descripción">
-<div style={{ padding: '10px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', minHeight: 72, overflow: 'hidden' }}>
-  {request.descripcion
-    ? <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{request.descripcion}</span>                  : <span style={{ fontSize: 13, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin descripción</span>
-                }
-              </div>
+              {canEdit ? (
+                <textarea
+                  value={descLocal}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDescLocal(val);
+                    debouncedSave({ descripcion: val });
+                  }}
+                  rows={4}
+                  placeholder="Escribe una descripción…"
+                  style={{ width: '100%', minHeight: 100, padding: '10px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: descLocal ? 'var(--txt)' : 'var(--txt-muted)', fontSize: 13, lineHeight: 1.65, resize: 'vertical', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
+                  onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+                />
+              ) : (
+                <div style={{ padding: '10px 12px', borderRadius: 7, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', minHeight: 72, overflow: 'hidden' }}>
+                  {request.descripcion
+                    ? <span style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{request.descripcion}</span>
+                    : <span style={{ fontSize: 13, color: 'var(--txt-muted)', fontStyle: 'italic' }}>Sin descripción</span>
+                  }
+                </div>
+              )}
             </FieldBlock>
 
             {hasFormData && (
@@ -478,7 +680,10 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
             )}
 
             <FieldBlock label="Criterios de aceptación">
-              <CriteriaReadonly requestId={request.id} />
+              {canEdit
+                ? <CriteriaEditable requestId={request.id} />
+                : <CriteriaReadonly requestId={request.id} />
+              }
             </FieldBlock>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
@@ -512,7 +717,28 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
               </FieldBlock>
 
               <FieldBlock label="Prioridad">
-                <FieldValue><ReadChip color={PRI_COLOR[request.prioridad]} label={PRIORIDADES[request.prioridad]} /></FieldValue>
+                {canEdit ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '4px 0' }}>
+                    {(Object.entries(PRIORIDADES) as [Prioridad, string][]).map(([pri, label]) => {
+                      const sel = effectiveRequest.prioridad === pri;
+                      const c   = PRI_COLOR[pri];
+                      return (
+                        <button
+                          key={pri}
+                          onClick={() => { if (!sel) update({ id: request.id, patch: { prioridad: pri } }); }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, padding: '4px 9px', borderRadius: 5, cursor: sel ? 'default' : 'pointer', color: sel ? c : 'var(--txt-muted)', background: sel ? `${c}18` : 'transparent', border: `1px solid ${sel ? `${c}45` : 'var(--border-subtle)'}`, transition: 'all 0.12s' }}
+                          onMouseEnter={(e) => { if (!sel) { e.currentTarget.style.borderColor = `${c}45`; e.currentTarget.style.color = c; } }}
+                          onMouseLeave={(e) => { if (!sel) { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
+                        >
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, flexShrink: 0 }} />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <FieldValue><ReadChip color={PRI_COLOR[request.prioridad]} label={PRIORIDADES[request.prioridad]} /></FieldValue>
+                )}
               </FieldBlock>
               
 
