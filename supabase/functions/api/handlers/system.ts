@@ -30,6 +30,44 @@ export const systemHandlers: Record<string, ActionHandler> = {
       .select('"Report_ID", "Title", "Severity", "Status", "Created_At"')
       .single();
     if (error) throw new Error(error.message);
+
+    // Notificar a los miembros de Desarrollo TI (board team 11) vía sub-teams.
+    // No bloquea la creación del reporte: si algo falla, se traga el error.
+    try {
+      const DESARROLLO_TI_BOARD_TEAM_ID = 11;
+
+      const { data: subTeams } = await supabase
+        .from('TBL_Sub_Teams')
+        .select('Sub_Team_ID')
+        .eq('Sub_Team_Team_ID', DESARROLLO_TI_BOARD_TEAM_ID);
+
+      const subTeamIds = ((subTeams ?? []) as any[]).map((s) => s.Sub_Team_ID) as number[];
+
+      if (subTeamIds.length > 0) {
+        const { data: members } = await supabase
+          .from('TBL_Sub_Team_Members')
+          .select('Sub_Team_Member_User_ID')
+          .in('Sub_Team_Member_Sub_Team_ID', subTeamIds);
+
+        const memberIds: number[] = [...new Set(
+          ((members ?? []) as any[]).map((m) => m.Sub_Team_Member_User_ID as number)
+        )].filter((uid) => uid !== p.userId);
+
+        if (memberIds.length > 0) {
+          await insertNotifications(supabase, {
+            userIds:   memberIds,
+            type:      'bug_report',
+            title:     'Nuevo fallo reportado',
+            body:      p.title.trim(),
+            requestId: null,
+            actorId:   p.userId,
+          });
+        }
+      }
+    } catch (_notifyErr) {
+      // no romper el flujo del reporte por un fallo notificando
+    }
+
     return data;
   },
 
