@@ -383,3 +383,5 @@
   .solvi-td--freeze-edge::after,
   .solvi-th--freeze-edge::after { display: none; }
 }
+@keyframes solvi-spin { to { transform: rotate(360deg); } }
+.solvi-spin { animation: solvi-spin 0.7s linear infinite; }

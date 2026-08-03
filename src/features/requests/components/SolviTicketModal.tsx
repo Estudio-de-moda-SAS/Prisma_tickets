@@ -1,7 +1,7 @@
 // src/features/requests/components/SolviTicketModal.tsx
-import { useState, useMemo } from 'react';
-import { X, FileText, Paperclip, Clock, User, Download, Copy, Check, Trash2 } from 'lucide-react';
-import { useSolviTicketDetail } from '@/features/requests/hooks/useSolviTickets';
+import { useState, useMemo, useRef } from 'react';
+import { X, FileText, Paperclip, Clock, User, Download, Copy, Check, Trash2, Plus, Loader2 } from 'lucide-react';
+import { useSolviTicketDetail, useUploadSolviAttachment } from '@/features/requests/hooks/useSolviTickets';
 import { useSolviComments, useCreateSolviComment, useDeleteSolviComment } from '@/features/requests/hooks/useSolviComments';
 import { useUsers } from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
@@ -107,7 +107,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const { data, isLoading, isError } = useSolviTicketDetail(ticketId);
   const t = data?.ticket as Record<string, unknown> | undefined;
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'detalle' | 'comentarios'>('detalle');
+  const [activeTab, setActiveTab] = useState<'detalle' | 'comentarios' | 'adjuntos'>('detalle');
   const { data: comments = [] }              = useSolviComments(ticketId);
   const { mutate: createComment, isPending: sending } = useCreateSolviComment();
   const { mutate: deleteComment }            = useDeleteSolviComment();
@@ -122,7 +122,9 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const myEmail = (currentUser?.User_Email ?? '').toLowerCase().trim();
   const reqEmail = String(t?.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim();
   const resEmail = String(t?.ticket_solvi_correo_resolutor ?? '').toLowerCase().trim();
-  const canComment = !!currentUser && (
+  const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
+  const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
+  const canComment = !isCerrado && !!currentUser && (
     (myEmail !== '' && (myEmail === reqEmail || myEmail === resEmail)) ||
     participants.some((p) => p.User_ID === currentUser.User_ID)
   );
@@ -206,7 +208,8 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
           {([
             { key: 'detalle',     label: 'Detalle' },
             { key: 'comentarios', label: `Comentarios${comments.length > 0 ? ` (${comments.length})` : ''}` },
-          ] as { key: 'detalle' | 'comentarios'; label: string }[]).map((tab) => {
+            { key: 'adjuntos',    label: `Adjuntos${(data?.attachments.length ?? 0) > 0 ? ` (${data?.attachments.length})` : ''}` },
+          ] as { key: 'detalle' | 'comentarios' | 'adjuntos'; label: string }[]).map((tab) => {
             const active = activeTab === tab.key;
             return (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -373,10 +376,23 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                   </div>
                 ) : (
                   <p style={{ margin: 0, padding: '14px 22px', borderTop: '1px solid var(--border-subtle)', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center', flexShrink: 0 }}>
-                    Solo el solicitante, el resolutor o quienes fueron mencionados pueden comentar.
+                    {isCerrado
+                      ? 'Este ticket está cerrado. No se pueden agregar comentarios.'
+                      : 'Solo el solicitante, el resolutor o quienes fueron mencionados pueden comentar.'}
                   </p>
                 )}
               </div>
+              )}
+
+              {activeTab === 'adjuntos' && (
+                <SolviAttachmentsTab
+                  ticketId={ticketId}
+                  userId={currentUser?.User_ID ?? null}
+                  canAttach={canComment}
+                  isCerrado={isCerrado}
+                  attachments={data?.attachments ?? []}
+                  seguimientos={data?.seguimientos ?? []}
+                />
               )}
             </>
           )}
@@ -398,4 +414,116 @@ function AttachmentRow({ a }: { a: import('@/features/requests/hooks/useSolviTic
   return a.signedUrl
     ? <a href={a.signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{inner}</a>
     : inner;
+}
+
+function SolviAttachmentsTab({
+  ticketId,
+  userId,
+  canAttach,
+  isCerrado,
+  attachments,
+  seguimientos,
+}: {
+  ticketId: number;
+  userId: number | null;
+  canAttach: boolean;
+  isCerrado: boolean;
+  attachments: import('@/features/requests/hooks/useSolviTickets').SolviAttachment[];
+  seguimientos: {
+    seguimientos_solvi_id: number;
+    seguimientos_solvi_tipo_de_accion: string | null;
+    seguimientos_solvi_action_date: string | null;
+  }[];
+}) {
+  const { mutate: upload, isPending } = useUploadSolviAttachment();
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handlePick = () => { setError(null); inputRef.current?.click(); };
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite re-subir el mismo archivo
+    if (!file || userId == null) return;
+    upload({ ticketId, userId, file }, { onError: (err) => setError(err.message) });
+  };
+
+  const ticketLevel = attachments.filter((a) => a.seguimiento_id == null);
+  const bySeguimiento = seguimientos
+    .map((s) => ({ seg: s, items: attachments.filter((a) => a.seguimiento_id === s.seguimientos_solvi_id) }))
+    .filter((g) => g.items.length > 0);
+  const knownSegIds = new Set(seguimientos.map((s) => s.seguimientos_solvi_id));
+  const orphan = attachments.filter((a) => a.seguimiento_id != null && !knownSegIds.has(a.seguimiento_id));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      {/* Barra de acción: adjuntar (con guard de permiso + cerrado) */}
+      {canAttach ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={handlePick}
+            disabled={isPending}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 14px', borderRadius: 7, border: '1px solid var(--accent)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', cursor: isPending ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, opacity: isPending ? 0.6 : 1, transition: 'all .15s' }}
+          >
+            {isPending ? <Loader2 size={14} className="solvi-spin" /> : <Plus size={14} />}
+            {isPending ? 'Subiendo…' : 'Adjuntar archivo'}
+          </button>
+          <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Máx. 20 MB</span>
+          <input ref={inputRef} type="file" onChange={handleFile} style={{ display: 'none' }} />
+        </div>
+      ) : (
+        <p style={{ margin: 0, padding: '10px 12px', borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center' }}>
+          {isCerrado
+            ? 'Este ticket está cerrado. No se pueden agregar adjuntos.'
+            : 'Solo el solicitante, el resolutor o quienes fueron mencionados pueden adjuntar.'}
+        </p>
+      )}
+
+      {error && (
+        <div style={{ fontSize: 11, color: 'var(--danger)', background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '8px 10px' }}>
+          {error}
+        </div>
+      )}
+
+      {attachments.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '40px 0', opacity: 0.55 }}>
+          <Paperclip size={30} style={{ color: 'var(--txt-muted)' }} />
+          <p style={{ fontSize: 12, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Este ticket no tiene adjuntos.</p>
+        </div>
+      ) : (
+        <>
+          {ticketLevel.length > 0 && (
+            <Section title={`Del ticket (${ticketLevel.length})`}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {ticketLevel.map((a) => <AttachmentRow key={a.id} a={a} />)}
+              </div>
+            </Section>
+          )}
+
+          {bySeguimiento.length > 0 && (
+            <Section title="De seguimientos">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {bySeguimiento.map(({ seg, items }) => (
+                  <div key={seg.seguimientos_solvi_id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>{str(seg.seguimientos_solvi_tipo_de_accion)}</span>
+                      <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>{fmtDate(seg.seguimientos_solvi_action_date)}</span>
+                    </div>
+                    {items.map((a) => <AttachmentRow key={a.id} a={a} />)}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {orphan.length > 0 && (
+            <Section title={`Otros (${orphan.length})`}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {orphan.map((a) => <AttachmentRow key={a.id} a={a} />)}
+              </div>
+            </Section>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

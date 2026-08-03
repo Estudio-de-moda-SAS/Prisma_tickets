@@ -102,30 +102,38 @@ export const solviHandlers: Record<string, ActionHandler> = {
       .order('seguimientos_solvi_id', { ascending: true });
     if (sErr) throw new Error(sErr.message);
 
-    // Adjuntos (del ticket y de sus seguimientos)
+    // Adjuntos (del ticket y de sus seguimientos, aunque id_ticket venga null)
+    const segIds = (seguimientos ?? []).map((s: { seguimientos_solvi_id: number }) => s.seguimientos_solvi_id);
+    const orFilter = segIds.length > 0
+      ? `id_ticket.eq.${id},seguimiento_id.in.(${segIds.join(',')})`
+      : `id_ticket.eq.${id}`;
     const { data: attachments, error: aErr } = await supabase
       .from('TBL_Ticket_Attachments_Solvi')
       .select(ATTACHMENT_SELECT)
-      .eq('id_ticket', id)
+      .or(orFilter)
       .order('created_at', { ascending: true });
     if (aErr) throw new Error(aErr.message);
 
     // Signed URLs — best-effort: si el bucket/path no resuelve, se deja null
     // y el front muestra solo el nombre (degradación elegante).
+    // NOTA: storage_bucket puede venir null en las filas → fallback al bucket fijo.
+    const DEFAULT_BUCKET = 'ticket-attachments';
     const withUrls = await Promise.all((attachments ?? []).map(async (a: {
       id: number; created_at: string; attachment_path: string | null;
       attachment_type: string | null; id_ticket: number | null;
       seguimiento_id: number | null; storage_bucket: string | null; file_name: string | null;
     }) => {
       let url: string | null = null;
-      if (a.storage_bucket && a.attachment_path) {
+      const bucket = a.storage_bucket ?? DEFAULT_BUCKET;
+      if (bucket && a.attachment_path) {
         try {
-          const { data: signed } = await supabase.storage
-            .from(a.storage_bucket)
+          const { data: signed, error: uErr } = await supabase.storage
+            .from(bucket)
             .createSignedUrl(a.attachment_path, SIGNED_URL_TTL);
+          if (uErr) console.error(`[solvi] signedUrl id=${a.id} path=${a.attachment_path}: ${uErr.message}`);
           url = signed?.signedUrl ?? null;
-        } catch {
-          url = null;
+        } catch (e) {
+          console.error(`[solvi] signedUrl id=${a.id}:`, e);
         }
       }
       return { ...a, signedUrl: url };
@@ -268,5 +276,84 @@ export const solviHandlers: Record<string, ActionHandler> = {
       .delete().eq('Ticket_ID', ticketId).eq('User_ID', userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  },
+
+  fetchMySolviTickets: async (payload, { supabase }) => {
+    const { email } = payload as { email: string };
+    const e = (email ?? '').toLowerCase().trim();
+    if (!e) return [];
+    const { data, error } = await supabase
+      .from('TBL_Ticket_Solvi')
+      .select('ticket_solvi_id, ticket_solvi_titulo, ticket_solvi_estado, ticket_solvi_categoria, ticket_solvi_resolutor, ticket_solvi_fechaapertura, ticket_solvi_correo_solicitante')
+      .ilike('ticket_solvi_correo_solicitante', e)   // ilike = case-insensitive
+      .order('ticket_solvi_fechaapertura', { ascending: false, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    // Filtro extra en memoria por trim (ilike no maneja espacios al borde)
+    return (data ?? []).filter((t: { ticket_solvi_correo_solicitante: string | null }) =>
+      (t.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim() === e);
+  },
+  
+  // ── Subir adjunto a un ticket SOLVI (nivel ticket) ──
+  // Guard: solicitante/resolutor (por correo) ∪ mencionado ∪ admin, y NO cerrado.
+  // Mismo criterio que createSolviComment.
+  uploadSolviAttachment: async (payload, { supabase }) => {
+    const p = payload as {
+      ticketId: number; userId: number; fileName: string; mimeType: string;
+      sizeBytes: number; base64: string;
+    };
+
+    // ── Enforcement del gate ──
+    {
+      const [{ data: user }, { data: ticket }, { data: part }] = await Promise.all([
+        supabase.from('TBL_Users').select('User_Email, User_Role').eq('User_ID', p.userId).single(),
+        supabase.from('TBL_Ticket_Solvi')
+          .select('ticket_solvi_correo_solicitante, ticket_solvi_correo_resolutor, ticket_solvi_estado')
+          .eq('ticket_solvi_id', p.ticketId).single(),
+        supabase.from('TBL_Solvi_Participants')
+          .select('User_ID').eq('Ticket_ID', p.ticketId).eq('User_ID', p.userId).maybeSingle(),
+      ]);
+
+      const estado   = String(ticket?.ticket_solvi_estado ?? '').toLowerCase();
+      const isCerrado = estado.includes('cerrado') || estado.includes('resuelto');
+      if (isCerrado) throw new Error('El ticket está cerrado. No se pueden agregar adjuntos.');
+
+      const myEmail  = (user?.User_Email ?? '').toLowerCase().trim();
+      const reqEmail = String(ticket?.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim();
+      const resEmail = String(ticket?.ticket_solvi_correo_resolutor ?? '').toLowerCase().trim();
+      const isAdmin  = user?.User_Role === 'admin';
+      const allowed  = isAdmin
+        || (myEmail !== '' && (myEmail === reqEmail || myEmail === resEmail))
+        || !!part;
+      if (!allowed) throw new Error('No autorizado para adjuntar en este ticket');
+    }
+
+    const bucket = 'ticket-attachments';
+    // Namespace propio de PRISMA, separado del de Graph/SOLVI (tickets/YYYY-MM-DD/AAMk…).
+    const safeName = p.fileName.replace(/[^\w.\-]+/g, '_');
+    const filePath = `tickets/prisma/${p.ticketId}/${Date.now()}_${safeName}`;
+
+    const bytes = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
+    const { error: uploadErr } = await supabase.storage
+      .from(bucket).upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
+    if (uploadErr) throw new Error(uploadErr.message);
+
+    const { data, error: insertErr } = await supabase
+      .from('TBL_Ticket_Attachments_Solvi')
+      .insert({
+        id_ticket:       p.ticketId,
+        seguimiento_id:  null,
+        storage_bucket:  bucket,          // lo llenamos → no dependemos del fallback
+        attachment_path: filePath,
+        attachment_type: p.mimeType,
+        file_name:       p.fileName,
+      })
+      .select('id, created_at, attachment_path, attachment_type, id_ticket, seguimiento_id, storage_bucket, file_name')
+      .single();
+    if (insertErr) throw new Error(insertErr.message);
+
+    const { data: signed } = await supabase.storage
+      .from(bucket).createSignedUrl(filePath, SIGNED_URL_TTL);
+
+    return { ...data, signedUrl: signed?.signedUrl ?? null };
   },
 };

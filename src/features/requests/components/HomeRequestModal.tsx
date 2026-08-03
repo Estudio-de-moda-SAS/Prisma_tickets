@@ -469,7 +469,8 @@ const canRevokeParticipant = !!currentUser && (
     request.assignees.some((a) => a.userId === currentUser.User_ID)
   );
 
-  const canComment = !!currentUser && (
+  const isCerrada = request.columna === 'hecho' || request.columna === 'historial' || !!request.fechaCierre;
+  const canComment = !isCerrada && !!currentUser && (
     currentUser.User_ID === request.solicitanteId ||
     request.assignees.some((a) => a.userId === currentUser.User_ID) ||
     participants.some((p) => p.User_ID === currentUser.User_ID)   // ← mencionado
@@ -868,7 +869,9 @@ const [revokingId, setRevokingId] = useState<number | null>(null);
                 />
               ) : (
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center', padding: '4px 0' }}>
-                  Solo el solicitante, los responsables o quienes fueron mencionados pueden comentar.
+                  {isCerrada
+                    ? 'Esta solicitud está cerrada. No se pueden agregar comentarios.'
+                    : 'Solo el solicitante, los responsables o quienes fueron mencionados pueden comentar.'}
                 </p>
               )}
               </div>
