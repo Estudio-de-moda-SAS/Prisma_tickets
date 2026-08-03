@@ -1,7 +1,7 @@
 // src/features/requests/components/HomeRequestModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ShieldAlert, Send, Trash2, Users, Plus, Pencil, Check } from 'lucide-react';
+import { X, ShieldAlert, Trash2, Users, Plus, Pencil, Check } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
 import { useSprints } from '@/features/requests/hooks/useSprints';
@@ -17,6 +17,12 @@ import { config } from '@/config';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
+import { useUsers } from '@/features/requests/hooks/useUsers';
+import { useRequestParticipants, useRemoveParticipant } from '@/features/requests/hooks/useRequestParticipants';
+import { CommentComposer } from './mentions/CommentComposer';
+import { CommentText } from './mentions/CommentText';
+import { ParticipantsPanel } from './mentions/ParticipantsPanel';
+
 const PRI_COLOR: Record<Prioridad, string> = {
   baja:    'var(--txt-muted)',
   media:   'var(--info)',
@@ -421,6 +427,8 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const { mutate: createComment, isPending: sending }              = useCreateComment();
   const { mutate: deleteComment }                                  = useDeleteComment();
   const { data: currentUser }                                      = useCurrentUser();
+  const { data: allUsers = [] }                                    = useUsers();
+  const { data: participants = [] }                                = useRequestParticipants(request.id);
   const { data: feedbackHistorial = [] }                           = useClientFeedback(request.id);
   const cierreCount    = (request.cierreHistorial?.length ?? 0);
   const clientFeedback = cierreCount > 0 && feedbackHistorial.length >= cierreCount
@@ -433,7 +441,7 @@ export function HomeRequestModal({ request, onClose }: Props) {
 
   const isClienteReview = request.columna === 'cliente_review';
 
-  const [_commentText, setCommentText] = useState('');
+  const [_commentText] = useState('');
 
   /* ── Estado de edición (solo aplica cuando canEdit) ── */
   const [tituloLocal, setTituloLocal] = useState(request.titulo ?? '');
@@ -456,10 +464,15 @@ export function HomeRequestModal({ request, onClose }: Props) {
       });
     }, delay);
   }
+const canRevokeParticipant = !!currentUser && (
+    currentUser.User_Role === 'admin' ||
+    request.assignees.some((a) => a.userId === currentUser.User_ID)
+  );
 
   const canComment = !!currentUser && (
     currentUser.User_ID === request.solicitanteId ||
-    request.assignees.some((a) => a.userId === currentUser.User_ID)
+    request.assignees.some((a) => a.userId === currentUser.User_ID) ||
+    participants.some((p) => p.User_ID === currentUser.User_ID)   // ← mencionado
   );
 
   const overlayRef     = useRef<HTMLDivElement>(null);
@@ -474,16 +487,6 @@ export function HomeRequestModal({ request, onClose }: Props) {
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments.length]);
-
-  function handleSendComment() {
-    const text = _commentText.trim();
-    if (!text || !currentUser) return;
-    createComment({ requestId: request.id, userId: currentUser.User_ID, text }, { onSuccess: () => setCommentText('') });
-  }
-
-  function handleCommentKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSendComment(); }
-  }
 
   const [showRatingModal,   setShowRatingModal]   = useState(false);
   const [ratingResolverIds, setRatingResolverIds] = useState<number[]>([]);
@@ -530,7 +533,8 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
     editSource.columna === 'sin_categorizar' &&
     !!currentUser &&
     currentUser.User_ID === request.solicitanteId;
-
+const { mutate: removeParticipant } = useRemoveParticipant();
+const [revokingId, setRevokingId] = useState<number | null>(null);
   return (
     <div
       ref={overlayRef}
@@ -784,7 +788,22 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
 
           {/* Panel derecho — comentarios */}
           <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: isMobile ? '70dvh' : undefined }}>
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+{currentUser && (
+                <ParticipantsPanel
+                  participants={participants}
+                  solicitanteId={request.solicitanteId}
+                  solicitante={request.solicitante}
+                  assignees={request.assignees ?? []}
+                  allUsers={allUsers}
+                  canRevoke={canRevokeParticipant}
+                  onRevoke={(userId) => {
+                    setRevokingId(userId);
+                    removeParticipant({ requestId: request.id, userId, actorId: currentUser.User_ID }, { onSettled: () => setRevokingId(null) });
+                  }}
+                  revokingId={revokingId}
+                />
+              )}
+                          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
               <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent)', color: 'var(--accent)', cursor: 'default' }}>
                 Comentarios
                 {comments.length > 0 && (
@@ -827,7 +846,7 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
                         )}
                       </div>
                       <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}>
-                        {c.Comment_Text}
+                        <CommentText text={c.Comment_Text} users={allUsers} />
                       </div>
                     </div>
                   );
@@ -837,32 +856,22 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
             </div>
 
             <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {canComment ? (
-                <>
-                  <textarea
-                    value={_commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyDown={handleCommentKeyDown}
-                    placeholder="Escribe un comentario… (Ctrl+Enter)"
-                    rows={2}
-                    style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '8px 10px', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }}
-                    onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
-                  />
-                  <button
-                    onClick={handleSendComment}
-                    disabled={!_commentText.trim() || sending}
-                    style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: _commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${_commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: _commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: _commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}
-                  >
-                    <Send size={11} />{sending ? 'Enviando…' : 'Enviar'}
-                  </button>
-                </>
+{canComment ? (
+                <CommentComposer
+                  users={allUsers}
+                  mentioner={{ User_ID: currentUser!.User_ID, User_Role: currentUser!.User_Role, Department_ID: currentUser!.Department_ID }}
+                  isConfidential={request.isConfidential ?? false}
+                  sending={sending}
+                  onSubmit={(text, mentionedUserIds) =>
+                    createComment({ requestId: request.id, userId: currentUser!.User_ID, text, mentionedUserIds })
+                  }
+                />
               ) : (
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-muted)', fontStyle: 'italic', textAlign: 'center', padding: '4px 0' }}>
-                  Solo el solicitante o los responsables pueden comentar.
+                  Solo el solicitante, los responsables o quienes fueron mencionados pueden comentar.
                 </p>
               )}
-            </div>
+              </div>
           </div>
         </div>
       </div>
