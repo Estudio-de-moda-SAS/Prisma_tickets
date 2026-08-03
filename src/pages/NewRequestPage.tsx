@@ -514,10 +514,8 @@ function StepIndicator({ step }: { step: Step }) {
   );
 }
 
-function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void; onNext: () => void }) {
+function StepEquipo({ teams, selectedTeamId, onSelect }: { teams: BoardTeam[]; selectedTeamId: number | null; onSelect: (id: number) => void }) {
   const isMobile = useIsMobile();
-  const selectedTeam = teams.find((t) => t.Board_Team_ID === selectedTeamId) ?? null;
-  const {  border: selBorder } = selectedTeam ? teamColors(selectedTeam.Board_Team_Color) : {  border: 'var(--accent)' };
 
   // Agrupar por departamento (respetando el orden global ya aplicado en teams).
   // "Sin departamento" (kanbans solo-admin) va al final. Los labels de grupo
@@ -555,9 +553,9 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
                 <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 14 }}>
-              {grupo.teams.map((team, idx) => {
-                const isAlone               = grupo.teams.length % 2 !== 0 && idx === grupo.teams.length - 1;
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+              {grupo.teams.map((team) => {
+                const isAlone               = grupo.teams.length === 1;
                 const isExternal            = !!team.Board_Team_Is_External && !!team.Board_Team_External_URL;
                 const selected              = !isExternal && selectedTeamId === team.Board_Team_ID;
                 const { dot, glow, border } = teamColors(team.Board_Team_Color);
@@ -575,27 +573,27 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
                       onSelect(team.Board_Team_ID);
                     }}
                     style={{
-                      padding: '22px 20px', borderRadius: 10,
+                      padding: '15px 18px', borderRadius: 10,
                       border: `1.5px solid ${selected ? border : 'var(--border)'}`,
                       background: selected ? glow : 'var(--bg-panel)',
                       cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
                       position: 'relative', overflow: 'hidden',
-                      display: 'flex', flexDirection: 'column', gap: 10,
-                      ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(50% - 7px)', justifySelf: 'center', width: '100%' } : {}),
+                      display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 13,
+                      ...(isAlone && !isMobile ? { gridColumn: '1 / -1', maxWidth: 'calc(33.333% - 10px)', justifySelf: 'center', width: '100%' } : {}),
                     }}
                     onMouseEnter={(e) => { if (!selected) { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = glow; }}}
                     onMouseLeave={(e) => { if (!selected) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-panel)'; }}}
                   >
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: selected ? `linear-gradient(90deg, transparent, ${dot}, transparent)` : 'transparent', transition: 'background 0.2s' }} />
-                    {selected && <div style={{ position: 'absolute', top: 12, right: 14, width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-                    {isExternal && <div style={{ position: 'absolute', top: 12, right: 14, width: 22, height: 22, borderRadius: 6, background: `${dot}18`, border: `1px solid ${dot}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Abre en herramienta externa"><ExternalLink size={12} style={{ color: dot }} /></div>}
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
+                    {selected && <div style={{ position: 'absolute', top: '50%', right: 14, transform: 'translateY(-50%)', width: 20, height: 20, borderRadius: '50%', background: dot, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 8px ${dot}60` }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+                    {isExternal && <div style={{ position: 'absolute', top: '50%', right: 14, transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: 6, background: `${dot}18`, border: `1px solid ${dot}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Abre en herramienta externa"><ExternalLink size={12} style={{ color: dot }} /></div>}
+                    <div style={{ width: 42, height: 42, borderRadius: 9, background: `${dot}${selected ? '22' : '10'}`, border: `1px solid ${selected ? border : dot + '35'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={18} style={{ color: dot, opacity: selected ? 1 : 0.5 }} />
                     </div>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3 }}>{team.Board_Team_Name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: (selected || isExternal) ? 26 : 0 }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: selected ? dot : 'var(--txt)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.Board_Team_Name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <div style={{ width: 5, height: 5, borderRadius: '50%', background: dot, flexShrink: 0, opacity: selected ? 1 : 0.55 }} />
-                        <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65 }}>
+                        <div style={{ fontSize: 11, color: 'var(--txt-muted)', lineHeight: 1.4, opacity: selected ? 0.9 : 0.65, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {team.Board_Team_Description ?? (isExternal ? 'Herramienta externa del equipo' : team.Board_Team_Code)}
                         </div>
                       </div>
@@ -607,28 +605,7 @@ function StepEquipo({ teams, selectedTeamId, onSelect, onNext }: { teams: BoardT
           </div>
         ))}
       </div>
-      <div style={{
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 20,
-        display: 'flex',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        marginTop: 24,
-        marginLeft: isMobile ? -14 : -50,
-        marginRight: isMobile ? -14 : -50,
-        marginBottom: isMobile ? -24 : -32,
-        padding: isMobile ? '12px 14px' : '14px 50px',
-        background: 'var(--bg-panel)',
-        borderTop: `1px solid ${selectedTeamId !== null ? selBorder : 'transparent'}`,
-        opacity: selectedTeamId !== null ? 1 : 0,
-        transform: selectedTeamId !== null ? 'translateY(0)' : 'translateY(10px)',
-        pointerEvents: selectedTeamId !== null ? 'auto' : 'none',
-        transition: 'opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease',
-      }}>
-        <button type="button" onClick={onNext} disabled={selectedTeamId === null} style={{ padding: '10px 28px', borderRadius: 6, border: 'none', background: selectedTeamId !== null ? 'linear-gradient(135deg, var(--accent-2), var(--accent))' : 'var(--bg-surface)', color: selectedTeamId !== null ? 'white' : 'var(--txt-muted)', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: selectedTeamId !== null ? 'pointer' : 'not-allowed' }}>Continuar →</button>
       </div>
-    </div>
   );
 }
 
@@ -1150,12 +1127,14 @@ useEffect(() => {
   }
 }, [currentUser]);
 function selectTeam(id: number) { setSelectedTeamId(id); setSelectedTemplateId(null); setExtraValues({}); }
+function selectTeamAndAdvance(id: number) { selectTeam(id); goToTemplate(id); }
 
-function goToTemplate() {
-  if (selectedTeamId === null) return;
+function goToTemplate(teamIdArg?: number) {
+  const tid = teamIdArg ?? selectedTeamId;
+  if (tid === null) return;
   // Equipo de integración (SOLVI, etc.): no usa el flujo de PRISMA. Se opera en
   // su propia app y tiene su propia página de creación. Redirigimos allí.
-  const team = teams.find((t) => t.Board_Team_ID === selectedTeamId);
+  const team = teams.find((t) => t.Board_Team_ID === tid);
   if (team?.Board_Team_Is_Integration && team.Board_Team_Integration_Key) {
     navigate(`/integracion/${team.Board_Team_Integration_Key}`, {
       state: { teamId: team.Board_Team_ID },
@@ -1166,7 +1145,7 @@ function goToTemplate() {
     (t) =>
       t.Request_Template_Is_Active &&
       (t.Request_Template_Teams?.length === 0 ||
-        t.Request_Template_Teams?.includes(selectedTeamId)),
+        t.Request_Template_Teams?.includes(tid)),
   );
   if (filtered.length === 1) {
     setSelectedTemplateId(filtered[0].Request_Template_ID);
@@ -1364,7 +1343,7 @@ function resetForCreateAnother(keepTeam: boolean) {
   return (
     <form onSubmit={handleSubmit} style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: isMobile ? '0 14px 24px' : '0 50px 32px', width: '100%', margin: '0 auto' }}>
       <StepIndicator step={step} />
-{step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeam} onNext={goToTemplate} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
+{step === 'equipo' && <StepEquipo teams={visibleTeams} selectedTeamId={selectedTeamId} onSelect={selectTeamAndAdvance} />}      {step === 'template' && <StepTemplate templates={templates} selectedBoardTeamId={selectedTeamId} selectedTemplateId={selectedTemplateId} onSelect={setSelectedTemplateId} onNext={() => setStep('form')} onBack={() => setStep('equipo')} />}
       {step === 'form' && selectedTemplateId !== null && (
         <StepForm
           allTemplates={templates} templateId={selectedTemplateId}
