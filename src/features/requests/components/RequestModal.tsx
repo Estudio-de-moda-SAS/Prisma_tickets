@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, ChevronDown as ChevDown,
-  Send, Trash2, Paperclip, Upload,
+  Trash2, Paperclip, Upload,
   GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy,
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
@@ -37,7 +37,10 @@ import { CopyLinkButton, TemplateFormDataPanel, DividirTooltip, DropdownPanel, D
   fmtHours, fileIcon, useDropdown, AcceptanceCriteriaPanel
 } from './RequestModalComponents';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
-
+import { CommentComposer } from './mentions/CommentComposer';
+import { CommentText } from './mentions/CommentText';
+import { ParticipantsPanel } from './mentions/ParticipantsPanel';
+import { useRequestParticipants, useRemoveParticipant } from '@/features/requests/hooks/useRequestParticipants';
 const COL_COLOR: Record<KanbanColumna, string> = {
   sin_categorizar: 'var(--txt-muted)',
   icebox:          '#60a5fa',
@@ -247,6 +250,7 @@ const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
   const { data: sprints     = [] } = useSprints();
 const { data: allUsers    = [] } = useUsers();
 const { data: comments    = [] } = useComments(requestId);  const { data: attachments = [] } = useAttachments(requestId);
+const { data: participants = [] } = useRequestParticipants(requestId);
   const { data: children    = [] } = useChildRequests(requestId);
   const { data: criteria    = [] } = useAcceptanceCriteria(requestId);
   const { data: parentRequest } = useQuery<Request>({
@@ -271,7 +275,6 @@ const [showSubRequests,  setShowSubRequests]  = useState(false);  const [columna
   const [assigneeIds,      setAssigneeIds]      = useState<number[]>(request.assignees?.map((a) => a.userId) ?? []);
   const [userSearch,       setUserSearch]       = useState('');
   const [labelSearch,      setLabelSearch]      = useState('');
-  const [commentText,      setCommentText]      = useState('');
   const [dragOver,         setDragOver]         = useState(false);
 const [tituloLocal,      setTituloLocal]      = useState(request.titulo ?? '');
 const [formDataLocal,    setFormDataLocal]    = useState<Record<string, unknown>>(request.formData ?? {});
@@ -486,18 +489,6 @@ function handleToggleAssignee(userId: number) {
     assign({ requestId, userId, assignedBy: currentUser?.User_ID });  // ← agregar esto
   }
 }
-
-  function handleSendComment() {
-    const text = commentText.trim();
-    if (!text || !currentUser) return;
-    createComment({ requestId, userId: currentUser.User_ID, text }, { onSuccess: () => setCommentText('') });
-  }
-
-  function handleCommentKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (readOnly) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleSendComment(); }
-  }
-
   function handleUploadFiles(files: FileList | null) {
     if (readOnly || !files || !currentUser) return;
     Array.from(files).forEach((file) => uploadAttachment({ requestId, userId: currentUser.User_ID, file }));
@@ -529,10 +520,15 @@ function handleToggleAssignee(userId: number) {
   const readyToDeployColumnId = columnMap?.['ready_to_deploy'] ?? 7;
   const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
 const yaHayClosure = !!effectiveRequest.fechaCierre;
-
+const canRevokeParticipant = !!currentUser && (
+  currentUser.User_Role === 'admin' ||
+  effectiveRequest.assignees.some((a) => a.userId === currentUser.User_ID)
+);
 const [showDescriptionModal, setShowDescriptionModal] = useState(false);
 const [showRatingModal,   setShowRatingModal]   = useState(false);
 const [ratingResolverIds, setRatingResolverIds] = useState<number[]>([]);
+const { mutate: removeParticipant } = useRemoveParticipant();
+const [revokingId, setRevokingId] = useState<number | null>(null);
 
   return (
     <>
@@ -1414,6 +1410,21 @@ onToggleAssignee={(userId) => {
 
             {/* Panel derecho */}
             <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: isMobile ? '70dvh' : undefined }}>
+{currentUser && (
+                <ParticipantsPanel
+                  participants={participants}
+                  solicitanteId={request.solicitanteId}
+                  solicitante={request.solicitante}
+                  assignees={request.assignees ?? []}
+                  allUsers={allUsers}
+                  canRevoke={canRevokeParticipant}
+                  onRevoke={(userId) => {
+                    setRevokingId(userId);
+                    removeParticipant({ requestId: request.id, userId, actorId: currentUser.User_ID }, { onSettled: () => setRevokingId(null) });
+                  }}
+                  revokingId={revokingId}
+                />
+              )}
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
                 {([
                   { key: 'comments',    label: 'Comentarios', icon: null,                   count: comments.length },
@@ -1448,20 +1459,24 @@ onToggleAssignee={(userId) => {
                                 <span style={{ fontSize: 9, color: 'var(--txt-muted)', flexShrink: 0 }}>{fmtRelative(c.Comment_Created_At)}</span>
                                 {isOwn && !readOnly && <button onClick={() => deleteComment({ commentId: c.Comment_ID, requestId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
                               </div>
-                              <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}>{c.Comment_Text}</div>
+                              <div style={{ marginLeft: 26, fontSize: 12, color: 'var(--txt)', lineHeight: 1.55, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '7px 10px', wordBreak: 'break-word' }}><CommentText text={c.Comment_Text} users={allUsers} /></div>
                             </div>
                           );
                         })
                     }
                     <div ref={commentsEndRef} />
                   </div>
-                  <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={handleCommentKeyDown} placeholder="Escribe un comentario… (Ctrl+Enter)" rows={2} style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 7, padding: '8px 10px', color: 'var(--txt)', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.4)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }} />
-                    <button onClick={handleSendComment} disabled={!commentText.trim() || sendingComment || !currentUser} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, background: commentText.trim() ? 'var(--accent-2)' : 'var(--bg-surface)', border: `1px solid ${commentText.trim() ? 'transparent' : 'var(--border-subtle)'}`, color: commentText.trim() ? 'white' : 'var(--txt-muted)', fontSize: 11, fontWeight: 600, cursor: commentText.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s', fontFamily: 'var(--font-display)' }}>
-                      <Send size={11} />{sendingComment ? 'Enviando…' : 'Enviar'}
-                    </button>
-                  </div>
-                </>
+{currentUser && (
+                    <CommentComposer
+                      users={allUsers}
+                      mentioner={{ User_ID: currentUser.User_ID, User_Role: currentUser.User_Role, Department_ID: currentUser.Department_ID }}
+                      isConfidential={effectiveRequest.isConfidential ?? false}
+                      sending={sendingComment}
+                      onSubmit={(text, mentionedUserIds) =>
+                        createComment({ requestId, userId: currentUser.User_ID, text, mentionedUserIds })
+                      }
+                    />
+                  )}                </>
               )}
 
               {rightTab === 'attachments' && (

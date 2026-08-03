@@ -41,6 +41,24 @@ export const requestHandlers: Record<string, ActionHandler> = {
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
 
+  fetchMyMentions: async (payload, { supabase }) => {
+    const { userId, boardId } = payload as { userId: number; boardId: number };
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Request_Participants')
+      .select('Request_ID')
+      .eq('User_ID', userId)
+      .eq('Added_Via', 'mention');
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = (links as { Request_ID: string }[]).map((l) => l.Request_ID);
+    if (ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from('TBL_Requests').select(BASE_SELECT)
+      .in('Request_ID', ids).eq('Request_Board_ID', boardId)
+      .order('Request_Created_At', { ascending: false });
+    if (error) throw new Error(error.message);
+    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+  },
+  
 fetchByTeamCode: async (payload, { supabase }) => {
     const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
     const { data: teamData, error: teamErr } = await supabase
@@ -715,7 +733,22 @@ fetchByTeamCode: async (payload, { supabase }) => {
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
-
+fetchByParticipant: async (payload, { supabase }) => {
+    const { userId, boardId } = payload as { userId: number; boardId: number };
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Request_Participants')
+      .select('Request_ID')
+      .eq('User_ID', userId);
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = (links as { Request_ID: string }[]).map((l) => l.Request_ID);
+    if (ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from('TBL_Requests').select(BASE_SELECT)
+      .in('Request_ID', ids).eq('Request_Board_ID', boardId)
+      .order('Request_Created_At', { ascending: false });
+    if (error) throw new Error(error.message);
+    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+  },
   fetchTeamHistorialCount: async (payload, { supabase }) => {
     const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
     const { data: teamData, error: teamErr } = await supabase

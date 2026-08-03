@@ -7,7 +7,9 @@ export type AppUser = {
   User_Name:       string;
   User_Email:      string;
   User_Avatar_url: string;
-  User_Role:       string;
+User_Role:       string;
+  Department_ID:   number | null;   // ← requerido para filtrar menciones
+  department?:     { Department_ID: number; Department_Name: string; Department_Code: string } | null;
 };
 
 export function useUsers() {

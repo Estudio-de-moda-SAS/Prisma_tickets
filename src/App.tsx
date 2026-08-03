@@ -9,6 +9,7 @@ import { BoardPage } from "@/pages/BoardPage";
 import { HomePage } from "@/pages/HomePage";
 import { NuevaSolicitudPage } from "@/pages/NewRequestPage";
 import { MisSolicitudesPage } from "@/pages/MyRequestsPage";
+import { MyMentionsPage } from "@/pages/MyMentionsPage";
 import { ClientRequestsPage } from "@/pages/ClientRequestsPage";
 import { TeamRequestsPage } from "@/pages/TeamRequestsPage";
 import { RequestsPage } from "@/pages/RequestsPage";
@@ -191,6 +192,7 @@ export default function App() {
           <Route path="integracion/solvi/tickets" element={<RequireTI><SolviTicketsPage /></RequireTI>} />
           <Route path="integracion/solvi/tickets/:ticketId" element={<SolviTicketOverlay />} />
           <Route path="my-requests"    element={<MisSolicitudesPage />} />
+          <Route path="mis-menciones"  element={<MyMentionsPage />} />
           <Route path="mis-solicitudes" element={<ClientRequestsPage />} />
 
           <Route path="stats" element={<RequireStats><StatsPage /></RequireStats>} />

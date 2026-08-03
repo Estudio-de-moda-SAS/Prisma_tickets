@@ -4,9 +4,8 @@ import { Plus, CalendarDays, Zap, Search, X, Clock, ExternalLink, LayoutList } f
 import { useAuth } from '@/auth/AuthProvider';
 import { useRole, canSeeBoard } from '@/auth/roles';
 import { teamColors, getTeamIcon } from '@/components/layout/siderbarConstants';
-import { useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
+import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { useSolviTicketsPreview } from '@/features/requests/hooks/useSolviTickets';
-import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardEquipo } from '@/features/requests/hooks/useRequests';
 import { useSprints } from '@/features/requests/hooks/useSprints';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -798,8 +797,7 @@ export function HomePage() {
   const [activeEquipo,    setActiveEquipo]    = useState<Equipo | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: boardTeams = [] } = useMyBoardTeams(currentUser?.User_ID ?? null);
+  const { data: boardTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const { data: sprints    = [] } = useSprints();
   // boardTeams ya viene filtrado server-side por acceso (depto + grants + admin-only).
   // Acá solo descartamos inactivos, igual que el sidebar.
