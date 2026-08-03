@@ -423,7 +423,10 @@ async fetchByTeamCode(teamCode: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchByAssignedTo', { userId, boardId: this.boardId });
     return rows.map(mapRowToRequest);
   }
-
+async fetchMyMentions(userId: number): Promise<Request[]> {
+    const rows = await apiClient.call<RawRequestRow[]>('fetchMyMentions', { userId, boardId: this.boardId });
+    return rows.map(mapRowToRequest);
+  }
   async fetchChildRequests(parentId: string): Promise<Request[]> {
     const rows = await apiClient.call<RawRequestRow[]>('fetchChildRequests', { parentId });
     return rows.map(mapRowToRequest);

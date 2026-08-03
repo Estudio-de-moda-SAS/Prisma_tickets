@@ -185,7 +185,7 @@ export async function pickTecnicoConMenosCasos(Usuarios: UsuariosSPService): Pro
   const elegido = candidatos[Math.floor(Math.random() * candidatos.length)] ?? null;
 
   if (elegido) {
-    console.log(`Asignar a: ${elegido.Title} (casos activos: ${elegido.Numerodecasos ?? 0})`);
+    //console.log(`Asignar a: ${elegido.Title} (casos activos: ${elegido.Numerodecasos ?? 0})`);
   }
 
   return elegido;
@@ -257,7 +257,7 @@ export async function sendMail({ payload, senderMail }: MailProps) {
     }
   );
 
-  console.log(sended);
+  //console.log(sended);
   return sended;
 }
 
@@ -429,7 +429,7 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
 
       cleanState(user)
 
-      console.log(ticketCreated);
+      //console.log(ticketCreated);
       if (resolutor) {
         const casosActuales = Number(resolutor.Numerodecasos ?? 0); // ← default 0 ANTES de Number()
         const nuevoTotal = casosActuales + 1;
