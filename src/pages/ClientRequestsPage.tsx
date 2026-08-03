@@ -406,48 +406,6 @@ export function ClientRequestsPage() {
           ))}
         </ul>
       )}
-      {/* ── Sección SOLVI ── */}
-      {!solviLoading && solviTickets.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 18 }}>🔌</span>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>Mis solicitudes SOLVI</h2>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: 'rgba(0,184,148,0.1)', color: '#00b894', border: '1px solid rgba(0,184,148,0.25)' }}>{solviTickets.length}</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {solviTickets.map((t) => (
-              <button
-                key={t.ticket_solvi_id}
-                type="button"
-                onClick={() => abrirSolvi(t.ticket_solvi_id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,184,148,0.4)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.transform = 'translateX(0)'; }}
-              >
-                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: '#00b894', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>#{t.ticket_solvi_id}</span>
-                    {t.ticket_solvi_estado && (
-                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#00b894', background: 'rgba(0,184,148,0.1)', border: '1px solid rgba(0,184,148,0.25)', borderRadius: 4, padding: '2px 8px' }}>{t.ticket_solvi_estado}</span>
-                    )}
-                    {t.ticket_solvi_categoria && (
-                      <span style={{ fontSize: 9, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 3, padding: '2px 7px' }}>{t.ticket_solvi_categoria}</span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--txt)', lineHeight: 1.4 }}>{t.ticket_solvi_titulo}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10, color: 'var(--txt-muted)' }}>
-                    {t.ticket_solvi_resolutor && <span>Atiende: {t.ticket_solvi_resolutor}</span>}
-                    {t.ticket_solvi_fechaapertura && <span>{timeAgo(t.ticket_solvi_fechaapertura)}</span>}
-                  </div>
-                </div>
-                <ChevronRight size={16} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
