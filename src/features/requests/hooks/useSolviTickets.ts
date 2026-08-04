@@ -1,6 +1,8 @@
 // src/features/requests/hooks/useSolviTickets.ts
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { compressImage } from '@/lib/compressImage';
 import { apiClient } from '@/lib/apiClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export type SolviTicket = {
   ticket_solvi_id:                 number;
@@ -85,4 +87,49 @@ export function useSolviTicketDetail(id: number | null) {
     enabled:  id != null,
     staleTime: 30_000,
   });
+}
+export function useUploadSolviAttachment() {
+  const qc = useQueryClient();
+  return useMutation<SolviAttachment, Error, { ticketId: number; userId: number; file: File }>({
+    mutationFn: async ({ ticketId, userId, file }) => {
+      const compressed = await compressImage(file); // imágenes se comprimen; PDF/video pasan derecho (throw si > 20 MB)
+      return new Promise<SolviAttachment>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64 = (reader.result as string).split(',')[1];
+            const result = await apiClient.call<SolviAttachment>('uploadSolviAttachment', {
+              ticketId,
+              userId,
+              fileName:  compressed.name,
+              mimeType:  compressed.type,
+              sizeBytes: compressed.size,
+              base64,
+            });
+            resolve(result);
+          } catch (err) {
+            reject(err instanceof Error ? err : new Error(String(err)));
+          }
+        };
+        reader.onerror = () => reject(new Error('Error leyendo el archivo'));
+        reader.readAsDataURL(compressed);
+      });
+    },
+    onSuccess: (_data, { ticketId }) => {
+      qc.invalidateQueries({ queryKey: ['solviTicketDetail', ticketId] });
+    },
+  });
+}
+
+export async function fetchTicketAttachments(id: number): Promise<SolviAttachment[]> {
+    if (id == null) throw new Error('Falta el id del ticket.');
+
+    const { data: attachments, error: aErr } = await supabase
+      .from('TBL_Ticket_Attachments_Solvi')
+      .select("*")
+      .eq('id_ticket', id)
+      .order('created_at', { ascending: true });
+    if (aErr) throw new Error(aErr.message);
+
+  return attachments
 }

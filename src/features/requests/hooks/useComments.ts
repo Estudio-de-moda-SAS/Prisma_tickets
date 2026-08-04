@@ -29,11 +29,13 @@ export function useCreateComment() {
       requestId,
       userId,
       text,
+      mentionedUserIds,
     }: {
-      requestId: string;
-      userId:    number;
-      text:      string;
-    }) => apiClient.call<Comment>('createComment', { requestId, userId, text }),
+      requestId:         string;
+      userId:            number;
+      text:              string;
+      mentionedUserIds?: number[];
+    }) => apiClient.call<Comment>('createComment', { requestId, userId, text, mentionedUserIds: mentionedUserIds ?? [] }),
     onSuccess: (_data, { requestId }) => {
       qc.invalidateQueries({ queryKey: ['comments', requestId] });
     },

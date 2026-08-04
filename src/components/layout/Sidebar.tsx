@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { NavLink, useNavigate, useMatch, useLocation } from 'react-router';
 import {
   BarChart2, Home, LogOut, Plus, Star,
-  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink
+  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink, AtSign
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -265,7 +265,7 @@ function handleEquipo(team: MyBoardTeam) {
             </NavLink>
           )}
 
-          {/* ── MIS SOLICITUDES (usuarios regulares) ── */}
+{/* ── MIS SOLICITUDES ── */}
             <NavLink
               to="/mis-solicitudes"
               title={sidebarAbierto ? undefined : 'Mis Solicitudes'}
@@ -277,6 +277,16 @@ function handleEquipo(team: MyBoardTeam) {
               {sidebarAbierto && <span>Mis Solicitudes</span>}
             </NavLink>
 
+            <NavLink
+              to="/mis-menciones"
+              title={sidebarAbierto ? undefined : 'Menciones'}
+              className={({ isActive }) =>
+                ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+              }
+            >
+              <AtSign size={16} />
+              {sidebarAbierto && <span>Menciones</span>}
+            </NavLink>
 
 
           {/* ── EQUIPOS ── */}

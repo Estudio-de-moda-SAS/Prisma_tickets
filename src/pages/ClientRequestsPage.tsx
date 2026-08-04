@@ -12,12 +12,12 @@ import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { config } from '@/config';
 import type { Request, KanbanColumna, Prioridad } from '@/features/requests/types';
-
+import { useMySolviTickets } from '@/features/requests/hooks/useMySolviTickets';
 import '@/styles/clientRequests.css';
 
 // ─── Estados simplificados para el cliente ──────────────────────────────
 
-type Estado = 'todas' | 'pendiente_revision' | 'en_proceso' | 'sin_clasificar' | 'completada';
+type Estado = 'todas' | 'pendiente_revision' | 'en_proceso' | 'sin_clasificar' | 'completada' | 'solvi';
 
 const ESTADO_LABEL: Record<Estado, string> = {
   todas:              'Todas',
@@ -25,9 +25,10 @@ const ESTADO_LABEL: Record<Estado, string> = {
   en_proceso:         'En proceso',
   sin_clasificar:     'Recibidas',
   completada:         'Completadas',
+  solvi:              'SOLVI',
 };
 
-const COLUMNAS_POR_ESTADO: Record<Exclude<Estado, 'todas'>, KanbanColumna[]> = {
+const COLUMNAS_POR_ESTADO: Record<Exclude<Estado, 'todas' | 'solvi'>, KanbanColumna[]> = {
   pendiente_revision: ['cliente_review'],
   en_proceso:         ['icebox', 'backlog', 'todo', 'en_progreso', 'en_revision_qas', 'ready_to_deploy'],
   sin_clasificar:     ['sin_categorizar'],
@@ -109,6 +110,12 @@ export function ClientRequestsPage() {
     refetchOnWindowFocus: true,
   });
 
+  const { data: solviTickets = [], isLoading: solviLoading } = useMySolviTickets(currentUser?.User_Email);
+
+  const abrirSolvi = (id: number) => {
+    navigate(`/integracion/solvi/tickets/${id}`, { state: { backgroundLocation: location } });
+  };
+
   // Mapa code → name de equipos para labels legibles
   const teamNameByCode = useMemo(() => {
     const m: Record<string, string> = {};
@@ -131,6 +138,7 @@ export function ClientRequestsPage() {
       en_proceso:         0,
       sin_clasificar:     0,
       completada:         0,
+      solvi:              0,
     };
     for (const r of solicitudes) {
       const e = estadoDeColumna(r.columna);
@@ -144,8 +152,8 @@ export function ClientRequestsPage() {
     const q = search.trim().toLowerCase();
     let out = solicitudes;
 
-    if (estado !== 'todas') {
-      const cols = new Set(COLUMNAS_POR_ESTADO[estado as Exclude<Estado, 'todas'>]);
+    if (estado !== 'todas' && estado !== 'solvi') {
+      const cols = new Set(COLUMNAS_POR_ESTADO[estado as Exclude<Estado, 'todas' | 'solvi'>]);
       out = out.filter((r) => cols.has(r.columna));
     }
     if (equipo !== 'todos') {
@@ -243,9 +251,21 @@ export function ClientRequestsPage() {
             </button>
           );
         })}
+        {solviTickets.length > 0 && (
+          <button
+            role="tab"
+            aria-selected={estado === 'solvi'}
+            onClick={() => setEstado('solvi')}
+            className={['client-requests__tab', estado === 'solvi' ? 'client-requests__tab--active' : ''].join(' ')}
+          >
+            <span>🔌 SOLVI</span>
+            <span className="client-requests__tab-count">{solviTickets.length}</span>
+          </button>
+        )}
       </nav>
 
-      {/* ── Toolbar: búsqueda + filtros ── */}
+      {/* ── Toolbar: búsqueda + filtros (solo PRISMA) ── */}
+      {estado !== 'solvi' && (
       <div className="client-requests__toolbar">
         <div className="client-requests__search">
           <Search size={14} />
@@ -298,14 +318,62 @@ export function ClientRequestsPage() {
           )}
         </div>
       </div>
+      )}
 
-      {/* ── Summary ── */}
-      <div className="client-requests__summary">
-        Mostrando {filtradas.length} de {solicitudes.length}
-      </div>
+      {/* ── Summary (solo PRISMA) ── */}
+      {estado !== 'solvi' && (
+        <div className="client-requests__summary">
+          Mostrando {filtradas.length} de {solicitudes.length}
+        </div>
+      )}
 
-      {/* ── Estados: loading / empty / lista ── */}
-      {isLoading ? (
+      {/* ── Contenido: tab SOLVI o solicitudes PRISMA ── */}
+      {estado === 'solvi' ? (
+        solviLoading ? (
+          <div className="client-requests__loading">
+            <Loader2 className="client-requests__spinner" size={18} />
+            <span>Cargando tickets SOLVI...</span>
+          </div>
+        ) : solviTickets.length === 0 ? (
+          <EmptyState
+            icon={<Inbox size={28} />}
+            title="Sin tickets SOLVI"
+            description="No tienes solicitudes registradas en SOLVI con tu correo."
+          />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {solviTickets.map((t) => (
+              <button
+                key={t.ticket_solvi_id}
+                type="button"
+                onClick={() => abrirSolvi(t.ticket_solvi_id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,184,148,0.4)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.transform = 'translateX(0)'; }}
+              >
+                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: '#00b894', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>#{t.ticket_solvi_id}</span>
+                    {t.ticket_solvi_estado && (
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#00b894', background: 'rgba(0,184,148,0.1)', border: '1px solid rgba(0,184,148,0.25)', borderRadius: 4, padding: '2px 8px' }}>{t.ticket_solvi_estado}</span>
+                    )}
+                    {t.ticket_solvi_categoria && (
+                      <span style={{ fontSize: 9, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 3, padding: '2px 7px' }}>{t.ticket_solvi_categoria}</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--txt)', lineHeight: 1.4 }}>{t.ticket_solvi_titulo}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10, color: 'var(--txt-muted)' }}>
+                    {t.ticket_solvi_resolutor && <span>Atiende: {t.ticket_solvi_resolutor}</span>}
+                    {t.ticket_solvi_fechaapertura && <span>{timeAgo(t.ticket_solvi_fechaapertura)}</span>}
+                  </div>
+                </div>
+                <ChevronRight size={16} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
+              </button>
+            ))}
+          </div>
+        )
+      ) : isLoading ? (
         <div className="client-requests__loading">
           <Loader2 className="client-requests__spinner" size={18} />
           <span>Cargando tus solicitudes...</span>
@@ -407,7 +475,9 @@ function RequestCard({
               <Clock size={11} />
               {timeAgo(r.fechaApertura)}
             </span>
+            
           </div>
+          
         </div>
 
         <ChevronRight size={16} className="client-request-card__chevron" />

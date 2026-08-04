@@ -1,0 +1,35 @@
+/* src/styles/mentions.css */
+.prisma-comment-wrapper {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  padding: 8px 10px;
+  transition: border-color 0.15s;
+}
+.prisma-comment-wrapper:focus-within { border-color: rgba(0,200,255,0.4); }
+
+.prisma-comment-input {
+  outline: none;
+  font-size: 12px;
+  color: var(--txt);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 44px;
+}
+.prisma-comment-input p { margin: 0; }
+.prisma-comment-input p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--txt-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.prisma-mention {
+  color: #a78bfa;
+  background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 600;
+}
