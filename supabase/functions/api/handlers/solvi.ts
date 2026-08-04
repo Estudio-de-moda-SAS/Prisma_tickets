@@ -292,68 +292,21 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return (data ?? []).filter((t: { ticket_solvi_correo_solicitante: string | null }) =>
       (t.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim() === e);
   },
-  
-  // ── Subir adjunto a un ticket SOLVI (nivel ticket) ──
-  // Guard: solicitante/resolutor (por correo) ∪ mencionado ∪ admin, y NO cerrado.
-  // Mismo criterio que createSolviComment.
-  uploadSolviAttachment: async (payload, { supabase }) => {
-    const p = payload as {
-      ticketId: number; userId: number; fileName: string; mimeType: string;
-      sizeBytes: number; base64: string;
-    };
 
-    // ── Enforcement del gate ──
-    {
-      const [{ data: user }, { data: ticket }, { data: part }] = await Promise.all([
-        supabase.from('TBL_Users').select('User_Email, User_Role').eq('User_ID', p.userId).single(),
-        supabase.from('TBL_Ticket_Solvi')
-          .select('ticket_solvi_correo_solicitante, ticket_solvi_correo_resolutor, ticket_solvi_estado')
-          .eq('ticket_solvi_id', p.ticketId).single(),
-        supabase.from('TBL_Solvi_Participants')
-          .select('User_ID').eq('Ticket_ID', p.ticketId).eq('User_ID', p.userId).maybeSingle(),
-      ]);
+  fetchTicketAttachments: async (payload, { supabase }) => {
+    const { id } = (payload ?? {}) as { id?: number };
+    if (id == null) throw new Error('Falta el id del ticket.');
 
-      const estado   = String(ticket?.ticket_solvi_estado ?? '').toLowerCase();
-      const isCerrado = estado.includes('cerrado') || estado.includes('resuelto');
-      if (isCerrado) throw new Error('El ticket está cerrado. No se pueden agregar adjuntos.');
-
-      const myEmail  = (user?.User_Email ?? '').toLowerCase().trim();
-      const reqEmail = String(ticket?.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim();
-      const resEmail = String(ticket?.ticket_solvi_correo_resolutor ?? '').toLowerCase().trim();
-      const isAdmin  = user?.User_Role === 'admin';
-      const allowed  = isAdmin
-        || (myEmail !== '' && (myEmail === reqEmail || myEmail === resEmail))
-        || !!part;
-      if (!allowed) throw new Error('No autorizado para adjuntar en este ticket');
-    }
-
-    const bucket = 'ticket-attachments';
-    // Namespace propio de PRISMA, separado del de Graph/SOLVI (tickets/YYYY-MM-DD/AAMk…).
-    const safeName = p.fileName.replace(/[^\w.\-]+/g, '_');
-    const filePath = `tickets/prisma/${p.ticketId}/${Date.now()}_${safeName}`;
-
-    const bytes = Uint8Array.from(atob(p.base64), (c) => c.charCodeAt(0));
-    const { error: uploadErr } = await supabase.storage
-      .from(bucket).upload(filePath, bytes, { contentType: p.mimeType, upsert: false });
-    if (uploadErr) throw new Error(uploadErr.message);
-
-    const { data, error: insertErr } = await supabase
+    const { data: attachments, error: aErr } = await supabase
       .from('TBL_Ticket_Attachments_Solvi')
-      .insert({
-        id_ticket:       p.ticketId,
-        seguimiento_id:  null,
-        storage_bucket:  bucket,          // lo llenamos → no dependemos del fallback
-        attachment_path: filePath,
-        attachment_type: p.mimeType,
-        file_name:       p.fileName,
-      })
-      .select('id, created_at, attachment_path, attachment_type, id_ticket, seguimiento_id, storage_bucket, file_name')
-      .single();
-    if (insertErr) throw new Error(insertErr.message);
+      .select(ATTACHMENT_SELECT)
+      .eq('id_ticket', id)
+      .order('created_at', { ascending: true });
+    if (aErr) throw new Error(aErr.message);
 
-    const { data: signed } = await supabase.storage
-      .from(bucket).createSignedUrl(filePath, SIGNED_URL_TTL);
-
-    return { ...data, signedUrl: signed?.signedUrl ?? null };
+    return {
+      attachments
+    };
   },
+
 };

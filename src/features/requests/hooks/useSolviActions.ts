@@ -368,6 +368,7 @@ type UseSolviActionsResult = {
   graphService: GraphRest;
   tecnicosService: UsuariosSPService;
   saveTicket: (titulo: string, descripcion: string, archivos: File[]) => Promise<boolean>;
+  uploadSolviAttachment(file: File, ticketId: number): Promise<{ok: boolean, url: string}>;
 };
 
 export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActionsResult {
@@ -385,6 +386,27 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
     setState(cleanState(user));
   }, [user]);
 
+  const uploadSolviAttachment = React.useCallback(async (file: File, ticketId: number) => {
+    setLoading(true);
+    try {
+      const result = await uploadImageToSupabase(file, TICKETS_ATTACHMENTS_BUCKET, `/${ticketId}/Creacion/${file.name}`);
+      await supabase
+        .from("TBL_Ticket_Attachments_Solvi")
+        .insert({
+          attachment_path: result.url,
+          attachment_type: "Creacion",
+          created_at: new Date().toISOString(),
+          file_name: file.name,
+          id_ticket: Number(ticketId),
+          storage_bucket: TICKETS_ATTACHMENTS_BUCKET
+        })
+        .select()
+        .single();
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const saveTicket = React.useCallback(async (titulo: string, descripcion: string, archivos: File[]): Promise<boolean> => {
     if (!user) {
@@ -409,19 +431,7 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
       if(archivos.length > 0){
         await Promise.all(
           archivos.map(async (file) => {
-              const result = await uploadImageToSupabase(file, TICKETS_ATTACHMENTS_BUCKET, `/${ticketCreated?.ticket_solvi_id}/Creacion/${file.name}`)
-              await supabase
-                .from("TBL_Ticket_Attachments_Solvi")
-                .insert({
-                  attachment_path: result.url,
-                  attachment_type: "Creacion",
-                  created_at: new Date().toISOString(),
-                  file_name: file.name,
-                  id_ticket: Number(ticketCreated?.ticket_solvi_id),
-                  storage_bucket: TICKETS_ATTACHMENTS_BUCKET
-                })
-                .select()
-                .single();
+              await uploadSolviAttachment(file, ticketCreated?.ticket_solvi_id ?? 0)
             }
           )
         )
@@ -471,5 +481,6 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
     graphService,
     tecnicosService,
     saveTicket,
+    uploadSolviAttachment
   };
 }
