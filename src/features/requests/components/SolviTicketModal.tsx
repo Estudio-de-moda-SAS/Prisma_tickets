@@ -9,7 +9,7 @@ import { CommentComposer } from './mentions/CommentComposer';
 import { CommentText } from './mentions/CommentText';
 import { ParticipantsPanel } from './mentions/ParticipantsPanel';
 import { useSolviParticipants, useRemoveSolviParticipant } from '@/features/requests/hooks/useSolviParticipants';
-import { useSolviActionsTickets } from '../hooks/useSolviActions';
+import { notifySolviCommentActivity, useSolviActionsTickets } from '../hooks/useSolviActions';
 import { SolviAttachment } from '@/features/requests/hooks/useSolviTickets';
 import React from 'react';
 
@@ -112,7 +112,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'detalle' | 'comentarios' | 'adjuntos'>('detalle');
   const { data: comments = [] }              = useSolviComments(ticketId);
-  const { mutate: createComment, isPending: sending } = useCreateSolviComment();
+  const { mutateAsync: createComment, isPending: sending } = useCreateSolviComment();
   const { mutate: deleteComment }            = useDeleteSolviComment();
   const { data: allUsers = [] }              = useUsers();
   const { data: currentUser }                = useCurrentUser();
@@ -168,6 +168,34 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleCreateComment = async (text: string, mentionedUserIds: number[]) => {
+    if (!currentUser) {
+      return;
+    }
+
+    await createComment({ ticketId, userId: currentUser.User_ID, text, mentionedUserIds });
+
+    try {
+      await notifySolviCommentActivity({
+        ticket: {
+          ticket_solvi_id: ticketId,
+          ticket_solvi_titulo: String(t?.ticket_solvi_titulo ?? ''),
+          ticket_solvi_correo_solicitante: String(t?.ticket_solvi_correo_solicitante ?? ''),
+          ticket_solvi_correo_resolutor: String(t?.ticket_solvi_correo_resolutor ?? ''),
+          ticket_solvi_correo_observador: String(t?.ticket_solvi_correo_observador ?? ''),
+        },
+        authorName: currentUser.User_Name,
+        authorEmail: currentUser.User_Email,
+        commentText: text,
+        mentionedUserIds,
+        participantUserIds: participants.map((participant) => participant.User_ID),
+        users: allUsers,
+      });
+    } catch (error) {
+      console.error('[SolviTicketModal] Error enviando notificaciones del comentario:', error);
+    }
   };
 
   return (
@@ -372,9 +400,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                       mentioner={{ User_ID: currentUser.User_ID, User_Role: currentUser.User_Role, Department_ID: currentUser.Department_ID }}
                       isConfidential={false}
                       sending={sending}
-                      onSubmit={(text, mentionedUserIds) =>
-                        createComment({ ticketId, userId: currentUser.User_ID, text, mentionedUserIds })
-                      }
+                      onSubmit={handleCreateComment}
                     />
                   </div>
                 ) : (
