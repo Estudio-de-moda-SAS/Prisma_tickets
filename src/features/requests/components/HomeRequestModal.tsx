@@ -464,12 +464,14 @@ export function HomeRequestModal({ request, onClose }: Props) {
       });
     }, delay);
   }
-const canRevokeParticipant = !!currentUser && (
+  const isCerrada = request.columna === 'hecho' || request.columna === 'historial' || !!request.fechaCierre;
+  
+  const canRevokeParticipant = !isCerrada && !!currentUser && (
     currentUser.User_Role === 'admin' ||
     request.assignees.some((a) => a.userId === currentUser.User_ID)
   );
 
-  const isCerrada = request.columna === 'hecho' || request.columna === 'historial' || !!request.fechaCierre;
+
   const canComment = !isCerrada && !!currentUser && (
     currentUser.User_ID === request.solicitanteId ||
     request.assignees.some((a) => a.userId === currentUser.User_ID) ||

@@ -92,7 +92,7 @@ export function useBoardEquipo(equipo: Equipo) {
       ? () => Promise.resolve(getMockBoardForTeam(equipo))
       : () => Requests.fetchByTeamCode(equipo).then(groupRequestsByColumn),
 
-    staleTime:            config.USE_MOCK ? Infinity : 30_000,
+    staleTime:            config.USE_MOCK ? Infinity : 60_000,
     refetchOnMount:       true,
     refetchOnWindowFocus: false,
     //refetchInterval:      config.USE_MOCK ? false : 0_0,

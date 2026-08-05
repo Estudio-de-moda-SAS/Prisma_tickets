@@ -111,6 +111,7 @@ export function KanbanColumn({ id, boardId, titulo, color, titleColor, requests,
     return (
       <div
         ref={setNodeRef}
+        data-slug={id}
         className={[
           'kanban__col',
           'kanban__col--collapsed',
@@ -147,6 +148,7 @@ export function KanbanColumn({ id, boardId, titulo, color, titleColor, requests,
   return (
     <div
       ref={setNodeRef}
+      data-slug={id}
       className={[
         'kanban__col',
         COL_CLASS[id as KanbanColumna],

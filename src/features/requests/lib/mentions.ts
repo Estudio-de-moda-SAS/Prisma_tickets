@@ -19,13 +19,11 @@ function isPreRegistered(u: AppUser): boolean {
   return !(u.User_Name ?? '').trim();
 }
 
-export function mentionablePool(users: AppUser[], m: Mentioner): AppUser[] {
-  const valid = users.filter((u) => !isPreRegistered(u));
-  if (m.User_Role === 'admin') return valid;
-  const dept = m.Department_ID;
-  return valid.filter(
-    (u) => u.Department_ID === TI_DEPARTMENT_ID || (dept != null && u.Department_ID === dept),
-  );
+export function mentionablePool(users: AppUser[], _m: Mentioner): AppUser[] {
+  // Todos pueden mencionar a cualquiera, excepto:
+  // - pre-registros (sin nombre, no han hecho login)
+  // - usuarios sin departamento asignado
+  return users.filter((u) => !isPreRegistered(u) && u.Department_ID != null);
 }
 
 /** Agrupa una lista plana de usuarios por departamento, para render con headers.
