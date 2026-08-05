@@ -353,7 +353,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                             <button onClick={() => deleteComment({ commentId: c.Comment_ID, ticketId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', opacity: 0.5 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>
                           )}
                         </div>
-                        <div style={{ maxWidth: '78%', fontSize: 12.5, color: 'var(--txt)', lineHeight: 1.55, background: isOwn ? 'rgba(0,200,255,0.08)' : 'var(--bg-surface)', border: `1px solid ${isOwn ? 'rgba(0,200,255,0.2)' : 'var(--border-subtle)'}`, borderRadius: isOwn ? '10px 10px 2px 10px' : '10px 10px 10px 2px', padding: '8px 12px', wordBreak: 'break-word' }}>
+                        <div style={{ maxWidth: '78%', fontSize: 12.5, color: 'var(--txt)', lineHeight: 1.55, background: isOwn ? 'rgba(0,200,255,0.08)' : 'var(--bg-surface)', border: `1px solid ${isOwn ? 'rgba(0,200,255,0.2)' : 'var(--border-subtle)'}`, borderRadius: isOwn ? '10px 10px 2px 10px' : '10px 10px 10px 2px', padding: '8px 12px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                           <CommentText text={c.Comment_Text} users={allUsers} />
                         </div>
                       </div>
