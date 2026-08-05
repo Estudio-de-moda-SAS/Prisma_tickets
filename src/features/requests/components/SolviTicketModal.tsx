@@ -119,14 +119,14 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const { data: participants = [] }          = useSolviParticipants(ticketId);
   const { mutate: removeParticipant }        = useRemoveSolviParticipant();
   const [revokingId, setRevokingId]          = useState<number | null>(null);
-  const canRevokeParticipant = currentUser?.User_Role === 'admin';
+  const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
+  const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
+  const canRevokeParticipant = !isCerrado && currentUser?.User_Role === 'admin';
 
   // Gate de comentarios SOLVI: solicitante/resolutor (por correo) ∪ mencionados.
   const myEmail = (currentUser?.User_Email ?? '').toLowerCase().trim();
   const reqEmail = String(t?.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim();
   const resEmail = String(t?.ticket_solvi_correo_resolutor ?? '').toLowerCase().trim();
-  const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
-  const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
   const canComment = !isCerrado && !!currentUser && (
     (myEmail !== '' && (myEmail === reqEmail || myEmail === resEmail)) ||
     participants.some((p) => p.User_ID === currentUser.User_ID)
