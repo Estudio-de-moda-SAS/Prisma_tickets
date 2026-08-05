@@ -44,7 +44,7 @@ const { data: rawUsers = [] } = useQuery({
   queryKey: ['automation-users'],
   queryFn: () =>
     apiClient.call<{ User_ID: number; User_Name: string }[]>(
-      'fetchAllUsers', {},
+      'rs', {},
     ),
   staleTime: 1000 * 60 * 5,
   enabled: action === 'asignar_resolutor' || action === 'notificar_usuario',
