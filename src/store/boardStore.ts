@@ -10,17 +10,22 @@ type BoardUIState = {
   sidebarAbierto:  boolean;
   kanbanZoom:      number;
 
+  /** Señal efímera para enfocar/scrollear a una columna del kanban. */
+  focusColumnSignal: { slug: string; nonce: number } | null;
+
   setEquipoActivo: (equipo: string) => void;
   toggleSidebar:   () => void;
   setKanbanZoom:   (zoom: number) => void;
   stepKanbanZoom:  (dir: 1 | -1) => void;
   resetKanbanZoom: () => void;
+  focusColumn:     (slug: string) => void;
 };
 
 export const useBoardStore = create<BoardUIState>((set, get) => ({
-  equipoActivo:   'desarrollo',
-  sidebarAbierto: true,
-  kanbanZoom:     1,
+  equipoActivo:      'desarrollo',
+  sidebarAbierto:    true,
+  kanbanZoom:        1,
+  focusColumnSignal: null,
 
   setEquipoActivo: (equipo) => set({ equipoActivo: equipo }),
   toggleSidebar:   ()       => set((s) => ({ sidebarAbierto: !s.sidebarAbierto })),
@@ -34,6 +39,8 @@ export const useBoardStore = create<BoardUIState>((set, get) => ({
   },
 
   resetKanbanZoom: () => set({ kanbanZoom: 1 }),
+
+  focusColumn: (slug) => set({ focusColumnSignal: { slug, nonce: Date.now() } }),
 }));
 
 export { ZOOM_MIN, ZOOM_MAX };

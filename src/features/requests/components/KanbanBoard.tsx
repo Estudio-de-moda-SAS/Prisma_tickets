@@ -75,7 +75,7 @@ export function KanbanBoard({ board, equipo, columnConfig, onMove, extraRequest,
   const isMobile = useIsMobile();
   const { ref: scrollRef, handlers: scrollHandlers } = useDragScroll();
   const { kanbanStyle } = useBoardStyle();
-  const { kanbanZoom }  = useBoardStore();
+  const { kanbanZoom, focusColumnSignal }  = useBoardStore();
   const { Requests }    = useGraphServices();
   const { data: currentUser } = useCurrentUser();
   const { data: allTeams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
@@ -326,6 +326,20 @@ const { data: historialCount } = useHistorialCount(equipo);
   const renderSlugs = columnSlugs.length > 0
     ? columnSlugs
     : Object.keys(board);
+
+  /* ── Enfoque externo de columna (desde el badge de intake) ── */
+  useEffect(() => {
+    if (!focusColumnSignal) return;
+    const { slug } = focusColumnSignal;
+    if (isMobile) {
+      const idx = renderSlugs.indexOf(slug);
+      if (idx >= 0) setMobileColIndex(idx);
+    } else {
+      const el = scrollRef.current?.querySelector(`[data-slug="${slug}"]`) as HTMLElement | null;
+      el?.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusColumnSignal]);
 
   // Índice de columna visible en móvil, siempre dentro de rango
   const clampedColIndex = Math.min(mobileColIndex, Math.max(0, renderSlugs.length - 1));

@@ -520,7 +520,7 @@ function handleToggleAssignee(userId: number) {
   const readyToDeployColumnId = columnMap?.['ready_to_deploy'] ?? 7;
   const enRevisionQasColumnId = columnMap?.['en_revision_qas'] ?? 8;
 const yaHayClosure = !!effectiveRequest.fechaCierre;
-const canRevokeParticipant = !!currentUser && (
+const canRevokeParticipant = !isCerrada && !!currentUser && (
   currentUser.User_Role === 'admin' ||
   effectiveRequest.assignees.some((a) => a.userId === currentUser.User_ID)
 );

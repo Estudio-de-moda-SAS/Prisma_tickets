@@ -31,6 +31,8 @@ export type SprintStats = {
   penalizacion:        number;
   puntajeReal:         number;
   cumplimiento:        number;
+  otrosSprintsCerradas: number | null;
+  otrosSprintsDetalle:  Array<{ sprintId: number; sprintName: string; count: number }> | null;
 };
 
 export type EquipoStatsReal = {
@@ -248,7 +250,7 @@ function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId
   if (refIdx === -1) return 0;
 
   return requests
-    .filter(r => !DONE_COLUMNS.has(r.columna) && !PENALIZATION_EXEMPT_COLUMNS.has(r.columna) && r.sprintId != null)
+    .filter(r => !DONE_COLUMNS.has(r.columna) && !PENALIZATION_EXEMPT_COLUMNS.has(r.columna) && !isBlocked(r) && r.sprintId != null)
     .reduce((acc, r) => {
       const reqIdx = sorted.findIndex(s => s.Sprint_ID === r.sprintId);
       if (reqIdx === -1) return acc;
@@ -263,12 +265,12 @@ function calcGeneral(requests: Request[], teams: BoardTeam[], statsConfig?: Stat
   // Las columnas done SIEMPRE cuentan (ya pasaron cualquier columna de inicio de stats),
   // sin importar minPos. Esto evita que históricos en "historial" caigan a 0.
   const activeRequests = statsConfig
-    ? requests.filter(r => DONE_COLUMNS.has(r.columna) || r.equipo.some(eq => {
+    ? requests.filter(r => DONE_COLUMNS.has(r.columna) || (!isBlocked(r) && r.equipo.some(eq => {
         const minPos = statsConfig.statsStartByTeam[eq];
         if (minPos === undefined) return true;
         return (statsConfig.columnPositions[r.columna] ?? 0) >= minPos;
-      }))
-    : requests;
+      })))
+    : requests.filter(r => DONE_COLUMNS.has(r.columna) || !isBlocked(r));
 
 const total = activeRequests.length;
   const resueltas  = activeRequests.filter(r => DONE_COLUMNS.has(r.columna)).length;
@@ -284,7 +286,7 @@ const total = activeRequests.length;
     const minPos = statsConfig?.statsStartByTeam[eq];
     const mine   = requests.filter(r =>
       r.equipo.includes(eq) &&
-      (DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)
+      (DONE_COLUMNS.has(r.columna) || (!isBlocked(r) && (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos)))
     );
     const done    = mine.filter(r => DONE_COLUMNS.has(r.columna));
     const criticas = mine.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
@@ -299,8 +301,9 @@ const total = activeRequests.length;
 function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfig, allSprints: Sprint[] = [], selectedSprints: Sprint[] = []): BoardStatsReal {
   const minPos = statsConfig?.statsStartByTeam[equipo];
   // Predicado de conteo: las columnas done siempre entran (bypass de minPos).
+  // Las bloqueadas/pausadas se omiten como el icebox (salvo si ya están en done).
   const countable = (r: Request) =>
-    DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
+    DONE_COLUMNS.has(r.columna) || (!isBlocked(r) && (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos));
 
   const allMine = requests.filter(r => r.equipo.includes(equipo)); // sin filtro de posición
   const mine    = requests.filter(r => r.equipo.includes(equipo) && countable(r));
@@ -320,6 +323,25 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
 
   const done     = mineScoped.filter(r => DONE_COLUMNS.has(r.columna));
   const criticas = mineScoped.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
+
+  // ── Arrastre completado: solicitudes de OTROS sprints terminadas dentro de
+  //    la ventana del/los sprint(s) seleccionado(s). Se suman SOLO a los
+  //    resolutores (no a resueltas/puntaje/cumplimiento, que siguen acotados
+  //    al sprint). Sin sprint seleccionado el concepto no aplica → []. ──
+  const datedSel = selectedSprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
+  const inAnyWindow = (iso: string | null): boolean => {
+    if (!iso) return false;
+    const day = iso.slice(0, 10);
+    return datedSel.some(s =>
+      s.Sprint_Start_Date!.slice(0, 10) <= day && day <= s.Sprint_End_Date!.slice(0, 10)
+    );
+  };
+  const arrastre = (selectedSprints.length === 0 || datedSel.length === 0) ? []
+    : allMine.filter(r =>
+        r.sprintId != null && !sprintSet.has(r.sprintId) &&
+        DONE_COLUMNS.has(r.columna) && inAnyWindow(r.fechaCierre)
+      );
+  const doneResol = arrastre.length > 0 ? [...done, ...arrastre] : done;
 
   // ── Métricas de sprint por equipo ──────────────────────────
   const puntajePlaneado  = mineScoped.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
@@ -353,7 +375,7 @@ const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
   };
   const resolMap = new Map<number, ResolAcc>();
   let idx = 0;
-  for (const r of done) {
+  for (const r of doneResol) {
     for (const a of r.assignees) {
       if (!resolMap.has(a.userId)) resolMap.set(a.userId, { name: a.userName, count: 0, idx: idx++, solicitudes: [] });
       const acc = resolMap.get(a.userId)!;
@@ -398,7 +420,7 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
   const combinedMinPos = minPositions.length > 0 ? Math.min(...minPositions) : undefined;
 
   const countable = (r: Request) =>
-    DONE_COLUMNS.has(r.columna) || combinedMinPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= combinedMinPos;
+    DONE_COLUMNS.has(r.columna) || (!isBlocked(r) && (combinedMinPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= combinedMinPos));
 
   const allMine = union;
   const mine    = union.filter(countable);
@@ -412,6 +434,23 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
 
   const done     = mineScoped.filter(r => DONE_COLUMNS.has(r.columna));
   const criticas = mineScoped.filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna)).length;
+
+  // ── Arrastre completado (ver calcBoard): otros sprints terminados en la
+  //    ventana del/los sprint(s) sel. Solo alimenta resolutores. ──
+  const datedSel = selectedSprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
+  const inAnyWindow = (iso: string | null): boolean => {
+    if (!iso) return false;
+    const day = iso.slice(0, 10);
+    return datedSel.some(s =>
+      s.Sprint_Start_Date!.slice(0, 10) <= day && day <= s.Sprint_End_Date!.slice(0, 10)
+    );
+  };
+  const arrastre = (selectedSprints.length === 0 || datedSel.length === 0) ? []
+    : allMine.filter(r =>
+        r.sprintId != null && !sprintSet.has(r.sprintId) &&
+        DONE_COLUMNS.has(r.columna) && inAnyWindow(r.fechaCierre)
+      );
+  const doneResol = arrastre.length > 0 ? [...done, ...arrastre] : done;
 
   const puntajePlaneado  = mineScoped.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
   const puntajeRealizado = done.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
@@ -444,7 +483,7 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
   };
   const resolMap = new Map<number, ResolAcc>();
   let idx = 0;
-  for (const r of done) {
+  for (const r of doneResol) {
     for (const a of r.assignees) {
       if (!resolMap.has(a.userId)) resolMap.set(a.userId, { name: a.userName, count: 0, idx: idx++, solicitudes: [] });
       const acc = resolMap.get(a.userId)!;
@@ -486,8 +525,9 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
   })();
 
   // Las columnas done SIEMPRE cuentan (bypass de minPos). Arregla históricos en "historial".
+  // Las bloqueadas/pausadas se omiten como el icebox (salvo si ya están en done).
   const isCountable = (r: Request) =>
-    DONE_COLUMNS.has(r.columna) || minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos;
+    DONE_COLUMNS.has(r.columna) || (!isBlocked(r) && (minPos === undefined || (statsConfig!.columnPositions[r.columna] ?? 0) >= minPos));
 
   /* ── Sin filtro de sprint → todos los activos ── */
   if (sprints.length === 0) {
@@ -511,7 +551,10 @@ function calcSprint(requests: Request[], sprints: Sprint[], statsConfig?: StatsC
         DONE_COLUMNS.has(r.columna) && isThisMonth(r.fechaCierre ?? r.fechaApertura)
       ).length,
 tiempoEstimadoProm:  avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.estimatedHours),
-      tiempoConsumidoProm: avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),      meta, penalizacion, puntajeReal, cumplimiento,
+      tiempoConsumidoProm: avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
+      otrosSprintsCerradas: null,
+      otrosSprintsDetalle:  null,
+      meta, penalizacion, puntajeReal, cumplimiento,
     };
   }
 
@@ -568,6 +611,39 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
   const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
+  /* ── Cerradas de OTROS sprints dentro de la ventana del/los sprint(s) sel. ──
+   *  Solicitudes cuyo sprintId pertenece a otro sprint (no seleccionado) pero
+   *  que se terminaron durante la ventana temporal del/los sprint(s) activo(s).
+   *  Señal de arrastre completado. `requests` llega con scope de equipo/usuario
+   *  pero SIN filtro de sprint, por eso vemos tickets de otros sprints.
+   *  Ventana = unión de [Start, End] de cada sprint seleccionado con fechas.
+   *  Si ninguno de los seleccionados tiene fechas → sin ventana → null ("—"). */
+  const datedSel = sprints.filter(s => s.Sprint_Start_Date && s.Sprint_End_Date);
+  const inAnyWindow = (iso: string | null): boolean => {
+    if (!iso) return false;
+    const day = iso.slice(0, 10);
+    return datedSel.some(s =>
+      s.Sprint_Start_Date!.slice(0, 10) <= day && day <= s.Sprint_End_Date!.slice(0, 10)
+    );
+  };
+  const otrosCerradas = datedSel.length === 0 ? null
+    : requests.filter(r =>
+        r.sprintId != null &&
+        !sprintIdSet.has(r.sprintId) &&
+        DONE_COLUMNS.has(r.columna) &&
+        inAnyWindow(r.fechaCierre)
+      );
+  const otrosSprintsCerradas: number | null = otrosCerradas?.length ?? null;
+  const otrosSprintsDetalle = otrosCerradas === null ? null : (() => {
+    const m = new Map<number, { sprintId: number; sprintName: string; count: number }>();
+    for (const r of otrosCerradas) {
+      const id = r.sprintId!;
+      if (!m.has(id)) m.set(id, { sprintId: id, sprintName: r.sprintName ?? `Sprint ${id}`, count: 0 });
+      m.get(id)!.count++;
+    }
+    return [...m.values()].sort((a, b) => b.count - a.count);
+  })();
+
   return {
     sprint: sprints.length === 1 ? sprints[0] : null,
     planeadas:    planeadas.length,
@@ -582,6 +658,8 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
     ).length,
 tiempoEstimadoProm:  avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.columna)), r => r.estimatedHours),
     tiempoConsumidoProm: avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
+    otrosSprintsCerradas,
+    otrosSprintsDetalle,
     meta, penalizacion, puntajeReal, cumplimiento,
   };
 }

@@ -119,14 +119,14 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const { data: participants = [] }          = useSolviParticipants(ticketId);
   const { mutate: removeParticipant }        = useRemoveSolviParticipant();
   const [revokingId, setRevokingId]          = useState<number | null>(null);
-  const canRevokeParticipant = currentUser?.User_Role === 'admin';
+  const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
+  const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
+  const canRevokeParticipant = !isCerrado && currentUser?.User_Role === 'admin';
 
   // Gate de comentarios SOLVI: solicitante/resolutor (por correo) ∪ mencionados.
   const myEmail = (currentUser?.User_Email ?? '').toLowerCase().trim();
   const reqEmail = String(t?.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim();
   const resEmail = String(t?.ticket_solvi_correo_resolutor ?? '').toLowerCase().trim();
-  const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
-  const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
   const canComment = !isCerrado && !!currentUser && (
     (myEmail !== '' && (myEmail === reqEmail || myEmail === resEmail)) ||
     participants.some((p) => p.User_ID === currentUser.User_ID)
@@ -384,7 +384,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                             <button onClick={() => deleteComment({ commentId: c.Comment_ID, ticketId })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 2, display: 'flex', opacity: 0.5 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>
                           )}
                         </div>
-                        <div style={{ maxWidth: '78%', fontSize: 12.5, color: 'var(--txt)', lineHeight: 1.55, background: isOwn ? 'rgba(0,200,255,0.08)' : 'var(--bg-surface)', border: `1px solid ${isOwn ? 'rgba(0,200,255,0.2)' : 'var(--border-subtle)'}`, borderRadius: isOwn ? '10px 10px 2px 10px' : '10px 10px 10px 2px', padding: '8px 12px', wordBreak: 'break-word' }}>
+                        <div style={{ maxWidth: '78%', fontSize: 12.5, color: 'var(--txt)', lineHeight: 1.55, background: isOwn ? 'rgba(0,200,255,0.08)' : 'var(--bg-surface)', border: `1px solid ${isOwn ? 'rgba(0,200,255,0.2)' : 'var(--border-subtle)'}`, borderRadius: isOwn ? '10px 10px 2px 10px' : '10px 10px 10px 2px', padding: '8px 12px', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                           <CommentText text={c.Comment_Text} users={allUsers} />
                         </div>
                       </div>

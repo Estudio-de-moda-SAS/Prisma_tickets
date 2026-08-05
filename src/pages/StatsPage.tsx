@@ -3,7 +3,7 @@ import {
   Globe, LayoutGrid,
   TrendingUp, TrendingDown, Minus,
   CheckCircle2, Clock, AlertTriangle, Layers,
-  PlusCircle, XCircle, Star, Target,
+  PlusCircle, XCircle, Star, Target, History,
   ChevronDown, Users, Search, Check, X,
 } from 'lucide-react';
 import { useStatsData }             from '@/features/requests/hooks/useStatsData';
@@ -123,17 +123,27 @@ function KPICard({ label, value, sub, trend, accent, trendGood = 'up' }: {
   );
 }
 
-function SprintCard({ label, value, sub, color, icon: Icon, pulse = false }: {
-  label: string; value: string | number; sub?: string; color: string; icon: React.ElementType; pulse?: boolean;
+function SprintCard({ label, value, sub, color, icon: Icon, pulse = false, onClick, expanded }: {
+  label: string; value: string | number; sub?: string; color: string; icon: React.ElementType;
+  pulse?: boolean; onClick?: () => void; expanded?: boolean;
 }) {
+  const clickable = !!onClick;
   return (
-    <div className="scard" style={{ '--scard-color': color } as React.CSSProperties}>
+    <div
+      className={['scard', clickable ? 'scard--clickable' : '', expanded ? 'scard--expanded' : ''].join(' ')}
+      style={{ '--scard-color': color } as React.CSSProperties}
+      onClick={onClick}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick!(); } } : undefined}
+    >
       <div className="scard__icon-wrap"><Icon size={16} className={pulse ? 'scard__icon--pulse' : ''} /></div>
       <div className="scard__body">
         <span className="scard__label">{label}</span>
         <span className="scard__value">{value}</span>
         {sub && <span className="scard__sub">{sub}</span>}
       </div>
+      {clickable && <ChevronDown size={14} className="scard__chevron" />}
       <div className="scard__glow" />
     </div>
   );
@@ -649,6 +659,7 @@ useEffect(() => {
   }, [teamTab]);
 
   const [expandedResolutor, setExpandedResolutor] = useState<number | null>(null);
+  const [otrosSprintsOpen, setOtrosSprintsOpen]   = useState(false);
 
   const sp        = stats.sprint;
   const gn        = stats.general;
@@ -663,8 +674,6 @@ useEffect(() => {
   const dCumplimiento = boardData ? calcDelta(boardData.cumplimiento, boardPrev?.cumplimiento, 'pts') : null;
   const dCriticas     = boardData ? calcDelta(boardData.criticas,     boardPrev?.criticas,     'pct') : null;
 
-const totalSprint = sp.planeadas + sp.postPlanning;
-const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) * 100) : 0;
   const teamColor     = isGlobal ? 'var(--accent)' : (teamColorMap[teamTab] ?? 'var(--accent)');
 
   return (
@@ -707,10 +716,6 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
             availableYears={availableYears}
           />
           {sprintDatesBadge && <span className="sprint-dates-badge">{sprintDatesBadge}</span>}
-          <div className="sprint-progress-pill">
-            <div className="sprint-progress-pill__fill" style={{ width: `${pctCompleto}%` }} />
-            <span>{pctCompleto}% completado</span>
-          </div>
         </div>
         <div className="stats-control-bar__right">
 
@@ -737,7 +742,7 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
             : `Sprint activo — ${teamNameMap[teamTab] ?? teamTab}`
           } />
 
-          <div className="scard-grid scard-grid--5">
+          <div className="scard-grid scard-grid--6">
             <SprintCard label="Planeadas"     value={sp.planeadas}   color="#378ADD" icon={Layers} />
             <SprintCard label="Activas"       value={sp.activas}     color="#00c8ff" icon={Clock} pulse />
             <SprintCard label="Completadas"   value={sp.completadas} color="#1D9E75" icon={CheckCircle2} />
@@ -750,7 +755,32 @@ const pctCompleto = totalSprint > 0 ? Math.round((sp.completadas / totalSprint) 
                 color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
                 icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
             )}
+            <SprintCard label="De otros sprints" value={sp.otrosSprintsCerradas ?? '\u2014'}
+              sub="Terminadas aquí, planeadas antes"
+              color="#7f77dd" icon={History}
+              onClick={sp.otrosSprintsDetalle && sp.otrosSprintsDetalle.length > 0
+                ? () => setOtrosSprintsOpen(o => !o) : undefined}
+              expanded={otrosSprintsOpen} />
                                   </div>
+
+          {otrosSprintsOpen && sp.otrosSprintsDetalle && sp.otrosSprintsDetalle.length > 0 && (
+            <div className="otros-sprints-detail">
+              <div className="otros-sprints-detail__head">
+                <span className="otros-sprints-detail__title">
+                  <History size={12} /> Origen de las solicitudes terminadas aquí
+                </span>
+                <span className="otros-sprints-detail__total">{sp.otrosSprintsCerradas}</span>
+              </div>
+              <div className="otros-sprints-detail__chips">
+                {sp.otrosSprintsDetalle.map(d => (
+                  <span key={d.sprintId} className="otros-sprints-chip">
+                    <span className="otros-sprints-chip__name">{d.sprintName}</span>
+                    <span className="otros-sprints-chip__count">{d.count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="stats-mid-grid">
             <div className="stats-panel">

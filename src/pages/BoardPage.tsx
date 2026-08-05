@@ -20,6 +20,7 @@ import { BoardFilters, type FilterDynamicOptions, type TemplateFilterOption, typ
 import { BoardSearch } from '@/features/requests/components/BoardSearch';
 import { BoardCustomizationTrigger } from '@/features/requests/components/BoardCustomization';
 import { MemberHoursBar } from '@/features/requests/components/MemberHoursBar'
+import { IntakeBadge } from '@/features/requests/components/IntakeBadge';
 import { useFilteredBoard } from '@/features/requests/hooks/useFilteredBoard';
 import { config } from '@/config';
 import type { KanbanColumna, Request, BoardData } from '@/features/requests/types';
@@ -357,6 +358,10 @@ function handleMove(id: string, columna: KanbanColumna, movedBy?: number) {
     board={filteredData ?? {}}
     equipo={equipoActivo}
     onSelectTicket={(id) => setOpenTicketSignal({ id, nonce: Date.now() })}
+  />
+  <IntakeBadge
+    requests={data?.sin_categorizar ?? EMPTY_REQUESTS}
+    boardId={equipoActivo}
   />
   <BoardFilters boardId={equipoActivo} dynamicOptions={dynamicOptions} />
   <BoardCustomizationTrigger boardId={equipoActivo} columns={boardColumns} />

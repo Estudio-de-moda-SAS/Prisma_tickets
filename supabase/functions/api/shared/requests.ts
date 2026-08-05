@@ -136,10 +136,10 @@ export async function maybeSendClientReviewEmail(
       return;
     }
 
-    if (args.assigneeIds.includes(args.requestedBy)) {
-      //console.log('[client-review-mail] omitido: el solicitante es también resolutor');
-      return;
-    }
+    // NOTA: a diferencia de en_progreso, acá NO se omite si el solicitante
+    // es también resolutor. En client review el solicitante actúa como
+    // aprobador — rol distinto del de resolutor — y debe recibir el aviso
+    // aunque haya trabajado el ticket.
 
     const { data: reqUser } = await supabase
       .from('TBL_Users')
@@ -149,7 +149,7 @@ export async function maybeSendClientReviewEmail(
 
     const deptId = (reqUser as any)?.Department_ID as number | null | undefined;
     if (deptId === TI_DEPARTMENT_ID) {
-      //console.log('[client-review-mail] omitido: solicitante interno (TI)');
+      console.log('[client-review-mail] omitido: solicitante interno (TI)');
       return;
     }
 
