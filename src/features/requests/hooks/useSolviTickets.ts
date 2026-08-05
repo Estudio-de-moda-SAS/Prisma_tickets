@@ -2,6 +2,7 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { compressImage } from '@/lib/compressImage';
 import { apiClient } from '@/lib/apiClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export type SolviTicket = {
   ticket_solvi_id:                 number;
@@ -118,4 +119,17 @@ export function useUploadSolviAttachment() {
       qc.invalidateQueries({ queryKey: ['solviTicketDetail', ticketId] });
     },
   });
+}
+
+export async function fetchTicketAttachments(id: number): Promise<SolviAttachment[]> {
+    if (id == null) throw new Error('Falta el id del ticket.');
+
+    const { data: attachments, error: aErr } = await supabase
+      .from('TBL_Ticket_Attachments_Solvi')
+      .select("*")
+      .eq('id_ticket', id)
+      .order('created_at', { ascending: true });
+    if (aErr) throw new Error(aErr.message);
+
+  return attachments
 }

@@ -1,7 +1,7 @@
 // src/features/requests/components/SolviTicketModal.tsx
 import { useState, useMemo, useRef } from 'react';
 import { X, FileText, Paperclip, Clock, User, Download, Copy, Check, Trash2, Plus, Loader2 } from 'lucide-react';
-import { useSolviTicketDetail, useUploadSolviAttachment } from '@/features/requests/hooks/useSolviTickets';
+import { fetchTicketAttachments, useSolviTicketDetail } from '@/features/requests/hooks/useSolviTickets';
 import { useSolviComments, useCreateSolviComment, useDeleteSolviComment } from '@/features/requests/hooks/useSolviComments';
 import { useUsers } from '@/features/requests/hooks/useUsers';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
@@ -9,6 +9,9 @@ import { CommentComposer } from './mentions/CommentComposer';
 import { CommentText } from './mentions/CommentText';
 import { ParticipantsPanel } from './mentions/ParticipantsPanel';
 import { useSolviParticipants, useRemoveSolviParticipant } from '@/features/requests/hooks/useSolviParticipants';
+import { notifySolviCommentActivity, useSolviActionsTickets } from '../hooks/useSolviActions';
+import { SolviAttachment } from '@/features/requests/hooks/useSolviTickets';
+import React from 'react';
 
 /* ============================================================
    SolviTicketModal — detalle de solo lectura de un ticket SOLVI.
@@ -109,7 +112,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'detalle' | 'comentarios' | 'adjuntos'>('detalle');
   const { data: comments = [] }              = useSolviComments(ticketId);
-  const { mutate: createComment, isPending: sending } = useCreateSolviComment();
+  const { mutateAsync: createComment, isPending: sending } = useCreateSolviComment();
   const { mutate: deleteComment }            = useDeleteSolviComment();
   const { data: allUsers = [] }              = useUsers();
   const { data: currentUser }                = useCurrentUser();
@@ -165,6 +168,34 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
     }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleCreateComment = async (text: string, mentionedUserIds: number[]) => {
+    if (!currentUser) {
+      return;
+    }
+
+    await createComment({ ticketId, userId: currentUser.User_ID, text, mentionedUserIds });
+
+    try {
+      await notifySolviCommentActivity({
+        ticket: {
+          ticket_solvi_id: ticketId,
+          ticket_solvi_titulo: String(t?.ticket_solvi_titulo ?? ''),
+          ticket_solvi_correo_solicitante: String(t?.ticket_solvi_correo_solicitante ?? ''),
+          ticket_solvi_correo_resolutor: String(t?.ticket_solvi_correo_resolutor ?? ''),
+          ticket_solvi_correo_observador: String(t?.ticket_solvi_correo_observador ?? ''),
+        },
+        authorName: currentUser.User_Name,
+        authorEmail: currentUser.User_Email,
+        commentText: text,
+        mentionedUserIds,
+        participantUserIds: participants.map((participant) => participant.User_ID),
+        users: allUsers,
+      });
+    } catch (error) {
+      console.error('[SolviTicketModal] Error enviando notificaciones del comentario:', error);
+    }
   };
 
   return (
@@ -369,9 +400,7 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                       mentioner={{ User_ID: currentUser.User_ID, User_Role: currentUser.User_Role, Department_ID: currentUser.Department_ID }}
                       isConfidential={false}
                       sending={sending}
-                      onSubmit={(text, mentionedUserIds) =>
-                        createComment({ ticketId, userId: currentUser.User_ID, text, mentionedUserIds })
-                      }
+                      onSubmit={handleCreateComment}
                     />
                   </div>
                 ) : (
@@ -390,7 +419,6 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
                   userId={currentUser?.User_ID ?? null}
                   canAttach={canComment}
                   isCerrado={isCerrado}
-                  attachments={data?.attachments ?? []}
                   seguimientos={data?.seguimientos ?? []}
                 />
               )}
@@ -408,11 +436,11 @@ function AttachmentRow({ a }: { a: import('@/features/requests/hooks/useSolviTic
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', marginTop: 6 }}>
       <FileText size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
       <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-      {a.signedUrl ? <Download size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} /> : <Paperclip size={11} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />}
+      {a.attachment_path ? <Download size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} /> : <Paperclip size={11} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />}
     </div>
   );
-  return a.signedUrl
-    ? <a href={a.signedUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{inner}</a>
+  return a.attachment_path
+    ? <a href={a.attachment_path} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{inner}</a>
     : inner;
 }
 
@@ -421,30 +449,44 @@ function SolviAttachmentsTab({
   userId,
   canAttach,
   isCerrado,
-  attachments,
   seguimientos,
 }: {
   ticketId: number;
   userId: number | null;
   canAttach: boolean;
   isCerrado: boolean;
-  attachments: import('@/features/requests/hooks/useSolviTickets').SolviAttachment[];
   seguimientos: {
     seguimientos_solvi_id: number;
     seguimientos_solvi_tipo_de_accion: string | null;
     seguimientos_solvi_action_date: string | null;
   }[];
 }) {
-  const { mutate: upload, isPending } = useUploadSolviAttachment();
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = React.useState<SolviAttachment[]>([]);
+  const {uploadSolviAttachment, loading} = useSolviActionsTickets()
+
+  React.useEffect(() => {
+    const loadAttachments = async () => {
+      try {
+        const response = await fetchTicketAttachments(ticketId);
+        setAttachments(response ?? []);
+      } catch (err) {
+        setError('Error al cargar los adjuntos del ticket.');
+      }
+    };
+
+    loadAttachments();
+  }, [ticketId]);
 
   const handlePick = () => { setError(null); inputRef.current?.click(); };
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // permite re-subir el mismo archivo
     if (!file || userId == null) return;
-    upload({ ticketId, userId, file }, { onError: (err) => setError(err.message) });
+    await uploadSolviAttachment(file, ticketId);
+    const response = await fetchTicketAttachments(ticketId);
+    setAttachments(response ?? []);
   };
 
   const ticketLevel = attachments.filter((a) => a.seguimiento_id == null);
@@ -461,11 +503,11 @@ function SolviAttachmentsTab({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <button
             onClick={handlePick}
-            disabled={isPending}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 14px', borderRadius: 7, border: '1px solid var(--accent)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', cursor: isPending ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, opacity: isPending ? 0.6 : 1, transition: 'all .15s' }}
+            disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, height: 32, padding: '0 14px', borderRadius: 7, border: '1px solid var(--accent)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', cursor: loading ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loading ? 0.6 : 1, transition: 'all .15s' }}
           >
-            {isPending ? <Loader2 size={14} className="solvi-spin" /> : <Plus size={14} />}
-            {isPending ? 'Subiendo…' : 'Adjuntar archivo'}
+            {loading ? <Loader2 size={14} className="solvi-spin" /> : <Plus size={14} />}
+            {loading ? 'Subiendo…' : 'Adjuntar archivo'}
           </button>
           <span style={{ fontSize: 10, color: 'var(--txt-muted)' }}>Máx. 20 MB</span>
           <input ref={inputRef} type="file" onChange={handleFile} style={{ display: 'none' }} />
