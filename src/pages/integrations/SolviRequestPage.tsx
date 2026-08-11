@@ -24,6 +24,22 @@ import { useSolviActionsTickets } from '@/features/requests/hooks/useSolviAction
 
 const MAX_ATTACHMENTS = 5;
 
+/* ============================================================
+   CATEGORÍAS SOLVI — placeholder (pendiente de conexión)
+   ────────────────────────────────────────────────────────────
+   TODO(SOLVI): por ahora las categorías son fijas en el front.
+   Cuando exista el endpoint/tabla de categorías de SOLVI,
+   reemplazá este arreglo por datos traídos vía hook
+   (ej: const { data: categorias } = useSolviCategorias()).
+   ============================================================ */
+const SOLVI_CATEGORIAS = [
+  'Soporte técnico',
+  'Solicitud de acceso',
+  'Reporte de error',
+  'Requerimiento',
+  'Otro',
+];
+
 function fmtBytes(bytes: number) {
   if (bytes < 1024)        return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -74,6 +90,10 @@ export function SolviRequestPage() {
 
   const [titulo,       setTitulo]       = useState('');
   const [descripcion,  setDescripcion]  = useState('');
+  // TODO(SOLVI): categoría seleccionada — por ahora solo vive en el front,
+  // aún no se envía a saveTicket (ver handleSubmit). Si querés hacerla
+  // obligatoria, sumala a `isReady` más abajo.
+  const [categoria,    setCategoria]    = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [dragOver,     setDragOver]     = useState(false);
@@ -100,6 +120,9 @@ export function SolviRequestPage() {
 
     try {
 
+      // TODO(SOLVI): cuando el backend acepte categoría, pasala aquí como 4º argumento:
+      //   const created = await solviController.saveTicket(titulo, descripcion, pendingFiles, categoria)
+      // y actualizá la firma de saveTicket en useSolviActions.
       const created = await solviController.saveTicket(titulo, descripcion, pendingFiles)
 
       if(!created){
@@ -184,6 +207,22 @@ export function SolviRequestPage() {
           </div>
         </div>
 
+        {/* ── Categoría (solo front — pendiente de conexión) ── */}
+        <div style={cardStyle(ACCENT)}>
+          <SectionLabel>Categoría</SectionLabel>
+          <FieldLabel>Categoría</FieldLabel>
+          <select
+            style={{ ...inputStyle(focusedField === 'categoria'), color: categoria ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            onFocus={() => setFocusedField('categoria')}
+            onBlur={() => setFocusedField(null)}
+          >
+            <option value="">Seleccioná una categoría…</option>
+            {SOLVI_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
         <div style={cardStyle(ACCENT)}>
           <SectionLabel>Descripción</SectionLabel>
           <RichTextEditor
@@ -218,7 +257,23 @@ export function SolviRequestPage() {
 
         {error && <div style={{ padding: '10px 14px', borderRadius: 6, background: 'rgba(255,71,87,0.08)', border: '1px solid rgba(255,71,87,0.25)', color: 'var(--danger)', fontSize: 12 }}>{error}</div>}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 8 }}>
+        <div style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 20,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginTop: 8,
+          marginLeft:   isMobile ? -14 : -50,
+          marginRight:  isMobile ? -14 : -50,
+          marginBottom: isMobile ? -24 : -32,
+          padding: isMobile ? '12px 14px' : '14px 50px',
+          background: 'var(--bg-panel)',
+          borderTop: `1px solid ${ACCENT}25`,
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+        }}>
           <button type="button" onClick={() => navigate('/new')} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
           <button type="submit" disabled={isPending || !isReady} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || !isReady) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`, color: (isPending || !isReady) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || !isReady) ? 0.55 : 1, cursor: (isPending || !isReady) ? 'not-allowed' : 'pointer' }}>
             {isPending ? 'Creando...' : '→ Crear Solicitud'}
