@@ -86,12 +86,12 @@ export function useAcceptanceCriteria(requestId: string | null | undefined) {
 
 type CreateContext = { snapshot: AcceptanceCriteria[] | undefined; tempId: number };
 
-export function useCreateCriteria(requestId: string) {
+export function useCreateCriteria(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 
   return useMutation<AcceptanceCriteria, Error, { title: string }, CreateContext>({
     mutationFn: ({ title }) =>
-      apiClient.call('createAcceptanceCriteria', { requestId, title }),
+      apiClient.call('createAcceptanceCriteria', { requestId, title, actorId }),
 
     onMutate: async ({ title }): Promise<CreateContext> => {
       const key = criteriaKeys.byRequest(requestId);
@@ -151,6 +151,7 @@ export function useUpdateCriteriaStatus(requestId: string) {
         status,
         reviewedBy,
         reviewerNotes: reviewerNotes ?? null,
+        requestId,   // ← faltaba: sin esto no dispara ni notificación ni historia
       }),
 
     onMutate: async ({ criteriaId, status, reviewerNotes }): Promise<UpdateStatusContext> => {
@@ -183,12 +184,12 @@ export function useUpdateCriteriaStatus(requestId: string) {
 
 /* ── Eliminar ──────────────────────────────────────────────── */
 
-export function useDeleteCriteria(requestId: string) {
+export function useDeleteCriteria(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 
   return useMutation<{ ok: boolean }, Error, DeleteVars, SnapshotContext>({
     mutationFn: ({ criteriaId }) =>
-      apiClient.call('deleteAcceptanceCriteria', { criteriaId }),
+      apiClient.call('deleteAcceptanceCriteria', { criteriaId, actorId }),
 
     onMutate: async ({ criteriaId }) => {
       const key = criteriaKeys.byRequest(requestId);
@@ -210,12 +211,12 @@ export function useDeleteCriteria(requestId: string) {
 
 /* ── Editar título ─────────────────────────────────────────── */
 
-export function useUpdateCriteriaTitle(requestId: string) {
+export function useUpdateCriteriaTitle(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 
   return useMutation<AcceptanceCriteria, Error, UpdateTitleVars, SnapshotContext>({
     mutationFn: ({ criteriaId, title }) =>
-      apiClient.call('updateCriteriaTitle', { criteriaId, title }),
+      apiClient.call('updateCriteriaTitle', { criteriaId, title, actorId }),
 
     onMutate: async ({ criteriaId, title }) => {
       const key = criteriaKeys.byRequest(requestId);

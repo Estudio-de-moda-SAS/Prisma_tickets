@@ -293,6 +293,7 @@ export type MoverRequestPayload = {
 };
 export type ActualizarRequestPayload = {
   id:              string;
+  updatedBy?:      number;
   titulo?:         string;
   descripcion?:    string;
   prioridad?:      Prioridad;
@@ -325,3 +326,20 @@ export type SubmitClientFeedbackPayload = {
 };
 
 export type BoardData = Record<string, Request[]>;
+
+export type HistoryAction =
+  | 'created' | 'field_update' | 'column_move'
+  | 'closed' | 'reopened' | 'deleted'
+  | 'criterion_added' | 'criterion_status' | 'criterion_removed' | 'criterion_edited';
+
+export interface RequestHistoryEntry {
+  id:        number;
+  requestId: string;
+  action:    HistoryAction;
+  field:     string | null;
+  oldValue:  string | null;
+  newValue:  string | null;
+  metadata:  Record<string, unknown> | null;
+  changedAt: string;
+  actor: { userId: number; userName: string; avatarUrl: string | null } | null;
+}

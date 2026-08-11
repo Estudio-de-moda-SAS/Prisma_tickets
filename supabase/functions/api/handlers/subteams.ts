@@ -4,10 +4,16 @@ export const subTeamHandlers: Record<string, ActionHandler> = {
   fetchSubTeamsByTeamId: async (payload, { supabase }) => {
     const { teamId } = payload as { teamId: number };
     const { data, error } = await supabase
-      .from('TBL_Sub_Teams').select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color')
+      .from('TBL_Sub_Teams')
+      .select('Sub_Team_ID, Sub_Team_Name, Sub_Team_Color, supervisors:TBL_Sub_Team_Supervisors ( Sub_Team_Supervisor_User_ID )')
       .eq('Sub_Team_Team_ID', teamId);
     if (error) throw new Error(error.message);
-    return data;
+    return (data as any[]).map((s) => ({
+      Sub_Team_ID:    s.Sub_Team_ID,
+      Sub_Team_Name:  s.Sub_Team_Name,
+      Sub_Team_Color: s.Sub_Team_Color,
+      supervisorIds:  (s.supervisors ?? []).map((x: any) => x.Sub_Team_Supervisor_User_ID),
+    }));
   },
 
   createSubTeam: async (payload, { supabase }) => {
@@ -59,6 +65,47 @@ export const subTeamHandlers: Record<string, ActionHandler> = {
     const { subTeamId, userId } = payload as { subTeamId: number; userId: number };
     const { error } = await supabase.from('TBL_Sub_Team_Members')
       .delete().eq('Sub_Team_Member_Sub_Team_ID', subTeamId).eq('Sub_Team_Member_User_ID', userId);
+    if (error) throw new Error(error.message);
+    await supabase.from('TBL_Sub_Team_Supervisors')
+      .delete().eq('Sub_Team_Supervisor_Sub_Team_ID', subTeamId).eq('Sub_Team_Supervisor_User_ID', userId);
+    return { ok: true };
+  },
+
+  fetchSubTeamSupervisors: async (payload, { supabase }) => {
+    const { subTeamId } = payload as { subTeamId: number };
+    const { data, error } = await supabase
+      .from('TBL_Sub_Team_Supervisors')
+      .select('Sub_Team_Supervisor_User_ID')
+      .eq('Sub_Team_Supervisor_Sub_Team_ID', subTeamId);
+    if (error) throw new Error(error.message);
+    return (data as any[]).map((r) => r.Sub_Team_Supervisor_User_ID);
+  },
+
+  addSubTeamSupervisor: async (payload, { supabase }) => {
+    const { subTeamId, userId } = payload as { subTeamId: number; userId: number };
+    // Validación: el supervisor DEBE ser integrante del sub-equipo
+    const { data: member, error: memErr } = await supabase
+      .from('TBL_Sub_Team_Members')
+      .select('Sub_Team_Member_User_ID')
+      .eq('Sub_Team_Member_Sub_Team_ID', subTeamId)
+      .eq('Sub_Team_Member_User_ID', userId)
+      .maybeSingle();
+    if (memErr) throw new Error(memErr.message);
+    if (!member) throw new Error('El supervisor debe ser integrante del sub-equipo.');
+    const { error } = await supabase.from('TBL_Sub_Team_Supervisors').upsert(
+      { Sub_Team_Supervisor_Sub_Team_ID: subTeamId, Sub_Team_Supervisor_User_ID: userId },
+      { onConflict: 'Sub_Team_Supervisor_Sub_Team_ID,Sub_Team_Supervisor_User_ID' },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  },
+
+  removeSubTeamSupervisor: async (payload, { supabase }) => {
+    const { subTeamId, userId } = payload as { subTeamId: number; userId: number };
+    const { error } = await supabase.from('TBL_Sub_Team_Supervisors')
+      .delete()
+      .eq('Sub_Team_Supervisor_Sub_Team_ID', subTeamId)
+      .eq('Sub_Team_Supervisor_User_ID', userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   },

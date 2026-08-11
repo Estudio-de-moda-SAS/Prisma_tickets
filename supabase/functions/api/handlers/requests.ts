@@ -9,6 +9,8 @@ import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail, mayb
 import { sendEventEmail } from '../email/send.ts';
 // @ts-ignore
 import { BASE_SELECT, BASE_SELECT_LIGHT, DETAIL_SELECT, STATS_SELECT } from '../shared/selects.ts';
+// @ts-ignore
+import { logHistory, diffFields, diffFormData } from '../lib/history.ts';
 
 const HISTORIAL_COLUMN_ID     = 9;
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
@@ -468,11 +470,20 @@ fetchByTeamCode: async (payload, { supabase }) => {
     console.log(`[move] id=${id} columnId=${columnId} movedBy=${movedBy}`);
     const [colRes, reqRes] = await Promise.all([
       supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', columnId).single(),
-      supabase.from('TBL_Requests').select('Request_Finished_At').eq('Request_ID', id).single(),
+      supabase.from('TBL_Requests').select('Request_Finished_At, Request_Board_Column_ID').eq('Request_ID', id).single(),
     ]);
     const colData   = colRes.data;
     const wasClosed = !!(reqRes.data as any)?.Request_Finished_At;
+    const fromColumnId = (reqRes.data as any)?.Request_Board_Column_ID as number | undefined;
     const willClose = await isCloseColumn(supabase, columnId, id);
+
+    // Nombre de la columna de origen para un log legible
+    let fromColName = 'otra columna';
+    if (fromColumnId && fromColumnId !== columnId) {
+      const { data: fromCol } = await supabase
+        .from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', fromColumnId).single();
+      fromColName = (fromCol as any)?.Board_Column_Name ?? fromColName;
+    }
 
     const updateData: Record<string, unknown> = { Request_Board_Column_ID: columnId };
     if (willClose) {
@@ -486,6 +497,24 @@ fetchByTeamCode: async (payload, { supabase }) => {
     const { error } = await supabase
       .from('TBL_Requests').update(updateData).eq('Request_ID', id);
     if (error) throw new Error(error.message);
+
+    // ── Audit: movimiento + cierre/reapertura ──
+    {
+      const toColName = (colData as any)?.Board_Column_Name ?? 'otra columna';
+      const entries = [];
+      if (fromColumnId !== columnId) {
+        entries.push({
+          requestId: id, changedBy: movedBy ?? null, action: 'column_move' as const,
+          field: 'columna', oldValue: fromColName, newValue: toColName,
+          metadata: { fromColumnId, toColumnId: columnId },
+        });
+      }
+      if (willClose && !wasClosed)
+        entries.push({ requestId: id, changedBy: movedBy ?? null, action: 'closed' as const, newValue: toColName });
+      if (!willClose && wasClosed)
+        entries.push({ requestId: id, changedBy: movedBy ?? null, action: 'reopened' as const, newValue: toColName });
+      await logHistory(supabase, entries);
+    }
 
     // ── Sincronizar bug report vinculado ──────────────────────────────
     // Si este ticket nació de un bug report y acaba de cerrarse (o de
@@ -637,13 +666,39 @@ fetchByTeamCode: async (payload, { supabase }) => {
     return { ok: true };
   },
 
-  updateRequest: async (payload, { supabase }) => {
-    const { id, ...patch } = payload as {
-      id: string; titulo?: string; descripcion?: string; score?: number;
+updateRequest: async (payload, { supabase }) => {
+    const { id, updatedBy, ...patch } = payload as {
+      id: string; updatedBy?: number | null;
+      titulo?: string; descripcion?: string; score?: number;
       progreso?: number; estimatedHours?: number | null; loggedHours?: number | null;
       equipoIds?: number[]; labelIds?: number[]; sprintId?: number | null;
       formData?: Record<string, unknown>;
     };
+    const actor = updatedBy ?? null;
+
+    // ── Estado previo (scalars + form_data) para el diff ──
+    const { data: beforeRow } = await supabase
+      .from('TBL_Requests')
+      .select('Request_Title, Request_Description, Request_Score, Request_Progress, Request_Estimated_Hours, Request_Logged_Hours, Request_Form_Data')
+      .eq('Request_ID', id).single();
+
+    // ── Estado previo de relaciones, solo si el patch las toca ──
+    let beforeLabelIds:  number[] | undefined;
+    let beforeSprintId:  number | null | undefined;
+    let beforeEquipoIds: number[] | undefined;
+    if (patch.labelIds !== undefined) {
+      const { data } = await supabase.from('TBL_Request_Labels').select('Request_Labels_Label_ID').eq('Request_Labels_Request_ID', id);
+      beforeLabelIds = ((data ?? []) as any[]).map((r) => r.Request_Labels_Label_ID);
+    }
+    if (patch.sprintId !== undefined) {
+      const { data } = await supabase.from('TBL_Request_Sprint').select('Request_Sprint_ID').eq('Request_Sprint_Request_ID', id).maybeSingle();
+      beforeSprintId = (data as any)?.Request_Sprint_ID ?? null;
+    }
+    if (patch.equipoIds !== undefined) {
+      const { data } = await supabase.from('TBL_Request_Team').select('Request_Team_ID').eq('Request_Team_Request_ID', id);
+      beforeEquipoIds = ((data ?? []) as any[]).map((r) => r.Request_Team_ID);
+    }
+
     const scalarUpdate: Record<string, unknown> = {};
     if (patch.titulo         !== undefined) scalarUpdate['Request_Title']           = patch.titulo;
     if (patch.descripcion    !== undefined) scalarUpdate['Request_Description']     = patch.descripcion;
@@ -677,6 +732,27 @@ fetchByTeamCode: async (payload, { supabase }) => {
           { Request_Sprint_Request_ID: id, Request_Sprint_ID: patch.sprintId }
         );
     }
+
+    // ── Audit: diff por campo ──
+    {
+      const before: Record<string, unknown> = {
+        titulo:         (beforeRow as any)?.Request_Title,
+        descripcion:    (beforeRow as any)?.Request_Description,
+        score:          (beforeRow as any)?.Request_Score,
+        progreso:       (beforeRow as any)?.Request_Progress,
+        estimatedHours: (beforeRow as any)?.Request_Estimated_Hours,
+        loggedHours:    (beforeRow as any)?.Request_Logged_Hours,
+        labelIds:       beforeLabelIds,
+        sprintId:       beforeSprintId,
+        equipoIds:      beforeEquipoIds,
+      };
+      const entries = [
+        ...diffFields(id, actor, before, patch),
+        ...diffFormData(id, actor, (beforeRow as any)?.Request_Form_Data, patch.formData),
+      ];
+      await logHistory(supabase, entries);
+    }
+
     return { ok: true };
   },
 

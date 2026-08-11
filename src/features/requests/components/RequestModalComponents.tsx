@@ -67,9 +67,9 @@ export function AcceptanceCriteriaPanel({
 }) {
   const { data: criteria = [], isLoading } = useAcceptanceCriteria(requestId);
   const { mutate: updateStatus, isPending: updatingStatus } = useUpdateCriteriaStatus(requestId);
-  const { mutate: updateTitle,  isPending: updatingTitle  } = useUpdateCriteriaTitle(requestId);
-  const { mutate: deleteCrit,   isPending: deleting       } = useDeleteCriteria(requestId);
-  const { mutate: createCrit,   isPending: creating       } = useCreateCriteria(requestId);
+  const { mutate: updateTitle,  isPending: updatingTitle  } = useUpdateCriteriaTitle(requestId, currentUserId);
+  const { mutate: deleteCrit,   isPending: deleting       } = useDeleteCriteria(requestId, currentUserId);
+  const { mutate: createCrit,   isPending: creating       } = useCreateCriteria(requestId, currentUserId);
 
   const [reviewNotes,  setReviewNotes]  = useState<Record<number, string>>({});
   const [expandedNote, setExpandedNote] = useState<number | null>(null);
