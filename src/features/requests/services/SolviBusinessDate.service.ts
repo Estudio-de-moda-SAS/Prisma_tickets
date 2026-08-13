@@ -62,6 +62,12 @@ export function toISODateTimeFlex(v?: string | Date | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// true fuera del horario laboral (antes de las 7:00 o desde las 17:00, hora Bogotá).
+export function isTurnoNocturnoAhora(): boolean {
+  const hora = new TZDate(new Date(), TIMEZONE).getHours();
+  return hora < WORK_START || hora >= WORK_END;
+}
+
 // Suma 4h hábiles (L-V, 7:00-17:00, excluyendo festivos) a partir de "ahora".
 export async function calcularFechaSolucion(): Promise<TZDate> {
   let restante = SLA_MINUTES;

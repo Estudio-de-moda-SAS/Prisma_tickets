@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabaseClient';
 import type { UserProfile } from '@/types/commons';
 import type { SolviTicket } from '../types/SolviTicket';
 import { UsuariosSPService, type UsuariosSP } from '../services/TecnicosSharepointSolvi.service';
-import { calcularFechaSolucion } from '../services/SolviBusinessDate.service';
+import { calcularFechaSolucion, isTurnoNocturnoAhora } from '../services/SolviBusinessDate.service';
 import { pickTecnicoConMenosCasos } from '../services/SolviTicketAssignment.service';
+import { fetchPersonaDisponibleAhora } from '../services/SolviShifts.service';
 import { uploadSolviAttachment as uploadSolviAttachmentToStorage } from '../services/SolviAttachments.service';
 import {
   notifyTicketCreatedResolutor,
@@ -47,6 +48,29 @@ async function assignTechnicianAndBumpLoad(tecnicosService: UsuariosSPService): 
   const casosActuales = Number(resolutor.Numerodecasos ?? 0);
   await tecnicosService.update(String(resolutor.Id), { Numerodecasos: casosActuales + 1 });
   return resolutor;
+}
+
+type ResolutorAsignado = { correo: string; nombre: string };
+
+// Fuera de horario laboral (17:00-7:00) prioriza a quien esté activo ahora mismo en el turno de
+// Teams Shifts; en horario laboral, o si nadie está en turno / falla la consulta, cae al técnico
+// con menos casos activos.
+async function assignResolutor(tecnicosService: UsuariosSPService, isTurnoNocturnoAhora: boolean): Promise<ResolutorAsignado | null> {
+  if (isTurnoNocturnoAhora) {
+    let disponibleAhora = null;
+    try {
+      disponibleAhora = await fetchPersonaDisponibleAhora();
+    } catch (err) {
+      console.error('[Flow] Error consultando disponibilidad de turnos:', err);
+    }
+
+    if (disponibleAhora?.correo) {
+      return { correo: disponibleAhora.correo, nombre: disponibleAhora.nombre ?? '' };
+    }
+  }
+
+  const resolutor = await assignTechnicianAndBumpLoad(tecnicosService);
+  return resolutor ? { correo: resolutor.Correo, nombre: resolutor.Title } : null;
 }
 
 async function notifyTicketCreated(ticket: SolviTicket | null | undefined): Promise<void> {
@@ -106,17 +130,19 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
 
     setLoading(true);
     try {
+      const turnoNocturno = await isTurnoNocturnoAhora()
       const fechaMaxima = await calcularFechaSolucion();
-      const resolutor = await assignTechnicianAndBumpLoad(tecnicosService);
+      const resolutor = await assignResolutor(tecnicosService, turnoNocturno);
 
       const payload: SolviTicket = {
         ...state,
         ticket_solvi_fechamaxima: fechaMaxima.toISOString(),
-        ticket_solvi_correo_resolutor: resolutor?.Correo ?? '',
-        ticket_solvi_resolutor: resolutor?.Title ?? '',
+        ticket_solvi_correo_resolutor: resolutor?.correo ?? '',
+        ticket_solvi_resolutor: resolutor?.nombre ?? '',
         ticket_solvi_titulo: titulo,
         ticket_solvi_descripcion: descripcion,
         ticket_solvi_categoria: categoria,
+        ticket_solvi_fuente: turnoNocturno ? "Disponibilidad" : "Aplicativo"
       };
 
       const { error, data: ticketCreated } = await supabase
