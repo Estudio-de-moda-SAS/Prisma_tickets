@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Clock, Play, Pause, Save, ExternalLink, X, GripHorizontal } from 'lucide-react';
 import { useTimerStore, type TimerEntry } from '@/store/timerStore';
 import { useUpdateRequest } from '@/features/requests/hooks/UseUpdateRequest';
+import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import type { Request } from '@/features/requests/types';
 import type { Location } from 'react-router';
@@ -151,6 +152,7 @@ function TimerWidgetInner({ entry }: { entry: TimerEntry }) {
   const pause    = useTimerStore((s) => s.pause);
   const reset    = useTimerStore((s) => s.reset);
   const dismiss  = useTimerStore((s) => s.dismiss);
+  const { data: currentUser } = useCurrentUser();
   const { mutate: update } = useUpdateRequest(entry.equipo);
 
   const running = !!entry.startedAt;
@@ -177,7 +179,7 @@ function TimerWidgetInner({ entry }: { entry: TimerEntry }) {
     if (hrs <= 0) { reset(entry.requestId); return; }
     const fresh = qc.getQueryData<Request>(['request', entry.requestId]);
     const base  = fresh?.loggedHours ?? 0;
-    update({ id: entry.requestId, patch: { loggedHours: parseFloat((base + hrs).toFixed(4)) } });
+    update({ id: entry.requestId, updatedBy: currentUser?.User_ID, patch: { loggedHours: parseFloat((base + hrs).toFixed(4)) } });
     reset(entry.requestId);
   }
 

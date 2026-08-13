@@ -3,7 +3,7 @@ import { apiClient } from '@/lib/apiClient';
 import { supabase } from '@/lib/supabaseClient';
 import { config } from '@/config';
 import type {
-  Request, CrearRequestPayload, ActualizarRequestPayload,
+  Request, CrearRequestPayload, ActualizarRequestPayload, RequestHistoryEntry,
   MoverRequestPayload, KanbanColumna, Prioridad,
   RequestAssignee, RequestExtraFields, CierreInfo, CerrarRequestPayload,
   ClosureAttachment, ClientFeedback, SubmitClientFeedbackPayload,
@@ -137,7 +137,28 @@ closure: Array<{
     }[];
   }> | null;
 };
+type RawHistoryRow = {
+  Request_History_ID:         number;
+  Request_History_Request_ID: string;
+  Request_History_Action:     string;
+  Request_History_Field:      string | null;
+  Request_History_Old_Value:  string | null;
+  Request_History_New_Value:  string | null;
+  Request_History_Metadata:   Record<string, unknown> | null;
+  Request_History_Changed_At: string;
+  actor: { User_ID: number; User_Name: string; User_Avatar_url: string | null } | null;
+};
 
+function mapHistoryRow(r: RawHistoryRow): RequestHistoryEntry {
+  return {
+    id: r.Request_History_ID, requestId: r.Request_History_Request_ID,
+    action: r.Request_History_Action as RequestHistoryEntry['action'],
+    field: r.Request_History_Field, oldValue: r.Request_History_Old_Value,
+    newValue: r.Request_History_New_Value, metadata: r.Request_History_Metadata,
+    changedAt: r.Request_History_Changed_At,
+    actor: r.actor ? { userId: r.actor.User_ID, userName: r.actor.User_Name, avatarUrl: r.actor.User_Avatar_url } : null,
+  };
+}
 const COLUMN_NAME_TO_KANBAN: Record<string, KanbanColumna> = {
   'Sin categorizar': 'sin_categorizar',
   'Icebox':          'icebox',
@@ -509,9 +530,10 @@ async fetchTeamHistorialPage(
     return rows.map(mapRowToRequest);
   }
   
-async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
+async updateRequest({ id, updatedBy, ...patch }: ActualizarRequestPayload): Promise<void> {
   await apiClient.call('updateRequest', {
     id,
+    updatedBy,
     titulo:         patch.titulo,
     descripcion:    patch.descripcion,
     score:          patch.prioridad !== undefined ? PRIORIDAD_TO_SCORE[patch.prioridad] : undefined,
@@ -528,8 +550,13 @@ async updateRequest({ id, ...patch }: ActualizarRequestPayload): Promise<void> {
     }
   }
 
-  async deleteRequest(id: string): Promise<void> {
-    await apiClient.call('deleteRequest', { id });
+  async deleteRequest(id: string, deletedBy?: number): Promise<void> {
+    await apiClient.call('deleteRequest', { id, deletedBy });
+  }
+
+  async fetchRequestHistory(requestId: string, requesterId: number): Promise<RequestHistoryEntry[]> {
+    const rows = await apiClient.call<RawHistoryRow[]>('fetchRequestHistory', { requestId, requesterId });
+    return rows.map(mapHistoryRow);
   }
 
 async closeRequest(payload: CerrarRequestPayload): Promise<CierreInfo> {

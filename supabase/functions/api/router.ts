@@ -50,6 +50,8 @@ import { migrationHandlers } from './handlers/migration.ts';
 import { resolutionRatingHandlers } from './handlers/resolutionRatings.ts';
 // @ts-ignore
 import { solviHandlers } from './handlers/solvi.ts';
+// @ts-ignore
+import { historyHandlers } from './handlers/history.ts';
 
 const handlers: Record<string, ActionHandler> = {
   ...requestHandlers,
@@ -77,6 +79,7 @@ const handlers: Record<string, ActionHandler> = {
   ...migrationHandlers,
   ...resolutionRatingHandlers,
   ...solviHandlers,
+  ...historyHandlers,
 };
 
 export function createDispatch(supabase: DB): Dispatch {

@@ -15,6 +15,7 @@ import {
   getSupabaseProviderToken,
   signInWithSupabaseAzure,
   signOutSupabase,
+  trySilentGraphReauth,
 } from './supabaseAuth';
 import type { UserProfile } from '@/types/commons';
 import { supabase } from '@/lib/supabaseClient';
@@ -250,8 +251,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (config.USE_SUPABASE_AUTH) {
       // Listener de cambios de sesión (login/logout/refresh) — Opción B
       const { data: authListener } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
+        (event, session) => {
           if (cancel) return;
+          // Supabase renueva su JWT solo, pero esa renovación no re-emite el
+          // provider_token de Microsoft (Azure solo lo entrega en el login
+          // inicial). Nos auto-reparamos en segundo plano en vez de esperar
+          // a que una llamada a Graph falle.
+          if (event === 'TOKEN_REFRESHED' && session && !session.provider_token) {
+            void trySilentGraphReauth();
+          }
           void syncSupabaseSession(session);
         },
       );

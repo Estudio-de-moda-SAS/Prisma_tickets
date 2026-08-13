@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, ChevronDown as ChevDown,
   Trash2, Paperclip, Upload,
-  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy,
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, History,
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useDeleteRequest } from '../hooks/useRequests';
@@ -29,6 +29,7 @@ import { CreateRequestModal } from './CreateRequestModal';
 import { ClosureModal } from './ClosureModal';
 import { ClientReviewBanner } from './ClientReviewBanner';
 import { ResolutionRatingModal } from './ResolutionRatingModal';
+import { RequestHistoryModal } from './RequestHistoryModal';
 import { config } from '@/config';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
@@ -176,6 +177,7 @@ export function RequestModal({
   const { mutate: deleteRequest, isPending: deleting } = useDeleteRequest();
   const { mutate: createRequest, isPending: duplicating }  = useCreateRequest();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistory,        setShowHistory]       = useState(false);
   const [duplicated,         setDuplicated]        = useState(false);
   const { data: currentUser } = useCurrentUser();
 const overlayRef   = useRef<HTMLDivElement>(null);
@@ -246,6 +248,11 @@ const { data: feedbackHistorial = [] } = useClientFeedback(requestId);
   const [pendingSourceReqEv,  setPendingSourceReqEv]  = useState<boolean>(false);
 
   const { data: subTeams    = [] } = useSubTeams(boardTeamId);
+  const canViewHistory = !!currentUser && (
+    currentUser.User_Role === 'admin' ||
+    (effectiveRequest.subTeamIds ?? []).some((sid) =>
+      subTeams.find((s) => s.Sub_Team_ID === sid)?.supervisorIds?.includes(currentUser.User_ID))
+  );
   const { data: labels      = [] } = useLabelsByTeamId(boardId, boardTeamId);
   const { data: sprints     = [] } = useSprints();
 const { data: allUsers    = [] } = useUsers();
@@ -341,7 +348,7 @@ function handleDuplicate() {
 }
 
 function handleDelete() {
-    deleteRequest(requestId, {
+    deleteRequest({ id: requestId, deletedBy: currentUser?.User_ID }, {
     onSuccess: () => {
       setShowDeleteConfirm(false);
       onClose();
@@ -421,7 +428,7 @@ useEffect(() => {
   saveDebounceRef.current = setTimeout(() => {
     setSaveStatus('saving');
     update(
-      { id: requestId, patch },
+      { id: requestId, updatedBy: currentUser?.User_ID, patch },
       {
         onSuccess: () => {
           setSaveStatus('saved');
@@ -438,7 +445,7 @@ function handleToggleLabel(labelId: number) {    if (readOnly) return;
       ? selectedLabelIds.filter((l) => l !== labelId)
       : [...selectedLabelIds, labelId];
     setSelectedLabelIds(next);
-    update({ id: requestId, patch: { labelIds: next } });
+    update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { labelIds: next } });
   }
 
 function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAssigneeIds?: number[]) {
@@ -463,19 +470,19 @@ function handleToggleSubTeam(subId: number, currentSubIds?: number[], currentAss
     });
   }
 
-  update({ id: requestId, patch: { subTeamIds: next } });
+  update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { subTeamIds: next } });
 }
 
 function handleFormFieldChange(key: string, value: unknown) {
     if (readOnly) return;
     const next = { ...formDataLocal, [key]: value };
     setFormDataLocal(next);
-    update({ id: requestId, patch: { formData: next } });
+    update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { formData: next } });
   }
 
   function handleSprint(sprintId: number | null) {    if (readOnly) return;
     setSelectedSprintId(sprintId);
-    update({ id: requestId, patch: { sprintId } });
+    update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { sprintId } });
     sprintDD.setOpen(false);
   }
 
@@ -671,6 +678,23 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
       </>
     )}
   </div>
+
+  {canViewHistory && (
+    <button
+      onClick={() => setShowHistory(true)}
+      title="Historial de cambios"
+      style={{
+        width: 30, height: 30, borderRadius: 6,
+        border: '1px solid rgba(0,200,255,0.25)', color: 'var(--txt-muted)',
+        background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', transition: 'all 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.5)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,200,255,0.08)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
+    >
+      <History size={14} />
+    </button>
+  )}
 
   <button
     onClick={handleDuplicate}
@@ -1243,7 +1267,7 @@ onToggleAssignee={(userId) => {
               key={pri}
               selected={sel}
               onClick={() => {
-                update({ id: requestId, patch: { prioridad: pri } });
+                update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { prioridad: pri } });
                 priorDD.setOpen(false);
               }}
             >
@@ -1288,7 +1312,7 @@ onToggleAssignee={(userId) => {
                 <FieldBlock label="Horas estimadas">
                   {readOnly
                     ? <span style={{ fontSize: 13, color: effectiveRequest.estimatedHours != null ? 'var(--txt)' : 'var(--txt-muted)' }}>{effectiveRequest.estimatedHours != null ? fmtHours(effectiveRequest.estimatedHours) : 'Sin estimado'}</span>
-                    : <HorasInput value={effectiveRequest.estimatedHours} onChange={(val) => update({ id: requestId, patch: { estimatedHours: val } })} />
+                    : <HorasInput value={effectiveRequest.estimatedHours} onChange={(val) => update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { estimatedHours: val } })} />
                   }
                 </FieldBlock>
               </div>
@@ -1318,7 +1342,7 @@ onToggleAssignee={(userId) => {
   titulo={effectiveRequest.titulo}
   equipo={equipo}
   loggedHours={effectiveRequest.loggedHours}
-  onSave={(val) => update({ id: requestId, patch: { loggedHours: val } })}
+  onSave={(val) => update({ id: requestId, updatedBy: currentUser?.User_ID, patch: { loggedHours: val } })}
 />
 )}
 
@@ -1588,6 +1612,17 @@ onToggleAssignee={(userId) => {
           onConfirm={handleClosureFromModal}
           onCancel={() => { setPendingClosureCol(null); setPendingSourceReqEv(false); }}
           isPending={false}
+        />
+      )}
+
+      {showHistory && currentUser && (
+        <RequestHistoryModal
+          requestId={requestId}
+          requesterId={currentUser.User_ID}
+          labels={labels}
+          sprints={sprints}
+          subTeams={subTeams}
+          onClose={() => setShowHistory(false)}
         />
       )}
 

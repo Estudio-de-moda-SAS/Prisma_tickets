@@ -5,6 +5,8 @@ import { SIGNED_URL_EXPIRES_IN } from '../lib/storage.ts';
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail } from '../shared/requests.ts';
+// @ts-ignore
+import { logHistory } from '../lib/history.ts';
 
 export const closureHandlers: Record<string, ActionHandler> = {
   closeRequest: async (payload, { supabase }) => {
@@ -69,6 +71,14 @@ export const closureHandlers: Record<string, ActionHandler> = {
       }
     }
 
+    // Estado previo para el audit log
+    const { data: beforeReq } = await supabase
+      .from('TBL_Requests')
+      .select('Request_Board_Column_ID, Request_Finished_At')
+      .eq('Request_ID', p.requestId).single();
+    const fromColumnId = (beforeReq as any)?.Request_Board_Column_ID as number | undefined;
+    const wasClosed    = !!(beforeReq as any)?.Request_Finished_At;
+
     const willClose = await isCloseColumn(supabase, p.targetColumnId, p.requestId);
     const updateData: Record<string, unknown> = {
       Request_Board_Column_ID: p.targetColumnId,
@@ -82,6 +92,29 @@ export const closureHandlers: Record<string, ActionHandler> = {
       .update(updateData)
       .eq('Request_ID', p.requestId);
     if (updateErr) throw new Error(updateErr.message);
+
+    // ── Audit: movimiento + cierre por la ruta de evidencia ──
+    {
+      const [fromColRes, toColRes] = await Promise.all([
+        fromColumnId
+          ? supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', fromColumnId).single()
+          : Promise.resolve({ data: null }),
+        supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', p.targetColumnId).single(),
+      ]);
+      const fromName = (fromColRes.data as any)?.Board_Column_Name ?? 'otra columna';
+      const toName   = (toColRes.data   as any)?.Board_Column_Name ?? 'otra columna';
+      const entries = [];
+      if (fromColumnId && fromColumnId !== p.targetColumnId) {
+        entries.push({
+          requestId: p.requestId, changedBy: p.closedBy, action: 'column_move' as const,
+          field: 'columna', oldValue: fromName, newValue: toName,
+          metadata: { fromColumnId, toColumnId: p.targetColumnId, viaEvidence: true },
+        });
+      }
+      if (willClose && !wasClosed)
+        entries.push({ requestId: p.requestId, changedBy: p.closedBy, action: 'closed' as const, newValue: toName });
+      await logHistory(supabase, entries);
+    }
 
     const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
     const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
