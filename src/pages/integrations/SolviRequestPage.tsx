@@ -9,6 +9,8 @@ import { Upload, X, FileText, Image, File as FileIcon2, Plus, ShieldAlert } from
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { RichTextEditor } from '@/features/requests/components/RichTextEditor';
 import { useSolviActionsTickets } from '@/features/requests/hooks/useSolviActions';
+import { useSolviCategorias } from '@/features/requests/hooks/useSolviCategorias';
+import React from 'react';
 
 /* ============================================================
    SOLVI — Página de creación de solicitud (integración externa)
@@ -23,22 +25,6 @@ import { useSolviActionsTickets } from '@/features/requests/hooks/useSolviAction
    ============================================================ */
 
 const MAX_ATTACHMENTS = 5;
-
-/* ============================================================
-   CATEGORÍAS SOLVI — placeholder (pendiente de conexión)
-   ────────────────────────────────────────────────────────────
-   TODO(SOLVI): por ahora las categorías son fijas en el front.
-   Cuando exista el endpoint/tabla de categorías de SOLVI,
-   reemplazá este arreglo por datos traídos vía hook
-   (ej: const { data: categorias } = useSolviCategorias()).
-   ============================================================ */
-const SOLVI_CATEGORIAS = [
-  'Soporte técnico',
-  'Solicitud de acceso',
-  'Reporte de error',
-  'Requerimiento',
-  'Otro',
-];
 
 function fmtBytes(bytes: number) {
   if (bytes < 1024)        return `${bytes} B`;
@@ -81,6 +67,7 @@ export function SolviRequestPage() {
   const { data: currentUser, isError: userError } = useCurrentUser();
   const { data: teams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const solviController = useSolviActionsTickets(currentUser)
+  const {data: categories = [], refetch} = useSolviCategorias()
 
   // Equipo SOLVI por su clave de integración: robusto venga de redirect,
   // sidebar o URL directa. De ahí sale el color definido al crear el kanban.
@@ -103,6 +90,10 @@ export function SolviRequestPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isReady = titulo.trim().length > 0 && !!currentUser;
+
+  React.useEffect(() => {
+    refetch()
+  }, [refetch]);
 
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
@@ -219,7 +210,7 @@ export function SolviRequestPage() {
             onBlur={() => setFocusedField(null)}
           >
             <option value="">Seleccioná una categoría…</option>
-            {SOLVI_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+            {categories.map((c) => <option key={c.Id} value={c.Title}>{c.Title}</option>)}
           </select>
         </div>
 
