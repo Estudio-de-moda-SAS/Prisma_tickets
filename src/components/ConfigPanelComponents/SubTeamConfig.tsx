@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
-import { useSubTeamMembers, useSubTeamMembersGrouped, useAddSubTeamMember, useRemoveSubTeamMember } from '@/features/requests/hooks/useSubTeamMembers';import { useUsers } from '@/features/requests/hooks/useUsers';
+import { useSubTeamMembers, useSubTeamMembersGrouped, useAddSubTeamMember, useRemoveSubTeamMember, useSubTeamSupervisors, useAddSubTeamSupervisor, useRemoveSubTeamSupervisor } from '@/features/requests/hooks/useSubTeamMembers';import { useUsers } from '@/features/requests/hooks/useUsers';
 import type { SubTeam } from '@/features/requests/hooks/useSubTeams';
 import { AddBtn, SmBtn, SimpleColorForm } from '../ConfigPanel';
 import { createPortal } from 'react-dom';
@@ -87,6 +87,9 @@ function SubTeamMembersSection({ subTeamId, subTeamColor }: { subTeamId: number;
   const { data: allUsers = [], isLoading: loadingU } = useUsers();
   const addMember    = useAddSubTeamMember(subTeamId);
   const removeMember = useRemoveSubTeamMember(subTeamId);
+  const { data: supervisorIds = [] } = useSubTeamSupervisors(subTeamId);
+  const addSup    = useAddSubTeamSupervisor(subTeamId);
+  const removeSup = useRemoveSubTeamSupervisor(subTeamId);
   const [search,   setSearch]   = useState('');
   const [dropOpen, setDropOpen] = useState(false);
   const [dropPos,  setDropPos]  = useState({ top: 0, left: 0, width: 0 });
@@ -121,7 +124,27 @@ function SubTeamMembersSection({ subTeamId, subTeamColor }: { subTeamId: number;
           {members.map((m) => (
             <div key={m.User_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
               <UserAvatar name={m.User_Name} avatarUrl={m.User_Avatar_url} />
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Name}</div><div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Email}</div></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Name}</span>
+                  {supervisorIds.includes(m.User_ID) && (
+                    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, color: '#fdcb6e', background: 'rgba(253,203,110,0.12)', border: '1px solid rgba(253,203,110,0.35)', flexShrink: 0 }}>Supervisor</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.User_Email}</div>
+              </div>
+              {(() => {
+                const isSup = supervisorIds.includes(m.User_ID);
+                return (
+                  <button
+                    onClick={() => (isSup ? removeSup.mutate(m.User_ID) : addSup.mutate(m.User_ID))}
+                    title={isSup ? 'Quitar como supervisor' : 'Hacer supervisor (verá el historial de sus tickets)'}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, cursor: 'pointer', flexShrink: 0, transition: 'all 0.12s', border: `1px solid ${isSup ? 'rgba(253,203,110,0.5)' : 'var(--border-subtle)'}`, background: isSup ? 'rgba(253,203,110,0.12)' : 'transparent', color: isSup ? '#fdcb6e' : 'var(--txt-muted)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill={isSup ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6"><path d="M12 2l2.9 6.3 6.8.8-5 4.6 1.3 6.7L12 17.8 5.7 21.2 7 14.5l-5-4.6 6.8-.8z" strokeLinejoin="round"/></svg>
+                  </button>
+                );
+              })()}
               <SmBtn color="#ff4757" onClick={() => removeMember.mutate(m.User_ID)} title="Quitar"><svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 1l7 7M8 1L1 8" strokeLinecap="round"/></svg></SmBtn>
             </div>
           ))}

@@ -59,3 +59,33 @@ export function useRemoveSubTeamMember(subTeamId: number | null) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['subTeamMembers', subTeamId] }),
   });
 }
+export function useSubTeamSupervisors(subTeamId: number | null) {
+  return useQuery<number[]>({
+    queryKey: ['subTeamSupervisors', subTeamId],
+    queryFn:  () => apiClient.call<number[]>('fetchSubTeamSupervisors', { subTeamId }),
+    enabled:  subTeamId !== null,
+    staleTime: 60_000,
+  });
+}
+
+export function useAddSubTeamSupervisor(subTeamId: number | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => apiClient.call('addSubTeamSupervisor', { subTeamId, userId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subTeamSupervisors', subTeamId] });
+      qc.invalidateQueries({ queryKey: ['subTeams'] });
+    },
+  });
+}
+
+export function useRemoveSubTeamSupervisor(subTeamId: number | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => apiClient.call('removeSubTeamSupervisor', { subTeamId, userId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subTeamSupervisors', subTeamId] });
+      qc.invalidateQueries({ queryKey: ['subTeams'] });
+    },
+  });
+}

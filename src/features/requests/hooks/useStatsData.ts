@@ -33,6 +33,7 @@ export type SprintStats = {
   cumplimiento:        number;
   otrosSprintsCerradas: number | null;
   otrosSprintsDetalle:  Array<{ sprintId: number; sprintName: string; count: number }> | null;
+  puntajeOtrosSprints:  number;
 };
 
 export type EquipoStatsReal = {
@@ -63,6 +64,9 @@ export type BoardStatsReal = {
   penalizacion: number;
   puntajeReal:  number;
   cumplimiento: number;
+  puntajeOtrosSprints: number;
+  otrosSprintsCount:   number;
+  otrosSprintsDetalle: Array<{ sprintId: number; sprintName: string; count: number }>;
   porColumna:   ColStatReal[];
   porPrioridad: PriStatReal[];
   resolutores:  Array<{
@@ -342,6 +346,20 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
         DONE_COLUMNS.has(r.columna) && inAnyWindow(r.fechaCierre)
       );
   const doneResol = arrastre.length > 0 ? [...done, ...arrastre] : done;
+  const puntajeOtrosSprints = arrastre.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  // La card "De otros sprints" cuenta SOLO las que están en la columna 'hecho'
+  // (no ready_to_deploy ni historial). El puntaje de arriba usa Done completo.
+  const arrastreHecho       = arrastre.filter(r => r.columna === 'hecho');
+  const otrosSprintsCount   = arrastreHecho.length;
+  const otrosSprintsDetalle = (() => {
+    const m = new Map<number, { sprintId: number; sprintName: string; count: number }>();
+    for (const r of arrastreHecho) {
+      const id = r.sprintId!;
+      if (!m.has(id)) m.set(id, { sprintId: id, sprintName: r.sprintName ?? `Sprint ${id}`, count: 0 });
+      m.get(id)!.count++;
+    }
+    return [...m.values()].sort((a, b) => b.count - a.count);
+  })();
 
   // ── Métricas de sprint por equipo ──────────────────────────
   const puntajePlaneado  = mineScoped.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
@@ -353,7 +371,8 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
     : null;
   const penalizacion     = calcPenalizacion(mine, allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
-  const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
+  // El arrastre suma al cumplimiento (meta intacta → puede pasar 100%).
+  const cumplimiento     = meta > 0 ? Math.round(((puntajeReal + puntajeOtrosSprints) / meta) * 100) : 0;
   const colOrder: KanbanColumna[] = [
     'sin_categorizar','icebox','backlog','todo',
     'en_progreso','en_revision_qas','ready_to_deploy','hecho',
@@ -395,7 +414,7 @@ const porPrioridad: PriStatReal[] = PRI_META.map(p => ({
       solicitudes,
     }));
 
-  return { equipo, creadas: mineScoped.length, resueltas: done.length, criticas, meta, penalizacion, puntajeReal, cumplimiento, porColumna, porPrioridad, resolutores };
+  return { equipo, creadas: mineScoped.length, resueltas: done.length, criticas, meta, penalizacion, puntajeReal, cumplimiento, puntajeOtrosSprints, otrosSprintsCount, otrosSprintsDetalle, porColumna, porPrioridad, resolutores };
 }
 
 /* ─── calcBoardCombined ───────────────────────────────────── */
@@ -451,6 +470,20 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
         DONE_COLUMNS.has(r.columna) && inAnyWindow(r.fechaCierre)
       );
   const doneResol = arrastre.length > 0 ? [...done, ...arrastre] : done;
+  const puntajeOtrosSprints = arrastre.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  // La card "De otros sprints" cuenta SOLO las que están en la columna 'hecho'
+  // (no ready_to_deploy ni historial). El puntaje de arriba usa Done completo.
+  const arrastreHecho       = arrastre.filter(r => r.columna === 'hecho');
+  const otrosSprintsCount   = arrastreHecho.length;
+  const otrosSprintsDetalle = (() => {
+    const m = new Map<number, { sprintId: number; sprintName: string; count: number }>();
+    for (const r of arrastreHecho) {
+      const id = r.sprintId!;
+      if (!m.has(id)) m.set(id, { sprintId: id, sprintName: r.sprintName ?? `Sprint ${id}`, count: 0 });
+      m.get(id)!.count++;
+    }
+    return [...m.values()].sort((a, b) => b.count - a.count);
+  })();
 
   const puntajePlaneado  = mineScoped.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
   const puntajeRealizado = done.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
@@ -460,7 +493,8 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
     : null;
   const penalizacion     = calcPenalizacion(mine, allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
-  const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
+  // El arrastre suma al cumplimiento (meta intacta → puede pasar 100%).
+  const cumplimiento     = meta > 0 ? Math.round(((puntajeReal + puntajeOtrosSprints) / meta) * 100) : 0;
 
   const colOrder: KanbanColumna[] = [
     'sin_categorizar','icebox','backlog','todo',
@@ -506,7 +540,8 @@ function calcBoardCombined(requests: Request[], equipos: string[], statsConfig?:
   return {
     equipo: equipos.join('+'),
     creadas: mineScoped.length, resueltas: done.length, criticas,
-    meta, penalizacion, puntajeReal, cumplimiento,
+    meta, penalizacion, puntajeReal, cumplimiento, puntajeOtrosSprints,
+    otrosSprintsCount, otrosSprintsDetalle,
     porColumna, porPrioridad, resolutores,
   };
 }
@@ -554,6 +589,7 @@ tiempoEstimadoProm:  avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r
       tiempoConsumidoProm: avgHoras(active.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
       otrosSprintsCerradas: null,
       otrosSprintsDetalle:  null,
+      puntajeOtrosSprints:  0,
       meta, penalizacion, puntajeReal, cumplimiento,
     };
   }
@@ -607,9 +643,11 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
   // Opción A: la penalización se acota a las solicitudes del/los sprint(s)
   // seleccionado(s), no a todo el board. Así un sprint sin solicitudes propias
   // no arrastra deuda de otros sprints (elimina el −132 fantasma en sprints vacíos).
-  const penalizacion     = calcPenalizacion(activeInSprint, allSprints, refSprintId);
+  // Opción Y: la penalización considera TODA la deuda del scope (equipo/usuario),
+  // no solo las del sprint seleccionado. Una solicitud abierta del #12 penaliza
+  // al mirar el #14 porque lleva ≥ SPRINT_LAG sprints de atraso respecto al ref.
+  const penalizacion     = calcPenalizacion(requests, allSprints, refSprintId);
   const puntajeReal      = Math.max(0, puntajeRealizado - penalizacion);
-  const cumplimiento     = meta > 0 ? Math.round((puntajeReal / meta) * 100) : 0;
 
   /* ── Cerradas de OTROS sprints dentro de la ventana del/los sprint(s) sel. ──
    *  Solicitudes cuyo sprintId pertenece a otro sprint (no seleccionado) pero
@@ -644,6 +682,10 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
     return [...m.values()].sort((a, b) => b.count - a.count);
   })();
 
+  // El puntaje del arrastre suma al cumplimiento (meta intacta → puede pasar 100%).
+  const puntajeOtrosSprints = (otrosCerradas ?? []).reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  const cumplimiento = meta > 0 ? Math.round(((puntajeReal + puntajeOtrosSprints) / meta) * 100) : 0;
+
   return {
     sprint: sprints.length === 1 ? sprints[0] : null,
     planeadas:    planeadas.length,
@@ -660,6 +702,7 @@ tiempoEstimadoProm:  avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.colu
     tiempoConsumidoProm: avgHoras(activeInSprint.filter(r => DONE_COLUMNS.has(r.columna)), r => r.loggedHours),
     otrosSprintsCerradas,
     otrosSprintsDetalle,
+    puntajeOtrosSprints,
     meta, penalizacion, puntajeReal, cumplimiento,
   };
 }

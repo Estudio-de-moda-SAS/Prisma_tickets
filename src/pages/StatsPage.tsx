@@ -744,10 +744,10 @@ useEffect(() => {
 
           <div className="scard-grid scard-grid--6">
             <SprintCard label="Planeadas"     value={sp.planeadas}   color="#378ADD" icon={Layers} />
-            <SprintCard label="Activas"       value={sp.activas}     color="#00c8ff" icon={Clock} pulse />
-            <SprintCard label="Completadas"   value={sp.completadas} color="#1D9E75" icon={CheckCircle2} />
             <SprintCard label="Post-planning" value={sp.postPlanning} sub="Fuera del scope original" color="#EF9F27" icon={PlusCircle} />
-{!isGlobal && !isCombined && !labelsLoading && !tieneCategoriaBloqueada ? (
+            <SprintCard label="Activas"       value={sp.activas}     color="#00c8ff" icon={Clock} pulse />
+            
+            {!isGlobal && !isCombined && !labelsLoading && !tieneCategoriaBloqueada ? (
               <SprintCard label="Bloqueadas" value="—" sub="Categoría no configurada"
                 color="#5a6a8a" icon={Minus} />
             ) : (
@@ -755,24 +755,26 @@ useEffect(() => {
                 color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
                 icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
             )}
-            <SprintCard label="De otros sprints" value={sp.otrosSprintsCerradas ?? '\u2014'}
+            <SprintCard label="Completadas"   value={sp.completadas + (boardData?.otrosSprintsCount ?? 0)} color="#1D9E75" icon={CheckCircle2} />
+            <SprintCard label="De otros sprints"
+              value={boardData ? boardData.otrosSprintsCount : '\u2014'}
               sub="Terminadas aquí, planeadas antes"
               color="#7f77dd" icon={History}
-              onClick={sp.otrosSprintsDetalle && sp.otrosSprintsDetalle.length > 0
+              onClick={boardData && boardData.otrosSprintsDetalle.length > 0
                 ? () => setOtrosSprintsOpen(o => !o) : undefined}
               expanded={otrosSprintsOpen} />
                                   </div>
 
-          {otrosSprintsOpen && sp.otrosSprintsDetalle && sp.otrosSprintsDetalle.length > 0 && (
+          {otrosSprintsOpen && boardData && boardData.otrosSprintsDetalle.length > 0 && (
             <div className="otros-sprints-detail">
               <div className="otros-sprints-detail__head">
                 <span className="otros-sprints-detail__title">
                   <History size={12} /> Origen de las solicitudes terminadas aquí
                 </span>
-                <span className="otros-sprints-detail__total">{sp.otrosSprintsCerradas}</span>
+                <span className="otros-sprints-detail__total">{boardData.otrosSprintsCount}</span>
               </div>
               <div className="otros-sprints-detail__chips">
-                {sp.otrosSprintsDetalle.map(d => (
+                {boardData.otrosSprintsDetalle.map(d => (
                   <span key={d.sprintId} className="otros-sprints-chip">
                     <span className="otros-sprints-chip__name">{d.sprintName}</span>
                     <span className="otros-sprints-chip__count">{d.count}</span>
@@ -791,7 +793,10 @@ useEffect(() => {
                 </span>
               </div>
               <div className="score-panel">
-                <ScoreDonut realizado={sp.puntajeReal} total={sp.meta} label="cumplimiento" />
+                <ScoreDonut
+                  realizado={sp.puntajeReal + sp.puntajeOtrosSprints}
+                  total={sp.meta}
+                  label="cumplimiento" />
                 <div className="score-panel__detail">
                   <div className="score-detail-row"><span>Pts. planeados</span><strong>{sp.puntajePlaneado}</strong></div>
                   <div className="score-detail-row"><span>Meta (83.3%)</span><strong>{sp.meta}</strong></div>
@@ -806,6 +811,13 @@ useEffect(() => {
                     <span>Pts. reales</span>
                     <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal}</strong>
                   </div>
+                  {sp.puntajeOtrosSprints > 0 && (
+                    <div className="score-detail-row"
+                      title="Puntos de solicitudes de otros sprints terminadas en la ventana de este sprint. Ya sumados al cumplimiento.">
+                      <span>Pts. de otros sprints</span>
+                      <strong style={{ color: '#7f77dd' }}>+{sp.puntajeOtrosSprints}</strong>
+                    </div>
+                  )}
                   <p className="score-detail-note">Puntos: Baja 1 · Media 2 · Alta 4 · Crítica 6</p>
                 </div>
               </div>

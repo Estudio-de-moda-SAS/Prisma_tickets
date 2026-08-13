@@ -184,9 +184,9 @@ export function useDeleteRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.call<{ ok: boolean }>('deleteRequest', { id }),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, deletedBy }: { id: string; deletedBy?: number }) =>
+      apiClient.call<{ ok: boolean }>('deleteRequest', { id, deletedBy }),
+    onSuccess: (_, { id }) => {
       queryClient.removeQueries({ queryKey: ['request', id] });
       queryClient.invalidateQueries({ queryKey: requestKeys.all });
     },
