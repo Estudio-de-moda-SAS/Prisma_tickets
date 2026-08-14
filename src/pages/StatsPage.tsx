@@ -11,7 +11,7 @@ import { useUsers }                  from '@/features/requests/hooks/useUsers';
 import { useSubTeams, useSubTeamsMulti } from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped }  from '@/features/requests/hooks/useSubTeamMembers';
 import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStatsData';
-import { isBlockedLabelName } from '@/features/requests/hooks/useStatsData';
+import { isBlockedLabelName, PENALIZACION_ACTIVA } from '@/features/requests/hooks/useStatsData';
 import { useLabelsByTeamId, useLabelsByBoardId } from '@/features/requests/hooks/useLabels';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
 import { useBoardTeams, useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
@@ -660,6 +660,7 @@ useEffect(() => {
 
   const [expandedResolutor, setExpandedResolutor] = useState<number | null>(null);
   const [otrosSprintsOpen, setOtrosSprintsOpen]   = useState(false);
+  const [realizadosOpen,   setRealizadosOpen]     = useState(false);
 
   const sp        = stats.sprint;
   const gn        = stats.general;
@@ -755,7 +756,12 @@ useEffect(() => {
                 color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
                 icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
             )}
-            <SprintCard label="Completadas"   value={sp.completadas + (boardData?.otrosSprintsCount ?? 0)} color="#1D9E75" icon={CheckCircle2} />
+            <SprintCard label="Completadas"
+              value={sp.completadas + (boardData?.otrosSprintsCount ?? 0)}
+              sub={boardData && boardData.otrosSprintsCount > 0
+                ? `${sp.completadas} de este sprint + ${boardData.otrosSprintsCount} de otros`
+                : 'Terminadas en este sprint'}
+              color="#1D9E75" icon={CheckCircle2} />
             <SprintCard label="De otros sprints"
               value={boardData ? boardData.otrosSprintsCount : '\u2014'}
               sub="Terminadas aquí, planeadas antes"
@@ -800,24 +806,55 @@ useEffect(() => {
                 <div className="score-panel__detail">
                   <div className="score-detail-row"><span>Pts. planeados</span><strong>{sp.puntajePlaneado}</strong></div>
                   <div className="score-detail-row"><span>Meta (83.3%)</span><strong>{sp.meta}</strong></div>
-                  <div className="score-detail-row"><span>Pts. realizados</span><strong style={{ color: 'var(--accent)' }}>{sp.puntajeRealizado}</strong></div>
+
+                  {/* Pts. realizados: incluye arrastre de otros sprints; desplegable para ver el desglose */}
+                  {(() => {
+                    const hayOtros        = sp.puntajeOtrosSprints > 0;
+                    const realizadosTotal = sp.puntajeRealizado + sp.puntajeOtrosSprints;
+                    return (
+                      <>
+                        <div
+                          className={['score-detail-row', hayOtros ? 'score-detail-row--clickable' : ''].join(' ')}
+                          onClick={hayOtros ? () => setRealizadosOpen(o => !o) : undefined}
+                          role={hayOtros ? 'button' : undefined}
+                          tabIndex={hayOtros ? 0 : undefined}
+                          onKeyDown={hayOtros ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRealizadosOpen(o => !o); } } : undefined}
+                          title={hayOtros ? 'Incluye puntos de solicitudes de otros sprints terminadas en esta ventana' : undefined}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            Pts. realizados
+                            {hayOtros && (
+                              <ChevronDown size={11} className="score-detail-row__chevron"
+                                style={{ transform: realizadosOpen ? 'rotate(180deg)' : 'none' }} />
+                            )}
+                          </span>
+                          <strong style={{ color: 'var(--accent)' }}>{realizadosTotal}</strong>
+                        </div>
+                        {hayOtros && realizadosOpen && (
+                          <>
+                            <div className="score-detail-row score-detail-row--sub">
+                              <span>De este sprint</span><strong>{sp.puntajeRealizado}</strong>
+                            </div>
+                            <div className="score-detail-row score-detail-row--sub">
+                              <span>De otros sprints</span>
+                              <strong style={{ color: '#7f77dd' }}>+{sp.puntajeOtrosSprints}</strong>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+
                   <div className="score-detail-row">
                     <span>Penalización</span>
                     <strong style={{ color: 'var(--danger)' }}>
-                      {sp.penalizacion > 0 ? `−${sp.penalizacion}` : '—'}
+                      {!PENALIZACION_ACTIVA ? 'N/A' : sp.penalizacion > 0 ? `\u2212${sp.penalizacion}` : '\u2014'}
                     </strong>
                   </div>
                   <div className="score-detail-row" style={{ borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 4 }}>
                     <span>Pts. reales</span>
-                    <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal}</strong>
+                    <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal + sp.puntajeOtrosSprints}</strong>
                   </div>
-                  {sp.puntajeOtrosSprints > 0 && (
-                    <div className="score-detail-row"
-                      title="Puntos de solicitudes de otros sprints terminadas en la ventana de este sprint. Ya sumados al cumplimiento.">
-                      <span>Pts. de otros sprints</span>
-                      <strong style={{ color: '#7f77dd' }}>+{sp.puntajeOtrosSprints}</strong>
-                    </div>
-                  )}
                   <p className="score-detail-note">Puntos: Baja 1 · Media 2 · Alta 4 · Crítica 6</p>
                 </div>
               </div>
@@ -901,8 +938,10 @@ useEffect(() => {
                 <KPICard label="Solicitudes"      value={boardData.creadas}
                   sub={dCreadas?.sub ?? 'En este equipo'}
                   trend={dCreadas?.trend ?? 'neutral'} accent={teamColor} />
-                <KPICard label="Resueltas"        value={boardData.resueltas}
-                  sub={dResueltas?.sub ?? 'Columna Hecho'}
+                <KPICard label="Resueltas"        value={boardData.resueltas + boardData.otrosSprintsCount}
+                  sub={dResueltas?.sub ?? (boardData.otrosSprintsCount > 0
+                    ? `${boardData.resueltas} de este sprint + ${boardData.otrosSprintsCount} de otros`
+                    : 'Columna Hecho')}
                   trend={dResueltas?.trend ?? 'neutral'} accent="var(--success)" />
                 <KPICard label="Cumplimiento"     value={`${boardData.cumplimiento}%`}
                   sub={dCumplimiento?.sub ?? 'Pts. reales vs meta'}

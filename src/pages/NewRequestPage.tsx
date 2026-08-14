@@ -70,8 +70,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function inputStyle(focused: boolean): React.CSSProperties {
-  return { width: '100%', background: 'transparent', border: `1px solid ${focused ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`, borderRadius: 6, padding: '10px 13px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+function inputStyle(focused: boolean, error = false): React.CSSProperties {
+  const borderColor = error ? 'rgba(255,71,87,0.55)' : focused ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)';
+  return { width: '100%', background: 'transparent', border: `1px solid ${borderColor}`, borderRadius: 6, padding: '10px 13px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+}
+
+function FieldError({ show, text = 'Este campo es obligatorio.' }: { show: boolean; text?: string }) {
+  if (!show) return null;
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 10, color: 'var(--danger)' }}>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" strokeWidth="1.2"/><line x1="5" y1="2.5" x2="5" y2="5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="5" cy="7" r="0.5" fill="currentColor"/></svg>
+      {text}
+    </span>
+  );
 }
 
 function cardStyle(accent: string): React.CSSProperties {
@@ -186,9 +197,44 @@ if (!res.valid) return res;
 }
 
 /* ============================================================
+   Recolección de TODAS las keys requeridas faltantes
+   (para señalarlas en el form, no solo la primera)
+   Mismo criterio que validateExtraFields.
+   ============================================================ */
+function collectMissingExtraKeys(
+  fields: TemplateExtraField[],
+  values: Record<string, string>,
+): string[] {
+  const missing: string[] = [];
+  for (const field of fields) {
+    if (isConditionalField(field)) {
+      const cf = field as ConditionalField;
+      const triggerValue = values[cf.key] ?? '';
+      if (cf.required && triggerValue !== 'true' && triggerValue !== 'false') missing.push(cf.key);
+      const activeBranch = triggerValue === 'true' ? cf.trueBranch : cf.falseBranch;
+      missing.push(...collectMissingExtraKeys(activeBranch, values));
+    } else if (isMultiConditionalField(field)) {
+      const mf = field as MultiConditionalField;
+      const chosen = values[mf.key] ?? '';
+      const active = mf.options.find((o) => o.optionKey === chosen);
+      if (mf.required && !active) missing.push(mf.key);
+      if (active) missing.push(...collectMissingExtraKeys(active.fields, values));
+    } else {
+      if (field.required) {
+        if (field.type === 'checkbox') {
+          if (values[field.key] !== 'true') missing.push(field.key);
+        } else if (!values[field.key]?.trim()) {
+          missing.push(field.key);
+        }
+      }
+    }
+  }
+  return missing;
+}
+/* ============================================================
    ExtraFieldRenderer
    ============================================================ */
-function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus, onBlur }: {
+function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus, onBlur, invalidKeys }: {
   field:    TemplateExtraField;
   values:   Record<string, string>;
   onChange: (key: string, value: string) => void;
@@ -196,53 +242,56 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
   focused:  boolean;
   onFocus:  (key: string) => void;
   onBlur:   () => void;
+  invalidKeys: Set<string>;
 }) {
   if (isConditionalField(field)) {
     const cf           = field as ConditionalField;
     const triggerValue = values[cf.key] ?? '';
     const isTrue       = triggerValue === 'true';
     const activeBranch: TemplateExtraField[] = isTrue ? cf.trueBranch : cf.falseBranch;
+    const invalid      = invalidKeys.has(cf.key);
 
     return (
-      <div style={{ marginBottom: 4 }}>
-<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-  <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
-    {cf.label}
-    {cf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
-  </span>
-  <div style={{ display: 'flex', gap: 8 }}>
-    {(['true', 'false'] as const).map((val) => {
-      const isSelected = triggerValue === val;
-      const label = val === 'true' ? 'Sí' : 'No';
-      const selectedColor = val === 'true' ? accent : 'var(--txt-muted)';
-      return (
-        <button
-          key={val}
-          type="button"
-          onClick={() => onChange(cf.key, val)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 20px', borderRadius: 7, cursor: 'pointer',
-            border: `1px solid ${isSelected ? (val === 'true' ? accent + '60' : 'rgba(178,190,195,0.5)') : 'var(--border-subtle)'}`,
-            background: isSelected ? (val === 'true' ? `${accent}12` : 'rgba(178,190,195,0.08)') : 'transparent',
-            color: isSelected ? selectedColor : 'var(--txt-muted)',
-            fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
-            letterSpacing: 1, textTransform: 'uppercase' as const,
-            transition: 'all 0.15s',
-          }}
-        >
-          <div style={{
-            width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-            border: `2px solid ${isSelected ? selectedColor : 'var(--border)'}`,
-            background: isSelected ? selectedColor : 'transparent',
-            transition: 'all 0.15s',
-          }} />
-          {label}
-        </button>
-      );
-    })}
-  </div>
-</div>
+      <div style={{ marginBottom: 4 }} data-vfield={cf.key}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
+            {cf.label}
+            {cf.required && <span style={{ color: invalid ? 'var(--danger)' : accent, marginLeft: 3 }}>*</span>}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['true', 'false'] as const).map((val) => {
+              const isSelected = triggerValue === val;
+              const label = val === 'true' ? 'Sí' : 'No';
+              const selectedColor = val === 'true' ? accent : 'var(--txt-muted)';
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => onChange(cf.key, val)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 20px', borderRadius: 7, cursor: 'pointer',
+                    border: `1px solid ${isSelected ? (val === 'true' ? accent + '60' : 'rgba(178,190,195,0.5)') : (invalid ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)')}`,
+                    background: isSelected ? (val === 'true' ? `${accent}12` : 'rgba(178,190,195,0.08)') : 'transparent',
+                    color: isSelected ? selectedColor : 'var(--txt-muted)',
+                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: 1, textTransform: 'uppercase' as const,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{
+                    width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid ${isSelected ? selectedColor : 'var(--border)'}`,
+                    background: isSelected ? selectedColor : 'transparent',
+                    transition: 'all 0.15s',
+                  }} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <FieldError show={invalid} text="Seleccioná una opción." />
+        </div>
 
         {activeBranch && activeBranch.some((f) => f.label.trim() !== '') && (
           <div style={{
@@ -268,6 +317,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                     focused={focused}
                     onFocus={onFocus}
                     onBlur={onBlur}
+                    invalidKeys={invalidKeys}
                   />
                 ))}
               </div>
@@ -284,12 +334,13 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
     const active      = mf.options.find((o) => o.optionKey === chosen) ?? null;
     const activeIndex = mf.options.findIndex((o) => o.optionKey === chosen);
     const activeColor = activeIndex >= 0 ? getOptionColor(activeIndex) : accent;
+    const invalid     = invalidKeys.has(mf.key);
     return (
-      <div style={{ marginBottom: 4 }}>
+      <div style={{ marginBottom: 4 }} data-vfield={mf.key}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <span style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 500 }}>
             {mf.label}
-            {mf.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+            {mf.required && <span style={{ color: invalid ? 'var(--danger)' : accent, marginLeft: 3 }}>*</span>}
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {mf.options.map((opt, optIdx) => {
@@ -303,14 +354,14 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                   style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '8px 18px', borderRadius: 7, cursor: 'pointer',
-                    border: `1px solid ${isSelected ? optColor + '60' : optColor + '25'}`,
+                    border: `1px solid ${isSelected ? optColor + '60' : (invalid ? 'rgba(255,71,87,0.4)' : optColor + '25')}`,
                     background: isSelected ? `${optColor}12` : 'transparent',
                     color: isSelected ? optColor : 'var(--txt-muted)',
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
                     letterSpacing: 0.5, transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}55`; e.currentTarget.style.color = optColor; } }}
-                  onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = `${optColor}25`; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
+                  onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = invalid ? 'rgba(255,71,87,0.4)' : `${optColor}25`; e.currentTarget.style.color = 'var(--txt-muted)'; } }}
                 >
                   <div style={{
                     width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
@@ -323,6 +374,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
               );
             })}
           </div>
+          <FieldError show={invalid} text="Seleccioná una opción." />
         </div>
 
         {active && active.fields.some((f) => f.label.trim() !== '') && (
@@ -343,6 +395,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                     focused={focused}
                     onFocus={onFocus}
                     onBlur={onBlur}
+                    invalidKeys={invalidKeys}
                   />
                 ))}
               </div>
@@ -353,12 +406,13 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
     );
   }
 
-  const value    = values[field.key] ?? '';
-  const isFocused = focused;
+  const value     = values[field.key] ?? '';
+  const isFocused  = focused;
+  const invalid    = invalidKeys.has(field.key);
   const [collapsed, setCollapsed] = useState(field.collapsible ?? false);
 
   return (
-    <div>
+    <div data-vfield={field.key}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: collapsed ? 0 : 7 }}>
         <FieldLabel>{field.label}{field.required && ' *'}</FieldLabel>
         {field.collapsible && (
@@ -372,7 +426,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
         <>
           {field.type === 'textarea' && (
             <textarea
-              style={{ ...inputStyle(isFocused), minHeight: 80, resize: 'vertical' }}
+              style={{ ...inputStyle(isFocused, invalid), minHeight: 80, resize: 'vertical' }}
               value={value} onChange={(e) => onChange(field.key, e.target.value)}
               onFocus={() => onFocus(field.key)} onBlur={onBlur}
               placeholder={field.placeholder} rows={3}
@@ -380,7 +434,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
           )}
           {field.type === 'text' && (
             <input
-              style={inputStyle(isFocused)}
+              style={inputStyle(isFocused, invalid)}
               value={value} onChange={(e) => onChange(field.key, e.target.value)}
               onFocus={() => onFocus(field.key)} onBlur={onBlur}
               placeholder={field.placeholder}
@@ -388,7 +442,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
           )}
           {field.type === 'select' && (
             <select
-              style={{ ...inputStyle(isFocused), color: value ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+              style={{ ...inputStyle(isFocused, invalid), color: value ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
               value={value} onChange={(e) => onChange(field.key, e.target.value)}
               onFocus={() => onFocus(field.key)} onBlur={onBlur}>
               <option value="">Seleccioná una opción…</option>
@@ -401,7 +455,7 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
                 const active = value === opt;
                 return (
                   <button key={opt} type="button" onClick={() => onChange(field.key, opt)}
-                    style={{ padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', border: `1px solid ${active ? accent + '50' : 'var(--border-subtle)'}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', transition: 'all 0.12s' }}>
+                    style={{ padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer', border: `1px solid ${active ? accent + '50' : (invalid ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)')}`, background: active ? `${accent}15` : 'transparent', color: active ? accent : 'var(--txt-muted)', transition: 'all 0.12s' }}>
                     {opt}
                   </button>
                 );
@@ -410,21 +464,28 @@ function ExtraFieldRenderer({ field, values, onChange, accent, focused, onFocus,
           )}
           {field.type === 'checkbox' && (
             <button type="button" onClick={() => onChange(field.key, value === 'true' ? 'false' : 'true')}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, width: '100%', border: `1px solid ${value === 'true' ? accent + '50' : 'var(--border-subtle)'}`, background: value === 'true' ? `${accent}0d` : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
-              <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: `2px solid ${value === 'true' ? accent : 'var(--border)'}`, background: value === 'true' ? accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, width: '100%', border: `1px solid ${value === 'true' ? accent + '50' : (invalid ? 'rgba(255,71,87,0.4)' : 'var(--border-subtle)')}`, background: value === 'true' ? `${accent}0d` : 'transparent', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
+              <div style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: `2px solid ${value === 'true' ? accent : (invalid ? 'rgba(255,71,87,0.5)' : 'var(--border)')}`, background: value === 'true' ? accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}>
                 {value === 'true' && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
               <span style={{ fontSize: 13, color: value === 'true' ? 'var(--txt)' : 'var(--txt-muted)', fontWeight: value === 'true' ? 600 : 400, transition: 'color 0.15s' }}>
-                {field.label}{field.required && <span style={{ color: accent, marginLeft: 3 }}>*</span>}
+                {field.label}{field.required && <span style={{ color: invalid ? 'var(--danger)' : accent, marginLeft: 3 }}>*</span>}
               </span>
             </button>
           )}
+          <FieldError
+            show={invalid}
+            text={
+              field.type === 'checkbox' ? 'Debés marcar esta casilla.'
+              : field.type === 'select' || field.type === 'radio' ? 'Seleccioná una opción.'
+              : 'Este campo es obligatorio.'
+            }
+          />
         </>
       )}
     </div>
   );
 }
-
 /* ── AcceptanceCriteriaEditor ── */
 function AutoTextarea({ value, onChange, style }: {
   value: string;
@@ -674,9 +735,9 @@ function StepForm({
   extraValues, setExtraValue,
   pendingFiles, setPendingFiles,
   acceptanceCriteria, setAcceptanceCriteria,
-  showCriteriaError,
+  showValidationErrors,
   isConfidential, setIsConfidential,
-  error, isPending, isReady, onBack,
+  error, isPending, dataLoading, onBack,
 }: {
   allTemplates: BoardTemplate[]; templateId: number; currentUserName: string; userTeamName: string | null;
   labels: { Label_ID: number; Label_Name: string; Label_Color: string; Label_Icon: string }[];
@@ -687,9 +748,9 @@ function StepForm({
   extraValues: Record<string, string>; setExtraValue: (key: string, value: string) => void;
   pendingFiles: File[]; setPendingFiles: (files: File[]) => void;
   acceptanceCriteria: string[]; setAcceptanceCriteria: (v: string[]) => void;
-  showCriteriaError: boolean;
+  showValidationErrors: boolean;
   isConfidential: boolean; setIsConfidential: (v: boolean) => void;
-  error: string | null; isPending: boolean; isReady: boolean; onBack: () => void;
+  error: string | null; isPending: boolean; dataLoading: boolean; onBack: () => void;
 }) {
   const isMobile = useIsMobile();
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -701,7 +762,13 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
   const def          = getTemplateDefinition(templateId, allTemplates);
   const accent       = def.visual.accentColor;
   const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
-
+// Errores de validación en vivo (solo tras el primer intento de envío).
+  // Se recalculan en cada render → se limpian solos al corregir el campo.
+  const titleError        = showValidationErrors && !titulo.trim();
+  const showCriteriaError  = showValidationErrors && acceptanceCriteria.length === 0;
+  const invalidExtraKeys  = showValidationErrors
+    ? new Set(collectMissingExtraKeys(extraFields, extraValues))
+    : new Set<string>();
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
     const toAdd = incoming.slice(0, slots);
@@ -719,9 +786,10 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
 
       <div style={cardStyle(accent)}>
         <SectionLabel>Solicitud</SectionLabel>
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }} data-vfield="titulo">
           <FieldLabel>Asunto *</FieldLabel>
-          <input style={{ ...inputStyle(focusedField === 'titulo'), fontSize: 15, fontWeight: 500, padding: '12px 14px' }} value={titulo} onChange={(e) => setTitulo(e.target.value)} onFocus={() => setFocusedField('titulo')} onBlur={() => setFocusedField(null)} placeholder="Describe brevemente el problema..." />
+          <input style={{ ...inputStyle(focusedField === 'titulo', titleError), fontSize: 15, fontWeight: 500, padding: '12px 14px' }} value={titulo} onChange={(e) => setTitulo(e.target.value)} onFocus={() => setFocusedField('titulo')} onBlur={() => setFocusedField(null)} placeholder="Describe brevemente el problema..." />
+          <FieldError show={titleError} text="El asunto es obligatorio." />
         </div>
         <div>
           <FieldLabel>Solicitante</FieldLabel>
@@ -739,7 +807,7 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
       </div>
 
       {/* Criterios de aceptación */}
-      <div style={{ ...cardStyle(accent), border: `1px solid ${acceptanceCriteria.length > 0 ? accent + '30' : (showCriteriaError ? 'rgba(255,71,87,0.25)' : 'var(--border-subtle)')}`, background: acceptanceCriteria.length > 0 ? `${accent}05` : 'transparent', transition: 'border-color 0.2s, background 0.2s' }}>
+      <div data-vfield="criteria" style={{ ...cardStyle(accent), border: `1px solid ${acceptanceCriteria.length > 0 ? accent + '30' : (showCriteriaError ? 'rgba(255,71,87,0.25)' : 'var(--border-subtle)')}`, background: acceptanceCriteria.length > 0 ? `${accent}05` : 'transparent', transition: 'border-color 0.2s, background 0.2s' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: acceptanceCriteria.length > 0 ? accent : (showCriteriaError ? 'var(--danger)' : 'var(--accent)'), background: acceptanceCriteria.length > 0 ? `${accent}12` : (showCriteriaError ? 'rgba(255,71,87,0.08)' : 'rgba(0,200,255,0.07)'), border: `1px solid ${acceptanceCriteria.length > 0 ? accent + '30' : (showCriteriaError ? 'rgba(255,71,87,0.25)' : 'rgba(0,200,255,0.18)')}`, padding: '3px 10px', borderRadius: 3, flexShrink: 0 }}>Criterios de aceptación *</span>
           {acceptanceCriteria.length > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: `${accent}15`, color: accent, border: `1px solid ${accent}30` }}>{acceptanceCriteria.length}</span>}
@@ -763,6 +831,7 @@ const priorityBtnRef = useRef<HTMLButtonElement>(null);
                 focused={focusedField === field.key}
                 onFocus={(key) => setFocusedField(key)}
                 onBlur={() => setFocusedField(null)}
+                invalidKeys={invalidExtraKeys}
               />
             ))}
           </div>
@@ -923,12 +992,7 @@ if (r) {
       }}>
         <button type="button" onClick={onBack} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {!isReady && !isPending && (
-            <span style={{ fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 0.3, opacity: 0.8, maxWidth: 220, textAlign: 'right', lineHeight: 1.4 }}>
-              Completá el asunto y al menos un criterio de aceptación.
-            </span>
-          )}
-          <button type="submit" disabled={isPending || !isReady} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || !isReady) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${accent === '#00c8ff' ? 'var(--accent-2)' : accent + 'cc'}, ${accent})`, color: (isPending || !isReady) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || !isReady) ? 0.55 : 1, cursor: (isPending || !isReady) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s' }}>
+          <button type="submit" disabled={isPending || dataLoading} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || dataLoading) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${accent === '#00c8ff' ? 'var(--accent-2)' : accent + 'cc'}, ${accent})`, color: (isPending || dataLoading) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || dataLoading) ? 0.55 : 1, cursor: (isPending || dataLoading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.15s' }}>
             {isPending ? 'Creando...' : '→ Crear Solicitud'}
           </button>
         </div>
@@ -967,7 +1031,7 @@ function SuccessScreen({
           Solicitud enviada
         </h2>
         <p style={{ fontSize: 14, color: 'var(--txt-muted)', lineHeight: 1.75, marginBottom: assignedSprint ? 20 : 0 }}>
-          Recibimos tu pedido. El equipo correspondiente lo revisará y estará trabajando en él a la brevedad.
+          Recibimos tu solicitud. El equipo correspondiente lo revisará y estará trabajando en él a la brevedad.
         </p>
 
         {assignedSprint ? (
@@ -1260,16 +1324,40 @@ onSuccess: () => {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!titulo.trim())                  return setError('El asunto es obligatorio.');
-    if (!currentUser)                    return setError('Cargando datos del usuario...');
-    if (!columnMap)                      return setError('Cargando columnas del board...');
-    if (!selectedTemplateId)             return setError('Seleccioná un tipo de solicitud.');
-    if (acceptanceCriteria.length === 0) { setSubmitAttempted(true); return setError('Debes definir al menos un criterio de aceptación.'); }
+    setSubmitAttempted(true); // a partir de acá los campos muestran su error en vivo
+
+    if (!currentUser)        return setError('Cargando datos del usuario...');
+    if (!columnMap)          return setError('Cargando columnas del board...');
+    if (!selectedTemplateId) return setError('Seleccioná un tipo de solicitud.');
+
+    // Validación completa: recolectamos TODO lo que falta para señalarlo de una.
+    const def          = getTemplateDefinition(selectedTemplateId, templates);
+    const extraFields  = filterEnabled(normalizeSchema(def.extraFields));
+    const missingExtra = collectMissingExtraKeys(extraFields, extraValues);
+
+    const titleMissing    = !titulo.trim();
+    const criteriaMissing = acceptanceCriteria.length === 0;
+
+    if (titleMissing || criteriaMissing || missingExtra.length > 0) {
+      const firstKey = titleMissing ? 'titulo' : criteriaMissing ? 'criteria' : missingExtra[0];
+      const total    = (titleMissing ? 1 : 0) + (criteriaMissing ? 1 : 0) + missingExtra.length;
+      setError(
+        total === 1
+          ? 'Falta 1 campo obligatorio. Revisá lo señalado en rojo.'
+          : `Faltan ${total} campos obligatorios. Revisá lo señalado en rojo.`,
+      );
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-vfield="${firstKey}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      return;
+    }
+
     setError(null);
     crear();
   }
 
-  const isReady = !!currentUser && !!columnMap && !!selectedTemplateId && acceptanceCriteria.length > 0;
+  const dataLoading = !currentUser || !columnMap;
 
 function resetForCreateAnother(keepTeam: boolean) {
     setTitulo('');
@@ -1355,9 +1443,9 @@ function resetForCreateAnother(keepTeam: boolean) {
           extraValues={extraValues} setExtraValue={setExtraValue}
           pendingFiles={pendingFiles} setPendingFiles={setPendingFiles}
           acceptanceCriteria={acceptanceCriteria} setAcceptanceCriteria={setAcceptanceCriteria}
-          showCriteriaError={submitAttempted && acceptanceCriteria.length === 0}
+          showValidationErrors={submitAttempted}
           isConfidential={isConfidential} setIsConfidential={setIsConfidential}
-error={error} isPending={isPending} isReady={isReady} onBack={() => {
+error={error} isPending={isPending} dataLoading={dataLoading} onBack={() => {
   if (selectedTeamId === null) { setStep('equipo'); return; }
   const filtered = templates.filter(
     (t) => t.Request_Template_Is_Active &&

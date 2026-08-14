@@ -233,9 +233,16 @@ function findPrevSprint(current: Sprint, all: Sprint[]): Sprint | null {
   return idx > 0 ? sorted[idx - 1] : null;
 }
 /* ─── calcPenalizacion ────────────────────────────────────── */
+/** ⚠️ PENALIZACIÓN DESACTIVADA temporalmente.
+ *  Para reactivar: PENALIZACION_ACTIVA = true. El cálculo original queda
+ *  intacto abajo; con la bandera en false devuelve 0 (no penaliza) y la
+ *  vista muestra "N/A". */
+export const PENALIZACION_ACTIVA: boolean = false;
+
 /** Doble de puntos de solicitudes sin resolver que llevan ≥ SPRINT_LAG sprints de atraso
  *  respecto al sprint de referencia (el seleccionado más reciente, o el activo hoy). */
 function calcPenalizacion(requests: Request[], allSprints: Sprint[], refSprintId: number | null = null): number {
+  if (!PENALIZACION_ACTIVA) return 0;   // ← desactivada: no penaliza. Flip a true para reactivar.
   const sorted = [...allSprints].sort((a, b) => sprintOrder(a) - sprintOrder(b));
   if (sorted.length === 0) return 0;
 
@@ -346,10 +353,11 @@ function calcBoard(requests: Request[], equipo: string, statsConfig?: StatsConfi
         DONE_COLUMNS.has(r.columna) && inAnyWindow(r.fechaCierre)
       );
   const doneResol = arrastre.length > 0 ? [...done, ...arrastre] : done;
-  const puntajeOtrosSprints = arrastre.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
-  // La card "De otros sprints" cuenta SOLO las que están en la columna 'hecho'
-  // (no ready_to_deploy ni historial). El puntaje de arriba usa Done completo.
+  // La card "De otros sprints" cuenta SOLO 'hecho' (no ready_to_deploy ni
+  // historial). El puntaje ahora usa el MISMO límite: solo 'hecho' suma al
+  // cumplimiento, para que card y puntaje coincidan.
   const arrastreHecho       = arrastre.filter(r => r.columna === 'hecho');
+  const puntajeOtrosSprints = arrastreHecho.reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
   const otrosSprintsCount   = arrastreHecho.length;
   const otrosSprintsDetalle = (() => {
     const m = new Map<number, { sprintId: number; sprintName: string; count: number }>();
@@ -683,7 +691,11 @@ const inSprint = requests.filter(r => r.sprintId != null && sprintIdSet.has(r.sp
   })();
 
   // El puntaje del arrastre suma al cumplimiento (meta intacta → puede pasar 100%).
-  const puntajeOtrosSprints = (otrosCerradas ?? []).reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
+  // Mismo límite que la card "De otros sprints": solo la columna 'hecho' cuenta
+  // (no ready_to_deploy ni historial), para que puntaje y card coincidan.
+  const puntajeOtrosSprints = (otrosCerradas ?? [])
+    .filter(r => r.columna === 'hecho')
+    .reduce((a, r) => a + (PRIORIDAD_TO_SCORE[r.prioridad] ?? 0), 0);
   const cumplimiento = meta > 0 ? Math.round(((puntajeReal + puntajeOtrosSprints) / meta) * 100) : 0;
 
   return {

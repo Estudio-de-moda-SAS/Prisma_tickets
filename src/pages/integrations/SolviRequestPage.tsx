@@ -51,8 +51,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function inputStyle(focused: boolean): React.CSSProperties {
-  return { width: '100%', background: 'transparent', border: `1px solid ${focused ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)'}`, borderRadius: 6, padding: '10px 13px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+function inputStyle(focused: boolean, error = false): React.CSSProperties {
+  const borderColor = error ? 'rgba(255,71,87,0.55)' : focused ? 'rgba(0,200,255,0.4)' : 'var(--border-subtle)';
+  return { width: '100%', background: 'transparent', border: `1px solid ${borderColor}`, borderRadius: 6, padding: '10px 13px', color: 'var(--txt)', fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' };
+}
+
+function FieldError({ show, text = 'Este campo es obligatorio.' }: { show: boolean; text?: string }) {
+  if (!show) return null;
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 10, color: 'var(--danger)' }}>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" strokeWidth="1.2"/><line x1="5" y1="2.5" x2="5" y2="5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="5" cy="7" r="0.5" fill="currentColor"/></svg>
+      {text}
+    </span>
+  );
 }
 
 function cardStyle(accent: string): React.CSSProperties {
@@ -86,10 +97,15 @@ export function SolviRequestPage() {
   const [dragOver,     setDragOver]     = useState(false);
   const [error,        setError]        = useState<string | null>(null);
   const [isPending,    setIsPending]    = useState(false);
-  const [submitted,    setSubmitted]    = useState(false);
+  const [submitted,       setSubmitted]       = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isReady = titulo.trim().length > 0 && !!currentUser;
+  const dataLoading = !currentUser;
+
+  // Errores en vivo (solo tras el primer intento) → se limpian solos al corregir.
+  const titleError    = submitAttempted && !titulo.trim();
+  const categoriaError = submitAttempted && !categoria;
 
   React.useEffect(() => {
     refetch()
@@ -104,8 +120,28 @@ export function SolviRequestPage() {
 
   async function handleSubmit(e: React.FormEvent, titulo: string, descripcion: string) {
     e.preventDefault();
-    if (!titulo.trim())  { setError('El asunto es obligatorio.'); return; }
-    if (!currentUser)    { setError('Cargando datos del usuario...'); return; }
+    setSubmitAttempted(true); // a partir de acá los campos muestran su error en vivo
+
+    if (!currentUser) { setError('Cargando datos del usuario...'); return; }
+
+    const titleMissing     = !titulo.trim();
+    const categoriaMissing = !categoria;
+
+    if (titleMissing || categoriaMissing) {
+      const firstKey = titleMissing ? 'titulo' : 'categoria';
+      const total    = (titleMissing ? 1 : 0) + (categoriaMissing ? 1 : 0);
+      setError(
+        total === 1
+          ? 'Falta 1 campo obligatorio. Revisá lo señalado en rojo.'
+          : `Faltan ${total} campos obligatorios. Revisá lo señalado en rojo.`,
+      );
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-vfield="${firstKey}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      return;
+    }
+
     setError(null);
     setIsPending(true);
 
@@ -178,9 +214,10 @@ export function SolviRequestPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={cardStyle(ACCENT)}>
           <SectionLabel>Solicitud</SectionLabel>
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 16 }} data-vfield="titulo">
             <FieldLabel>Asunto *</FieldLabel>
-            <input style={{ ...inputStyle(focusedField === 'titulo'), fontSize: 15, fontWeight: 500, padding: '12px 14px' }} value={titulo} onChange={(e) => { setTitulo(e.target.value); setError(null); }} onFocus={() => setFocusedField('titulo')} onBlur={() => setFocusedField(null)} placeholder="Describe brevemente el problema..." />
+            <input style={{ ...inputStyle(focusedField === 'titulo', titleError), fontSize: 15, fontWeight: 500, padding: '12px 14px' }} value={titulo} onChange={(e) => { setTitulo(e.target.value); setError(null); }} onFocus={() => setFocusedField('titulo')} onBlur={() => setFocusedField(null)} placeholder="Describe brevemente el problema..." />
+            <FieldError show={titleError} text="El asunto es obligatorio." />
           </div>
           <div>
             <FieldLabel>Solicitante</FieldLabel>
@@ -199,19 +236,20 @@ export function SolviRequestPage() {
         </div>
 
         {/* ── Categoría (solo front — pendiente de conexión) ── */}
-        <div style={cardStyle(ACCENT)}>
+        <div style={cardStyle(ACCENT)} data-vfield="categoria">
           <SectionLabel>Categoría</SectionLabel>
-          <FieldLabel>Categoría</FieldLabel>
+          <FieldLabel>Categoría *</FieldLabel>
           <select
-            style={{ ...inputStyle(focusedField === 'categoria'), color: categoria ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+            style={{ ...inputStyle(focusedField === 'categoria', categoriaError), color: categoria ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
             value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
+            onChange={(e) => { setCategoria(e.target.value); setError(null); }}
             onFocus={() => setFocusedField('categoria')}
             onBlur={() => setFocusedField(null)}
           >
             <option value="">Seleccioná una categoría…</option>
             {categories.map((c) => <option key={c.Id} value={c.Title}>{c.Title}</option>)}
           </select>
+          <FieldError show={categoriaError} text="Seleccioná una categoría." />
         </div>
 
         <div style={cardStyle(ACCENT)}>
@@ -266,7 +304,7 @@ export function SolviRequestPage() {
           flexWrap: isMobile ? 'wrap' : 'nowrap',
         }}>
           <button type="button" onClick={() => navigate('/new')} style={{ padding: '9px 20px', borderRadius: 6, border: '1px solid var(--border-subtle)', color: 'var(--txt-muted)', fontSize: 12, background: 'transparent', cursor: 'pointer' }}>← Volver</button>
-          <button type="submit" disabled={isPending || !isReady} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || !isReady) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`, color: (isPending || !isReady) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || !isReady) ? 0.55 : 1, cursor: (isPending || !isReady) ? 'not-allowed' : 'pointer' }}>
+          <button type="submit" disabled={isPending || dataLoading} style={{ padding: '10px 26px', borderRadius: 6, border: 'none', background: (isPending || dataLoading) ? 'var(--bg-surface)' : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`, color: (isPending || dataLoading) ? 'var(--txt-muted)' : 'white', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: (isPending || dataLoading) ? 0.55 : 1, cursor: (isPending || dataLoading) ? 'not-allowed' : 'pointer' }}>
             {isPending ? 'Creando...' : '→ Crear Solicitud'}
           </button>
         </div>
