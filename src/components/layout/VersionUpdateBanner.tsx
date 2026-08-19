@@ -42,7 +42,7 @@ export function VersionUpdateBanner() {
     setReloading(true);
 
     // Red de seguridad: si el SW no toma el control en 3s, recargamos igual.
-    window.setTimeout(() => window.location.reload(), 3000);
+    window.setTimeout(() => window.location.reload(), );
 
     if (updateSW) {
       updateSW(true).catch(() => window.location.reload());

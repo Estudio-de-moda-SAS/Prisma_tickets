@@ -147,10 +147,7 @@ export function SolviRequestPage() {
 
     try {
 
-      // TODO(SOLVI): cuando el backend acepte categoría, pasala aquí como 4º argumento:
-      //   const created = await solviController.saveTicket(titulo, descripcion, pendingFiles, categoria)
-      // y actualizá la firma de saveTicket en useSolviActions.
-      const created = await solviController.saveTicket(titulo, descripcion, pendingFiles)
+      const created = await solviController.saveTicket(titulo, descripcion, pendingFiles, categoria)
 
       if(!created){
         alert("Algo ha salido mal")
