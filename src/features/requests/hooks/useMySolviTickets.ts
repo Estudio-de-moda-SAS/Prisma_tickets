@@ -19,3 +19,12 @@ export function useMySolviTickets(email: string | null | undefined) {
     staleTime: 30_000,
   });
 }
+
+export function useMySolviMentions(userId: number | null | undefined) {
+  return useQuery<MySolviTicket[]>({
+    queryKey:  ['my-solvi-mentions', userId],
+    queryFn:   () => apiClient.call<MySolviTicket[]>('fetchMySolviMentions', { userId }),
+    enabled:   !!userId,
+    staleTime: 15_000,
+  });
+}

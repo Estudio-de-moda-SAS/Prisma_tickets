@@ -103,6 +103,8 @@ export type StatsData = {
   /** primaryTeam derivado de historial de asignaciones — para enriquecer useUsers */
   primaryTeamMap: Map<number, string>;
   sprints:      Sprint[];
+  /** Métricas de flujo/salud (lead time, aging, throughput, estimación) */
+  flow:         FlowMetrics;
   isLoading:    boolean;
   isError:      boolean;
 };
@@ -739,6 +741,144 @@ function buildPrimaryTeamMap(requests: Request[]): Map<number, string> {
   return result;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Métricas de flujo / salud del board (estándar ITSM + Kanban)
+   Todo se calcula sobre el Request ya cargado — sin backend nuevo.
+   ═══════════════════════════════════════════════════════════ */
+
+export type Percentiles = { p50: number | null; p85: number | null; p95: number | null; count: number };
+export type AgingBucket = { label: string; value: number; color: string };
+export type ThroughputPoint = { periodLabel: string; created: number; resolved: number };
+export type EstimationAccuracy = {
+  withBoth:      number;
+  avgRatio:      number | null;   // consumido / estimado
+  withinBand:    number;
+  withinBandPct: number | null;
+  tomoMas:       number;          // ratio > 1.25 → subestimado
+  tomoMenos:     number;          // ratio < 0.75 → sobreestimado
+};
+export type FlowMetrics = {
+  leadTime:      Percentiles;     // días (apertura → cierre) de las resueltas
+  wipActual:     number;
+  agingWip:      AgingBucket[];
+  agingBacklog:  AgingBucket[];
+  throughput:    ThroughputPoint[];
+  netFlow:       { created: number; resolved: number; net: number };
+  estimation:    EstimationAccuracy;
+  criticalAging: Array<{ id: string; titulo: string; dias: number }>;
+};
+
+/** Columnas de trabajo en curso vs backlog (para aging). 'ready_to_deploy'
+ *  se considera done en todo el dashboard, así que no entra en WIP. */
+const WIP_COLUMNS     = new Set<KanbanColumna>(['todo', 'en_progreso', 'en_revision_qas', 'cliente_review']);
+const BACKLOG_COLUMNS = new Set<KanbanColumna>(['sin_categorizar', 'icebox', 'backlog']);
+
+const AGING_BUCKETS = [
+  { label: '< 1d',   max: 1,        color: 'rgba(0,229,160,0.75)'  },
+  { label: '1-3d',   max: 3,        color: 'rgba(0,200,255,0.75)'  },
+  { label: '3-7d',   max: 7,        color: 'rgba(239,159,39,0.75)' },
+  { label: '7-30d',  max: 30,       color: 'rgba(251,113,33,0.75)' },
+  { label: '> 30d',  max: Infinity, color: 'rgba(255,71,87,0.85)'  },
+] as const;
+
+/** Supabase devuelve timestamps sin 'Z' → los normalizamos a UTC para
+ *  compararlos contra Date.now() sin desfase de zona horaria. */
+function toUtcMs(iso: string): number {
+  const clean = iso.endsWith('Z') ? iso : `${iso.replace(' ', 'T')}Z`;
+  return new Date(clean).getTime();
+}
+function ageInDays(iso: string): number {
+  return Math.max(0, (Date.now() - toUtcMs(iso)) / 86_400_000);
+}
+/** Percentil por interpolación lineal sobre un array YA ordenado asc. */
+function percentile(sorted: number[], p: number): number | null {
+  if (sorted.length === 0) return null;
+  if (sorted.length === 1) return sorted[0];
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+function calcLeadTime(requests: Request[]): Percentiles {
+  const times = requests
+    .filter(r => DONE_COLUMNS.has(r.columna) && r.fechaCierre && r.fechaApertura)
+    .map(r => daysBetween(r.fechaApertura, r.fechaCierre!))
+    .sort((a, b) => a - b);
+  return { p50: percentile(times, 50), p85: percentile(times, 85), p95: percentile(times, 95), count: times.length };
+}
+
+function calcAging(requests: Request[], cols: Set<KanbanColumna>): AgingBucket[] {
+  const buckets = AGING_BUCKETS.map(b => ({ label: b.label, value: 0, color: b.color }));
+  for (const r of requests) {
+    if (!cols.has(r.columna)) continue;
+    const age = ageInDays(r.fechaApertura);
+    let idx = AGING_BUCKETS.findIndex(b => age < b.max);
+    if (idx === -1) idx = AGING_BUCKETS.length - 1;
+    buckets[idx].value++;
+  }
+  return buckets;
+}
+
+function calcThroughput(requests: Request[], weeks: number): { points: ThroughputPoint[]; net: { created: number; resolved: number; net: number } } {
+  const DAY = 86_400_000, now = Date.now();
+  const points: ThroughputPoint[] = [];
+  let tc = 0, tr = 0;
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = now - (i + 1) * 7 * DAY;
+    const end   = now - i * 7 * DAY;
+    let created = 0, resolved = 0;
+    for (const r of requests) {
+      const c = toUtcMs(r.fechaApertura);
+      if (c >= start && c < end) created++;
+      if (r.fechaCierre && DONE_COLUMNS.has(r.columna)) {
+        const f = toUtcMs(r.fechaCierre);
+        if (f >= start && f < end) resolved++;
+      }
+    }
+    tc += created; tr += resolved;
+    const d = new Date(start);
+    points.push({ periodLabel: `${d.getDate()}/${d.getMonth() + 1}`, created, resolved });
+  }
+  return { points, net: { created: tc, resolved: tr, net: tr - tc } };
+}
+
+function calcEstimation(requests: Request[]): EstimationAccuracy {
+  const ratios = requests
+    .filter(r => DONE_COLUMNS.has(r.columna) && r.estimatedHours != null && r.estimatedHours > 0 && r.loggedHours != null)
+    .map(r => (r.loggedHours as number) / (r.estimatedHours as number));
+  const withBoth = ratios.length;
+  if (withBoth === 0) return { withBoth: 0, avgRatio: null, withinBand: 0, withinBandPct: null, tomoMas: 0, tomoMenos: 0 };
+  const LO = 0.75, HI = 1.25;
+  const withinBand = ratios.filter(x => x >= LO && x <= HI).length;
+  return {
+    withBoth,
+    avgRatio:      ratios.reduce((a, b) => a + b, 0) / withBoth,
+    withinBand,
+    withinBandPct: Math.round((withinBand / withBoth) * 100),
+    tomoMas:       ratios.filter(x => x > HI).length,
+    tomoMenos:     ratios.filter(x => x < LO).length,
+  };
+}
+
+export function calcFlowMetrics(requests: Request[]): FlowMetrics {
+  const { points: throughput, net: netFlow } = calcThroughput(requests, 8);
+  return {
+    leadTime:     calcLeadTime(requests),
+    wipActual:    requests.filter(r => WIP_COLUMNS.has(r.columna)).length,
+    agingWip:     calcAging(requests, WIP_COLUMNS),
+    agingBacklog: calcAging(requests, BACKLOG_COLUMNS),
+    throughput,
+    netFlow,
+    estimation:   calcEstimation(requests),
+    criticalAging: requests
+      .filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna))
+      .map(r => ({ id: r.id, titulo: r.titulo, dias: Math.round(ageInDays(r.fechaApertura)) }))
+      .sort((a, b) => b.dias - a.dias)
+      .slice(0, 5),
+  };
+}
+
 /* ─── Hook principal ──────────────────────────────────────── */
 export function useStatsData(
   selectedSprintIds: number[],
@@ -832,8 +972,12 @@ const sprint = useMemo(
     return calcBoardCombined(filteredRequests, combinedTeams, statsConfig, sprints, selectedSprints);
   }, [filteredRequests, combinedTeams, statsConfig, sprints, selectedSprints]);
 
+  /** Flujo/salud — sobre el set con scope de usuario + equipo/combinado
+   *  (mismo universo que sprintRequests, sin filtro de sprint). */
+  const flow = useMemo(() => calcFlowMetrics(sprintRequests), [sprintRequests]);
+
   return {
-    general, boards, boardsPrev, boardCombined, sprint,
+    general, boards, boardsPrev, boardCombined, sprint, flow,
     allRequests, primaryTeamMap, sprints,
     isLoading: boardQuery.isLoading || sprintsQuery.isLoading,
     isError:   boardQuery.isError   || sprintsQuery.isError,

@@ -302,6 +302,25 @@ export const solviHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return { ok: true };
   },
+  
+  fetchMySolviMentions: async (payload, { supabase }) => {
+    const { userId } = payload as { userId: number };
+    const { data: links, error: linksErr } = await supabase
+      .from('TBL_Solvi_Participants')
+      .select('Ticket_ID')
+      .eq('User_ID', userId)
+      .eq('Added_Via', 'mention');
+    if (linksErr) throw new Error(linksErr.message);
+    const ids = [...new Set((links as { Ticket_ID: number }[]).map((l) => l.Ticket_ID))];
+    if (ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from('TBL_Ticket_Solvi')
+      .select('ticket_solvi_id, ticket_solvi_titulo, ticket_solvi_estado, ticket_solvi_categoria, ticket_solvi_resolutor, ticket_solvi_fechaapertura')
+      .in('ticket_solvi_id', ids)
+      .order('ticket_solvi_fechaapertura', { ascending: false, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
 
   fetchMySolviTickets: async (payload, { supabase }) => {
     const { email } = payload as { email: string };

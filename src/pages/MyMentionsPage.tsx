@@ -1,7 +1,8 @@
 // src/pages/MyMentionsPage.tsx
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router';
-import { AtSign } from 'lucide-react';
+import { AtSign, ChevronRight } from 'lucide-react';
+import { useMySolviMentions } from '@/features/requests/hooks/useMySolviTickets';
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { KANBAN_COLUMNAS } from '@/features/requests/types';
@@ -39,6 +40,8 @@ export function MyMentionsPage() {
     retry: 1,
   });
 
+  const { data: solviMentions = [], isLoading: solviLoading } = useMySolviMentions(currentUser?.User_ID);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -49,13 +52,13 @@ export function MyMentionsPage() {
           </p>
         </div>
         <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '4px 12px', fontSize: 11, color: 'var(--txt-muted)' }}>
-          {menciones.length} mención{menciones.length !== 1 ? 'es' : ''}
+          {menciones.length + solviMentions.length} mención{(menciones.length + solviMentions.length) !== 1 ? 'es' : ''}s
         </span>
       </div>
 
       {isLoading && <p style={{ color: 'var(--txt-muted)', fontSize: 12 }}>Cargando...</p>}
 
-      {!isLoading && menciones.length === 0 && (
+      {!isLoading && !solviLoading && menciones.length === 0 && solviMentions.length === 0 && (
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 40, textAlign: 'center', color: 'var(--txt-muted)', fontSize: 13 }}>
           Nadie te ha mencionado en una solicitud todavía.
         </div>
@@ -64,7 +67,52 @@ export function MyMentionsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {menciones.map((r) => <MentionRow key={r.id} request={r} />)}
       </div>
+
+      {!solviLoading && solviMentions.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 16 }}>🔌</span>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>En tickets SOLVI</h2>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: 'rgba(0,184,148,0.1)', color: '#00b894', border: '1px solid rgba(0,184,148,0.25)' }}>{solviMentions.length}</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {solviMentions.map((t) => <SolviMentionRow key={t.ticket_solvi_id} ticket={t} />)}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function SolviMentionRow({ ticket: t }: { ticket: { ticket_solvi_id: number; ticket_solvi_titulo: string; ticket_solvi_estado: string | null; ticket_solvi_categoria: string | null } }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const open = () => navigate(`/integracion/solvi/tickets/${t.ticket_solvi_id}`, { state: { backgroundLocation: location } });
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 8, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'border-color 0.15s, transform 0.15s' }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,184,148,0.4)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.transform = 'translateX(0)'; }}
+    >
+      <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, background: '#00b894', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--txt-muted)', letterSpacing: 1 }}>#{t.ticket_solvi_id}</span>
+          {t.ticket_solvi_estado && (
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#00b894', background: 'rgba(0,184,148,0.1)', border: '1px solid rgba(0,184,148,0.25)', borderRadius: 4, padding: '2px 8px' }}>{t.ticket_solvi_estado}</span>
+          )}
+          {t.ticket_solvi_categoria && (
+            <span style={{ fontSize: 9, color: 'var(--txt-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 3, padding: '2px 7px' }}>{t.ticket_solvi_categoria}</span>
+          )}
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--txt)', lineHeight: 1.4 }}>{t.ticket_solvi_titulo}</span>
+      </div>
+      <ChevronRight size={16} style={{ color: 'var(--txt-muted)', flexShrink: 0 }} />
+    </button>
   );
 }
 
