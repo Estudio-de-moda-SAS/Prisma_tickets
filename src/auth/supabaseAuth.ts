@@ -29,6 +29,25 @@ export async function signInWithSupabaseAzure(opts?: { silent?: boolean }): Prom
   if (error) throw error;
 }
 
+const POST_LOGIN_REDIRECT_KEY = 'sb_post_login_redirect';
+
+/** Recuerda a dónde quería ir el usuario antes de mandarlo a /login, para
+ *  volver ahí (y no a /home) una vez completado el login. */
+export function savePostLoginRedirect(path: string): void {
+  try { sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, path); } catch { /* noop */ }
+}
+
+/** Lee y limpia la ruta guardada por savePostLoginRedirect (uso único). */
+export function consumePostLoginRedirect(): string | null {
+  try {
+    const path = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+    if (path) sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+    return path;
+  } catch {
+    return null;
+  }
+}
+
 // Supabase renueva su propio JWT sola (autoRefreshToken), pero esa renovación
 // no vuelve a traer el provider_token de Microsoft: Azure solo lo entrega en el
 // intercambio OAuth inicial. Por eso, tras un refresh (o al restaurar sesión

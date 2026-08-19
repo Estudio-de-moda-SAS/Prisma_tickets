@@ -1,12 +1,21 @@
+import { useEffect } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
-import { Navigate } from 'react-router';
+import { useNavigate } from 'react-router';
+import { consumePostLoginRedirect } from '@/auth/supabaseAuth';
 import '@/styles/LoginPage.css';
 import { usePublicAnnouncements } from '@/features/requests/hooks/useAnnouncements';
 
 export function LoginPage() {
 const { account, signIn, ready, dbReady } = useAuth();
-  // DESPUÉS
-if (ready && dbReady && account) return <Navigate to="/home" replace />;
+  const navigate = useNavigate();
+  const loggedIn = ready && dbReady && !!account;
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    navigate(consumePostLoginRedirect() ?? '/home', { replace: true });
+  }, [loggedIn, navigate]);
+
+  if (loggedIn) return null;
 function LoginAnnouncementStrip() {
   const { data: list = [] } = usePublicAnnouncements();
   if (list.length === 0) return null;
