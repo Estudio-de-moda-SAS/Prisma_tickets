@@ -5,13 +5,14 @@ import {
   CheckCircle2, Clock, AlertTriangle, Layers,
   PlusCircle, XCircle, Star, Target, History,
   ChevronDown, Users, Search, Check, X,
+  Activity, Hourglass, Timer, Gauge, Flame,
 } from 'lucide-react';
 import { useStatsData }             from '@/features/requests/hooks/useStatsData';
 import { useUsers }                  from '@/features/requests/hooks/useUsers';
 import { useSubTeams, useSubTeamsMulti } from '@/features/requests/hooks/useSubTeams';
 import { useSubTeamMembersGrouped }  from '@/features/requests/hooks/useSubTeamMembers';
 import type { ColStatReal, PriStatReal } from '@/features/requests/hooks/useStatsData';
-import { isBlockedLabelName } from '@/features/requests/hooks/useStatsData';
+import { isBlockedLabelName, PENALIZACION_ACTIVA } from '@/features/requests/hooks/useStatsData';
 import { useLabelsByTeamId, useLabelsByBoardId } from '@/features/requests/hooks/useLabels';
 import type { Sprint }     from '@/features/requests/hooks/useSprints';
 import { useBoardTeams, useMyBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
@@ -64,6 +65,7 @@ const fmtHoras = (h: number | null): string => {
   if (mins === 0)  return `${horas}h`;
   return `${horas}h ${mins}m`;
 };
+const fmtDays = (d: number | null): string => (d == null ? '\u2014' : `${d.toFixed(1)}d`);
 /** Delta de una métrica vs sprint anterior.
  *  mode 'pct' → variación porcentual (creadas/resueltas/críticas).
  *  mode 'pts' → diferencia en puntos (cumplimiento, que ya es %). */
@@ -357,6 +359,27 @@ function SectionDivider({ icon: Icon, label }: { icon: React.ElementType; label:
     <div className="stats-section-divider">
       <span className="stats-section-divider__label"><Icon size={10} />{label}</span>
       <div className="stats-section-divider__line" />
+    </div>
+  );
+}
+
+/** Mini-gráfico de barras dobles (creadas vs resueltas) por semana. Sin
+ *  Chart.js — barras con divs para no montar otra instancia de canvas. */
+function ThroughputMini({ data }: { data: { periodLabel: string; created: number; resolved: number }[] }) {
+  const max = Math.max(1, ...data.flatMap(d => [d.created, d.resolved]));
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140, padding: '8px 4px 0' }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 3, width: '100%', justifyContent: 'center' }}>
+            <div title={`${d.created} creadas`}
+              style={{ width: '42%', height: `${(d.created / max) * 100}%`, minHeight: d.created > 0 ? 3 : 0, background: 'var(--warn)', borderRadius: '3px 3px 0 0', transition: 'height .3s' }} />
+            <div title={`${d.resolved} resueltas`}
+              style={{ width: '42%', height: `${(d.resolved / max) * 100}%`, minHeight: d.resolved > 0 ? 3 : 0, background: 'var(--success)', borderRadius: '3px 3px 0 0', transition: 'height .3s' }} />
+          </div>
+          <span style={{ fontSize: 9, color: 'var(--txt-muted)' }}>{d.periodLabel}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -660,6 +683,7 @@ useEffect(() => {
 
   const [expandedResolutor, setExpandedResolutor] = useState<number | null>(null);
   const [otrosSprintsOpen, setOtrosSprintsOpen]   = useState(false);
+  const [realizadosOpen,   setRealizadosOpen]     = useState(false);
 
   const sp        = stats.sprint;
   const gn        = stats.general;
@@ -755,7 +779,12 @@ useEffect(() => {
                 color={sp.bloqueadas > 0 ? '#ff4757' : '#1D9E75'}
                 icon={sp.bloqueadas > 0 ? XCircle : CheckCircle2} />
             )}
-            <SprintCard label="Completadas"   value={sp.completadas + (boardData?.otrosSprintsCount ?? 0)} color="#1D9E75" icon={CheckCircle2} />
+            <SprintCard label="Completadas"
+              value={sp.completadas + (boardData?.otrosSprintsCount ?? 0)}
+              sub={boardData && boardData.otrosSprintsCount > 0
+                ? `${sp.completadas} de este sprint + ${boardData.otrosSprintsCount} de otros`
+                : 'Terminadas en este sprint'}
+              color="#1D9E75" icon={CheckCircle2} />
             <SprintCard label="De otros sprints"
               value={boardData ? boardData.otrosSprintsCount : '\u2014'}
               sub="Terminadas aquí, planeadas antes"
@@ -800,24 +829,55 @@ useEffect(() => {
                 <div className="score-panel__detail">
                   <div className="score-detail-row"><span>Pts. planeados</span><strong>{sp.puntajePlaneado}</strong></div>
                   <div className="score-detail-row"><span>Meta (83.3%)</span><strong>{sp.meta}</strong></div>
-                  <div className="score-detail-row"><span>Pts. realizados</span><strong style={{ color: 'var(--accent)' }}>{sp.puntajeRealizado}</strong></div>
+
+                  {/* Pts. realizados: incluye arrastre de otros sprints; desplegable para ver el desglose */}
+                  {(() => {
+                    const hayOtros        = sp.puntajeOtrosSprints > 0;
+                    const realizadosTotal = sp.puntajeRealizado + sp.puntajeOtrosSprints;
+                    return (
+                      <>
+                        <div
+                          className={['score-detail-row', hayOtros ? 'score-detail-row--clickable' : ''].join(' ')}
+                          onClick={hayOtros ? () => setRealizadosOpen(o => !o) : undefined}
+                          role={hayOtros ? 'button' : undefined}
+                          tabIndex={hayOtros ? 0 : undefined}
+                          onKeyDown={hayOtros ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRealizadosOpen(o => !o); } } : undefined}
+                          title={hayOtros ? 'Incluye puntos de solicitudes de otros sprints terminadas en esta ventana' : undefined}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            Pts. realizados
+                            {hayOtros && (
+                              <ChevronDown size={11} className="score-detail-row__chevron"
+                                style={{ transform: realizadosOpen ? 'rotate(180deg)' : 'none' }} />
+                            )}
+                          </span>
+                          <strong style={{ color: 'var(--accent)' }}>{realizadosTotal}</strong>
+                        </div>
+                        {hayOtros && realizadosOpen && (
+                          <>
+                            <div className="score-detail-row score-detail-row--sub">
+                              <span>De este sprint</span><strong>{sp.puntajeRealizado}</strong>
+                            </div>
+                            <div className="score-detail-row score-detail-row--sub">
+                              <span>De otros sprints</span>
+                              <strong style={{ color: '#7f77dd' }}>+{sp.puntajeOtrosSprints}</strong>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+
                   <div className="score-detail-row">
                     <span>Penalización</span>
                     <strong style={{ color: 'var(--danger)' }}>
-                      {sp.penalizacion > 0 ? `−${sp.penalizacion}` : '—'}
+                      {!PENALIZACION_ACTIVA ? 'N/A' : sp.penalizacion > 0 ? `\u2212${sp.penalizacion}` : '\u2014'}
                     </strong>
                   </div>
                   <div className="score-detail-row" style={{ borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 4 }}>
                     <span>Pts. reales</span>
-                    <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal}</strong>
+                    <strong style={{ color: 'var(--accent)' }}>{sp.puntajeReal + sp.puntajeOtrosSprints}</strong>
                   </div>
-                  {sp.puntajeOtrosSprints > 0 && (
-                    <div className="score-detail-row"
-                      title="Puntos de solicitudes de otros sprints terminadas en la ventana de este sprint. Ya sumados al cumplimiento.">
-                      <span>Pts. de otros sprints</span>
-                      <strong style={{ color: '#7f77dd' }}>+{sp.puntajeOtrosSprints}</strong>
-                    </div>
-                  )}
                   <p className="score-detail-note">Puntos: Baja 1 · Media 2 · Alta 4 · Crítica 6</p>
                 </div>
               </div>
@@ -901,8 +961,10 @@ useEffect(() => {
                 <KPICard label="Solicitudes"      value={boardData.creadas}
                   sub={dCreadas?.sub ?? 'En este equipo'}
                   trend={dCreadas?.trend ?? 'neutral'} accent={teamColor} />
-                <KPICard label="Resueltas"        value={boardData.resueltas}
-                  sub={dResueltas?.sub ?? 'Columna Hecho'}
+                <KPICard label="Resueltas"        value={boardData.resueltas + boardData.otrosSprintsCount}
+                  sub={dResueltas?.sub ?? (boardData.otrosSprintsCount > 0
+                    ? `${boardData.resueltas} de este sprint + ${boardData.otrosSprintsCount} de otros`
+                    : 'Columna Hecho')}
                   trend={dResueltas?.trend ?? 'neutral'} accent="var(--success)" />
                 <KPICard label="Cumplimiento"     value={`${boardData.cumplimiento}%`}
                   sub={dCumplimiento?.sub ?? 'Pts. reales vs meta'}
@@ -1005,6 +1067,110 @@ useEffect(() => {
               )}
             </>
           )}
+          {/* ═══ Flujo & salud del board ═════════════════════════ */}
+          {(() => {
+            const fl = stats.flow;
+            const flowLabel = isGlobal
+              ? 'Flujo & salud \u2014 todos los equipos'
+              : isCombined
+              ? `Flujo & salud \u2014 ${selectedTeams.map(c => teamNameMap[c] ?? c).join(' + ')}`
+              : `Flujo & salud \u2014 ${teamNameMap[teamTab] ?? teamTab}`;
+            const net = fl.netFlow.net;
+            return (
+              <>
+                <SectionDivider icon={Activity} label={flowLabel} />
+
+                {/* Lead time percentiles + WIP */}
+                <div className="stats-kpi-grid">
+                  <KPICard label="Lead time p50" value={fmtDays(fl.leadTime.p50)}
+                    sub={`Mediana \u00B7 ${fl.leadTime.count} resueltas`} trend="neutral" accent="var(--accent)" />
+                  <KPICard label="Lead time p85" value={fmtDays(fl.leadTime.p85)}
+                    sub="85% cierra dentro de esto" trend="neutral" accent="var(--warn)" />
+                  <KPICard label="Lead time p95" value={fmtDays(fl.leadTime.p95)}
+                    sub="Cola larga (outliers)" trend="neutral" accent="var(--danger)" />
+                  <KPICard label="WIP actual" value={fl.wipActual}
+                    sub="En curso ahora mismo" trend="neutral" accent="var(--info)" />
+                </div>
+
+                {/* Aging WIP / Backlog */}
+                <div className="stats-mid-grid">
+                  <div className="stats-panel">
+                    <div className="stats-panel__header"><span className="stats-panel__title"><Hourglass size={12} /> Antig{'\u00FC'}edad del WIP</span></div>
+                    <BarChart id="agingWip" data={fl.agingWip} height={150} />
+                  </div>
+                  <div className="stats-panel">
+                    <div className="stats-panel__header"><span className="stats-panel__title"><Hourglass size={12} /> Antig{'\u00FC'}edad del backlog</span></div>
+                    <BarChart id="agingBacklog" data={fl.agingBacklog} height={150} />
+                  </div>
+                </div>
+
+                {/* Throughput + Estimación */}
+                <div className="stats-mid-grid">
+                  <div className="stats-panel">
+                    <div className="stats-panel__header">
+                      <span className="stats-panel__title"><Timer size={12} /> Throughput (8 semanas)</span>
+                      <span className="stats-velocity-badge" style={{ color: net > 0 ? 'var(--success)' : net < 0 ? 'var(--danger)' : 'var(--txt-muted)' }}>
+                        Neto {net > 0 ? '+' : ''}{net}
+                      </span>
+                    </div>
+                    <div className="stats-chart-legend">
+                      <span className="stats-legend-item"><span className="stats-legend-sq" style={{ background: 'var(--warn)' }} />Creadas</span>
+                      <span className="stats-legend-item"><span className="stats-legend-sq" style={{ background: 'var(--success)' }} />Resueltas</span>
+                    </div>
+                    <ThroughputMini data={fl.throughput} />
+                    <p style={{ fontSize: 11, color: 'var(--txt-muted)', margin: '8px 4px 0' }}>
+                      {fl.netFlow.created} creadas {'\u00B7'} {fl.netFlow.resolved} resueltas en el per{'\u00ED'}odo.
+                      {net > 0 ? ' El backlog se est\u00E1 reduciendo.' : net < 0 ? ' El backlog est\u00E1 creciendo.' : ' Backlog estable.'}
+                    </p>
+                  </div>
+
+                  <div className="stats-panel">
+                    <div className="stats-panel__header"><span className="stats-panel__title"><Gauge size={12} /> Precisi{'\u00F3'}n de estimaci{'\u00F3'}n</span></div>
+                    {fl.estimation.withBoth === 0 ? (
+                      <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--txt-muted)', fontSize: 12 }}>
+                        Sin solicitudes cerradas con estimaci{'\u00F3'}n y consumo cargados.
+                      </div>
+                    ) : (
+                      <div className="month-stats">
+                        <div className="month-stat">
+                          <span className="month-stat__num" style={{ color: 'var(--accent)' }}>{fl.estimation.withinBandPct}%</span>
+                          <span className="month-stat__label">Dentro de {'\u00B1'}25%</span>
+                          <p className="month-stat__note">{fl.estimation.withinBand} de {fl.estimation.withBoth} cerradas</p>
+                        </div>
+                        <div className="month-stat-divider" />
+                        <div className="month-stat">
+                          <span className="month-stat__num" style={{ color: fl.estimation.avgRatio! > 1.15 ? 'var(--danger)' : fl.estimation.avgRatio! < 0.85 ? 'var(--warn)' : 'var(--success)' }}>
+                            {fl.estimation.avgRatio!.toFixed(2)}{'\u00D7'}
+                          </span>
+                          <span className="month-stat__label">Consumido / estimado</span>
+                          <p className="month-stat__note">{fl.estimation.tomoMas} tardaron m{'\u00E1'}s {'\u00B7'} {fl.estimation.tomoMenos} menos</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Aging de críticas activas */}
+                {fl.criticalAging.length > 0 && (
+                  <div className="stats-panel">
+                    <div className="stats-panel__header">
+                      <span className="stats-panel__title" style={{ color: 'var(--danger)' }}><Flame size={12} /> Cr{'\u00ED'}ticas activas m{'\u00E1'}s antiguas</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {fl.criticalAging.map(c => (
+                        <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: 'var(--bg-surface)' }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt-muted)', fontVariantNumeric: 'tabular-nums' }}>{c.id}</span>
+                          <span style={{ flex: 1, fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={c.titulo}>{c.titulo || '\u2014'}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: c.dias >= 14 ? 'var(--danger)' : c.dias >= 7 ? 'var(--warn)' : 'var(--txt-muted)' }}>{c.dias}d</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
         </>
       )}
     </div>
