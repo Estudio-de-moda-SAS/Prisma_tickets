@@ -2,7 +2,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "re
 import type { Location } from "react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
-import { savePostLoginRedirect } from "@/auth/supabaseAuth";
+import { savePostLoginRedirect, consumePostLoginRedirect } from "@/auth/supabaseAuth";
 import { useRole, canSeeBoard, canSeeStats } from "@/auth/roles";
 import { useMyBoardTeams } from "@/features/requests/hooks/useBoardMetadata";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -100,6 +100,16 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Aterriza en "/" tras el login (redirectTo de Supabase apunta al origin, no
+// al link original) — retoma la ruta guardada por RequireAuth, o /home si no hay.
+function IndexRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate(consumePostLoginRedirect() ?? '/home', { replace: true });
+  }, [navigate]);
+  return null;
+}
+
 // ─── Overlay de ticket ────────────────────────────────────────────────────────
 // Se renderiza ENCIMA de la página de fondo cuando hay backgroundLocation.
 // Las rutas aquí NO tienen AppLayout — el modal ya usa position:fixed.
@@ -166,7 +176,7 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route index element={<Navigate to="/home" replace />} />
+          <Route index element={<IndexRedirect />} />
 
           <Route
             path="board/:equipo"
