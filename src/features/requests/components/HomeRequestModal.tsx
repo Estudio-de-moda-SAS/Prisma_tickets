@@ -1,7 +1,7 @@
 // src/features/requests/components/HomeRequestModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, ShieldAlert, Trash2, Users, Plus, Pencil, Check } from 'lucide-react';
+import { X, ShieldAlert, Trash2, Users, Plus, Pencil, Check, Paperclip, Upload } from 'lucide-react';
 import { PRIORIDADES, KANBAN_COLUMNAS } from '../types';
 import type { Request, Prioridad, KanbanColumna } from '../types';
 import { useSprints } from '@/features/requests/hooks/useSprints';
@@ -18,6 +18,8 @@ import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/
 import { useGraphServices } from '@/graph/GraphServicesProvider';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { useUsers } from '@/features/requests/hooks/useUsers';
+import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/features/requests/hooks/useAttachments';
+import { fmtBytes, fileIcon } from './RequestModalComponents';
 import { useRequestParticipants, useRemoveParticipant } from '@/features/requests/hooks/useRequestParticipants';
 import { CommentComposer } from './mentions/CommentComposer';
 import { CommentText } from './mentions/CommentText';
@@ -429,6 +431,9 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const { data: currentUser }                                      = useCurrentUser();
   const { data: allUsers = [] }                                    = useUsers();
   const { data: participants = [] }                                = useRequestParticipants(request.id);
+  const { data: attachments = [] }                                 = useAttachments(request.id);
+  const { mutate: uploadAttachment, isPending: uploading }         = useUploadAttachment();
+  const { mutate: deleteAttachment }                               = useDeleteAttachment();
   const { data: feedbackHistorial = [] }                           = useClientFeedback(request.id);
   const cierreCount    = (request.cierreHistorial?.length ?? 0);
   const clientFeedback = cierreCount > 0 && feedbackHistorial.length >= cierreCount
@@ -442,6 +447,9 @@ export function HomeRequestModal({ request, onClose }: Props) {
   const isClienteReview = request.columna === 'cliente_review';
 
   const [_commentText] = useState('');
+  const [rightTab, setRightTab] = useState<'comments' | 'attachments'>('comments');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Estado de edición (solo aplica cuando canEdit) ── */
   const [tituloLocal, setTituloLocal] = useState(request.titulo ?? '');
@@ -536,6 +544,15 @@ const hasFormData = (request.templateFormSchema?.length ?? 0) > 0;
     editSource.columna === 'sin_categorizar' &&
     !!currentUser &&
     currentUser.User_ID === request.solicitanteId;
+
+  function handleUploadFiles(files: FileList | null) {
+    if (!canEdit || !files || !currentUser) return;
+    Array.from(files).forEach((file) => uploadAttachment({ requestId: request.id, userId: currentUser.User_ID, file }));
+  }
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false);
+    if (canEdit) handleUploadFiles(e.dataTransfer.files);
+  }
 const { mutate: removeParticipant } = useRemoveParticipant();
 const [revokingId, setRevokingId] = useState<number | null>(null);
   return (
@@ -807,16 +824,23 @@ const [revokingId, setRevokingId] = useState<number | null>(null);
                 />
               )}
                           <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
-              <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: '2px solid var(--accent)', color: 'var(--accent)', cursor: 'default' }}>
-                Comentarios
-                {comments.length > 0 && (
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: 'rgba(0,200,255,0.15)', color: 'var(--accent)', border: '1px solid rgba(0,200,255,0.25)' }}>
-                    {comments.length}
-                  </span>
-                )}
-              </button>
+              {([
+                { key: 'comments',    label: 'Comentarios', icon: null,                    count: comments.length },
+                { key: 'attachments', label: 'Adjuntos',    icon: <Paperclip size={11} />, count: attachments.length },
+              ] as { key: 'comments' | 'attachments'; label: string; icon: React.ReactNode; count: number }[]).map((tab) => {
+                const active = rightTab === tab.key;
+                return (
+                  <button key={tab.key} onClick={() => setRightTab(tab.key)}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '12px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1, background: 'transparent', border: 'none', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, color: active ? 'var(--accent)' : 'var(--txt-muted)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    {tab.icon}{tab.label}
+                    {tab.count > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 10, background: active ? 'rgba(0,200,255,0.15)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent)' : 'var(--txt-muted)', border: `1px solid ${active ? 'rgba(0,200,255,0.25)' : 'var(--border-subtle)'}` }}>{tab.count}</span>}
+                  </button>
+                );
+              })}
             </div>
 
+            {rightTab === 'comments' && (
+            <>
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {comments.length === 0
                 ? (
@@ -877,6 +901,41 @@ const [revokingId, setRevokingId] = useState<number | null>(null);
                 </p>
               )}
               </div>
+            </>
+            )}
+
+            {rightTab === 'attachments' && (
+              <>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {attachments.length === 0 && !dragOver
+                    ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: 0.5, paddingTop: 40 }}><Paperclip size={26} style={{ color: 'var(--txt-muted)' }} /><p style={{ fontSize: 11, color: 'var(--txt-muted)', textAlign: 'center', margin: 0 }}>Sin adjuntos aún.</p></div>
+                    : attachments.map((a) => {
+                        const isOwn   = a.uploader?.User_ID === currentUser?.User_ID;
+                        const isImage = a.Attachment_Mime_Type.startsWith('image/');
+                        return (
+                          <div key={a.Attachment_ID} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', transition: 'border-color 0.12s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; }}>
+                            {isImage && a.Attachment_Url ? <img src={a.Attachment_Url} alt={a.Attachment_Name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-subtle)' }} /> : <div style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(0,200,255,0.08)', border: '1px solid rgba(0,200,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>{fileIcon(a.Attachment_Mime_Type)}</div>}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {a.Attachment_Url ? <a href={a.Attachment_Url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--txt)'; }}>{a.Attachment_Name}</a> : <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.Attachment_Name}</span>}
+                              <div style={{ fontSize: 9, color: 'var(--txt-muted)', display: 'flex', gap: 6, marginTop: 1 }}><span>{fmtBytes(a.Attachment_Size)}</span><span>·</span><span>{fmtRelative(a.Attachment_Created_At)}</span>{a.uploader && <><span>·</span><span>{a.uploader.User_Name.split(' ')[0]}</span></>}</div>
+                            </div>
+                            {isOwn && canEdit && <button onClick={() => deleteAttachment({ attachmentId: a.Attachment_ID, requestId: request.id })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-muted)', padding: 3, display: 'flex', alignItems: 'center', opacity: 0.5, flexShrink: 0 }} onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }} onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--txt-muted)'; }}><Trash2 size={11} /></button>}
+                          </div>
+                        );
+                      })
+                  }
+                </div>
+                {canEdit && (
+                  <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '14px 10px', borderRadius: 8, border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--border-subtle)'}`, background: dragOver ? 'rgba(0,200,255,0.06)' : 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
+                      <Upload size={15} style={{ color: dragOver ? 'var(--accent)' : 'var(--txt-muted)' }} />
+                      <span style={{ fontSize: 10, color: dragOver ? 'var(--accent)' : 'var(--txt-muted)', textAlign: 'center', lineHeight: 1.4 }}>{uploading ? 'Subiendo…' : 'Arrastra archivos o haz clic para subir'}</span>
+                    </div>
+                    <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }} onChange={(e) => handleUploadFiles(e.target.files)} />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

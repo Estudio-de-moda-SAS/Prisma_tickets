@@ -376,6 +376,18 @@
 .score-detail-row strong { color: var(--txt); font-weight: 600; }
 .score-detail-note { font-size: 10px; color: var(--txt-dim, var(--txt-muted)); line-height: 1.5; margin-top: 4px; }
 
+/* Fila "Pts. realizados" desplegable + sub-líneas del desglose */
+.score-detail-row--clickable { cursor: pointer; user-select: none; transition: color 0.12s; }
+.score-detail-row--clickable:hover { color: var(--txt); }
+.score-detail-row--clickable:hover strong { filter: brightness(1.1); }
+.score-detail-row__chevron { color: var(--txt-muted); transition: transform 0.2s; flex-shrink: 0; }
+.score-detail-row--sub {
+  padding: 3px 0 3px 12px;
+  font-size: 11px;
+  border-bottom: none;
+}
+.score-detail-row--sub > span:first-child { color: var(--txt-dim, var(--txt-muted)); }
+
 /* ── Month stats ─────────────────────────────────────────────── */
 .month-stats { display: flex; align-items: stretch; height: calc(100% - 50px); }
 .month-stat  { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 16px; text-align: center; }
