@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "re
 import type { Location } from "react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/auth/AuthProvider";
+import { savePostLoginRedirect } from "@/auth/supabaseAuth";
 import { useRole, canSeeBoard, canSeeStats } from "@/auth/roles";
 import { useMyBoardTeams } from "@/features/requests/hooks/useBoardMetadata";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -56,8 +57,12 @@ function ScrollToSection() {
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { ready, account } = useAuth();
+  const location = useLocation();
   if (!ready)   return null;
-  if (!account) return <Navigate to="/login" replace />;
+  if (!account) {
+    savePostLoginRedirect(location.pathname + location.search);
+    return <Navigate to="/login" replace />;
+  }
   return <>{children}</>;
 }
 
