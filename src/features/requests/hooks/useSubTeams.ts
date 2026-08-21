@@ -2,6 +2,17 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 
+/**
+ * Hooks de TanStack Query para los subequipos.
+ *
+ * Cubre las lecturas de subequipos por equipo (individual {@link useSubTeams} y
+ * multi {@link useSubTeamsMulti}), el CRUD optimista (crear, actualizar, eliminar)
+ * y las lecturas/mutaciones de supervisores.
+ *
+ * @module useSubTeams
+ */
+
+/** Un subequipo, con sus supervisores (opcionales). */
 export type SubTeam = {
   Sub_Team_ID:    number;
   Sub_Team_Name:  string;
@@ -9,6 +20,15 @@ export type SubTeam = {
   supervisorIds?: number[];
 };
 
+/**
+ * Lista los subequipos de un equipo.
+ *
+ * @remarks
+ * Se deshabilita si no hay `teamId`. `staleTime: 0`.
+ *
+ * @param teamId - ID del equipo, o `null` para no consultar.
+ * @returns El resultado de `useQuery` con los subequipos.
+ */
 export function useSubTeams(teamId: number | null) {
   return useQuery<SubTeam[]>({
     queryKey:  ['subTeams', teamId],
@@ -19,9 +39,17 @@ export function useSubTeams(teamId: number | null) {
   });
 }
 
-/** Sub-equipos de VARIOS equipos a la vez (para el filtro combinado).
- *  Devuelve, por cada teamId, sus sub-equipos — preservando el orden de
- *  entrada para que los grupos salgan agrupados por equipo. */
+/**
+ * Lista los subequipos de varios equipos a la vez (para el filtro combinado).
+ *
+ * @remarks
+ * Usa `useQueries` (una query por equipo, compartiendo la key `['subTeams', id]`
+ * con {@link useSubTeams}) y preserva el orden de entrada para que los grupos
+ * salgan agrupados por equipo.
+ *
+ * @param teamIds - IDs de los equipos.
+ * @returns Un arreglo de `{ teamId, subTeams, isLoading }`, alineado con la entrada.
+ */
 export function useSubTeamsMulti(teamIds: number[]) {
   const results = useQueries({
     queries: teamIds.map((id) => ({
@@ -38,6 +66,16 @@ export function useSubTeamsMulti(teamIds: number[]) {
   }));
 }
 
+/**
+ * Crea un subequipo (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta un subequipo temporal con `Sub_Team_ID` negativo; `onError`
+ * restaura el snapshot; `onSettled` invalida los subequipos del equipo.
+ *
+ * @param teamId - Equipo al que pertenece el subequipo (define la query key).
+ * @returns El objeto de mutación de React Query. Variables: `{ name, color }`.
+ */
 export function useCreateSubTeam(teamId: number | null) {
   const qc = useQueryClient();
   const qk = ['subTeams', teamId] as const;
@@ -70,6 +108,16 @@ export function useCreateSubTeam(teamId: number | null) {
   });
 }
 
+/**
+ * Actualiza un subequipo (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica nombre y color en caché; `onError` restaura el snapshot;
+ * `onSettled` invalida los subequipos del equipo.
+ *
+ * @param teamId - Equipo de contexto (define la query key).
+ * @returns El objeto de mutación de React Query. Variables: `{ id, name, color }`.
+ */
 export function useUpdateSubTeam(teamId: number | null) {
   const qc = useQueryClient();
   const qk = ['subTeams', teamId] as const;
@@ -102,6 +150,16 @@ export function useUpdateSubTeam(teamId: number | null) {
   });
 }
 
+/**
+ * Elimina un subequipo (optimista).
+ *
+ * @remarks
+ * `onMutate` quita el subequipo de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida los subequipos del equipo.
+ *
+ * @param teamId - Equipo de contexto (define la query key).
+ * @returns El objeto de mutación de React Query. Variables: `id` del subequipo.
+ */
 export function useDeleteSubTeam(teamId: number | null) {
   const qc = useQueryClient();
   const qk = ['subTeams', teamId] as const;
@@ -130,6 +188,15 @@ export function useDeleteSubTeam(teamId: number | null) {
   });
 }
 
+/**
+ * Lista los IDs de los supervisores de un subequipo.
+ *
+ * @remarks
+ * Se deshabilita si `subTeamId` es `null`. `staleTime` de 60s.
+ *
+ * @param subTeamId - ID del subequipo, o `null` para no consultar.
+ * @returns El resultado de `useQuery` con los IDs de supervisores.
+ */
 export function useSubTeamSupervisors(subTeamId: number | null) {
   return useQuery<number[]>({
     queryKey: ['subTeamSupervisors', subTeamId],
@@ -138,6 +205,16 @@ export function useSubTeamSupervisors(subTeamId: number | null) {
     staleTime: 60_000,
   });
 }
+
+/**
+ * Agrega un supervisor a un subequipo.
+ *
+ * @remarks
+ * En `onSuccess` invalida los supervisores del subequipo y la lista de subequipos.
+ *
+ * @param subTeamId - Subequipo al que se agrega (define la query key a invalidar).
+ * @returns El objeto de mutación de React Query. Variables: `userId`.
+ */
 export function useAddSubTeamSupervisor(subTeamId: number | null) {
   const qc = useQueryClient();
   return useMutation({
@@ -148,6 +225,16 @@ export function useAddSubTeamSupervisor(subTeamId: number | null) {
     },
   });
 }
+
+/**
+ * Quita un supervisor de un subequipo.
+ *
+ * @remarks
+ * En `onSuccess` invalida los supervisores del subequipo y la lista de subequipos.
+ *
+ * @param subTeamId - Subequipo del que se quita (define la query key a invalidar).
+ * @returns El objeto de mutación de React Query. Variables: `userId`.
+ */
 export function useRemoveSubTeamSupervisor(subTeamId: number | null) {
   const qc = useQueryClient();
   return useMutation({

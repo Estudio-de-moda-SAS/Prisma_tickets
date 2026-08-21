@@ -5,8 +5,20 @@ import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 import type { Department, Team } from '@/types/commons';
 
+/**
+ * Hooks de TanStack Query para departamentos.
+ *
+ * Expone dos queries de lectura ({@link useDepartments} plano y
+ * {@link useDepartmentsWithTeams} con sus equipos anidados) y las mutaciones de
+ * crear, actualizar y eliminar, todas con actualización optimista sobre la caché
+ * `departments-with-teams` y rollback por snapshot.
+ *
+ * @module useDepartments
+ */
+
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+/** Departamento con sus equipos anidados. */
 export type DepartmentWithTeams = {
   Department_ID:             number;
   Department_Name:           string;
@@ -17,6 +29,7 @@ export type DepartmentWithTeams = {
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+/** Departamentos simulados para el modo mock. */
 const MOCK_DEPARTMENTS: (Department & { Is_Hidden_From_Onboarding: boolean })[] = [
   { Department_ID: 1, Department_Name: 'Tecnología',     Department_Code: 'tecnologia',    Is_Hidden_From_Onboarding: true  },
   { Department_ID: 2, Department_Name: 'Comercial',      Department_Code: 'comercial',     Is_Hidden_From_Onboarding: false },
@@ -24,6 +37,7 @@ const MOCK_DEPARTMENTS: (Department & { Is_Hidden_From_Onboarding: boolean })[] 
   { Department_ID: 4, Department_Name: 'Administración', Department_Code: 'administracion',Is_Hidden_From_Onboarding: false },
 ];
 
+/** Departamentos con equipos (vacíos) simulados para el modo mock. */
 const MOCK_DEPTS_WITH_TEAMS: DepartmentWithTeams[] = MOCK_DEPARTMENTS.map((d) => ({
   ...d,
   teams: [],
@@ -31,6 +45,14 @@ const MOCK_DEPTS_WITH_TEAMS: DepartmentWithTeams[] = MOCK_DEPARTMENTS.map((d) =>
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
+/**
+ * Lista los departamentos (sin equipos).
+ *
+ * @remarks
+ * En modo mock devuelve {@link MOCK_DEPARTMENTS}. `staleTime: Infinity`.
+ *
+ * @returns El resultado de `useQuery` con los departamentos.
+ */
 export function useDepartments() {
   return useQuery<(Department & { Is_Hidden_From_Onboarding: boolean })[]>({
     queryKey: ['departments'],
@@ -41,6 +63,15 @@ export function useDepartments() {
   });
 }
 
+/**
+ * Lista los departamentos con sus equipos anidados.
+ *
+ * @remarks
+ * En modo mock devuelve {@link MOCK_DEPTS_WITH_TEAMS}. `staleTime` de 30s. Es la
+ * caché que actualizan de forma optimista las mutaciones de este módulo.
+ *
+ * @returns El resultado de `useQuery` con los departamentos y sus equipos.
+ */
 export function useDepartmentsWithTeams() {
   return useQuery<DepartmentWithTeams[]>({
     queryKey: ['departments-with-teams'],
@@ -53,6 +84,16 @@ export function useDepartmentsWithTeams() {
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
+/**
+ * Crea un departamento (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta un departamento temporal con `Department_ID` negativo (sin
+ * equipos); `onError` restaura el snapshot; `onSettled` invalida `departments` y
+ * `departments-with-teams`.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `{ name, code, isHidden }`.
+ */
 export function useCreateDepartment() {
   const qc = useQueryClient();
   return useMutation({
@@ -82,6 +123,15 @@ export function useCreateDepartment() {
   });
 }
 
+/**
+ * Actualiza un departamento (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica los nuevos valores en caché; `onError` restaura el snapshot;
+ * `onSettled` invalida `departments` y `departments-with-teams`.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `{ id, name, code, isHidden }`.
+ */
 export function useUpdateDepartment() {
   const qc = useQueryClient();
   return useMutation({
@@ -110,6 +160,16 @@ export function useUpdateDepartment() {
   });
 }
 
+/**
+ * Elimina un departamento (optimista).
+ *
+ * @remarks
+ * `onMutate` quita el departamento de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida `departments`, `departments-with-teams` y `allUsers` (los
+ * usuarios pueden depender del departamento eliminado).
+ *
+ * @returns El objeto de mutación de React Query. Variables: `id` del departamento.
+ */
 export function useDeleteDepartment() {
   const qc = useQueryClient();
   return useMutation({

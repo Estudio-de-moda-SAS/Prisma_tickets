@@ -3,8 +3,20 @@ import { useAuth } from '@/auth/AuthProvider';
 import { GraphRest, } from '@/graph/GraphRest';
 import {CategoriasSPService, type CategoriaSP,} from '../services/CategoriasSharepointSolvi.service';
 
+/**
+ * Hook para cargar las categorías de Solvi desde SharePoint.
+ *
+ * Expone {@link useSolviCategorias}, que trae las categorías vía Microsoft Graph,
+ * las ordena alfabéticamente y las entrega con estado de carga/error y una acción
+ * de recarga.
+ *
+ * @module useSolviCategorias
+ */
+
+/** Categoría de Solvi (alias del tipo de SharePoint). */
 export type SolviCategoria = CategoriaSP;
 
+/** Valor de retorno de {@link useSolviCategorias}. */
 type UseSolviCategoriasResult = {
   data: SolviCategoria[];
   loading: boolean;
@@ -12,6 +24,16 @@ type UseSolviCategoriasResult = {
   refetch: () => Promise<void>;
 };
 
+/**
+ * Carga las categorías de Solvi.
+ *
+ * @remarks
+ * Memoiza los servicios de Graph y de categorías a partir del token de auth.
+ * Trae las categorías al montar y las ordena por `Title`. Captura errores en
+ * estado (`error`) sin propagarlos y expone `refetch` para recargar bajo demanda.
+ *
+ * @returns {@link UseSolviCategoriasResult}: `{ data, loading, error, refetch }`.
+ */
 export function useSolviCategorias(): UseSolviCategoriasResult {
   const { getToken } = useAuth();
   const graphService = React.useMemo(() => new GraphRest(getToken), [getToken]);
@@ -42,4 +64,3 @@ export function useSolviCategorias(): UseSolviCategoriasResult {
 
   return { data, loading, error, refetch };
 }
-

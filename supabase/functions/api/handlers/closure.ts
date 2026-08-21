@@ -1,3 +1,15 @@
+/**
+ * Handlers de cierre de solicitudes con evidencia adjunta.
+ *
+ * Registrados en {@link closureHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. El cierre registra una fila en
+ * `TBL_Request_Closure`, mueve la solicitud a la columna destino (marcándola
+ * como finalizada si esa columna es de cierre), deja rastro en el audit log,
+ * notifica a los participantes y dispara —de forma best-effort— el correo de
+ * revisión del cliente.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { SIGNED_URL_EXPIRES_IN } from '../lib/storage.ts';
@@ -8,7 +20,35 @@ import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail } fro
 // @ts-ignore
 import { logHistory } from '../lib/history.ts';
 
+/**
+ * Mapa de handlers de cierre indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const closureHandlers: Record<string, ActionHandler> = {
+  /**
+   * Cierra una solicitud con evidencia y la mueve a la columna destino.
+   *
+   * Flujo:
+   * 1. Inserta la fila de cierre en `TBL_Request_Closure` con el modo de
+   *    evidencia (`new` | `reuse` | `skip`, por defecto `new`).
+   * 2. Si el modo es `reuse`, clona los adjuntos de un cierre previo
+   *    (`reuseFromClosureId`) hacia el nuevo cierre.
+   * 3. Captura el estado previo (columna y si ya estaba cerrada) para el audit.
+   * 4. Mueve la solicitud a la columna destino; si esa columna es de cierre,
+   *    marca `Request_Finished_At` y pone el progreso en 100.
+   * 5. Registra en el historial el movimiento de columna y, si aplica, el cierre.
+   * 6. Notifica a los participantes (resolutores + solicitante), excluyendo a
+   *    quien cerró.
+   * 7. Dispara el correo de revisión del cliente vía el mismo helper que
+   *    `moveToColumn` (best-effort, nunca lanza).
+   *
+   * @param payload - Datos del cierre: `requestId`, `closedBy`, `closureNote`,
+   *                  `targetColumnId`, `evidenceMode?`, `reuseFromClosureId?`,
+   *                  y metadatos opcionales del adjunto.
+   * @returns La fila de cierre creada, con el closer embebido.
+   */
   closeRequest: async (payload, { supabase }) => {
     const p = payload as {
       requestId: string; closedBy: number; closureNote: string;
@@ -142,6 +182,15 @@ export const closureHandlers: Record<string, ActionHandler> = {
     return closure;
   },
 
+  /**
+   * Lista los adjuntos de un cierre con signed URLs temporales.
+   *
+   * Por cada adjunto genera una signed URL a partir de su `Storage_Path`; si la
+   * firma falla, `Signed_Url` queda en `null` en vez de tumbar la operación.
+   *
+   * @param payload - `{ closureId }`.
+   * @returns Los adjuntos del cierre, cada uno con su URL firmada (o `null`).
+   */
   fetchClosureAttachments: async (payload, { supabase }) => {
     const { closureId } = payload as { closureId: number };
     const { data, error } = await supabase
@@ -168,6 +217,17 @@ export const closureHandlers: Record<string, ActionHandler> = {
     return results;
   },
 
+  /**
+   * Sube un archivo de evidencia y lo asocia a un cierre.
+   *
+   * Decodifica el base64 a bytes, lo sube al bucket `attachments` bajo
+   * `closures/{requestId}/{timestamp}_{fileName}` (con `upsert: false`),
+   * inserta la fila en `TBL_Closure_Attachments` y devuelve el adjunto con su
+   * signed URL lista para usar.
+   *
+   * @param payload - `{ closureId, requestId, userId, fileName, mimeType, sizeBytes, base64 }`.
+   * @returns El adjunto de cierre creado, con su URL firmada (o `null` si la firma falla).
+   */
   uploadClosureAttachment: async (payload, { supabase }) => {
     const p = payload as {
       closureId: number; requestId: string; userId: number;

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.app.json",
+  "json": "docs/models/frontend.json",
+  "name": "Frontend PRISMA",
+  "readme": "none",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/node_modules/**"],
+  "excludePrivate": true,
+  "excludeInternal": true
+}

@@ -6,8 +6,35 @@ import { requestKeys } from './useRequests';
 import { COLUMNAS_FINALES } from '../types';
 import type { BoardData, CierreInfo, CerrarRequestPayload, Equipo, KanbanColumna } from '../types';
 
+/**
+ * Hook de TanStack Query para cerrar un request.
+ *
+ * Expone {@link useCloseRequest}, una mutación que mueve la card a la columna
+ * destino y le adjunta la información de cierre (`cierreInfo`) de forma optimista,
+ * sellando fecha de cierre y progreso al 100% cuando la columna es final.
+ *
+ * @module useCloseRequest
+ */
+
+/** Contexto de rollback: snapshot del board previo a la mutación. */
 type CloseContext = { snapshot: BoardData | undefined };
 
+/**
+ * Mutación para cerrar un request y moverlo a su columna destino (optimista).
+ *
+ * @remarks
+ * En modo mock devuelve un `CierreInfo` simulado tras un breve retardo. En
+ * `onMutate` reconstruye el `BoardData` del equipo: quita la card de cualquier
+ * columna y la reinserta en la destino con `cierreInfo` provisional; si la
+ * columna destino es final ({@link COLUMNAS_FINALES}), además sella
+ * `fechaCierre` y `progreso: 100`. En `onSuccess` reemplaza el `cierreInfo`
+ * provisional por el real del servidor (y actualiza `fechaCierre` si es final).
+ * `onError` restaura el snapshot; `onSettled` (fuera de mock) invalida el board y
+ * las stats completas.
+ *
+ * @param equipo - Equipo cuyo board se actualiza (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useCloseRequest(equipo: Equipo) {
   const queryClient  = useQueryClient();
   const { Requests } = useGraphServices();
@@ -130,6 +157,13 @@ export function useCloseRequest(equipo: Equipo) {
   });
 }
 
+/**
+ * Traduce el ID numérico de columna a su clave de kanban.
+ *
+ * @param columnId - ID numérico de la columna (según la configuración del board).
+ * @returns La {@link KanbanColumna} correspondiente, o `'sin_categorizar'` si el
+ *   ID no está mapeado.
+ */
 function columnIdToKanban(columnId: number): KanbanColumna {
   const map: Record<number, KanbanColumna> = {
     1:  'sin_categorizar',

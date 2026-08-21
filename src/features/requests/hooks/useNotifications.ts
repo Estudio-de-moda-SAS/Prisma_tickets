@@ -3,11 +3,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import type { Notification } from '@/types/commons';
 
+/**
+ * Hook de notificaciones in-app del usuario.
+ *
+ * Expone {@link useNotifications}, que combina una query con polling adaptativo
+ * (más lento cuando la pestaña está en segundo plano), el mapeo de la fila cruda
+ * de DB a {@link Notification}, y las mutaciones optimistas de marcar una o todas
+ * como leídas. Devuelve una API compacta con lista, contador y acciones.
+ *
+ * @module useNotifications
+ */
+
+/** Respuesta ya mapeada de la query de notificaciones. */
 type NotificationsResponse = {
   notifications: Notification[];
   unreadCount:   number;
 };
 
+/** Fila cruda de notificación tal como viene de la base. */
 type RawNotification = {
   Notification_ID:         number;
   Notification_Type:       string;
@@ -23,6 +36,12 @@ type RawNotification = {
   } | null;
 };
 
+/**
+ * Mapea una fila cruda de notificación a su DTO camelCase.
+ *
+ * @param raw - Fila de notificación de la base.
+ * @returns La {@link Notification} con claves camelCase; `actor` en `null` si no hay.
+ */
 function mapNotification(raw: RawNotification): Notification {
   return {
     notificationId: raw.Notification_ID,
@@ -42,10 +61,29 @@ function mapNotification(raw: RawNotification): Notification {
   };
 }
 
+/** Fábrica de la query key de notificaciones, por usuario. */
 const QUERY_KEY = (userId: number) => ['notifications', userId];
+/** Intervalo de polling con la pestaña visible (30s). */
 const POLL_ACTIVE_MS     = 30_000;   // pestaña visible
+/** Intervalo de polling con la pestaña en segundo plano (2 min). */
 const POLL_BACKGROUND_MS = 120_000;  // pestaña en segundo plano (2 min)
 
+/**
+ * Notificaciones del usuario, con polling adaptativo y acciones de lectura.
+ *
+ * @remarks
+ * La query se deshabilita sin `userId`. El `refetchInterval` es adaptativo: más
+ * lento ({@link POLL_BACKGROUND_MS}) cuando la pestaña está oculta y más rápido
+ * ({@link POLL_ACTIVE_MS}) cuando está visible; sigue refrescando en segundo
+ * plano. `staleTime` de 20s. La `queryFn` pide hasta 40 notificaciones y las mapea
+ * con {@link mapNotification}.
+ *
+ * Las mutaciones `markRead` y `markAllRead` son optimistas: actualizan `isRead` y
+ * recalculan `unreadCount` en caché, con rollback por snapshot en error.
+ *
+ * @param userId - ID del usuario, o `null` para no consultar.
+ * @returns `{ notifications, unreadCount, isLoading, markRead, markAllRead }`.
+ */
 export function useNotifications(userId: number | null) {
   const queryClient = useQueryClient();
 
@@ -120,4 +158,3 @@ const query = useQuery<NotificationsResponse>({
     markAllRead:   () => markAllRead.mutate(),
   };
 }
-

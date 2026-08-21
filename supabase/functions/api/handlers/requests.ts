@@ -1,3 +1,23 @@
+/**
+ * Handlers del núcleo de solicitudes (tickets): lectura, creación, movimiento,
+ * edición, borrado, búsqueda y filtrado.
+ *
+ * Registrados en {@link requestHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Es el módulo central de PRISMA:
+ * concentra el ciclo de vida completo del ticket y orquesta efectos colaterales
+ * (auto-asignación de sprint, reglas de automatización, notificaciones,
+ * correos, sincronización de bug reports y auditoría).
+ *
+ * Dos patrones transversales importantes:
+ * - **`chunkedIn`**: todo `.in('Request_ID', ...)` con arreglos grandes se
+ *   procesa en lotes de `IN_CHUNK` para no reventar el límite de URL de
+ *   PostgREST (que devuelve 500 con boards grandes). Los resultados se combinan,
+ *   se reordenan globalmente y recién ahí se recortan.
+ * - **Efectos best-effort**: automatizaciones, correos y notificaciones van
+ *   envueltos en try/catch para que nunca tumben la operación principal.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { attachCriteriaSummary } from '../shared/criteria.ts';
@@ -12,12 +32,27 @@ import { BASE_SELECT, BASE_SELECT_LIGHT, DETAIL_SELECT, STATS_SELECT } from '../
 // @ts-ignore
 import { logHistory, diffFields, diffFormData } from '../lib/history.ts';
 
+/** ID de la columna "Historial" (tickets archivados fuera del flujo activo). */
 const HISTORIAL_COLUMN_ID     = 9;
+/** Tope inicial de filas de historial que se traen antes de paginar. */
 const HISTORIAL_INITIAL_LIMIT = 50; // ajustable
 
 // ⬇️ PEGÁ AQUÍ, justo debajo de las constantes existentes
+/** Tamaño de lote para los `.in('Request_ID', ...)` — mantiene la URL bajo el límite de PostgREST. */
 const IN_CHUNK = 120;
 
+/**
+ * Ejecuta una consulta `.in()` en lotes y concatena los resultados.
+ *
+ * Parte `ids` en tandas de `IN_CHUNK`, invoca `build(slice)` por cada una y
+ * acumula las filas. Evita el 500 de PostgREST por URL demasiado larga cuando
+ * hay muchos IDs. No reordena: el orden final es responsabilidad del llamador.
+ *
+ * @param supabase - Cliente de Supabase (service role).
+ * @param ids - IDs a consultar en lotes.
+ * @param build - Fábrica que arma la query para un sub-arreglo de IDs.
+ * @returns Todas las filas de todas las tandas, concatenadas.
+ */
 async function chunkedIn(
   supabase: any,
   ids: string[],
@@ -32,7 +67,19 @@ async function chunkedIn(
   return out;
 }
 
+/**
+ * Mapa de handlers de solicitudes indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const requestHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista todas las solicitudes de un board con su resumen de criterios.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Solicitudes ordenadas por fecha descendente, con resumen de criterios adjunto.
+   */
   fetchAllByBoard: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data, error } = await supabase
@@ -43,6 +90,15 @@ export const requestHandlers: Record<string, ActionHandler> = {
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
 
+  /**
+   * Lista las solicitudes de un board donde el usuario fue mencionado.
+   *
+   * Resuelve primero los `Request_ID` de participación vía mención
+   * (`Added_Via = 'mention'`) y luego hidrata las que pertenezcan al board.
+   *
+   * @param payload - `{ userId, boardId }`.
+   * @returns Solicitudes con mención al usuario, con resumen de criterios.
+   */
   fetchMyMentions: async (payload, { supabase }) => {
     const { userId, boardId } = payload as { userId: number; boardId: number };
     const { data: links, error: linksErr } = await supabase
@@ -60,8 +116,20 @@ export const requestHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
-  
-fetchByTeamCode: async (payload, { supabase }) => {
+
+  /**
+   * Lista las solicitudes de un equipo (por código), separando activas e historial.
+   *
+   * Resuelve el board team por `teamCode`, obtiene sus `Request_ID` y trae, vía
+   * `chunkedIn`, dos conjuntos: las columnas activas (sin límite) y el historial
+   * (columna `HISTORIAL_COLUMN_ID`, con tope de `HISTORIAL_INITIAL_LIMIT`). El
+   * historial se combina, se reordena globalmente por fecha e ID descendente y
+   * se recorta al límite antes de fusionarse con las activas.
+   *
+   * @param payload - `{ boardId, teamCode }`.
+   * @returns Activas + historial recortado, con resumen de criterios.
+   */
+  fetchByTeamCode: async (payload, { supabase }) => {
     const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
     const { data: teamData, error: teamErr } = await supabase
       .from('TBL_Board_Teams').select('Board_Team_ID')
@@ -106,7 +174,13 @@ fetchByTeamCode: async (payload, { supabase }) => {
     const combined = [...active, ...historial];
     return attachCriteriaSummary(combined as Record<string, unknown>[], supabase);
   },
-  
+
+  /**
+   * Lista las solicitudes creadas por un usuario en un board.
+   *
+   * @param payload - `{ userId, boardId }`.
+   * @returns Solicitudes del solicitante, con resumen de criterios.
+   */
   fetchByRequestedBy: async (payload, { supabase }) => {
     const { userId, boardId } = payload as { userId: number; boardId: number };
     const { data, error } = await supabase
@@ -117,6 +191,12 @@ fetchByTeamCode: async (payload, { supabase }) => {
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
 
+  /**
+   * Lista las solicitudes de la columna "Sin categorizar" de un board.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Solicitudes sin categorizar, ordenadas por fecha descendente.
+   */
   fetchUncategorized: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data: col, error: colErr } = await supabase
@@ -131,6 +211,16 @@ fetchByTeamCode: async (payload, { supabase }) => {
     return data;
   },
 
+  /**
+   * Trae el detalle completo de una solicitud por ID.
+   *
+   * Usa `maybeSingle`: un ID inexistente (ticket borrado, deep-link viejo, padre
+   * huérfano) se considera "no encontrado" y devuelve `null`, no un 500. El
+   * frontend decide qué mostrar.
+   *
+   * @param payload - `{ id }`.
+   * @returns La solicitud con `DETAIL_SELECT`, o `null` si no existe.
+   */
   fetchById: async (payload, { supabase }) => {
     const { id } = payload as { id: string };
     // maybeSingle: un ID inexistente (ticket borrado, deep-link viejo, padre
@@ -143,6 +233,31 @@ fetchByTeamCode: async (payload, { supabase }) => {
     return data;
   },
 
+  /**
+   * Crea una solicitud nueva con todas sus relaciones y efectos colaterales.
+   *
+   * Flujo:
+   * 1. Toma el snapshot inmutable del esquema de la plantilla.
+   * 2. Inserta la solicitud (`Request_ID` lo genera el DEFAULT).
+   * 3. Detecta si el solicitante es externo (rol distinto de `admin`/`ti_member`);
+   *    este flag se reutiliza para el sprint y el correo.
+   * 4. Si el solicitante es externo y no vino sprint, intenta auto-asignar el
+   *    primer sprint futuro con capacidad externa disponible (best-effort).
+   * 5. Inserta las relaciones (equipos, labels, sprint).
+   * 6. Ejecuta las reglas de automatización de `solicitud_creada` (best-effort).
+   * 7. Si la solicitud es externa por departamento, notifica a los miembros de
+   *    los sub-equipos destino (best-effort).
+   * 8. Envía el correo `ticket_recibido` solo a solicitantes externos (best-effort).
+   *
+   * Nota sobre "externo": para la notificación a sub-equipos se usa el criterio
+   * real `Department_ID !== TI_DEPARTMENT_ID`, no el flag por rol —porque el rol
+   * `ti_member` no existe como valor en `TBL_Users.User_Role` (solo hay
+   * `admin`/`member`), y usarlo trataría a los miembros de TI como externos.
+   *
+   * @param payload - Datos del ticket, equipos/labels/sprint destino, flags y `formData`.
+   * @returns La solicitud creada (`BASE_SELECT`); incluye `_autoAssignedSprint`
+   *          cuando se auto-asignó un sprint.
+   */
   createRequest: async (payload, { supabase }) => {
     const p = payload as {
       boardId: number; columnId: number; requestedBy: number; templateId: number;
@@ -465,6 +580,21 @@ fetchByTeamCode: async (payload, { supabase }) => {
       : data;
   },
 
+  /**
+   * Mueve una solicitud a otra columna, gestionando cierre/reapertura y efectos.
+   *
+   * Detecta si la columna destino cierra el ticket (`isCloseColumn`): al cerrar
+   * fija `Request_Finished_At` y progreso 100; al reabrir (venía cerrado y la
+   * nueva columna no cierra) los limpia. Luego registra en auditoría el
+   * movimiento y el cierre/reapertura, sincroniza el bug report vinculado
+   * (best-effort), deja un comentario automático si hubo reapertura, notifica a
+   * los participantes, dispara los correos de cambio de columna (cada helper se
+   * auto-omite según su slug) y ejecuta las reglas de automatización de
+   * `columna_cambiada` (best-effort). Ningún efecto colateral puede tumbar el move.
+   *
+   * @param payload - `{ id, columnId, movedBy? }`.
+   * @returns `{ ok: true }` tras mover y procesar los efectos.
+   */
   moveToColumn: async (payload, { supabase }) => {
     const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
     console.log(`[move] id=${id} columnId=${columnId} movedBy=${movedBy}`);
@@ -666,7 +796,20 @@ fetchByTeamCode: async (payload, { supabase }) => {
     return { ok: true };
   },
 
-updateRequest: async (payload, { supabase }) => {
+  /**
+   * Actualiza una solicitud (campos escalares, `formData` y relaciones) con auditoría.
+   *
+   * Captura el estado previo de los escalares y del `formData` siempre, y el de
+   * las relaciones (labels, sprint, equipos) solo cuando el patch las incluye.
+   * Aplica los cambios: los escalares en un update parcial (solo campos
+   * presentes, con el progreso acotado a 0–100), y las relaciones con estrategia
+   * delete-all + insert. Al final registra en auditoría el diff por campo
+   * (`diffFields`) y el diff del `formData` (`diffFormData`).
+   *
+   * @param payload - `{ id, updatedBy?, ...campos y relaciones a actualizar }`.
+   * @returns `{ ok: true }` tras aplicar los cambios y auditar.
+   */
+  updateRequest: async (payload, { supabase }) => {
     const { id, updatedBy, ...patch } = payload as {
       id: string; updatedBy?: number | null;
       titulo?: string; descripcion?: string; score?: number;
@@ -756,6 +899,14 @@ updateRequest: async (payload, { supabase }) => {
     return { ok: true };
   },
 
+  /**
+   * Reemplaza el conjunto de sub-equipos asignados a una solicitud.
+   *
+   * Estrategia delete-all + insert sobre `TBL_Request_Sub_Team`.
+   *
+   * @param payload - `{ id, subTeamIds }`.
+   * @returns `{ ok: true }` tras reemplazar los sub-equipos.
+   */
   updateRequestSubTeams: async (payload, { supabase }) => {
     const { id, subTeamIds } = payload as { id: string; subTeamIds: number[] };
     await supabase.from('TBL_Request_Sub_Team').delete().eq('Request_Sub_Team_Request_ID', id);
@@ -768,6 +919,16 @@ updateRequest: async (payload, { supabase }) => {
     return { ok: true };
   },
 
+  /**
+   * Elimina una solicitud y todas sus filas relacionadas.
+   *
+   * Borra en paralelo los vínculos (equipos, labels, sprint, asignaciones,
+   * sub-equipos, criterios de aceptación y feedback del cliente) y luego la
+   * solicitud en sí.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ ok: true }` tras eliminar la solicitud y sus dependencias.
+   */
   deleteRequest: async (payload, { supabase }) => {
     const { id } = payload as { id: string };
     await Promise.all([
@@ -784,6 +945,12 @@ updateRequest: async (payload, { supabase }) => {
     return { ok: true };
   },
 
+  /**
+   * Lista las sub-solicitudes (hijas) de una solicitud padre.
+   *
+   * @param payload - `{ parentId }`.
+   * @returns Las solicitudes hijas ordenadas por fecha de creación ascendente.
+   */
   fetchChildRequests: async (payload, { supabase }) => {
     const { parentId } = payload as { parentId: string };
     const { data, error } = await supabase
@@ -793,6 +960,15 @@ updateRequest: async (payload, { supabase }) => {
     return data;
   },
 
+  /**
+   * Lista las solicitudes asignadas a un usuario en un board.
+   *
+   * Resuelve primero los `Request_ID` desde las asignaciones del usuario y luego
+   * hidrata las que pertenezcan al board.
+   *
+   * @param payload - `{ userId, boardId }`.
+   * @returns Solicitudes asignadas al usuario, con resumen de criterios.
+   */
   fetchByAssignedTo: async (payload, { supabase }) => {
     const { userId, boardId } = payload as { userId: number; boardId: number };
     const { data: links, error: linksErr } = await supabase
@@ -809,7 +985,14 @@ updateRequest: async (payload, { supabase }) => {
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
-fetchByParticipant: async (payload, { supabase }) => {
+
+  /**
+   * Lista las solicitudes en las que un usuario es participante, en un board.
+   *
+   * @param payload - `{ userId, boardId }`.
+   * @returns Solicitudes donde el usuario participa, con resumen de criterios.
+   */
+  fetchByParticipant: async (payload, { supabase }) => {
     const { userId, boardId } = payload as { userId: number; boardId: number };
     const { data: links, error: linksErr } = await supabase
       .from('TBL_Request_Participants')
@@ -825,6 +1008,13 @@ fetchByParticipant: async (payload, { supabase }) => {
     if (error) throw new Error(error.message);
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
+
+  /**
+   * Cuenta las solicitudes en historial de un equipo (por código).
+   *
+   * @param payload - `{ boardId, teamCode }`.
+   * @returns `{ total }` — cantidad de tickets en la columna de historial.
+   */
   fetchTeamHistorialCount: async (payload, { supabase }) => {
     const { boardId, teamCode } = payload as { boardId: number; teamCode: string };
     const { data: teamData, error: teamErr } = await supabase
@@ -847,6 +1037,17 @@ fetchByParticipant: async (payload, { supabase }) => {
     return { total: count ?? 0 };
   },
 
+  /**
+   * Trae una página del historial de un equipo con paginación por cursor.
+   *
+   * Usa un cursor compuesto `(Request_Created_At, Request_ID)` descendente para
+   * paginar sin offset. El `.in()` se procesa con `chunkedIn` para evitar el
+   * overflow de URL en boards grandes; cada tanda aplica el mismo cursor y
+   * límite, y luego el conjunto se reordena globalmente y se recorta una sola vez.
+   *
+   * @param payload - `{ boardId, teamCode, cursorCreatedAt, cursorId }`.
+   * @returns La página de historial, con resumen de criterios.
+   */
   fetchTeamHistorialPage: async (payload, { supabase }) => {
     const { boardId, teamCode, cursorCreatedAt, cursorId } = payload as {
       boardId: number; teamCode: string; cursorCreatedAt: string; cursorId: string;
@@ -886,6 +1087,15 @@ fetchByParticipant: async (payload, { supabase }) => {
     return attachCriteriaSummary(page as Record<string, unknown>[], supabase);
   },
 
+  /**
+   * Busca solicitudes por título o ID dentro de un equipo.
+   *
+   * Requiere al menos 2 caracteres. Escapa los caracteres especiales de
+   * PostgREST (`%_,()`) antes de armar el `ilike`, y limita a 30 resultados.
+   *
+   * @param payload - `{ boardId, teamCode, query }`.
+   * @returns Hasta 30 coincidencias, con resumen de criterios; `[]` si la query es muy corta.
+   */
   searchRequests: async (payload, { supabase }) => {
     const { boardId, teamCode, query } = payload as {
       boardId: number; teamCode: string; query: string;
@@ -916,7 +1126,16 @@ fetchByParticipant: async (payload, { supabase }) => {
     return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
   },
 
-fetchAllByBoardStats: async (payload, { supabase }) => {
+  /**
+   * Trae todas las solicitudes de un board para estadísticas, paginando internamente.
+   *
+   * Recorre el board en tandas de 500 filas (`range`) hasta agotarlo, usando el
+   * select liviano de stats. Loguea el tamaño de cada tanda y el total.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Todas las filas del board con `STATS_SELECT`.
+   */
+  fetchAllByBoardStats: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const PAGE = 500;
     let from = 0;
@@ -940,6 +1159,19 @@ fetchAllByBoardStats: async (payload, { supabase }) => {
     console.log('[stats] TOTAL devuelto: ' + all.length);
     return all;
   },
+
+  /**
+   * Filtra solicitudes vía la RPC `filter_requests` y las hidrata.
+   *
+   * Delega el filtrado complejo (AST de condiciones) a la función PostgreSQL
+   * `filter_requests`, que devuelve los IDs ordenados por `Request_ID` DESC más
+   * metadata (total, conteos por columna, cursor siguiente). Luego hidrata esos
+   * IDs con `BASE_SELECT` vía `chunkedIn` y **reordena** el resultado según la
+   * secuencia original de la RPC (el chunking rompe el orden).
+   *
+   * @param payload - `{ boardId, teamCode, ast, limit?, cursorId? }`.
+   * @returns `{ rows, totalCount, perColumnCounts, nextCursor }`.
+   */
   filterRequests: async (payload, { supabase }) => {
     const { boardId, teamCode, ast, limit, cursorId } = payload as {
       boardId:  number;

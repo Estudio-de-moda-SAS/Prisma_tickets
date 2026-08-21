@@ -1,6 +1,36 @@
+/**
+ * Handlers CRUD de reglas de automatización (`TBL_Automation_Rules`).
+ *
+ * Registrados en {@link automationRuleHandlers} y despachados desde el Edge
+ * Function único vía el envelope `{ action, payload }`. Cada regla define un
+ * disparador (`Rule_Trigger`) y una acción (`Rule_Action`) con su valor; el
+ * valor de la acción se guarda como string genérico y se resuelve a una
+ * etiqueta legible al momento de listar.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de reglas de automatización indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const automationRuleHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista todas las reglas con una etiqueta legible de su acción.
+   *
+   * Trae las reglas con su equipo embebido y luego resuelve
+   * `Rule_Action_Value` a `Rule_Action_Resolved_Label` según el tipo de acción:
+   * nombre de usuario para `asignar_resolutor`, etiqueta de prioridad para
+   * `asignar_prioridad`, y etiqueta de audiencia (o nombre de usuario como
+   * fallback) para `notificar_usuario`. Los nombres de usuario se resuelven en
+   * una sola query batch a partir de los IDs numéricos presentes.
+   *
+   * @returns Reglas ordenadas por fecha de creación descendente, cada una con
+   *          `Rule_Action_Resolved_Label`.
+   */
   fetchAutomationRules: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Automation_Rules')
@@ -15,6 +45,7 @@ export const automationRuleHandlers: Record<string, ActionHandler> = {
 
     const rows = data as any[];
 
+    // IDs de usuario únicos referenciados por acciones que apuntan a un resolutor.
     const resolverIds = [...new Set(
       rows
         .filter((r) =>
@@ -57,6 +88,15 @@ export const automationRuleHandlers: Record<string, ActionHandler> = {
     }));
   },
 
+  /**
+   * Crea una regla de automatización nueva (activa por defecto).
+   *
+   * Normaliza con `trim()` el nombre y la descripción, e inicializa el contador
+   * de ejecuciones en 0.
+   *
+   * @param payload - `{ name, description, teamId, trigger, triggerValue, action, actionValue }`.
+   * @returns La regla creada con su equipo embebido.
+   */
   createAutomationRule: async (payload, { supabase }) => {
     const p = payload as {
       name: string; description: string | null; teamId: number | null;
@@ -88,6 +128,12 @@ export const automationRuleHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Activa o desactiva una regla sin eliminarla.
+   *
+   * @param payload - `{ ruleId, isActive }`.
+   * @returns `{ ok: true }` tras actualizar el estado.
+   */
   toggleAutomationRule: async (payload, { supabase }) => {
     const { ruleId, isActive } = payload as { ruleId: number; isActive: boolean };
     const { error } = await supabase
@@ -98,6 +144,12 @@ export const automationRuleHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Elimina una regla de automatización de forma permanente.
+   *
+   * @param payload - `{ ruleId }`.
+   * @returns `{ ok: true }` tras eliminar la regla.
+   */
   deleteAutomationRule: async (payload, { supabase }) => {
     const { ruleId } = payload as { ruleId: number };
     const { error } = await supabase

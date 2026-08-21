@@ -1,10 +1,40 @@
 // handlers/shared/notifyEvent.ts  (ajustá la ruta a donde viven tus helpers)
+/**
+ * Helper de notificación combinada: in-app + correo en una sola llamada.
+ *
+ * Centraliza el patrón "notificá y, si corresponde, mandá correo" que usan los
+ * handlers de dominio. La parte in-app siempre se ejecuta; la de correo es
+ * condicional y best-effort.
+ *
+ * @module
+ */
 import type { DB } from '../lib/supabase.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { sendEventEmail }      from '../email/send.ts';
 
+/**
+ * Emite una notificación in-app y, opcionalmente, un correo por el mismo evento.
+ *
+ * Primero inserta la notificación in-app para todos los `userIds`. Luego, solo
+ * si se proveen `emailVars` **y** hay `requestId`, dispara el correo del evento
+ * (que además exige que exista un template activo para ese `eventKey`). El envío
+ * de correo va envuelto en try/catch dentro de `sendEventEmail`, por lo que un
+ * fallo de la API de correo nunca tumba la notificación ni la operación que la
+ * originó.
+ *
+ * @param supabase - Cliente de Supabase (service role).
+ * @param params - Parámetros del evento:
+ *   - `eventKey`: clave que selecciona el template de correo (`Event_Key`).
+ *   - `userIds`: destinatarios, compartidos por la notificación in-app y el correo.
+ *   - `requestId`: solicitud asociada (o `null`); requerido para que haya correo.
+ *   - `actorId`: usuario que originó el evento (o `null`).
+ *   - `notification`: contenido in-app (`type`, `title`, `body`).
+ *   - `emailVars`: variables para interpolar el template; si faltan, no se envía correo.
+ *   - `cc`: destinatarios en copia del correo (opcional).
+ * @returns Una promesa que resuelve cuando la notificación (y el correo, si aplica) se procesaron.
+ */
 export async function notifyEvent(
   supabase: DB,
   params: {

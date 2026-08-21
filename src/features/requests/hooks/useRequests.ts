@@ -7,11 +7,26 @@ import { MOCK_BOARD } from '../mock/Mockboard';
 import type { Equipo, BoardData, KanbanColumna, Request } from '../types';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 
+/**
+ * Hooks centrales de lectura de requests y el board.
+ *
+ * Define las query keys compartidas ({@link requestKeys}, usadas por casi todos
+ * los demás hooks de la feature), utilidades para agrupar requests en el shape de
+ * `BoardData`, helpers de mock, y los hooks de: board por equipo, board completo,
+ * board para estadísticas, bandeja "sin categorizar", mis solicitudes, borrado,
+ * conteo y paginación de historial, y búsqueda con debounce.
+ *
+ * @module useRequests
+ */
+
 /* ============================================================
    Query keys
    ============================================================ */
+
+/** Prefijo raíz de todas las query keys de requests. */
 const ALL = ['requests'] as const;
 
+/** Fábrica de query keys de requests, compartida por la feature. */
 export const requestKeys = {
   all:            ALL,
   byEquipo:       (equipo: Equipo) => [...ALL, 'equipo', equipo] as const,
@@ -22,6 +37,16 @@ export const requestKeys = {
 /* ============================================================
    Agrupa array plano en el shape del board
    ============================================================ */
+
+/**
+ * Agrupa una lista plana de requests en el shape de `BoardData` (por columna).
+ *
+ * @remarks
+ * Ignora los requests cuya `columna` no sea una columna válida del board.
+ *
+ * @param requests - Lista plana de requests.
+ * @returns El `BoardData` con cada request en su columna.
+ */
 function groupRequestsByColumn(requests: Request[]): BoardData {
   const board: BoardData = {
     sin_categorizar: [],
@@ -45,6 +70,13 @@ function groupRequestsByColumn(requests: Request[]): BoardData {
 /* ============================================================
    Mock helpers
    ============================================================ */
+
+/**
+ * Construye el board mock filtrado para un equipo.
+ *
+ * @param equipo - Equipo por el que filtrar las cards del mock.
+ * @returns El `BoardData` mock con solo las cards del equipo.
+ */
 function getMockBoardForTeam(equipo: Equipo): BoardData {
   const board: BoardData = {
     sin_categorizar: [],
@@ -64,6 +96,11 @@ function getMockBoardForTeam(equipo: Equipo): BoardData {
   return board;
 }
 
+/**
+ * Devuelve una copia completa del board mock (todas las columnas).
+ *
+ * @returns El `BoardData` mock completo (clonado).
+ */
 function getMockBoardFull(): BoardData {
   const base = structuredClone(MOCK_BOARD) as Partial<BoardData>;
   return {
@@ -83,6 +120,18 @@ function getMockBoardFull(): BoardData {
 /* ============================================================
    Hook — board de un equipo
    ============================================================ */
+
+/**
+ * Lee el board de un equipo, agrupado por columna.
+ *
+ * @remarks
+ * En modo mock devuelve el board filtrado del equipo. En real, obtiene los
+ * requests por código de equipo y los agrupa con {@link groupRequestsByColumn}.
+ * `staleTime` de 60s (Infinity en mock), sin refetch al enfocar.
+ *
+ * @param equipo - Equipo cuyo board se lee.
+ * @returns El resultado de `useQuery` con el `BoardData` del equipo.
+ */
 export function useBoardEquipo(equipo: Equipo) {
   const { Requests } = useGraphServices();
 
@@ -103,6 +152,15 @@ export function useBoardEquipo(equipo: Equipo) {
 /* ============================================================
    Hook — board completo (sin filtro de equipo, para admins)
    ============================================================ */
+
+/**
+ * Lee el board completo, sin filtrar por equipo (para admins).
+ *
+ * @remarks
+ * `staleTime` de 30s (Infinity en mock).
+ *
+ * @returns El resultado de `useQuery` con el `BoardData` completo.
+ */
 export function useBoardCompleto() {
   const { Requests } = useGraphServices();
 
@@ -118,10 +176,22 @@ staleTime:            config.USE_MOCK ? Infinity : 30_000,
     //refetchInterval:      config.USE_MOCK ? false : 180_000,
     retry:                config.USE_MOCK ? false : 1,  });
 }
+
 /* ============================================================
    Hook — board completo para ESTADÍSTICAS (dataset completo, liviano)
    No poliea agresivamente; Stats no necesita realtime de 15s.
    ============================================================ */
+
+/**
+ * Lee el board completo en su variante liviana para estadísticas.
+ *
+ * @remarks
+ * Usa un dataset completo pero liviano (`fetchAllByBoardStats`). No hace polling
+ * (`refetchInterval: false`) porque Stats no necesita realtime; `refetchOnMount:
+ * 'always'` y `staleTime` de 30s.
+ *
+ * @returns El resultado de `useQuery` con el `BoardData` para estadísticas.
+ */
 export function useBoardCompletoStats() {
   const { Requests } = useGraphServices();
 
@@ -138,9 +208,19 @@ export function useBoardCompletoStats() {
     retry:                config.USE_MOCK ? false : 1,
   });
 }
+
 /* ============================================================
    Hook — bandeja de entrada (sin categorizar)
    ============================================================ */
+
+/**
+ * Lee la bandeja de entrada: requests sin categorizar.
+ *
+ * @remarks
+ * `staleTime` de 30s (Infinity en mock).
+ *
+ * @returns El resultado de `useQuery` con los requests sin categorizar.
+ */
 export function useSinCategorizar() {
   const { Requests } = useGraphServices();
 
@@ -160,6 +240,17 @@ staleTime:            config.USE_MOCK ? Infinity : 30_000,
 /* ============================================================
    Hook — mis solicitudes (filtrado local por nombre)
    ============================================================ */
+
+/**
+ * Lista "mis solicitudes" filtrando localmente por nombre del solicitante.
+ *
+ * @remarks
+ * Trabaja sobre el board mock (filtrado en cliente por el primer nombre). Se
+ * deshabilita si no hay `nombre`.
+ *
+ * @param nombre - Nombre por el que filtrar (se usa su primera palabra).
+ * @returns El resultado de `useQuery` con las solicitudes del usuario.
+ */
 export function useMisSolicitudes(nombre: string) {
   return useQuery<Request[]>({
     queryKey: [...ALL, 'mis-solicitudes', nombre],
@@ -180,6 +271,16 @@ export function useMisSolicitudes(nombre: string) {
 /* ============================================================
    Hook — eliminar solicitud
    ============================================================ */
+
+/**
+ * Elimina una solicitud.
+ *
+ * @remarks
+ * En `onSuccess` remueve la caché de detalle del request e invalida todo el
+ * listado.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `{ id, deletedBy? }`.
+ */
 export function useDeleteRequest() {
   const queryClient = useQueryClient();
 
@@ -193,6 +294,15 @@ export function useDeleteRequest() {
   });
 }
 
+/**
+ * Lee el conteo total de historial de un equipo.
+ *
+ * @remarks
+ * Se deshabilita en modo mock. `staleTime` y `refetchInterval` de 30s.
+ *
+ * @param equipo - Equipo cuyo conteo de historial se pide.
+ * @returns El resultado de `useQuery` con `{ total }`.
+ */
 export function useHistorialCount(equipo: Equipo) {
   return useQuery<{ total: number }>({
     queryKey: [...ALL, 'historial-count', equipo],
@@ -206,8 +316,24 @@ export function useHistorialCount(equipo: Equipo) {
   });
 }
 
+/** Tamaño de página del historial. Mantener en sync con `HISTORIAL_INITIAL_LIMIT` del Edge Function. */
 const HISTORIAL_PAGE_SIZE = 50; // mantener en sync con HISTORIAL_INITIAL_LIMIT del Edge Function
 
+/**
+ * Paginación incremental ("cargar más") del historial de un equipo.
+ *
+ * @remarks
+ * Mantiene, además del `baseHistorial` recibido, las páginas extra cargadas bajo
+ * demanda, deduplicando por `id`. Resetea las páginas extra al cambiar de equipo.
+ * `hasMore` es `true` mientras no se haya agotado y la base tenga al menos una
+ * página completa. `loadMore` usa el último elemento como cursor
+ * (`createdAt` + `id`) y marca `exhausted` cuando la página devuelta es menor al
+ * tamaño esperado. No opera en modo mock.
+ *
+ * @param equipo - Equipo cuyo historial se pagina.
+ * @param baseHistorial - Historial base ya cargado (primera página).
+ * @returns `{ historial, loadMore, hasMore, loading }`.
+ */
 export function useHistorialLoadMore(equipo: Equipo, baseHistorial: Request[]) {
   const { Requests } = useGraphServices();
   const [extra,     setExtra]     = useState<Request[]>([]);
@@ -245,6 +371,18 @@ export function useHistorialLoadMore(equipo: Equipo, baseHistorial: Request[]) {
   return { historial, loadMore, hasMore, loading };
 }
 
+/**
+ * Busca requests de un equipo con debounce.
+ *
+ * @remarks
+ * Aplica un debounce de 250ms sobre `query`. La búsqueda se habilita solo fuera
+ * de mock y con al menos 2 caracteres. Usa `placeholderData` para conservar el
+ * resultado previo y evitar parpadeo entre tecleos. `staleTime` de 30s.
+ *
+ * @param equipo - Equipo en cuyo ámbito se busca.
+ * @param query - Texto de búsqueda (sin debounce; el hook lo aplica).
+ * @returns El resultado de `useQuery` con los requests que coinciden.
+ */
 export function useSearchRequests(equipo: Equipo, query: string) {
   const { Requests } = useGraphServices();
   const [debounced, setDebounced] = useState(query);

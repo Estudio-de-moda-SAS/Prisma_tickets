@@ -4,7 +4,33 @@ import { SELF_URL, INTERNAL_JOB_SECRET, JOB_CHUNK_SIZE, JOB_MAX_CHUNKS_PER_INVOK
 // @ts-ignore
 import { _renameKeysInFormData, _renameKeysInSchema } from '../shared/templateKeys.ts';
 
+/**
+ * Job en background para renombrar claves de campos de una plantilla.
+ *
+ * Cuando se renombra un campo de una plantilla, hay que propagar el cambio a
+ * todos los requests que usan esa plantilla: tanto en su `Request_Form_Data`
+ * como en el snapshot de esquema `Request_Template_Schema_Snapshot`. Como pueden
+ * ser muchos, el trabajo se procesa por *chunks*: cada invocación de
+ * {@link _processTemplateRenameChunk} actualiza unos cuantos requests y, si
+ * quedan más, se auto-invoca vía {@link _kickoffJobChunk} para no exceder el
+ * tiempo de una Edge Function. Al terminar, {@link _finalizeRenameJob} cierra el
+ * job y deja auditoría.
+ *
+ * @module templateRename
+ */
+
 /* ── Self-invoke para procesar el siguiente chunk ───────── */
+
+/**
+ * Auto-invoca el procesamiento del siguiente chunk del job.
+ *
+ * @remarks
+ * Hace un `fetch` a la propia función ({@link SELF_URL}) con la acción
+ * `_processBackgroundJobChunk`. Los errores se ignoran a propósito: si queda
+ * colgado, se reintenta en el próximo poll.
+ *
+ * @param jobId - ID del job de background a continuar.
+ */
 export async function _kickoffJobChunk(jobId: string): Promise<void> {
   try {
     await fetch(SELF_URL, {
@@ -22,6 +48,20 @@ export async function _kickoffJobChunk(jobId: string): Promise<void> {
 }
 
 /* ── Marca el job como done y escribe auditoría ─────────── */
+
+/**
+ * Marca el job como `done`, persiste el resultado y escribe la auditoría de renombres.
+ *
+ * @remarks
+ * Inserta una fila en `TBL_Template_Field_Renames` por cada renombre, registrando
+ * quién lo hizo, cuándo y cuántos requests se vieron afectados.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param jobId - ID del job de background.
+ * @param processed - Total de requests procesados (afectados).
+ * @param payload - Datos del job: `templateId`, lista de `renames`
+ *   (`oldKey` → `newKey`) y `renamedBy` (usuario que originó el cambio).
+ */
 export async function _finalizeRenameJob(
   supabase: DB,
   jobId: string,
@@ -51,6 +91,28 @@ export async function _finalizeRenameJob(
 }
 
 /* ── Procesa hasta MAX_CHUNKS_PER_INVOKE; si quedan más, self-invoke ── */
+
+/**
+ * Procesa hasta {@link JOB_MAX_CHUNKS_PER_INVOKE} chunks del renombrado; si
+ * quedan más requests, se auto-invoca.
+ *
+ * @remarks
+ * Punto de entrada del procesamiento en background. Lee el job, transiciona su
+ * estado (`pending` → `running`) y arma un mapa `oldKey → newKey`. Por cada
+ * chunk lee un lote de {@link JOB_CHUNK_SIZE} requests de la plantilla
+ * (ordenados por `Request_ID` y paginados con `.range()`), reescribe sus claves
+ * en `Request_Form_Data` ({@link _renameKeysInFormData}) y en el snapshot de
+ * esquema ({@link _renameKeysInSchema}), y persiste el progreso.
+ *
+ * Termina y finaliza ({@link _finalizeRenameJob}) cuando un lote llega vacío o
+ * es más corto que el tamaño de chunk. Si se alcanza el techo de chunks por
+ * invocación sin terminar, continúa vía {@link _kickoffJobChunk}. Cualquier
+ * excepción marca el job como `failed`. Sale temprano si el job no existe, ya
+ * está `done`/`failed`, o no es de tipo `template_field_rename`.
+ *
+ * @param jobId - ID del job de background a procesar.
+ * @param supabase - Cliente de Supabase.
+ */
 export async function _processTemplateRenameChunk(
   jobId: string,
   supabase: DB,

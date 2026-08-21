@@ -1,7 +1,38 @@
 // supabase/functions/api/handlers/history.ts
+/**
+ * Handler de consulta del historial de auditoría de una solicitud.
+ *
+ * Registrado en {@link historyHandlers} y despachado desde el Edge Function
+ * único vía el envelope `{ action, payload }`. La lectura del historial está
+ * restringida: solo la ve un admin o quien supervise algún sub-equipo asignado
+ * al ticket.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de historial indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const historyHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista el historial de auditoría de una solicitud, con control de acceso.
+   *
+   * Gating: un admin siempre puede verlo. Un no-admin solo si supervisa alguno
+   * de los sub-equipos asignados al ticket: se resuelven los sub-equipos del
+   * request (`TBL_Request_Sub_Team`) y se comprueba que el solicitante figure
+   * como supervisor de al menos uno (`TBL_Sub_Team_Supervisors`); si no, lanza
+   * `FORBIDDEN`.
+   *
+   * @param payload - `{ requestId, requesterId }`.
+   * @returns Las entradas de historial ordenadas de la más reciente a la más
+   *          antigua, con el actor de cada cambio embebido.
+   * @throws Si faltan `requestId`/`requesterId`, o `FORBIDDEN` si el solicitante
+   *         no es admin ni supervisor de un sub-equipo del ticket.
+   */
   fetchRequestHistory: async (payload, { supabase }) => {
     const { requestId, requesterId } = payload as { requestId: string; requesterId: number };
     if (!requestId)   throw new Error('requestId requerido');

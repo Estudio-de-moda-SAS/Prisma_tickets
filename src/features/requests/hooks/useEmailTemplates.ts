@@ -1,6 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 
+/**
+ * Hooks de TanStack Query para las plantillas de correo de un board.
+ *
+ * Expone la query de listado ({@link useEmailTemplates}), las mutaciones de
+ * crear, actualizar (contenido y metadata), activar/desactivar y eliminar, y
+ * utilidades para resolver las variables disponibles de cada plantilla
+ * ({@link EMAIL_EVENT_VARIABLES_FALLBACK}, {@link getTemplateVariables}).
+ *
+ * @module useEmailTemplates
+ */
+
+/** Una plantilla de correo tal como viene de la base. */
 export type EmailTemplate = {
   Email_Template_ID:        number;
   Email_Template_Name:      string;
@@ -13,8 +25,18 @@ export type EmailTemplate = {
   Email_Template_Updated_At: string;
 };
 
+/** Fábrica de la query key de plantillas, por board. */
 const QUERY_KEY = (boardId: number) => ['emailTemplates', boardId];
 
+/**
+ * Lista las plantillas de correo de un board.
+ *
+ * @remarks
+ * `staleTime` de 5 minutos.
+ *
+ * @param boardId - Board cuyas plantillas se listan.
+ * @returns El resultado de `useQuery` con las plantillas.
+ */
 export function useEmailTemplates(boardId: number) {
   return useQuery({
     queryKey: QUERY_KEY(boardId),
@@ -23,6 +45,15 @@ export function useEmailTemplates(boardId: number) {
   });
 }
 
+/**
+ * Actualiza el contenido (asunto, HTML y texto) de una plantilla.
+ *
+ * @remarks
+ * En `onSuccess` invalida la lista de plantillas del board.
+ *
+ * @param boardId - Board de contexto (define la query key a invalidar).
+ * @returns El objeto de mutación de React Query. Variables: `{ id, subject, html, text }`.
+ */
 export function useUpdateEmailTemplate(boardId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -32,6 +63,16 @@ export function useUpdateEmailTemplate(boardId: number) {
   });
 }
 
+/**
+ * Activa o desactiva una plantilla (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica el nuevo `Is_Active` en caché; `onError` restaura el
+ * snapshot; `onSettled` invalida la lista del board.
+ *
+ * @param boardId - Board de contexto (define la query key).
+ * @returns El objeto de mutación de React Query. Variables: `{ id, isActive }`.
+ */
 export function useToggleEmailTemplate(boardId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -53,6 +94,16 @@ export function useToggleEmailTemplate(boardId: number) {
   });
 }
 
+/**
+ * Crea una plantilla de correo.
+ *
+ * @remarks
+ * En `onSuccess` invalida la lista del board.
+ *
+ * @param boardId - Board al que pertenece la plantilla.
+ * @returns El objeto de mutación de React Query. Variables:
+ *   `{ name, eventKey, subject, variables }`.
+ */
 export function useCreateEmailTemplate(boardId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -63,6 +114,16 @@ export function useCreateEmailTemplate(boardId: number) {
   });
 }
 
+/**
+ * Elimina una plantilla de correo (optimista).
+ *
+ * @remarks
+ * `onMutate` quita la plantilla de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la lista del board.
+ *
+ * @param boardId - Board de contexto (define la query key).
+ * @returns El objeto de mutación de React Query. Variables: `id` de la plantilla.
+ */
 export function useDeleteEmailTemplate(boardId: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -82,7 +143,13 @@ export function useDeleteEmailTemplate(boardId: number) {
   });
 }
 
-// Variables base hardcodeadas como fallback para los 6 eventos del sistema
+/**
+ * Variables base por defecto para los 6 eventos del sistema.
+ *
+ * @remarks
+ * Sirven de respaldo cuando una plantilla no tiene variables definidas en la BD.
+ * Indexado por `Email_Template_Event_Key`.
+ */
 export const EMAIL_EVENT_VARIABLES_FALLBACK: Record<string, string[]> = {
   assignRequest:                  ['ticket_id', 'ticket_title', 'ticket_url', 'assignee_name', 'actor_name'],
   createComment:                  ['ticket_id', 'ticket_title', 'ticket_url', 'actor_name', 'comment_preview'],
@@ -92,7 +159,16 @@ export const EMAIL_EVENT_VARIABLES_FALLBACK: Record<string, string[]> = {
   submitClientFeedback:           ['ticket_id', 'ticket_title', 'ticket_url', 'feedback_status', 'actor_name'],
 };
 
-// Helper para obtener variables de un template — usa las de DB si existen, si no el fallback
+/**
+ * Devuelve las variables disponibles de una plantilla.
+ *
+ * @remarks
+ * Usa las variables de la BD si existen; si no, cae al fallback por evento
+ * ({@link EMAIL_EVENT_VARIABLES_FALLBACK}), o `[]` si el evento no está mapeado.
+ *
+ * @param template - Plantilla de correo.
+ * @returns La lista de nombres de variables.
+ */
 export function getTemplateVariables(template: EmailTemplate): string[] {
   if (template.Email_Template_Variables?.length > 0) {
     return template.Email_Template_Variables;
@@ -100,6 +176,15 @@ export function getTemplateVariables(template: EmailTemplate): string[] {
   return EMAIL_EVENT_VARIABLES_FALLBACK[template.Email_Template_Event_Key] ?? [];
 }
 
+/**
+ * Actualiza la metadata de una plantilla (nombre, asunto y variables).
+ *
+ * @remarks
+ * En `onSuccess` invalida la lista del board.
+ *
+ * @param boardId - Board de contexto (define la query key a invalidar).
+ * @returns El objeto de mutación de React Query. Variables: `{ id, name, subject, variables }`.
+ */
 export function useUpdateEmailTemplateMetadata(boardId: number) {
   const qc = useQueryClient();
   return useMutation({

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["supabase/functions/api"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "supabase/functions/tsconfig.json",
+  "json": "docs/models/backend.json",
+  "name": "Backend PRISMA (Supabase Edge Function)",
+  "readme": "none",
+  "skipErrorChecking": true,
+  "exclude": ["**/node_modules/**"],
+  "excludePrivate": true,
+  "excludeInternal": true
+}

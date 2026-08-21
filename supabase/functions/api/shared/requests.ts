@@ -2,24 +2,53 @@ import type { DB } from '../lib/supabase.ts';
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
 
+/**
+ * Orquestación de correos transaccionales por evento del ticket.
+ *
+ * Reúne las funciones `maybeSend*` que deciden si corresponde enviar cada tipo
+ * de correo (inicio de trabajo, revisión del cliente, nuevo comentario,
+ * feedback del cliente) según reglas de negocio, y helpers para resolver
+ * participantes ({@link getRequestParticipants}) y detectar columnas de cierre
+ * ({@link isCloseColumn}).
+ *
+ * @remarks
+ * Todas las funciones `maybeSend*` son best-effort: capturan cualquier error y
+ * solo lo loguean, porque el correo nunca debe tumbar la operación principal
+ * (mover columna, crear comentario, registrar feedback).
+ *
+ * @module notificationEmails
+ */
+
+/** ID del departamento de TI; sus solicitantes se consideran internos. */
 const TI_DEPARTMENT_ID   = 7;
+/** Slug de la columna "revisión del cliente". */
 const CLIENT_REVIEW_SLUG = 'cliente_review';
+/** Slug de la columna "en progreso". */
 const IN_PROGRESS_SLUG   = 'en_progreso';
 
 /**
  * Correo "ya empezamos a trabajar".
- * Se dispara al mover a En progreso. Solo pasa por moveToColumn: en_progreso
+ *
+ * @remarks
+ * Se dispara al mover a *En progreso*. Solo pasa por `moveToColumn`: en_progreso
  * no requiere evidencia, así que nunca abre el ClosureModal.
  *
- * Condiciones: (a) columna destino = en_progreso, (b) hay solicitante,
- * (c) el solicitante NO es también resolutor, (d) el solicitante es EXTERNO
- * (Department_ID !== 7), (e) NO se envió antes este correo para el ticket.
+ * Condiciones para enviar: (a) columna destino = en_progreso, (b) hay
+ * solicitante, (c) el solicitante NO es también resolutor, (d) el solicitante es
+ * EXTERNO (`Department_ID !== 7`), (e) NO se envió antes este correo para el ticket.
  *
- * (e) importa porque en_progreso no es columna de cierre: un ticket puede
- * volver a entrar varias veces (rechazo del cliente → QAS → en progreso).
+ * La condición (e) importa porque en_progreso no es columna de cierre: un ticket
+ * puede volver a entrar varias veces (rechazo del cliente → QAS → en progreso).
  * El aviso "ya empezamos" solo tiene sentido la primera vez.
  *
  * Nunca lanza: el correo no puede tumbar el move.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args - Datos del movimiento.
+ * @param args.requestId - ID del request movido.
+ * @param args.columnId - Columna destino del movimiento.
+ * @param args.requestedBy - Usuario solicitante, o `null`.
+ * @param args.assigneeIds - IDs de los resolutores asignados.
  */
 export async function maybeSendInProgressEmail(
   supabase: DB,
@@ -99,13 +128,26 @@ export async function maybeSendInProgressEmail(
 
 /**
  * Correo "listo para revisión del cliente".
- * Se llama desde moveToColumn Y desde closeRequest (los dos caminos reales
+ *
+ * @remarks
+ * Se llama desde `moveToColumn` Y desde `closeRequest` (los dos caminos reales
  * para llegar a Client Review). Nunca lanza: el correo no puede tumbar el move.
  *
- * Condiciones: (a) columna destino = cliente_review, (b) hay solicitante,
- * (c) el solicitante es EXTERNO (Department_ID !== 7 — la verdad real, no el
- * rol 'ti_member' que no existe en TBL_Users.User_Role), (d) el solicitante
- * NO es también resolutor del ticket.
+ * Condiciones para enviar: (a) columna destino = cliente_review, (b) hay
+ * solicitante, (c) el solicitante es EXTERNO (`Department_ID !== 7` — la verdad
+ * real, no el rol `ti_member`, que no existe en `TBL_Users.User_Role`).
+ *
+ * A diferencia de {@link maybeSendInProgressEmail}, aquí NO se omite cuando el
+ * solicitante es también resolutor: en client review el solicitante actúa como
+ * aprobador (rol distinto del de resolutor) y debe recibir el aviso aunque haya
+ * trabajado el ticket.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args - Datos del movimiento.
+ * @param args.requestId - ID del request movido.
+ * @param args.columnId - Columna destino del movimiento.
+ * @param args.requestedBy - Usuario solicitante, o `null`.
+ * @param args.assigneeIds - IDs de los resolutores asignados.
  */
 export async function maybeSendClientReviewEmail(
   supabase: DB,
@@ -180,18 +222,35 @@ export async function maybeSendClientReviewEmail(
   }
 }
 
-/** Ventana anti-spam: no se manda otro correo de comentario al mismo
- *  destinatario/ticket si ya salió uno dentro de estos minutos. */
+/**
+ * Ventana anti-spam (en minutos): no se manda otro correo de comentario al mismo
+ * destinatario/ticket si ya salió uno dentro de este lapso.
+ */
 const COMMENT_MAIL_COOLDOWN_MIN = 15;
 
-/** Escapa HTML para no romper la plantilla ni permitir inyección desde un comentario. */
+/**
+ * Escapa caracteres HTML para no romper la plantilla ni permitir inyección desde
+ * un comentario.
+ *
+ * @param s - Texto a escapar.
+ * @returns El texto con `&`, `<`, `>`, `"` y `'` convertidos a entidades HTML.
+ */
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-/** Formato PRISMA: "Nombre1 Nombre2 Apellido1 Apellido2" → "Nombre1 Apellido1" */
+/**
+ * Acorta un nombre completo al formato PRISMA "Nombre1 Apellido1".
+ *
+ * @remarks
+ * Si el nombre tiene 4 o más partes ("Nombre1 Nombre2 Apellido1 Apellido2"),
+ * toma la 1ª y la 3ª; en otro caso devuelve el nombre tal cual (trim).
+ *
+ * @param fullName - Nombre completo.
+ * @returns El nombre corto.
+ */
 function shortName(fullName: string): string {
   const parts = (fullName ?? '').trim().split(/\s+/);
   return parts.length >= 4 ? `${parts[0]} ${parts[2]}` : (fullName ?? '').trim();
@@ -199,10 +258,22 @@ function shortName(fullName: string): string {
 
 /**
  * Correo "nuevo comentario".
+ *
+ * @remarks
  * Destinatarios: resolutores + solicitante, excluyendo al autor del comentario.
- * Confidencial: se avisa que hay comentario, pero NO se manda el contenido.
- * Anti-spam: se omite si ya se mandó uno a ese destinatario en la última ventana.
- * Nunca lanza: el correo no puede tumbar la creación del comentario.
+ * Si el ticket es confidencial, se avisa que hay comentario pero NO se incluye el
+ * contenido. Anti-spam: se descartan los destinatarios que ya recibieron un
+ * correo de comentario para este ticket dentro de {@link COMMENT_MAIL_COOLDOWN_MIN}
+ * minutos. Se hace un envío por destinatario para personalizar el saludo. Nunca
+ * lanza: el correo no puede tumbar la creación del comentario.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args - Datos del comentario.
+ * @param args.requestId - ID del request comentado.
+ * @param args.actorId - Autor del comentario (se excluye de los destinatarios).
+ * @param args.commentText - Texto del comentario (se recorta a 200 chars en el preview).
+ * @param args.assigneeIds - IDs de los resolutores asignados.
+ * @param args.requestedBy - Usuario solicitante, o `null`.
  */
 export async function maybeSendCommentEmail(
   supabase: DB,
@@ -292,10 +363,23 @@ export async function maybeSendCommentEmail(
 
 /**
  * Correo "el cliente respondió la revisión".
+ *
+ * @remarks
  * Destinatarios: los que ya calculó el handler (resolutores; el solicitante
- * queda fuera porque es quien envía el feedback).
- * Confidencial: no se manda el texto de la nota del cliente, solo el aviso.
- * Nunca lanza: el correo no puede tumbar el registro del feedback.
+ * queda fuera porque es quien envía el feedback). Si el ticket es confidencial no
+ * se manda el texto de la nota del cliente, solo el aviso. Construye un stepper
+ * visual y una paleta según la decisión: si `approved`, avanza a Ready to Deploy;
+ * si `rejected`, el ticket retrocede a En revisión QAS. Se hace un envío por
+ * destinatario para personalizar el saludo. Nunca lanza: el correo no puede
+ * tumbar el registro del feedback.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args - Datos del feedback.
+ * @param args.requestId - ID del request revisado.
+ * @param args.recipientIds - Destinatarios ya calculados por el handler.
+ * @param args.clientId - Usuario cliente que dio el feedback.
+ * @param args.decision - Decisión del cliente: `'approved'` o `'rejected'`.
+ * @param args.feedbackNote - Nota del cliente, o `null` (se recorta a 400 chars).
  */
 export async function maybeSendClientFeedbackEmail(
   supabase: DB,
@@ -405,6 +489,17 @@ export async function maybeSendClientFeedbackEmail(
   }
 }
 
+/**
+ * Resuelve los participantes de un request: resolutores y solicitante.
+ *
+ * @remarks
+ * Ejecuta en paralelo la lectura de asignaciones y del solicitante. Se usa para
+ * calcular destinatarios de los correos `maybeSend*`.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param requestId - ID del request.
+ * @returns `assigneeIds` (IDs de resolutores) y `requestedBy` (solicitante o `null`).
+ */
 export async function getRequestParticipants(
   supabase: DB,
   requestId: string,
@@ -432,6 +527,19 @@ export async function getRequestParticipants(
   return { assigneeIds, requestedBy };
 }
 
+/**
+ * Indica si una columna es de cierre para los equipos del request.
+ *
+ * @remarks
+ * Obtiene los equipos del request y consulta `TBL_Team_Column_Config` buscando
+ * una configuración con `Is_Close_Column = true` para esa columna en alguno de
+ * esos equipos. Si el request no tiene equipos, devuelve `false`.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param columnId - Columna a evaluar.
+ * @param requestId - Request cuyos equipos determinan la configuración.
+ * @returns `true` si la columna es de cierre para algún equipo del request.
+ */
 export async function isCloseColumn(
   supabase: DB,
   columnId: number,
