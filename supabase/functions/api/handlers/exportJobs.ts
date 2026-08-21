@@ -1,3 +1,23 @@
+/**
+ * Handlers de exportación de solicitudes (jobs en background + export directo).
+ *
+ * Registrados en {@link exportJobHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Hay dos rutas:
+ *
+ * - **Job en background** (`createExportJob` + helpers): resuelve el universo de
+ *   tickets, crea la fila del job y el historial, sube los artefactos a Storage
+ *   y arranca el procesamiento por chunks vía `EdgeRuntime.waitUntil`. El
+ *   cliente luego pide las signed URLs de los artefactos y confirma la descarga.
+ * - **Export directo** (`exportRequests`): resuelve y devuelve los tickets en
+ *   una sola llamada, con tope de `MAX_LIMIT`.
+ *
+ * Patrón transversal: los IDs se procesan en lotes (`ID_CHUNK`) para mantener la
+ * URL de PostgREST corta y evitar los 500 por overflow del `.in()`. La lista de
+ * IDs candidatos se guarda en Storage, no en el payload del job, para no
+ * reescribir filas pesadas en cada update de progreso.
+ *
+ * @module
+ */
 import type { ActionHandler, ExportFilters } from '../shared/types.ts';
 // @ts-ignore
 import { MAX_EXPORT_SIZE, EXPORT_JOB_CHUNK_SIZE, EXPORT_BUCKET } from '../config.ts';
@@ -9,7 +29,32 @@ import {
 // @ts-ignore
 } from '../jobs/exportJob.ts';
 
+/**
+ * Mapa de handlers de exportación indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const exportJobHandlers: Record<string, ActionHandler> = {
+  /**
+   * Crea un job de exportación en background y arranca su primer chunk.
+   *
+   * Flujo:
+   * 1. Resuelve los IDs candidatos según los filtros relacionales. Si los hay,
+   *    calcula la lista final ordenada y filtrada; si no, hace un count directo.
+   * 2. Valida que haya al menos un ticket y que no se supere `MAX_EXPORT_SIZE`.
+   * 3. Crea la fila del job (`TBL_Background_Jobs`) y la del historial
+   *    (`TBL_Export_History`).
+   * 4. Sube la lista de IDs candidatos a Storage (no al payload) para no inflar
+   *    la fila del job en cada update de progreso, y sube la metadata del board
+   *    (equipos, columnas, plantillas).
+   * 5. Dispara el primer chunk vía `EdgeRuntime.waitUntil` (o un `.catch`
+   *    silencioso como fallback local).
+   *
+   * @param payload - `{ userId, boardId, filters, format, selectedColumns, sheetPerTemplate }`.
+   * @returns `{ jobId, exportId, total, chunksTotal }`.
+   * @throws Si ningún ticket coincide o si el total supera `MAX_EXPORT_SIZE`.
+   */
   createExportJob: async (payload, { supabase }) => {
     const p = payload as {
       userId:           number;
@@ -135,6 +180,17 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     return { jobId, exportId, total, chunksTotal };
   },
 
+  /**
+   * Devuelve signed URLs de los artefactos de un export ya terminado.
+   *
+   * Verifica que el usuario sea el dueño del job y que su estado sea `done`,
+   * luego firma la metadata y cada chunk (`chunk_0001.json`, …) con validez de
+   * 10 minutos.
+   *
+   * @param payload - `{ jobId, userId }`.
+   * @returns `{ fileName, format, metadataUrl, chunkUrls, chunksTotal }`.
+   * @throws Si el export no existe, el usuario no está autorizado o el job no está `done`.
+   */
   getExportArtifactUrls: async (payload, { supabase }) => {
     const { jobId, userId } = payload as { jobId: string; userId: number };
 
@@ -181,6 +237,13 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     };
   },
 
+  /**
+   * Marca un export como descargado e incrementa su contador de descargas.
+   *
+   * @param payload - `{ exportId, userId }`.
+   * @returns `{ ok: true }` tras actualizar el historial.
+   * @throws Si la entrada de historial no existe o el usuario no es su dueño.
+   */
   confirmExportDownloaded: async (payload, { supabase }) => {
     const { exportId, userId } = payload as { jobId: string; exportId: string; userId: number };
 
@@ -201,6 +264,12 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     return { ok: true };
   },
 
+  /**
+   * Lista el historial de exportaciones de un usuario.
+   *
+   * @param payload - `{ userId, limit? }` (por defecto 20).
+   * @returns Las entradas de historial ordenadas por fecha de creación descendente.
+   */
   fetchExportHistory: async (payload, { supabase }) => {
     const { userId, limit = 20 } = payload as { userId: number; limit?: number };
     const { data, error } = await supabase
@@ -219,6 +288,16 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     return data ?? [];
   },
 
+  /**
+   * Elimina una entrada de historial junto con sus artefactos y su job.
+   *
+   * Verifica la propiedad del usuario, limpia los artefactos de Storage (si hay
+   * prefix) y borra tanto la fila de historial como la del job en background.
+   *
+   * @param payload - `{ exportId, userId }`.
+   * @returns `{ ok: true }` tras la limpieza completa.
+   * @throws Si la entrada no existe o el usuario no es su dueño.
+   */
   deleteExportHistoryEntry: async (payload, { supabase }) => {
     const { exportId, userId } = payload as { exportId: string; userId: number };
     const { data: hist } = await supabase
@@ -238,6 +317,17 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     return { ok: true };
   },
 
+  /**
+   * Repite un export previo reutilizando sus filtros y opciones.
+   *
+   * Recupera la configuración del export original y delega en
+   * {@link exportJobHandlers.createExportJob} vía `dispatch`, separando el
+   * `boardId` del resto de filtros.
+   *
+   * @param payload - `{ exportId, userId }`.
+   * @returns El resultado de crear el nuevo job (`{ jobId, exportId, total, chunksTotal }`).
+   * @throws Si el export original no existe o el usuario no es su dueño.
+   */
   repeatExport: async (payload, { supabase, dispatch }) => {
     const { exportId, userId } = payload as { exportId: string; userId: number };
     const { data: hist, error: histErr } = await supabase
@@ -266,7 +356,28 @@ const fullFilters: ExportFilters = { ...p.filters, boardId: p.boardId };
     });
   },
 
-exportRequests: async (payload, { supabase }) => {
+  /**
+   * Export directo (síncrono) de solicitudes con filtros combinados.
+   *
+   * Estrategia en dos capas para respetar el tope de URL de PostgREST:
+   *
+   * 1. **Filtros relacionales** (equipos, sprints, asignados, labels): se
+   *    resuelven por separado y se van intersectando en `candidateIds`. Si
+   *    alguno deja el conjunto vacío, corta temprano con respuesta vacía.
+   * 2. **Filtros escalares** (columna, solicitante, prioridad, plantilla,
+   *    confidencialidad, rango de fechas): se aplican vía `buildQuery`, que arma
+   *    una query fresca por invocación.
+   *
+   * El count y la data se procesan en lotes de `ID_CHUNK` (150) cuando hay
+   * `candidateIds`. Para la data, primero hace un scan liviano (solo ID + fecha)
+   * para elegir los top-N por fecha, y recién ahí trae el `BASE_SELECT` pesado
+   * solo para esos pocos IDs, minimizando joins sobre la URL.
+   *
+   * @param payload - Filtros de exportación + `boardId` y `limit?` (tope `MAX_LIMIT` = 500).
+   * @returns `{ tickets, templates, boardTeams, boardColumns, meta }` con
+   *          `meta.totalMatched`, `meta.returned` y `meta.truncated`.
+   */
+  exportRequests: async (payload, { supabase }) => {
     const p = payload as {
       boardId:         number;
       teamIds?:        number[] | null;

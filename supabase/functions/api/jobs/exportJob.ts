@@ -12,25 +12,78 @@ import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 
+/**
+ * Pipeline de exportación de tickets (requests) por lotes.
+ *
+ * Procesa exportaciones grandes en background dividiéndolas en *chunks*: cada
+ * invocación de {@link _processExportChunks} genera unos cuantos archivos JSON
+ * parciales en Storage y, si queda trabajo, se auto-invoca vía
+ * {@link _kickoffExportChunk} para continuar sin exceder los límites de tiempo
+ * de una Edge Function.
+ *
+ * El flujo general es:
+ * 1. {@link _resolveExportCandidateIds} — intersecta IDs según filtros relacionales.
+ * 2. {@link _resolveOrderedExportIds} / {@link _countExportMatches} — ordena y cuenta.
+ * 3. {@link _processExportChunks} — lee, enriquece y sube cada chunk a Storage.
+ * 4. {@link _finalizeExportJob} / {@link _failExportJob} — cierra el job y notifica.
+ *
+ * @remarks
+ * Los helpers "anti-escala" evitan dos problemas de Supabase: el truncado
+ * silencioso a 1000 filas (se pagina con `.range()`) y las URLs demasiado
+ * largas al usar `.in()` con listas grandes (se trocean en lotes).
+ *
+ * @module export
+ */
+
 /* ============================================================
    Helpers anti-escala (URL larga + truncado silencioso)
    ============================================================ */
 
-// Página para lecturas grandes con .range() (junctions). Supabase corta en 1000
-// por defecto si NO se pagina → leemos en ventanas y recolectamos todo.
+/**
+ * Tamaño de ventana para lecturas grandes con `.range()`.
+ *
+ * @remarks
+ * Supabase corta en 1000 filas por defecto si NO se pagina, así que leemos en
+ * ventanas de este tamaño y recolectamos todo con {@link _collectAll}.
+ */
 const READ_PAGE = 1000;
-// Lote para .in('Request_ID', ...) en queries livianas (solo IDs).
+
+/** Tamaño de lote para `.in('Request_ID', ...)` en queries livianas (solo IDs). */
 const ID_IN_CHUNK = 150;
-// Lote para .in('Request_ID', ...) cuando el select es BASE_SELECT (pesado).
-// El select gigante ya ocupa casi toda la URL → mantené esto chico.
+
+/**
+ * Tamaño de lote para `.in('Request_ID', ...)` cuando el select es `BASE_SELECT`.
+ *
+ * @remarks
+ * El select gigante ya ocupa casi toda la URL, por eso este lote se mantiene
+ * pequeño para no superar el límite de longitud de la petición.
+ */
 const SELECT_IN_CHUNK = 80;
 
+/**
+ * Parte un arreglo en sub-arreglos de tamaño fijo.
+ *
+ * @typeParam T - Tipo de los elementos del arreglo.
+ * @param arr - Arreglo a trocear.
+ * @param size - Tamaño máximo de cada lote.
+ * @returns Arreglo de lotes; el último puede ser más corto.
+ */
 function _chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
 
+/**
+ * Convierte un timestamp a epoch en milisegundos, asumiendo UTC.
+ *
+ * @remarks
+ * Si el valor no termina en `Z`, se le añade para forzar interpretación UTC.
+ * Valores vacíos o inválidos devuelven `0`, lo que los ordena al final.
+ *
+ * @param v - Valor a parsear (normalmente un string ISO).
+ * @returns Epoch en ms, o `0` si el valor es vacío o no es una fecha válida.
+ */
 function _parseTs(v: unknown): number {
   const s = String(v ?? '');
   if (!s) return 0;
@@ -40,7 +93,14 @@ function _parseTs(v: unknown): number {
 
 /**
  * Recolecta TODAS las filas de una lectura potencialmente grande, paginando con
- * .range() en ventanas de READ_PAGE. Evita el truncado silencioso a 1000 filas.
+ * `.range()` en ventanas de {@link READ_PAGE}. Evita el truncado silencioso a
+ * 1000 filas.
+ *
+ * @typeParam T - Tipo de fila devuelto por la consulta.
+ * @param build - Fábrica que construye la consulta para el rango `[from, to]`
+ *   y devuelve `{ data, error }`.
+ * @returns Todas las filas concatenadas de todas las páginas.
+ * @throws Si alguna página devuelve error de Supabase.
  */
 async function _collectAll<T>(
   build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
@@ -58,7 +118,22 @@ async function _collectAll<T>(
   return all;
 }
 
-/** Resuelve la intersección de IDs candidatos según filtros relacionales (paginado) */
+/**
+ * Resuelve la intersección de IDs candidatos según los filtros relacionales
+ * (equipo, sprint, asignado, etiqueta), paginando cada lectura.
+ *
+ * @remarks
+ * Cada filtro relacional presente aporta un conjunto de `Request_ID` y se
+ * intersecta con los anteriores. Si algún paso deja la intersección vacía se
+ * corta temprano devolviendo `[]`. Un retorno `null` significa que no se aplicó
+ * ningún filtro relacional (sin restricción por IDs).
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param filters - Filtros de exportación; se leen las propiedades relacionales.
+ * @returns Lista de IDs candidatos, `[]` si la intersección es vacía, o `null`
+ *   si no hay filtros relacionales.
+ * @throws Si alguna de las lecturas paginadas falla.
+ */
 export async function _resolveExportCandidateIds(
   supabase: DB,
   filters:  ExportFilters,
@@ -113,7 +188,18 @@ export async function _resolveExportCandidateIds(
   return candidateIds;
 }
 
-/** Aplica solo filtros escalares (sin board, sin Request_ID in) */
+/**
+ * Aplica únicamente los filtros escalares (sin `board` ni `Request_ID in`).
+ *
+ * @remarks
+ * Cubre columna, solicitante, prioridad, plantilla, confidencialidad y rango de
+ * fechas de creación. Es el bloque de filtros común a varias consultas.
+ *
+ * @typeParam Q - Query builder encadenable de Supabase.
+ * @param query - Consulta base sobre la que encadenar los filtros.
+ * @param filters - Filtros de exportación; solo se usan las propiedades escalares.
+ * @returns La misma consulta con los filtros escalares aplicados.
+ */
 function _applyScalarFilters<Q extends { eq: (k: string, v: unknown) => Q; in: (k: string, v: unknown[]) => Q; gte: (k: string, v: unknown) => Q; lte: (k: string, v: unknown) => Q }>(
   query: Q,
   filters: ExportFilters,
@@ -131,7 +217,15 @@ function _applyScalarFilters<Q extends { eq: (k: string, v: unknown) => Q; in: (
   return q;
 }
 
-/** Aplica filtros directos (board + Request_ID in + escalares) */
+/**
+ * Aplica los filtros directos: board, `Request_ID in` (si hay candidatos) y escalares.
+ *
+ * @typeParam Q - Query builder encadenable de Supabase.
+ * @param query - Consulta base sobre `TBL_Requests`.
+ * @param filters - Filtros de exportación.
+ * @param candidateIds - IDs candidatos a restringir, o `null` para no filtrar por ID.
+ * @returns La consulta con board + IDs + escalares aplicados.
+ */
 function _applyExportDirectFilters<Q extends { eq: (k: string, v: unknown) => Q; in: (k: string, v: unknown[]) => Q; gte: (k: string, v: unknown) => Q; lte: (k: string, v: unknown) => Q }>(
   query: Q,
   filters: ExportFilters,
@@ -143,8 +237,18 @@ function _applyExportDirectFilters<Q extends { eq: (k: string, v: unknown) => Q;
 }
 
 /**
- * Resuelve la lista FINAL ordenada (fecha desc) y filtrada por escalares, a
- * partir de los candidateIds relacionales. Chunkea el .in() → URL siempre chica.
+ * Resuelve la lista FINAL de IDs, ordenada por fecha de creación descendente y
+ * filtrada por escalares, a partir de los `candidateIds` relacionales.
+ *
+ * @remarks
+ * Trocea el `.in()` en lotes de {@link ID_IN_CHUNK} para mantener la URL corta,
+ * y ordena en memoria porque los lotes llegan sin orden garantizado.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param filters - Filtros de exportación (se usa `boardId` y los escalares).
+ * @param candidateIds - IDs candidatos ya intersectados.
+ * @returns IDs ordenados por fecha desc. `[]` si no hay candidatos.
+ * @throws Si alguna consulta por lote falla.
  */
 export async function _resolveOrderedExportIds(
   supabase:     DB,
@@ -172,7 +276,19 @@ export async function _resolveOrderedExportIds(
   return collected.map((r) => r.id);
 }
 
-/** Cuenta cuántos tickets coinciden (chunkea si hay candidateIds) */
+/**
+ * Cuenta cuántos tickets coinciden con los filtros.
+ *
+ * @remarks
+ * Usa `count: 'exact'` con `head: true` (no trae filas). Si hay `candidateIds`,
+ * los cuenta por lotes disjuntos y suma sin doble conteo.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param filters - Filtros de exportación.
+ * @param candidateIds - IDs candidatos, o `null` para contar sin restricción por ID.
+ * @returns Número total de tickets que coinciden. `0` si `candidateIds` es `[]`.
+ * @throws Si alguna consulta de conteo falla.
+ */
 export async function _countExportMatches(
   supabase:    DB,
   filters:     ExportFilters,
@@ -197,7 +313,15 @@ export async function _countExportMatches(
   return total;
 }
 
-/** Sube un archivo JSON al bucket de exports */
+/**
+ * Sube un objeto como archivo JSON al bucket de exports (con `upsert`).
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param storagePath - Prefijo/carpeta dentro del bucket.
+ * @param fileName - Nombre del archivo a crear.
+ * @param jsonObject - Contenido a serializar como JSON.
+ * @throws Si la subida a Storage falla.
+ */
 export async function _uploadExportArtifact(
   supabase:    DB,
   storagePath: string,
@@ -214,7 +338,14 @@ export async function _uploadExportArtifact(
   if (error) throw new Error(`Storage upload failed (${fileName}): ${error.message}`);
 }
 
-/** Descarga + parsea el artifact de IDs candidatos */
+/**
+ * Descarga y parsea el artifact `candidate_ids.json` desde Storage.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param path - Ruta completa del archivo dentro del bucket de exports.
+ * @returns La lista de IDs (`ids`) del JSON, o `[]` si no está presente.
+ * @throws Si el archivo no se puede leer.
+ */
 async function _downloadCandidateIds(supabase: DB, path: string): Promise<string[]> {
   const { data, error } = await supabase.storage.from(EXPORT_BUCKET).download(path);
   if (error || !data) throw new Error(`No se pudo leer candidate_ids.json: ${error?.message ?? 'sin datos'}`);
@@ -223,7 +354,16 @@ async function _downloadCandidateIds(supabase: DB, path: string): Promise<string
   return parsed.ids ?? [];
 }
 
-/** Self-invoca el procesamiento del siguiente chunk de export */
+/**
+ * Auto-invoca el procesamiento del siguiente chunk del export.
+ *
+ * @remarks
+ * Hace un `fetch` a la propia función ({@link SELF_URL}) con la acción
+ * `_processExportJobChunk`. Los errores se ignoran a propósito: si la petición
+ * queda colgada, el watchdog reintenta.
+ *
+ * @param jobId - ID del job de background a continuar.
+ */
 export async function _kickoffExportChunk(jobId: string): Promise<void> {
   try {
     await fetch(SELF_URL, {
@@ -240,7 +380,19 @@ export async function _kickoffExportChunk(jobId: string): Promise<void> {
   } catch (_e) { /* silent — el watchdog reintenta si quedó colgado */ }
 }
 
-/** Marca el job como done, sube notificación y actualiza historial */
+/**
+ * Marca el job como `done`, envía la notificación al usuario y actualiza el historial.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param jobId - ID del job de background.
+ * @param exportId - ID de la entrada en `TBL_Export_History`.
+ * @param userId - Usuario destinatario de la notificación.
+ * @param totalChunks - Número final de chunks generados.
+ * @param totalTickets - Total de tickets procesados.
+ * @param format - Formato de exportación (p. ej. `xlsx` o `csv`).
+ * @param fileName - Nombre del archivo final.
+ * @param prefix - Prefijo de Storage donde quedaron los artifacts.
+ */
 async function _finalizeExportJob(
   supabase:  DB,
   jobId:     string,
@@ -281,7 +433,14 @@ async function _finalizeExportJob(
   });
 }
 
-/** Marca el job como fallido y la entrada de historial */
+/**
+ * Marca el job y su entrada de historial como `failed`.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param jobId - ID del job de background.
+ * @param exportId - ID de la entrada en `TBL_Export_History`.
+ * @param error - Mensaje de error a persistir.
+ */
 async function _failExportJob(
   supabase: DB,
   jobId:    string,
@@ -303,7 +462,26 @@ async function _failExportJob(
   }).eq('Export_ID', exportId);
 }
 
-/** Procesa N chunks consecutivos del export */
+/**
+ * Procesa hasta {@link EXPORT_MAX_CHUNKS_PER_INVOKE} chunks consecutivos del export.
+ *
+ * @remarks
+ * Punto de entrada del procesamiento en background. Lee el job, transiciona su
+ * estado (`pending` → `running`), y por cada chunk:
+ * - Con filtros relacionales: usa `orderedIds` (ya ordenados y filtrados),
+ *   toma una porción, lee `BASE_SELECT` troceando el `.in()`, y re-ordena por
+ *   fecha desc porque el `.in()` no preserva el orden.
+ * - Sin filtros relacionales: pagina directo con `.range()` sobre `TBL_Requests`.
+ *
+ * Cada chunk se enriquece con {@link attachCriteriaSummary}, se sube como
+ * `chunk_NNNN.json` y se actualiza el progreso. Si el trabajo no terminó, se
+ * auto-invoca ({@link _kickoffExportChunk}); si terminó, se finaliza. Cualquier
+ * excepción marca el job como fallido. Sale temprano si el job no existe, ya
+ * está `done`/`failed`, o no es de tipo `export_requests`.
+ *
+ * @param jobId - ID del job de background a procesar.
+ * @param supabase - Cliente de Supabase.
+ */
 export async function _processExportChunks(
   jobId:    string,
   supabase: DB,
@@ -442,7 +620,16 @@ export async function _processExportChunks(
   }
 }
 
-/** Elimina todos los artifacts de Storage de un export */
+/**
+ * Elimina todos los artifacts de Storage asociados a un export.
+ *
+ * @remarks
+ * Los errores se ignoran a propósito: si algo queda sin borrar, un cron de
+ * limpieza lo recogerá más adelante.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param storagePrefix - Prefijo/carpeta cuyos archivos se van a eliminar.
+ */
 export async function _cleanupExportArtifacts(
   supabase: DB,
   storagePrefix: string,

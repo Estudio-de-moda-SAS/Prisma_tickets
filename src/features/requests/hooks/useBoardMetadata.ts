@@ -3,9 +3,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import type { TemplateExtraField, TemplateDefinition, TemplateVisual } from '@/features/requests/templates/types';
 
+/**
+ * Metadata de un board: equipos, etiquetas y plantillas.
+ *
+ * Reúne los tipos de DB (equipos, labels, templates), helpers para mapear una
+ * plantilla de DB a su definición de UI ({@link mapBoardTemplateToDefinition} y
+ * derivados, que reemplazan por completo al antiguo `registry.ts`), y los hooks
+ * de TanStack Query de lectura y CRUD. Las mutaciones de labels y templates usan
+ * actualización optimista con rollback por snapshot.
+ *
+ * @module useBoardMetadata
+ */
+
 /* ============================================================
    Tipos de DB
    ============================================================ */
+
+/** Equipo/board tal como viene de la base (`TBL_Board_Teams`). */
 export type BoardTeam = {
   Board_Team_ID:            number;
   Board_Team_Name:          string;
@@ -25,13 +39,17 @@ export type BoardTeam = {
 };
 
 /**
- * BoardTeam + su departamento, que trae fetchMyBoardTeams para armar los
- * grupos del sidebar. El join puede venir null: kanban sin departamento.
+ * `BoardTeam` junto con su departamento, tal como lo devuelve `fetchMyBoardTeams`
+ * para armar los grupos del sidebar.
+ *
+ * @remarks
+ * El join `department` puede venir `null`: representa un kanban sin departamento.
  */
 export type MyBoardTeam = BoardTeam & {
   department: { Department_ID: number; Department_Name: string } | null;
 };
 
+/** Etiqueta de un board (`TBL_Labels`). */
 export type BoardLabel = {
   Label_ID:    number;
   Label_Name:  string;
@@ -39,6 +57,7 @@ export type BoardLabel = {
   Label_Icon:  string;
 };
 
+/** Plantilla de solicitud tal como viene de la base. */
 export type BoardTemplate = {
   Request_Template_ID:          number;
   Request_Template_Name:        string;
@@ -51,6 +70,7 @@ export type BoardTemplate = {
   Request_Template_Is_Active:   boolean;
 };
 
+/** Payload para crear/actualizar una plantilla desde la UI (claves camelCase). */
 export type TemplatePayload = {
   boardId:     number;
   name:        string;
@@ -66,6 +86,14 @@ export type TemplatePayload = {
 /* ============================================================
    Fallback
    ============================================================ */
+
+/**
+ * Definición de plantilla por defecto ("General").
+ *
+ * @remarks
+ * La usa {@link getTemplateDefinition} cuando no se encuentra la plantilla
+ * solicitada, para que la UI siempre tenga algo válido que renderizar.
+ */
 const FALLBACK_TEMPLATE: TemplateDefinition = {
   id:          0,
   nombre:      'General',
@@ -83,6 +111,17 @@ const FALLBACK_TEMPLATE: TemplateDefinition = {
 /* ============================================================
    Helpers — reemplazan registry.ts por completo
    ============================================================ */
+
+/**
+ * Mapea una plantilla de DB ({@link BoardTemplate}) a su definición de UI
+ * ({@link TemplateDefinition}).
+ *
+ * @remarks
+ * Aplica valores por defecto para color, ícono y badge si faltan.
+ *
+ * @param t - Plantilla cruda de la base.
+ * @returns La definición de plantilla lista para la UI.
+ */
 export function mapBoardTemplateToDefinition(t: BoardTemplate): TemplateDefinition {
   return {
     id:          t.Request_Template_ID,
@@ -99,6 +138,13 @@ export function mapBoardTemplateToDefinition(t: BoardTemplate): TemplateDefiniti
   };
 }
 
+/**
+ * Resuelve la definición de una plantilla por ID dentro de una lista.
+ *
+ * @param templateId - ID de la plantilla buscada.
+ * @param templates - Lista de plantillas disponibles.
+ * @returns La definición encontrada, o {@link FALLBACK_TEMPLATE} si no existe.
+ */
 export function getTemplateDefinition(
   templateId: number,
   templates:  BoardTemplate[],
@@ -107,10 +153,24 @@ export function getTemplateDefinition(
   return found ? mapBoardTemplateToDefinition(found) : FALLBACK_TEMPLATE;
 }
 
+/**
+ * Devuelve el color de acento de una plantilla.
+ *
+ * @param templateId - ID de la plantilla.
+ * @param templates - Lista de plantillas disponibles.
+ * @returns El `accentColor` de la definición (o el del fallback).
+ */
 export function getTemplateAccent(templateId: number, templates: BoardTemplate[]): string {
   return getTemplateDefinition(templateId, templates).visual.accentColor;
 }
 
+/**
+ * Devuelve la etiqueta de badge de una plantilla.
+ *
+ * @param templateId - ID de la plantilla.
+ * @param templates - Lista de plantillas disponibles.
+ * @returns El `badgeLabel` de la definición (o el del fallback).
+ */
 export function getTemplateBadge(templateId: number, templates: BoardTemplate[]): string {
   return getTemplateDefinition(templateId, templates).visual.badgeLabel;
 }
@@ -118,10 +178,13 @@ export function getTemplateBadge(templateId: number, templates: BoardTemplate[])
 /* ============================================================
    Query keys
    ============================================================ */
+
+/** Fábrica de query keys de plantillas, por board. */
 const templateKeys = {
   all: (boardId: number) => ['boardTemplates', boardId] as const,
 };
 
+/** Fábrica de query keys de etiquetas, por board o por equipo. */
 const labelKeys = {
   byTeam:  (boardId: number, teamId: number | null) => ['boardLabels', boardId, teamId] as const,
   byBoard: (boardId: number)                         => ['boardLabels', boardId]         as const,
@@ -130,6 +193,16 @@ const labelKeys = {
 /* ============================================================
    Hooks — Equipos
    ============================================================ */
+
+/**
+ * Lista todos los equipos/boards.
+ *
+ * @remarks
+ * `staleTime: Infinity` (metadata estable; se invalida manualmente al mutar).
+ *
+ * @param boardId - Board de contexto (parte de la query key).
+ * @returns El resultado de `useQuery` con los equipos.
+ */
 export function useBoardTeams(boardId: number) {
   return useQuery<BoardTeam[]>({
     queryKey:  ['boardTeams', boardId],
@@ -140,12 +213,17 @@ export function useBoardTeams(boardId: number) {
 }
 
 /**
- * Boards visibles para UN usuario, ya filtrados server-side por su nivel
- * de acceso (admin → todos · grants → esos · TI sin grants → todos ·
- * cliente → los de su depto). Lo consume el sidebar.
+ * Boards visibles para un usuario, ya filtrados server-side por su nivel de acceso.
  *
- * Devuelve [] cuando el usuario no tiene ningún board visible → el sidebar
- * cae a la vista limpia (solo Home / Nueva Solicitud / Mis Solicitudes).
+ * @remarks
+ * El filtrado ocurre en el backend (admin → todos; grants → esos; TI sin grants
+ * → todos; cliente → los de su departamento). Lo consume el sidebar. Devuelve
+ * `[]` cuando el usuario no tiene ningún board visible, en cuyo caso el sidebar
+ * cae a la vista limpia (solo Home / Nueva Solicitud / Mis Solicitudes). La query
+ * se deshabilita si `userId` es `null`/`undefined`.
+ *
+ * @param userId - Usuario cuyos boards visibles se piden.
+ * @returns El resultado de `useQuery` con los boards visibles.
  */
 export function useMyBoardTeams(userId: number | null | undefined) {
   return useQuery<MyBoardTeam[]>({
@@ -160,6 +238,13 @@ export function useMyBoardTeams(userId: number | null | undefined) {
 /* ============================================================
    Hooks — Labels lectura
    ============================================================ */
+
+/**
+ * Lista las etiquetas de un board.
+ *
+ * @param boardId - Board cuyas etiquetas se listan.
+ * @returns El resultado de `useQuery` con las etiquetas del board.
+ */
 export function useBoardLabels(boardId: number) {
   return useQuery<BoardLabel[]>({
     queryKey:  labelKeys.byBoard(boardId),
@@ -169,6 +254,16 @@ export function useBoardLabels(boardId: number) {
   });
 }
 
+/**
+ * Lista las etiquetas de un equipo dentro de un board.
+ *
+ * @remarks
+ * La query se deshabilita si `teamId` es `null`.
+ *
+ * @param boardId - Board de contexto.
+ * @param teamId - Equipo cuyas etiquetas se listan, o `null` para no consultar.
+ * @returns El resultado de `useQuery` con las etiquetas del equipo.
+ */
 export function useLabelsByTeamId(boardId: number, teamId: number | null) {
   return useQuery<BoardLabel[]>({
     queryKey: labelKeys.byTeam(boardId, teamId),
@@ -182,6 +277,19 @@ export function useLabelsByTeamId(boardId: number, teamId: number | null) {
 /* ============================================================
    Hooks — Labels CRUD con optimistic updates
    ============================================================ */
+
+/**
+ * Crea una etiqueta (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta una etiqueta temporal con `Label_ID` negativo (para no
+ * colisionar con IDs reales); `onError` restaura el snapshot; `onSettled`
+ * invalida la caché del equipo para traer el registro real.
+ *
+ * @param boardId - Board de contexto.
+ * @param teamId - Equipo al que pertenece la etiqueta (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useCreateLabel(boardId: number, teamId: number | null) {
   const qc = useQueryClient();
   const qk = labelKeys.byTeam(boardId, teamId);
@@ -216,6 +324,17 @@ export function useCreateLabel(boardId: number, teamId: number | null) {
   });
 }
 
+/**
+ * Actualiza una etiqueta (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica los nuevos valores en caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la caché del equipo.
+ *
+ * @param boardId - Board de contexto.
+ * @param teamId - Equipo al que pertenece la etiqueta (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useUpdateLabel(boardId: number, teamId: number | null) {
   const qc = useQueryClient();
   const qk = labelKeys.byTeam(boardId, teamId);
@@ -248,6 +367,17 @@ export function useUpdateLabel(boardId: number, teamId: number | null) {
   });
 }
 
+/**
+ * Elimina una etiqueta (optimista).
+ *
+ * @remarks
+ * `onMutate` quita la etiqueta de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la caché del equipo.
+ *
+ * @param boardId - Board de contexto.
+ * @param teamId - Equipo al que pertenece la etiqueta (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useDeleteLabel(boardId: number, teamId: number | null) {
   const qc = useQueryClient();
   const qk = labelKeys.byTeam(boardId, teamId);
@@ -279,6 +409,13 @@ export function useDeleteLabel(boardId: number, teamId: number | null) {
 /* ============================================================
    Hooks — Templates lectura
    ============================================================ */
+
+/**
+ * Lista las plantillas de un board.
+ *
+ * @param boardId - Board cuyas plantillas se listan.
+ * @returns El resultado de `useQuery` con las plantillas del board.
+ */
 export function useBoardTemplates(boardId: number) {
   return useQuery<BoardTemplate[]>({
     queryKey:  templateKeys.all(boardId),
@@ -291,6 +428,17 @@ export function useBoardTemplates(boardId: number) {
 /* ============================================================
    Hooks — Templates CRUD con optimistic updates
    ============================================================ */
+
+/**
+ * Crea una plantilla (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta una plantilla temporal con `Request_Template_ID` negativo;
+ * `onError` restaura el snapshot; `onSettled` invalida la caché del board.
+ *
+ * @param boardId - Board al que pertenece la plantilla.
+ * @returns El objeto de mutación de React Query.
+ */
 export function useCreateTemplate(boardId: number) {
   const qc = useQueryClient();
   const qk = templateKeys.all(boardId);
@@ -329,6 +477,16 @@ export function useCreateTemplate(boardId: number) {
   });
 }
 
+/**
+ * Actualiza una plantilla (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica los nuevos valores en caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la caché del board.
+ *
+ * @param boardId - Board al que pertenece la plantilla.
+ * @returns El objeto de mutación de React Query.
+ */
 export function useUpdateTemplate(boardId: number) {
   const qc = useQueryClient();
   const qk = templateKeys.all(boardId);
@@ -371,6 +529,16 @@ export function useUpdateTemplate(boardId: number) {
   });
 }
 
+/**
+ * Elimina una plantilla (optimista).
+ *
+ * @remarks
+ * `onMutate` quita la plantilla de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la caché del board.
+ *
+ * @param boardId - Board al que pertenece la plantilla.
+ * @returns El objeto de mutación de React Query.
+ */
 export function useDeleteTemplate(boardId: number) {
   const qc = useQueryClient();
   const qk = templateKeys.all(boardId);

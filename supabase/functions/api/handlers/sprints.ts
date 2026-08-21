@@ -1,6 +1,28 @@
+/**
+ * Handlers CRUD de sprints y de la automatización de arranque de sprint.
+ *
+ * Registrados en {@link sprintHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Cada sprint puede definir una
+ * capacidad externa por equipo (`TBL_Sprint_Team_Capacity`), que limita cuántas
+ * solicitudes de usuarios externos se le auto-asignan.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de sprints indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const sprintHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista todos los sprints con sus capacidades por equipo.
+   *
+   * @returns Sprints ordenados por fecha de inicio descendente, con su arreglo
+   *          `capacities` embebido.
+   */
   fetchSprints: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Sprint')
@@ -15,6 +37,16 @@ export const sprintHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Crea un sprint y, opcionalmente, sus capacidades por equipo.
+   *
+   * Inserta la cabecera del sprint y, si se proveen `teamCapacities`, las filas
+   * de capacidad. Devuelve el sprint con las capacidades reflejadas (con
+   * `Capacity_ID` en null, ya que no se re-consultan).
+   *
+   * @param payload - `{ text, startDate, endDate, teamCapacities? }`.
+   * @returns El sprint creado con su arreglo `capacities`.
+   */
   createSprint: async (payload, { supabase }) => {
     const { text, startDate, endDate, teamCapacities } = payload as {
       text: string; startDate: string; endDate: string;
@@ -43,6 +75,16 @@ export const sprintHandlers: Record<string, ActionHandler> = {
     };
   },
 
+  /**
+   * Actualiza un sprint y hace upsert de sus capacidades por equipo.
+   *
+   * Las capacidades se resuelven con upsert sobre la clave compuesta
+   * `(Sprint_ID, Board_Team_ID)`, de modo que actualiza las existentes y crea
+   * las nuevas sin duplicar.
+   *
+   * @param payload - `{ id, text, startDate, endDate, teamCapacities? }`.
+   * @returns `{ ok: true }` tras actualizar.
+   */
   updateSprint: async (payload, { supabase }) => {
     const { id, text, startDate, endDate, teamCapacities } = payload as {
       id: number; text: string; startDate: string; endDate: string;
@@ -64,6 +106,12 @@ export const sprintHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Elimina un sprint por su ID.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ ok: true }` tras eliminar el sprint.
+   */
   deleteSprint: async (payload, { supabase }) => {
     const { id } = payload as { id: number };
     const { error } = await supabase.from('TBL_Sprint').delete().eq('Sprint_ID', id);
@@ -71,6 +119,19 @@ export const sprintHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Mueve automáticamente los tickets de los sprints que inician hoy.
+   *
+   * Pensado para dispararse al arranque de sprint. Resuelve la columna origen
+   * ("Sin categorizar") y la primera columna de flujo como destino, busca los
+   * sprints cuya fecha de inicio cae hoy y, para sus solicitudes que sigan sin
+   * categorizar y sin cerrar, las mueve a la columna destino.
+   *
+   * @param payload - `{ boardId? }` (por defecto 1).
+   * @returns `{ ok: true, moved, destColumn? }` con la cantidad movida; si no hay
+   *          sprints que inicien hoy, `moved: 0` con un mensaje.
+   * @throws Si no se encuentran las columnas origen/destino.
+   */
   triggerSprintStartMoves: async (payload, { supabase }) => {
     const { boardId: trigBoardId } = payload as { boardId?: number };
     const bId = trigBoardId ?? 1;

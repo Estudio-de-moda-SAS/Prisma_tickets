@@ -14,6 +14,23 @@ import {
   notifyTicketCreatedSolicitante,
 } from '../services/SolviTicketNotifications.service';
 
+/**
+ * Hook de acciones para la creación de tickets de Solvi.
+ *
+ * Orquesta todo el alta de un ticket: mantiene el estado del formulario, asigna
+ * el resolutor (priorizando la disponibilidad por turnos en horario nocturno o el
+ * técnico con menos casos en horario laboral), calcula la fecha máxima de
+ * solución, inserta el ticket, sube los adjuntos y dispara las notificaciones a
+ * solicitante y resolutor.
+ *
+ * @remarks
+ * Reexporta utilidades relacionadas de los servicios de Solvi (notificaciones de
+ * comentarios y helpers de fecha) para que los consumidores tengan un punto único
+ * de importación.
+ *
+ * @module useSolviActionsTickets
+ */
+
 export type { SolviTicket } from '../types/SolviTicket';
 export {
   notifySolviCommentActivity,
@@ -21,6 +38,16 @@ export {
 } from '../services/SolviTicketNotifications.service';
 export { parseDateFlex, toISODateTimeFlex } from '../services/SolviBusinessDate.service';
 
+/**
+ * Construye un ticket vacío con los valores por defecto del formulario.
+ *
+ * @remarks
+ * Precarga el correo y nombre del solicitante desde el usuario, estado inicial
+ * "En Atención" y fuente "Aplicación".
+ *
+ * @param user - Usuario actual (opcional), para precargar solicitante.
+ * @returns Un {@link SolviTicket} con los valores iniciales.
+ */
 function emptyTicket(user?: UserProfile | null): SolviTicket {
   return {
     FechaCierreReal: null,
@@ -41,6 +68,15 @@ function emptyTicket(user?: UserProfile | null): SolviTicket {
   };
 }
 
+/**
+ * Selecciona el técnico con menos casos y le incrementa la carga.
+ *
+ * @remarks
+ * Efecto secundario: aumenta en 1 el `Numerodecasos` del técnico elegido.
+ *
+ * @param tecnicosService - Servicio de técnicos (SharePoint).
+ * @returns El técnico asignado, o `null` si no hay ninguno disponible.
+ */
 async function assignTechnicianAndBumpLoad(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
   const resolutor = await pickTecnicoConMenosCasos(tecnicosService);
   if (!resolutor) return null;
@@ -50,11 +86,22 @@ async function assignTechnicianAndBumpLoad(tecnicosService: UsuariosSPService): 
   return resolutor;
 }
 
+/** Resolutor asignado a un ticket: su correo y nombre. */
 type ResolutorAsignado = { correo: string; nombre: string };
 
-// Fuera de horario laboral (17:00-7:00) prioriza a quien esté activo ahora mismo en el turno de
-// Teams Shifts; en horario laboral, o si nadie está en turno / falla la consulta, cae al técnico
-// con menos casos activos.
+/**
+ * Asigna el resolutor de un ticket según el horario.
+ *
+ * @remarks
+ * Fuera de horario laboral (17:00–7:00) prioriza a quien esté activo ahora mismo
+ * en el turno de Teams Shifts; en horario laboral, o si nadie está en turno o
+ * falla la consulta de disponibilidad, cae al técnico con menos casos activos
+ * ({@link assignTechnicianAndBumpLoad}).
+ *
+ * @param tecnicosService - Servicio de técnicos (SharePoint).
+ * @param isTurnoNocturnoAhora - Si el momento actual es turno nocturno.
+ * @returns El {@link ResolutorAsignado}, o `null` si no se pudo asignar.
+ */
 async function assignResolutor(tecnicosService: UsuariosSPService, isTurnoNocturnoAhora: boolean): Promise<ResolutorAsignado | null> {
   if (isTurnoNocturnoAhora) {
     let disponibleAhora = null;
@@ -73,6 +120,16 @@ async function assignResolutor(tecnicosService: UsuariosSPService, isTurnoNoctur
   return resolutor ? { correo: resolutor.Correo, nombre: resolutor.Title } : null;
 }
 
+/**
+ * Notifica la creación de un ticket a solicitante y resolutor.
+ *
+ * @remarks
+ * No hace nada si el ticket no tiene resolutor. Cada envío está aislado en su
+ * propio try/catch: un fallo notificando a uno no impide el aviso al otro ni
+ * propaga el error.
+ *
+ * @param ticket - Ticket recién creado, o `null`/`undefined`.
+ */
 async function notifyTicketCreated(ticket: SolviTicket | null | undefined): Promise<void> {
   if (!ticket?.ticket_solvi_correo_resolutor) return;
 
@@ -89,6 +146,7 @@ async function notifyTicketCreated(ticket: SolviTicket | null | undefined): Prom
   }
 }
 
+/** Valor de retorno de {@link useSolviActionsTickets}. */
 type UseSolviActionsResult = {
   state: SolviTicket;
   setState: React.Dispatch<React.SetStateAction<SolviTicket>>;
@@ -99,6 +157,21 @@ type UseSolviActionsResult = {
   uploadSolviAttachment(file: File, ticketId: number): Promise<{ ok: boolean; url: string }>;
 };
 
+/**
+ * Provee el estado y las acciones para crear un ticket de Solvi.
+ *
+ * @remarks
+ * Memoiza los servicios de Graph y de técnicos a partir del token de auth.
+ * Mantiene el estado del formulario (reiniciándolo cuando cambia el usuario) y un
+ * flag `loading`. `saveTicket` ejecuta el flujo completo: determina turno
+ * nocturno, calcula la fecha máxima, asigna resolutor, inserta el ticket en
+ * `TBL_Ticket_Solvi`, sube los adjuntos y notifica. `uploadSolviAttachment`
+ * delega en el servicio de storage manejando el flag `loading`.
+ *
+ * @param user - Usuario actual (opcional), para precargar el formulario y validar
+ *   en `saveTicket`.
+ * @returns {@link UseSolviActionsResult} con estado, servicios y acciones.
+ */
 export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActionsResult {
   const { getToken } = useAuth();
   const graphService = React.useMemo(() => new GraphRest(getToken), [getToken]);

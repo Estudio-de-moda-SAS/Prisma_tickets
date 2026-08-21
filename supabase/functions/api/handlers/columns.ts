@@ -1,6 +1,27 @@
+/**
+ * Handlers CRUD de columnas de un board Kanban (`TBL_Board_Columns`).
+ *
+ * Registrados en {@link columnHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Cubre listar, crear, actualizar
+ * y reordenar columnas dentro de un board.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de columnas indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const columnHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista las columnas de un board ordenadas por posición.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Las columnas del board en orden ascendente de posición.
+   */
   fetchBoardColumns: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data, error } = await supabase
@@ -12,6 +33,12 @@ export const columnHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Actualiza nombre, color y límite (WIP) de una columna.
+   *
+   * @param payload - `{ columnId, name, color, limit }`.
+   * @returns `{ ok: true }` tras actualizar.
+   */
   updateBoardColumn: async (payload, { supabase }) => {
     const { columnId, name, color, limit } = payload as {
       columnId: number; name: string; color: string; limit: number;
@@ -28,6 +55,17 @@ export const columnHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Crea una columna nueva al final del board.
+   *
+   * Deriva el `slug` a partir del nombre: quita acentos (normalización NFD),
+   * pasa a minúsculas, reemplaza espacios por guiones bajos y descarta todo
+   * carácter que no sea alfanumérico o `_`. La posición es la máxima actual + 1
+   * (o 0 si es la primera columna del board).
+   *
+   * @param payload - `{ boardId, name, color, limit }`.
+   * @returns La columna creada.
+   */
   createBoardColumn: async (payload, { supabase }) => {
     const { boardId, name, color, limit } = payload as {
       boardId: number; name: string; color: string; limit: number;
@@ -60,6 +98,15 @@ export const columnHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Mueve una columna una posición hacia arriba o abajo dentro de su board.
+   *
+   * Intercambia el `Board_Column_Position` con la columna vecina inmediata. Si
+   * la columna ya está en el extremo del board, no hace nada.
+   *
+   * @param payload - `{ columnId, direction: 'up' | 'down', boardId }`.
+   * @returns `{ ok: true }` (idempotente aunque no haya movimiento).
+   */
   reorderBoardColumn: async (payload, { supabase }) => {
     const { columnId, direction, boardId } = payload as {
       columnId: number; direction: 'up' | 'down'; boardId: number;

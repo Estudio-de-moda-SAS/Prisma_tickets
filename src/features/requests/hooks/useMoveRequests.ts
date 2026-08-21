@@ -5,15 +5,45 @@ import { config } from '@/config';
 import { requestKeys } from './useRequests';
 import type { BoardData, Equipo, KanbanColumna } from '../types';
 
+/**
+ * Hook de TanStack Query para mover un request entre columnas del board.
+ *
+ * Expone {@link useMoveRequest}, la mutación que respalda el drag & drop del
+ * kanban: mueve la card a la columna destino de forma optimista y sincroniza con
+ * el servidor.
+ *
+ * @module useMoveRequests
+ */
+
+/** Payload para mover un request. */
 type MovePayload = {
+  /** ID del request a mover. */
   id:        string;
+  /** Columna destino (clave de kanban). */
   columna:   KanbanColumna;
+  /** ID numérico de la columna destino (requerido en modo real). */
   columnId?: number;
+  /** Usuario que realiza el movimiento (opcional). */
   movedBy?:  number;
 };
 
+/** Contexto de rollback: snapshot del board previo a la mutación. */
 type MutationContext = { snapshot: BoardData | undefined };
 
+/**
+ * Mueve un request a otra columna del board (optimista).
+ *
+ * @remarks
+ * En modo mock no hace llamada real; en modo real exige `columnId` (lanza si
+ * falta) y llama a `moveToColumn`. En `onMutate` reconstruye el `BoardData`:
+ * quita la card de cualquier columna y la inserta al inicio de la columna
+ * destino con la columna y `columnId` actualizados. En `onError` restaura el
+ * snapshot y además invalida para traer estado limpio del servidor. `onSettled`
+ * invalida el board y las stats completas.
+ *
+ * @param equipo - Equipo cuyo board se actualiza (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useMoveRequest(equipo: Equipo) {
   const queryClient  = useQueryClient();
   const { Requests } = useGraphServices();

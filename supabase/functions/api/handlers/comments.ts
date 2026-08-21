@@ -1,10 +1,33 @@
+/**
+ * Handlers de comentarios, menciones y participantes de una solicitud.
+ *
+ * Registrados en {@link commentHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. La creación de comentarios
+ * re-valida las reglas de mención server-side (el front no es autoridad),
+ * persiste el acceso durable de los mencionados como participantes y dispara
+ * notificaciones in-app y correo de forma best-effort.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { getRequestParticipants, maybeSendCommentEmail } from '../shared/requests.ts';
 
+/**
+ * Mapa de handlers de comentarios indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const commentHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista los comentarios de una solicitud con su autor embebido.
+   *
+   * @param payload - `{ requestId }`.
+   * @returns Los comentarios ordenados por fecha de creación ascendente.
+   */
   fetchComments: async (payload, { supabase }) => {
     const { requestId } = payload as { requestId: string };
     const { data, error } = await supabase
@@ -15,7 +38,17 @@ export const commentHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return data;
   },
-fetchRequestParticipants: async (payload, { supabase }) => {
+
+  /**
+   * Lista los participantes de una solicitud (identificadores y procedencia).
+   *
+   * Devuelve `User_Name` y `User_Avatar_url` vacíos a propósito: el front los
+   * resuelve con su lista `allUsers`, evitando un join extra acá.
+   *
+   * @param payload - `{ requestId }`.
+   * @returns Participantes con `Added_Via`/`Added_By` y campos de nombre en blanco.
+   */
+  fetchRequestParticipants: async (payload, { supabase }) => {
     const { requestId } = payload as { requestId: string };
     const { data, error } = await supabase
       .from('TBL_Request_Participants')
@@ -30,6 +63,28 @@ fetchRequestParticipants: async (payload, { supabase }) => {
       Added_By:        r.Added_By,
     }));
   },
+
+  /**
+   * Crea un comentario, procesa menciones y notifica a los involucrados.
+   *
+   * Flujo:
+   * 1. Inserta el comentario (texto recortado con `trim()`).
+   * 2. Re-valida las menciones server-side según tres reglas:
+   *    - Ticket confidencial y autor no-admin → ninguna mención permitida.
+   *    - Autor admin → puede mencionar a cualquiera.
+   *    - Autor no-admin → solo a TI (`Department_ID === 7`) o a miembros de su
+   *      propio departamento. Nunca se permite la auto-mención.
+   * 3. Persiste las menciones permitidas (`TBL_Comment_Mentions`), les da
+   *    acceso durable como participantes (`TBL_Request_Participants`, upsert
+   *    idempotente) y les envía notificación de tipo `mention`.
+   * 4. Envía notificación de tipo `comment` al resto de involucrados
+   *    (resolutores + solicitante), excluyendo al autor y a los ya notificados
+   *    por mención.
+   * 5. Dispara el correo de comentario (best-effort).
+   *
+   * @param payload - `{ requestId, userId, text, mentionedUserIds? }`.
+   * @returns El comentario creado, con su autor embebido.
+   */
   createComment: async (payload, { supabase }) => {
     const { requestId, userId, text, mentionedUserIds = [] } =
       payload as { requestId: string; userId: number; text: string; mentionedUserIds?: number[] };
@@ -121,7 +176,19 @@ fetchRequestParticipants: async (payload, { supabase }) => {
 
     return data;
   },
-removeParticipant: async (payload, { supabase }) => {
+
+  /**
+   * Revoca a un participante de una solicitud, con control de autoridad.
+   *
+   * Solo puede ejecutarla un admin o un resolutor asignado al ticket; en
+   * cualquier otro caso lanza «No autorizado». Verificada la autoridad, elimina
+   * la fila correspondiente de `TBL_Request_Participants`.
+   *
+   * @param payload - `{ requestId, userId, actorId }`.
+   * @returns `{ ok: true }` tras revocar al participante.
+   * @throws Si `actorId` no es admin ni resolutor del ticket.
+   */
+  removeParticipant: async (payload, { supabase }) => {
     const { requestId, userId, actorId } =
       payload as { requestId: string; userId: number; actorId: number };
 
@@ -148,6 +215,13 @@ removeParticipant: async (payload, { supabase }) => {
     if (error) throw new Error(error.message);
     return { ok: true };
   },
+
+  /**
+   * Elimina un comentario por su ID.
+   *
+   * @param payload - `{ commentId }`.
+   * @returns `{ ok: true }` tras eliminar el comentario.
+   */
   deleteComment: async (payload, { supabase }) => {
     const { commentId } = payload as { commentId: number };
     const { error } = await supabase.from('TBL_Comments').delete().eq('Comment_ID', commentId);
