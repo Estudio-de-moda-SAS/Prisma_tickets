@@ -5,12 +5,16 @@ import { useCurrentUser } from '@/features/requests/hooks/useCurrentUser';
 import { useBoardTeams } from '@/features/requests/hooks/useBoardMetadata';
 import { config } from '@/config';
 import { compressImage } from '@/lib/compressImage';
-import { Upload, X, FileText, Image, File as FileIcon2, Plus, ShieldAlert } from 'lucide-react';
+import { Upload, X, FileText, Image, File as FileIcon2, Plus, ShieldAlert, Clock } from 'lucide-react';
 import { useIsMobile } from '@/components/hooks/useMediaQuery';
 import { RichTextEditor } from '@/features/requests/components/RichTextEditor';
 import { useSolviActionsTickets } from '@/features/requests/hooks/useSolviActions';
 import { useSolviCategorias } from '@/features/requests/hooks/useSolviCategorias';
+import { useSolviSubcategorias } from '@/features/requests/hooks/useSolviSubcategorias';
+import { useSolviArticulos } from '@/features/requests/hooks/useSolviArticulos';
 import React from 'react';
+import { useSolviAns } from '@/features/requests/hooks/useSolviANS';
+import { formatSlaHorasHabiles } from '@/features/requests/services/SolviBusinessDate.service';
 
 /* ============================================================
    SOLVI — Página de creación de solicitud (integración externa)
@@ -78,7 +82,7 @@ export function SolviRequestPage() {
   const { data: currentUser, isError: userError } = useCurrentUser();
   const { data: teams = [] } = useBoardTeams(config.DEFAULT_BOARD_ID);
   const solviController = useSolviActionsTickets(currentUser)
-  const {data: categories = [], refetch} = useSolviCategorias()
+  const {data: categories = []} = useSolviCategorias()
 
   // Equipo SOLVI por su clave de integración: robusto venga de redirect,
   // sidebar o URL directa. De ahí sale el color definido al crear el kanban.
@@ -88,10 +92,12 @@ export function SolviRequestPage() {
 
   const [titulo,       setTitulo]       = useState('');
   const [descripcion,  setDescripcion]  = useState('');
-  // TODO(SOLVI): categoría seleccionada — por ahora solo vive en el front,
-  // aún no se envía a saveTicket (ver handleSubmit). Si querés hacerla
-  // obligatoria, sumala a `isReady` más abajo.
-  const [categoria,    setCategoria]    = useState('');
+  // Categoría/subcategoría/artículo en cascada: cada select guarda el Id de
+  // SharePoint del item elegido (no el Title), porque las listas hijas
+  // filtran por Id_Categoria / Id_Subcategoria, no por nombre.
+  const [categoriaId,    setCategoriaId]    = useState('');
+  const [subcategoriaId, setSubcategoriaId] = useState('');
+  const [articuloId,     setArticuloId]     = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [dragOver,     setDragOver]     = useState(false);
@@ -101,15 +107,23 @@ export function SolviRequestPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: subcategories = [], isLoading: subcategoriesLoading } = useSolviSubcategorias(categoriaId || null);
+  const { data: articulos = [],     isLoading: articulosLoading }     = useSolviArticulos(subcategoriaId || null);
+  const { data: ansInfo = null, isLoading: ansLoading } = useSolviAns(categoriaId || null, subcategoriaId || null, articuloId || null);
+
+  const categoriaTitle    = categories.find((c) => c.Id === categoriaId)?.Title ?? '';
+  const subcategoriaTitle = subcategories.find((s) => s.Id === subcategoriaId)?.Title ?? '';
+  const articuloTitle     = articulos.find((a) => a.Id === articuloId)?.Title ?? '';
+
   const dataLoading = !currentUser;
 
   // Errores en vivo (solo tras el primer intento) → se limpian solos al corregir.
-  const titleError    = submitAttempted && !titulo.trim();
-  const categoriaError = submitAttempted && !categoria;
-
-  React.useEffect(() => {
-    refetch()
-  }, [refetch]);
+  // Subcategoría/artículo solo son obligatorios cuando la categoría/subcategoría
+  // elegida efectivamente tiene opciones para ese nivel (si no tiene, no se bloquea).
+  const titleError       = submitAttempted && !titulo.trim();
+  const categoriaError   = submitAttempted && !categoriaId;
+  const subcategoriaError = submitAttempted && subcategories.length > 0 && !subcategoriaId;
+  const articuloError     = submitAttempted && articulos.length > 0 && !articuloId;
 
   function addFiles(incoming: File[]) {
     const slots = MAX_ATTACHMENTS - pendingFiles.length;
@@ -124,12 +138,14 @@ export function SolviRequestPage() {
 
     if (!currentUser) { setError('Cargando datos del usuario...'); return; }
 
-    const titleMissing     = !titulo.trim();
-    const categoriaMissing = !categoria;
+    const titleMissing        = !titulo.trim();
+    const categoriaMissing    = !categoriaId;
+    const subcategoriaMissing = subcategories.length > 0 && !subcategoriaId;
+    const articuloMissing     = articulos.length > 0 && !articuloId;
 
-    if (titleMissing || categoriaMissing) {
+    if (titleMissing || categoriaMissing || subcategoriaMissing || articuloMissing) {
       const firstKey = titleMissing ? 'titulo' : 'categoria';
-      const total    = (titleMissing ? 1 : 0) + (categoriaMissing ? 1 : 0);
+      const total    = [titleMissing, categoriaMissing, subcategoriaMissing, articuloMissing].filter(Boolean).length;
       setError(
         total === 1
           ? 'Falta 1 campo obligatorio. Revisá lo señalado en rojo.'
@@ -147,7 +163,16 @@ export function SolviRequestPage() {
 
     try {
 
-      const created = await solviController.saveTicket(titulo, descripcion, pendingFiles, categoria)
+      const created = await solviController.saveTicket(
+        titulo,
+        descripcion,
+        pendingFiles,
+        categoriaTitle,
+        subcategoriaTitle || undefined,
+        articuloTitle || undefined,
+        ansInfo?.horas,
+        ansInfo?.nombre
+      )
 
       if(!created){
         alert("Algo ha salido mal")
@@ -232,21 +257,106 @@ export function SolviRequestPage() {
           </div>
         </div>
 
-        {/* ── Categoría (solo front — pendiente de conexión) ── */}
+        {/* ── Categoría / Subcategoría / Artículo en cascada ── */}
         <div style={cardStyle(ACCENT)} data-vfield="categoria">
           <SectionLabel>Categoría</SectionLabel>
-          <FieldLabel>Categoría *</FieldLabel>
-          <select
-            style={{ ...inputStyle(focusedField === 'categoria', categoriaError), color: categoria ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
-            value={categoria}
-            onChange={(e) => { setCategoria(e.target.value); setError(null); }}
-            onFocus={() => setFocusedField('categoria')}
-            onBlur={() => setFocusedField(null)}
-          >
-            <option value="">Seleccioná una categoría…</option>
-            {categories.map((c) => <option key={c.Id} value={c.Title}>{c.Title}</option>)}
-          </select>
-          <FieldError show={categoriaError} text="Seleccioná una categoría." />
+
+          <div style={{ marginBottom: (subcategoriaId || subcategories.length > 0) ? 16 : 0 }}>
+            <FieldLabel>Categoría *</FieldLabel>
+            <select
+              style={{ ...inputStyle(focusedField === 'categoria', categoriaError), color: categoriaId ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+              value={categoriaId}
+              onChange={(e) => {
+                setCategoriaId(e.target.value);
+                setSubcategoriaId('');
+                setArticuloId('');
+                setError(null);
+              }}
+              onFocus={() => setFocusedField('categoria')}
+              onBlur={() => setFocusedField(null)}
+            >
+              <option value="">Seleccioná una categoría…</option>
+              {categories.map((c) => <option key={c.Id} value={c.Id}>{c.Title}</option>)}
+            </select>
+            <FieldError show={categoriaError} text="Seleccioná una categoría." />
+          </div>
+
+          {categoriaId && (
+            <div style={{ marginBottom: (articuloId || articulos.length > 0) ? 16 : 0 }}>
+              <FieldLabel>Subcategoría{subcategories.length > 0 ? ' *' : ''}</FieldLabel>
+              <select
+                style={{ ...inputStyle(focusedField === 'subcategoria', subcategoriaError), color: subcategoriaId ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+                value={subcategoriaId}
+                disabled={subcategoriesLoading || subcategories.length === 0}
+                onChange={(e) => {
+                  setSubcategoriaId(e.target.value);
+                  setArticuloId('');
+                  setError(null);
+                }}
+                onFocus={() => setFocusedField('subcategoria')}
+                onBlur={() => setFocusedField(null)}
+              >
+                <option value="">
+                  {subcategoriesLoading
+                    ? 'Cargando subcategorías…'
+                    : subcategories.length === 0
+                      ? 'Sin subcategorías para esta categoría'
+                      : 'Seleccioná una subcategoría…'}
+                </option>
+                {subcategories.map((s) => <option key={s.Id} value={s.Id}>{s.Title}</option>)}
+              </select>
+              <FieldError show={subcategoriaError} text="Seleccioná una subcategoría." />
+            </div>
+          )}
+
+          {subcategoriaId && (
+            <div>
+              <FieldLabel>Artículo{articulos.length > 0 ? ' *' : ''}</FieldLabel>
+              <select
+                style={{ ...inputStyle(focusedField === 'articulo', articuloError), color: articuloId ? 'var(--txt)' : 'var(--txt-muted)', cursor: 'pointer' }}
+                value={articuloId}
+                disabled={articulosLoading || articulos.length === 0}
+                onChange={(e) => { setArticuloId(e.target.value); setError(null); }}
+                onFocus={() => setFocusedField('articulo')}
+                onBlur={() => setFocusedField(null)}
+              >
+                <option value="">
+                  {articulosLoading
+                    ? 'Cargando artículos…'
+                    : articulos.length === 0
+                      ? 'Sin artículos para esta subcategoría'
+                      : 'Seleccioná un artículo…'}
+                </option>
+                {articulos.map((a) => <option key={a.Id} value={a.Id}>{a.Title}</option>)}
+              </select>
+              <FieldError show={articuloError} text="Seleccioná un artículo." />
+            </div>
+          )}
+
+          {articuloId && (ansLoading || ansInfo) && (
+            <div style={{
+              marginTop: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 9,
+              padding: '9px 13px',
+              borderRadius: 8,
+              background: `${ACCENT}0c`,
+              border: `1px solid ${ACCENT}25`,
+              fontSize: 12,
+              color: 'var(--txt)',
+            }}>
+              <Clock size={14} style={{ color: ACCENT, flexShrink: 0 }} />
+              {ansLoading ? (
+                <span style={{ color: 'var(--txt-muted)' }}>Calculando tiempo de atención…</span>
+              ) : (
+                <span>
+                  Tiempo de atención: <strong>{formatSlaHorasHabiles(ansInfo!.horas)}</strong>
+                  <span style={{ color: 'var(--txt-muted)' }}> — horas/días <strong>hábiles</strong>, no corridos.</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={cardStyle(ACCENT)}>

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import type { UserProfile } from '@/types/commons';
 import type { SolviTicket } from '../types/SolviTicket';
 import { UsuariosSPService, type UsuariosSP } from '../services/TecnicosSharepointSolvi.service';
-import { calcularFechaSolucion, isTurnoNocturnoAhora } from '../services/SolviBusinessDate.service';
+import { calcularFechaSolucion, isTurnoNocturnoAhora, DEFAULT_SLA_HORAS } from '../services/SolviBusinessDate.service';
 import { pickTecnicoConMenosCasos } from '../services/SolviTicketAssignment.service';
 import { fetchPersonaDisponibleAhora } from '../services/SolviShifts.service';
 import { uploadSolviAttachment as uploadSolviAttachmentToStorage } from '../services/SolviAttachments.service';
@@ -153,7 +153,16 @@ type UseSolviActionsResult = {
   loading: boolean;
   graphService: GraphRest;
   tecnicosService: UsuariosSPService;
-  saveTicket: (titulo: string, descripcion: string, archivos: File[], categoria: string) => Promise<boolean>;
+  saveTicket: (
+    titulo: string,
+    descripcion: string,
+    archivos: File[],
+    categoria: string,
+    subcategoria?: string,
+    articulo?: string,
+    ansHoras?: number | null,
+    ansNombre?: string | null,
+  ) => Promise<boolean>;
   uploadSolviAttachment(file: File, ticketId: number): Promise<{ ok: boolean; url: string }>;
 };
 
@@ -196,7 +205,16 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
     }
   }, []);
 
-  const saveTicket = React.useCallback(async (titulo: string, descripcion: string, archivos: File[], categoria: string): Promise<boolean> => {
+  const saveTicket = React.useCallback(async (
+    titulo: string,
+    descripcion: string,
+    archivos: File[],
+    categoria: string,
+    subcategoria?: string,
+    articulo?: string,
+    ansHoras?: number | null,
+    ansNombre?: string | null,
+  ): Promise<boolean> => {
     if (!user) {
       throw new Error('El usuario actual aún no está disponible.');
     }
@@ -204,7 +222,8 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
     setLoading(true);
     try {
       const turnoNocturno = await isTurnoNocturnoAhora()
-      const fechaMaxima = await calcularFechaSolucion();
+      const horasEfectivas = ansHoras != null && ansHoras > 0 ? ansHoras : DEFAULT_SLA_HORAS;
+      const fechaMaxima = await calcularFechaSolucion(horasEfectivas);
       const resolutor = await assignResolutor(tecnicosService, turnoNocturno);
 
       const payload: SolviTicket = {
@@ -215,6 +234,9 @@ export function useSolviActionsTickets(user?: UserProfile | null): UseSolviActio
         ticket_solvi_titulo: titulo,
         ticket_solvi_descripcion: descripcion,
         ticket_solvi_categoria: categoria,
+        ticket_solvi_subcategoria: subcategoria ?? null,
+        ticket_solvi_articulo: articulo ?? null,
+        ticket_solvi_ans: ansNombre ?? null,
         ticket_solvi_fuente: turnoNocturno ? "Disponibilidad" : "Aplicativo"
       };
 
