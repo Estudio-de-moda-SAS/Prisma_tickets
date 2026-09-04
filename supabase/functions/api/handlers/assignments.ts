@@ -1,10 +1,40 @@
+/**
+ * Handlers de asignación de resolutores a solicitudes.
+ *
+ * Registrados en {@link assignmentHandlers} y despachados desde el Edge
+ * Function único vía el envelope `{ action, payload }`. La asignación dispara,
+ * de forma best-effort, una notificación in-app y un correo al resolutor;
+ * ninguno de los dos debe tumbar la operación principal.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
 
+/**
+ * Mapa de handlers de asignación indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const assignmentHandlers: Record<string, ActionHandler> = {
+  /**
+   * Asigna un resolutor a una solicitud y notifica de forma best-effort.
+   *
+   * Primero elimina cualquier asignación previa del mismo par
+   * solicitud/usuario (idempotencia) y luego inserta la nueva. Si hay un
+   * `assignedBy` distinto del asignado, notifica al resolutor: comprueba que
+   * no exista ya una notificación de tipo `assignment` sin leer para ese
+   * ticket antes de crear una nueva (evita duplicados), envía la notificación
+   * in-app y, si hay template activo, un correo. Un fallo en el correo se
+   * traga con un `catch` para que nunca tumbe la asignación.
+   *
+   * @param payload - `{ requestId, userId, assignedBy? }`.
+   * @returns `{ ok: true }` una vez registrada la asignación.
+   */
   assignRequest: async (payload, { supabase }) => {
     const { requestId, userId, assignedBy } = payload as {
       requestId: string; userId: number; assignedBy?: number;
@@ -30,6 +60,7 @@ export const assignmentHandlers: Record<string, ActionHandler> = {
 
       if (!existing || existing.length === 0) {
         // Nombres para notificación in-app Y correo (formato PRISMA)
+        // Toma el primer nombre y primer apellido cuando hay 4+ partes.
         const shortName = (full: string) => {
           const parts = (full ?? '').trim().split(/\s+/);
           return parts.length >= 4 ? `${parts[0]} ${parts[2]}` : (full ?? '').trim();
@@ -82,6 +113,12 @@ export const assignmentHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Quita la asignación de un resolutor sobre una solicitud.
+   *
+   * @param payload - `{ requestId, userId }`.
+   * @returns `{ ok: true }` tras eliminar la asignación.
+   */
   unassignRequest: async (payload, { supabase }) => {
     const { requestId, userId } = payload as { requestId: string; userId: number };
     const { error } = await supabase.from('TBL_Requests_Assignments')

@@ -3,6 +3,23 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 
+/**
+ * Hook de solo lectura para la vista de tareas de un equipo.
+ *
+ * Expone el tipo de fila cruda {@link TaskRow} (con todas sus relaciones) y
+ * {@link useTasksData}, que trae las tareas del equipo desde el board por defecto.
+ *
+ * @module useTasksData
+ */
+
+/**
+ * Fila de tarea con todas sus relaciones, tal como viene del backend.
+ *
+ * @remarks
+ * Incluye columna, asignados, etiquetas, sprints, equipo y departamento
+ * solicitante, y los datos de plantilla (`Form_Data`, snapshot de esquema y
+ * esquema actual). Las relaciones anidadas pueden venir `null` o vacías.
+ */
 export interface TaskRow {
   Request_ID: string;
   Request_Title: string | null;
@@ -50,6 +67,17 @@ export interface TaskRow {
   template_schema: { Request_Template_Form_Schema: unknown[] } | null;
 }
 
+/**
+ * Lee las tareas de un equipo desde el board por defecto.
+ *
+ * @remarks
+ * Usa `config.DEFAULT_BOARD_ID` y el `teamCode` dado. Se deshabilita si no hay
+ * `teamCode`. `staleTime: 0` y `refetchOnMount: true` para reflejar cambios al
+ * abrir la vista.
+ *
+ * @param teamCode - Código del equipo cuyas tareas se listan.
+ * @returns El resultado de `useQuery` con las filas de tareas ({@link TaskRow}).
+ */
 export function useTasksData(teamCode: string) {
   return useQuery<TaskRow[]>({
     queryKey: ['tasks', teamCode],

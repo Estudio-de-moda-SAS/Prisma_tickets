@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs": "typedoc --options typedoc.frontend.json && typedoc --options typedoc.backend.json && typedoc --options typedoc.json",
+    "docs:frontend": "typedoc --options typedoc.frontend.json",
+    "docs:backend": "typedoc --options typedoc.backend.json"  
   },
   "dependencies": {
     "@azure/msal-browser": "^4.27.0",
@@ -49,6 +52,7 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.9",
     "tailwindcss": "^4.2.2",
+    "typedoc": "^0.28.20",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^8.0.16",
