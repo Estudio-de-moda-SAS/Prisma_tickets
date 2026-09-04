@@ -3,19 +3,32 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { config } from '@/config';
 
+/**
+ * Hooks de TanStack Query para los sprints.
+ *
+ * Expone la query de listado ({@link useSprints}) y las mutaciones de crear,
+ * actualizar y eliminar (todas optimistas, incluyendo las capacidades por
+ * equipo), más el helper {@link sprintYear} para derivar el año de un sprint.
+ *
+ * @module useSprints
+ */
+
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
+/** Capacidad externa de un equipo dentro de un sprint. */
 export type SprintTeamCapacity = {
   Capacity_ID:       number | null;
   Board_Team_ID:     number;
   External_Capacity: number;
 };
 
+/** Entrada de capacidad por equipo al crear/actualizar un sprint. */
 export type SprintCapacityInput = {
   teamId:   number;
   capacity: number;
 };
 
+/** Un sprint con sus capacidades por equipo (opcionales). */
 export type Sprint = {
   Sprint_ID:         number;
   Sprint_Text:       string;
@@ -26,6 +39,7 @@ export type Sprint = {
 
 // ── Mock ─────────────────────────────────────────────────────────────────────
 
+/** Sprints simulados para el modo mock. */
 const MOCK_SPRINTS: Sprint[] = [
   {
     Sprint_ID:         1,
@@ -45,10 +59,19 @@ const MOCK_SPRINTS: Sprint[] = [
 
 // ── Query key ────────────────────────────────────────────────────────────────
 
+/** Query key de los sprints. */
 const QK = ['sprints'] as const;
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
+/**
+ * Lista los sprints.
+ *
+ * @remarks
+ * En modo mock devuelve {@link MOCK_SPRINTS}. `staleTime` de 60s.
+ *
+ * @returns El resultado de `useQuery` con los sprints.
+ */
 export function useSprints() {
   return useQuery<Sprint[]>({
     queryKey: QK,
@@ -60,6 +83,17 @@ export function useSprints() {
   });
 }
 
+/**
+ * Crea un sprint (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta un sprint temporal con `Sprint_ID` negativo, mapeando las
+ * capacidades de entrada a filas con `Capacity_ID: null`; `onError` restaura el
+ * snapshot; `onSettled` invalida la lista.
+ *
+ * @returns El objeto de mutación de React Query. Variables:
+ *   `{ text, startDate, endDate, teamCapacities? }`.
+ */
 export function useCreateSprint() {
   const qc = useQueryClient();
   return useMutation({
@@ -100,6 +134,18 @@ export function useCreateSprint() {
   });
 }
 
+/**
+ * Actualiza un sprint (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica los nuevos valores en caché; al recomponer las capacidades,
+ * conserva el `Capacity_ID` existente de cada equipo (si lo había) para no perder
+ * la referencia; si no se envían `teamCapacities`, mantiene las actuales.
+ * `onError` restaura el snapshot; `onSettled` invalida la lista.
+ *
+ * @returns El objeto de mutación de React Query. Variables:
+ *   `{ id, text, startDate, endDate, teamCapacities? }`.
+ */
 export function useUpdateSprint() {
   const qc = useQueryClient();
   return useMutation({
@@ -148,6 +194,15 @@ export function useUpdateSprint() {
   });
 }
 
+/**
+ * Elimina un sprint (optimista).
+ *
+ * @remarks
+ * `onMutate` quita el sprint de la caché; `onError` restaura el snapshot;
+ * `onSettled` invalida la lista.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `id` del sprint.
+ */
 export function useDeleteSprint() {
   const qc = useQueryClient();
   return useMutation({
@@ -171,7 +226,17 @@ export function useDeleteSprint() {
     },
   });
 }
-/** Año de un sprint: de la fecha si existe, o del patrón (YYYY) del nombre. */
+
+/**
+ * Deriva el año de un sprint.
+ *
+ * @remarks
+ * Usa el año de `Sprint_Start_Date` si está presente; si no, busca un patrón
+ * `(YYYY)` en el nombre (`Sprint_Text`).
+ *
+ * @param s - Sprint (fecha de inicio y texto).
+ * @returns El año, o `null` si no se puede determinar.
+ */
 export function sprintYear(s: { Sprint_Start_Date: string | null; Sprint_Text: string }): number | null {
   if (s.Sprint_Start_Date) {
     const y = Number(s.Sprint_Start_Date.slice(0, 4));

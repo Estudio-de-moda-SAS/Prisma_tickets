@@ -1,11 +1,47 @@
+/**
+ * Utilidades para recorrer y reescribir claves en esquemas de plantilla y en `Form_Data`.
+ *
+ * Los esquemas de plantilla pueden anidar campos dentro de ramas condicionales
+ * (`conditional`: `trueBranch`/`falseBranch`) y multicondicionales
+ * (`multiconditional`: `options[].fields`). Este módulo recorre esa estructura de
+ * forma recursiva para recolectar claves ({@link _collectSchemaKeys}) o
+ * renombrarlas ({@link _renameKeysInSchema}), y aplica los mismos renombres al
+ * `Form_Data` de los requests ({@link _renameKeysInFormData}).
+ *
+ * @module templateKeys
+ */
+
+/**
+ * Indica si un nodo de schema es un campo condicional.
+ *
+ * @param f - Nodo del schema.
+ * @returns `true` si es un objeto con `type === 'conditional'`.
+ */
 export function _isConditional(f: unknown): boolean {
   return !!f && typeof f === 'object' && (f as { type?: string }).type === 'conditional';
 }
 
+/**
+ * Indica si un nodo de schema es un campo multicondicional.
+ *
+ * @param f - Nodo del schema.
+ * @returns `true` si es un objeto con `type === 'multiconditional'`.
+ */
 export function _isMultiConditional(f: unknown): boolean {
   return !!f && typeof f === 'object' && (f as { type?: string }).type === 'multiconditional';
 }
 
+/**
+ * Recolecta todas las claves (`key`) de un schema, incluidas las anidadas.
+ *
+ * @remarks
+ * Recorre en profundidad: por cada nodo con `key` la agrega, y desciende por las
+ * ramas de los condicionales (`trueBranch`/`falseBranch`) y por los campos de
+ * cada opción de los multicondicionales (`options[].fields`).
+ *
+ * @param schema - Arreglo de nodos del schema.
+ * @returns Lista de claves encontradas (en orden de recorrido; puede incluir duplicados).
+ */
 export function _collectSchemaKeys(schema: unknown[]): string[] {
   const out: string[] = [];
   const walk = (arr: unknown[]) => {
@@ -26,6 +62,18 @@ export function _collectSchemaKeys(schema: unknown[]): string[] {
   return out;
 }
 
+/**
+ * Reescribe las claves de un schema según un mapa de renombres, respetando el anidamiento.
+ *
+ * @remarks
+ * Devuelve una copia nueva (no muta la entrada). Renombra el `key` de cada nodo
+ * si está en `renames` y desciende recursivamente por ramas condicionales y por
+ * los `fields` de cada opción multicondicional.
+ *
+ * @param schema - Arreglo de nodos del schema original.
+ * @param renames - Mapa `claveVieja → claveNueva`.
+ * @returns Un nuevo schema con las claves renombradas.
+ */
 export function _renameKeysInSchema(schema: unknown[], renames: Record<string, string>): unknown[] {
   return (schema ?? []).map((f) => {
     if (!f || typeof f !== 'object') return f;
@@ -48,6 +96,21 @@ export function _renameKeysInSchema(schema: unknown[], renames: Record<string, s
   });
 }
 
+/**
+ * Reescribe las claves de un objeto `Form_Data` según un mapa de renombres.
+ *
+ * @remarks
+ * Copia el objeto renombrando cada clave presente en `renames` (las demás se
+ * mantienen). La clave especial `__labels` recibe trato aparte: sus claves
+ * internas también se renombran, preservando el formato original (string JSON u
+ * objeto); si su parseo falla, se deja el valor tal cual. Los valores que no son
+ * objetos planos (null, arreglos, primitivos) se devuelven sin cambios.
+ *
+ * @param formData - `Form_Data` a transformar.
+ * @param renames - Mapa `claveVieja → claveNueva`.
+ * @returns El `Form_Data` con las claves renombradas, o el valor original si no
+ *   es un objeto plano.
+ */
 export function _renameKeysInFormData(formData: unknown, renames: Record<string, string>): unknown {
   if (!formData || typeof formData !== 'object' || Array.isArray(formData)) return formData;
   const src = formData as Record<string, unknown>;

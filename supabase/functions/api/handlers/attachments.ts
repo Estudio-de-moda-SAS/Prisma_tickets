@@ -1,8 +1,36 @@
+/**
+ * Handlers de adjuntos (attachments) de solicitudes.
+ *
+ * Registrados en {@link attachmentHandlers} y despachados desde el Edge
+ * Function único vía el envelope `{ action, payload }`. Los archivos viven en
+ * el bucket `attachments` de Supabase Storage; la tabla `TBL_Attachments`
+ * guarda solo la ruta interna, y las URLs se entregan siempre como signed URLs
+ * temporales generadas al vuelo.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { SIGNED_URL_EXPIRES_IN, extractStoragePath } from '../lib/storage.ts';
 
+/**
+ * Mapa de handlers de adjuntos indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const attachmentHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista los adjuntos de una solicitud con signed URLs temporales.
+   *
+   * Trae las filas de `TBL_Attachments` (con el uploader embebido) y, por cada
+   * una, genera una signed URL a partir de la ruta de storage. Si la firma de
+   * algún adjunto falla, su `Attachment_Url` queda en `null` en vez de tumbar
+   * la operación completa.
+   *
+   * @param payload - `{ requestId }`.
+   * @returns Adjuntos ordenados por fecha de creación ascendente, con URL firmada.
+   */
   fetchAttachments: async (payload, { supabase }) => {
     const { requestId } = payload as { requestId: string };
     const { data, error } = await supabase
@@ -33,6 +61,17 @@ export const attachmentHandlers: Record<string, ActionHandler> = {
     return results;
   },
 
+  /**
+   * Sube un archivo a storage y registra su fila en `TBL_Attachments`.
+   *
+   * Decodifica el contenido base64 a bytes, lo sube al bucket `attachments`
+   * bajo `requests/{requestId}/{timestamp}_{fileName}` (con `upsert: false`
+   * para no pisar), inserta la fila y devuelve el adjunto ya con una signed URL
+   * lista para usar.
+   *
+   * @param payload - `{ requestId, userId, fileName, mimeType, sizeBytes, base64 }`.
+   * @returns El adjunto recién creado con su URL firmada y el uploader embebido.
+   */
   uploadAttachment: async (payload, { supabase }) => {
     const p = payload as {
       requestId: string; userId: number; fileName: string;
@@ -74,6 +113,15 @@ export const attachmentHandlers: Record<string, ActionHandler> = {
     };
   },
 
+  /**
+   * Elimina un adjunto tanto de storage como de la base de datos.
+   *
+   * Recupera primero la ruta del archivo para borrarlo del bucket y luego
+   * elimina la fila de `TBL_Attachments`.
+   *
+   * @param payload - `{ attachmentId }`.
+   * @returns `{ ok: true }` tras eliminar archivo y registro.
+   */
   deleteAttachment: async (payload, { supabase }) => {
     const { attachmentId } = payload as { attachmentId: number };
     const { data: existing, error: fetchErr } = await supabase

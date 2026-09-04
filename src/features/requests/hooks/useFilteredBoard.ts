@@ -5,9 +5,39 @@ import type { FilterCondition, FilterField, FilterOperator } from '@/store/filte
 import type { TemplateExtraField, ConditionalField } from '../templates/types';
 import { isConditionalField } from '../templates/types';
 
+/**
+ * Motor de filtrado de requests para el board y las listas planas.
+ *
+ * A partir de las condiciones guardadas en `filterStore`, evalúa cada request
+ * contra los campos, operadores y valores configurados. Expone dos hooks:
+ * {@link useFilteredBoard} (para `BoardData` de kanban, filtra columna por
+ * columna) y {@link useFilteredRequests} (para listas planas como HomePage o
+ * MyRequestsPage). Ambos memoizan el resultado.
+ *
+ * @remarks
+ * Soporta campos escalares, relacionales (equipo, etiqueta, assignee, sprint),
+ * banderas derivadas (tiene_hijos, es_hijo, confidencial), campos de plantilla
+ * (`template_field`, incluidos los de ramas condicionales) y una condición
+ * especial `desactualizado` que detecta claves de `formData` huérfanas respecto
+ * al schema de la plantilla.
+ *
+ * @module useFilteredRequests
+ */
+
 /* ============================================================
    Aplana recursivamente todas las keys de un schema de template.
    ============================================================ */
+
+/**
+ * Recolecta recursivamente todas las claves (`key`) de un schema de plantilla.
+ *
+ * @remarks
+ * Desciende por las ramas de los campos condicionales (`trueBranch`/`falseBranch`).
+ * Acumula en el `Set` recibido (mutándolo).
+ *
+ * @param fields - Campos del schema.
+ * @param result - Conjunto donde se acumulan las claves encontradas.
+ */
 function collectSchemaKeys(fields: unknown[], result: Set<string>): void {
   for (const f of fields as TemplateExtraField[]) {
     if (!f || typeof f !== 'object') continue;
@@ -23,6 +53,23 @@ function collectSchemaKeys(fields: unknown[], result: Set<string>): void {
 /* ============================================================
    Extrae valores del campo como string[] normalizado
    ============================================================ */
+
+/**
+ * Extrae, del request, los valores del campo de una condición como `string[]`
+ * normalizado (minúsculas y sin espacios).
+ *
+ * @remarks
+ * Cada `field` se mapea a la propiedad correspondiente del request. Casos
+ * especiales: los booleanos (`confidencial`, `tiene_hijos`, `es_hijo`) devuelven
+ * `'true'`/`'false'`; `template_field` lee `formData[key]` y trata el valor
+ * ausente como `'false'` cuando el filtro es booleano o como vacío en otro caso;
+ * `desactualizado` devuelve `'true'` si hay claves de `formData` que no existen en
+ * el schema de la plantilla (huérfanas).
+ *
+ * @param request - Request del que se extraen los valores.
+ * @param cond - Condición de filtro (define el campo y sus parámetros).
+ * @returns Los valores normalizados del campo.
+ */
 function extractValues(request: Request, cond: FilterCondition): string[] {
   const norm = (v: unknown) => String(v ?? '').toLowerCase().trim();
   const field = cond.field as FilterField;
@@ -95,15 +142,47 @@ function extractValues(request: Request, cond: FilterCondition): string[] {
   }
 }
 
+/**
+ * Indica si una lista de valores extraídos se considera vacía.
+ *
+ * @param values - Valores normalizados.
+ * @returns `true` si no hay valores o todos son `''`, `'null'` o `'undefined'`.
+ */
 function isEmpty(values: string[]): boolean {
   return values.length === 0 || values.every((v) => v === '' || v === 'null' || v === 'undefined');
 }
+
+/**
+ * Indica si un operador requiere un valor de comparación.
+ *
+ * @param operator - Operador de filtro.
+ * @returns `false` para `esta_vacio`/`no_esta_vacio`; `true` para el resto.
+ */
 function needsValue(operator: FilterOperator): boolean {
   return operator !== 'esta_vacio' && operator !== 'no_esta_vacio';
 }
+
 /* ============================================================
    Evalúa una condición contra un request
    ============================================================ */
+
+/**
+ * Evalúa una condición de filtro contra un request.
+ *
+ * @remarks
+ * Para `template_field` filtra primero por `templateId`; sin campo seleccionado
+ * solo filtra por plantilla, y con campo pero sin valor exige que el campo tenga
+ * algún valor. Para el resto, extrae los valores ({@link extractValues}) y aplica
+ * el operador: igualdad/negación (con soporte multi-valor separado por `|` en
+ * `sprint` y `assignee`), inclusión de texto, comparaciones numéricas
+ * (`mayor_que`, `menor_que`, `entre`) y vacío/no-vacío. Un valor de comparación
+ * no numérico en operadores numéricos hace que la condición no descarte
+ * (devuelve `true`).
+ *
+ * @param request - Request a evaluar.
+ * @param cond - Condición de filtro.
+ * @returns `true` si el request cumple la condición.
+ */
 function evaluate(request: Request, cond: FilterCondition): boolean {
   if (cond.field === 'template_field') {
     // Filtrar por templateId siempre
@@ -177,6 +256,17 @@ case 'es': {
 /* ============================================================
    Determina si una condición está activa (tiene valor útil)
    ============================================================ */
+
+/**
+ * Indica si una condición está "activa" (aporta un filtro efectivo).
+ *
+ * @remarks
+ * `esta_vacio`/`no_esta_vacio` siempre están activas. `template_field` requiere
+ * `templateId`. `entre` exige ambos valores. El resto exige un `value` no vacío.
+ *
+ * @param c - Condición de filtro.
+ * @returns `true` si la condición debe aplicarse.
+ */
 function isActive(c: FilterCondition): boolean {
   if (c.operator === 'esta_vacio' || c.operator === 'no_esta_vacio') return true;
   if (c.field === 'template_field') {
@@ -186,9 +276,25 @@ function isActive(c: FilterCondition): boolean {
   if (c.operator === 'entre') return c.value.trim() !== '' && (c.value2 ?? '').trim() !== '';
   return c.value.trim() !== '';
 }
+
 /* ============================================================
    Hook para BoardData (Kanban)
    ============================================================ */
+
+/**
+ * Filtra un `BoardData` de kanban según las condiciones del board.
+ *
+ * @remarks
+ * Aplica solo las condiciones activas ({@link isActive}) que no estén en
+ * `excludeFields`, combinándolas con la conjunción del board (`AND`/`OR`). Filtra
+ * cada columna por separado y memoiza el resultado. Si no hay condiciones activas
+ * devuelve el board sin cambios.
+ *
+ * @param boardId - ID del board (para leer sus condiciones del store).
+ * @param board - Datos del board a filtrar, o `undefined`.
+ * @param excludeFields - Campos a ignorar en el filtrado (opcional).
+ * @returns El `BoardData` filtrado, o `undefined` si no hay board.
+ */
 export function useFilteredBoard(
   boardId: string,
   board: BoardData | undefined,
@@ -227,6 +333,19 @@ export function useFilteredBoard(
 /* ============================================================
    Hook para listas planas (HomePage, MyRequestsPage, etc.)
    ============================================================ */
+
+/**
+ * Filtra una lista plana de requests según las condiciones del board.
+ *
+ * @remarks
+ * Aplica las condiciones activas con la conjunción del board (`AND`/`OR`) y
+ * memoiza. Si no hay condiciones activas devuelve la lista sin cambios. Pensado
+ * para vistas no-kanban (HomePage, MyRequestsPage, etc.).
+ *
+ * @param boardId - ID del board (para leer sus condiciones del store).
+ * @param requests - Lista de requests a filtrar, o `undefined`.
+ * @returns La lista filtrada, o `undefined` si no hay lista.
+ */
 export function useFilteredRequests(
   boardId: string,
   requests: Request[] | undefined,

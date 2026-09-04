@@ -1,0 +1,8 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "merge",
+  "entryPoints": ["docs/models/frontend.json", "docs/models/backend.json"],
+  "out": "docs/site",
+  "name": "PRISMA Tickets",
+  "readme": "README.md"
+}

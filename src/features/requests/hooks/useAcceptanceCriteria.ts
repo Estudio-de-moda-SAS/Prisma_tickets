@@ -5,16 +5,41 @@ import { apiClient } from '@/lib/apiClient';
 import type { AcceptanceCriteria } from '@/types/commons';
 import type { Request } from '../types';
 
+/**
+ * Hooks de TanStack Query para los criterios de aceptación de un request.
+ *
+ * Expone la query de lectura ({@link useAcceptanceCriteria}) y las mutaciones de
+ * crear, cambiar estado, eliminar y editar título, todas con actualización
+ * optimista. Además mantiene sincronizado el `criteriaSummary` (badge del board y
+ * detalle del ticket) al vuelo.
+ *
+ * @module useAcceptanceCriteria
+ */
+
+/** Fábrica de query keys de criterios, agrupadas por request. */
 export const criteriaKeys = {
   byRequest: (requestId: string) => ['acceptance-criteria', requestId] as const,
 };
 
+/** Resumen de conteo de criterios, o `null` cuando no hay ninguno. */
 type CriteriaSummary = { total: number; accepted: number; rejected: number } | null;
 
+/** Contexto de rollback: snapshot de la lista previa a la mutación. */
 type SnapshotContext = { snapshot: AcceptanceCriteria[] | undefined };
+/** Variables de la mutación de borrado. */
 type DeleteVars      = { criteriaId: number };
+/** Variables de la mutación de edición de título. */
 type UpdateTitleVars = { criteriaId: number; title: string };
 
+/**
+ * Recalcula el resumen de conteo a partir de la lista de criterios.
+ *
+ * @remarks
+ * Sigue el mismo criterio que `mapRowToRequest`: 0 criterios → `null`.
+ *
+ * @param list - Lista de criterios.
+ * @returns El resumen `{ total, accepted, rejected }`, o `null` si la lista está vacía.
+ */
 function recalcSummary(list: AcceptanceCriteria[]): CriteriaSummary {
   if (list.length === 0) return null; // mismo criterio que mapRowToRequest: 0 criterios → null
   return {
@@ -26,9 +51,18 @@ function recalcSummary(list: AcceptanceCriteria[]): CriteriaSummary {
 
 /**
  * Propaga el conteo de criterios al badge del board y al detalle del ticket.
- * Recorre todas las cachés bajo ['requests'] tolerando las dos formas que
- * existen: BoardData (objeto columna → Request[]) y Request[] plano.
- * Las cachés que no son ninguna de las dos (ej. historial-count) se dejan intactas.
+ *
+ * @remarks
+ * Recorre todas las cachés bajo `['requests']` tolerando las dos formas que
+ * existen: `BoardData` (objeto columna → `Request[]`) y `Request[]` plano. Las
+ * cachés que no son ninguna de las dos (p. ej. historial-count) se dejan
+ * intactas. También parchea la caché de detalle `['request', requestId]`. Solo
+ * reemplaza referencias cuando realmente encuentra el request, para no invalidar
+ * memos innecesariamente.
+ *
+ * @param qc - Cliente de React Query.
+ * @param requestId - ID del request a actualizar.
+ * @param list - Lista actual de criterios (de la que se recalcula el resumen).
  */
 function syncCriteriaSummary(qc: QueryClient, requestId: string, list: AcceptanceCriteria[]): void {
   const criteriaSummary = recalcSummary(list);
@@ -61,7 +95,19 @@ function syncCriteriaSummary(qc: QueryClient, requestId: string, list: Acceptanc
   );
 }
 
-/** Escribe la lista de criterios y mantiene el badge del board en sync. */
+/**
+ * Escribe la lista de criterios en caché y mantiene el badge del board en sync.
+ *
+ * @remarks
+ * Aplica `updater` sobre la lista actual (o `[]`), guarda el resultado bajo la
+ * key del request y dispara {@link syncCriteriaSummary}. Es la única vía usada
+ * por las mutaciones para tocar la caché de criterios, de modo que el resumen
+ * siempre quede consistente.
+ *
+ * @param qc - Cliente de React Query.
+ * @param requestId - ID del request.
+ * @param updater - Función que transforma la lista previa en la nueva.
+ */
 function writeCriteria(
   qc: QueryClient,
   requestId: string,
@@ -73,6 +119,15 @@ function writeCriteria(
   syncCriteriaSummary(qc, requestId, next);
 }
 
+/**
+ * Lee los criterios de aceptación de un request.
+ *
+ * @remarks
+ * La query se deshabilita si `requestId` es falsy. `staleTime` de 30s.
+ *
+ * @param requestId - ID del request, o `null`/`undefined` para no consultar.
+ * @returns El resultado de `useQuery` con la lista de criterios.
+ */
 export function useAcceptanceCriteria(requestId: string | null | undefined) {
   return useQuery<AcceptanceCriteria[]>({
     queryKey: criteriaKeys.byRequest(requestId ?? ''),
@@ -84,8 +139,22 @@ export function useAcceptanceCriteria(requestId: string | null | undefined) {
 
 /* ── Crear ─────────────────────────────────────────────────── */
 
+/** Contexto de la creación optimista: snapshot previo + id temporal insertado. */
 type CreateContext = { snapshot: AcceptanceCriteria[] | undefined; tempId: number };
 
+/**
+ * Mutación para crear un criterio de aceptación (optimista).
+ *
+ * @remarks
+ * En `onMutate` inserta un criterio temporal con `tempId` negativo (para no
+ * chocar con un `Criteria_ID` real) y estado `pending`. En `onSuccess` reemplaza
+ * el temporal por el registro real devuelto por el servidor. En `onError`
+ * restaura el snapshot.
+ *
+ * @param requestId - ID del request al que pertenece el criterio.
+ * @param actorId - Usuario que realiza la acción (opcional).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useCreateCriteria(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 
@@ -132,6 +201,7 @@ export function useCreateCriteria(requestId: string, actorId?: number) {
 
 /* ── Cambiar estado ────────────────────────────────────────── */
 
+/** Payload para cambiar el estado de un criterio. */
 type UpdateStatusPayload = {
   criteriaId:    number;
   status:        'accepted' | 'rejected' | 'pending';
@@ -139,8 +209,21 @@ type UpdateStatusPayload = {
   reviewerNotes?: string;
 };
 
+/** Contexto de rollback para el cambio de estado. */
 type UpdateStatusContext = { snapshot: AcceptanceCriteria[] | undefined };
 
+/**
+ * Mutación para cambiar el estado (accepted/rejected/pending) de un criterio (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica el nuevo estado y notas en caché; `onSuccess` reemplaza con
+ * el registro del servidor; `onError` restaura el snapshot. El `requestId` se
+ * envía en el payload al backend: sin él no se dispara ni la notificación ni el
+ * registro de historial.
+ *
+ * @param requestId - ID del request al que pertenecen los criterios.
+ * @returns El objeto de mutación de React Query.
+ */
 export function useUpdateCriteriaStatus(requestId: string) {
   const qc = useQueryClient();
 
@@ -184,6 +267,18 @@ export function useUpdateCriteriaStatus(requestId: string) {
 
 /* ── Eliminar ──────────────────────────────────────────────── */
 
+/**
+ * Mutación para eliminar un criterio (optimista).
+ *
+ * @remarks
+ * `onMutate` quita el criterio de la caché; `onError` restaura el snapshot. No
+ * define `onSuccess` porque la eliminación optimista ya deja la caché en el
+ * estado final esperado.
+ *
+ * @param requestId - ID del request al que pertenece el criterio.
+ * @param actorId - Usuario que realiza la acción (opcional).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useDeleteCriteria(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 
@@ -211,6 +306,17 @@ export function useDeleteCriteria(requestId: string, actorId?: number) {
 
 /* ── Editar título ─────────────────────────────────────────── */
 
+/**
+ * Mutación para editar el título de un criterio (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica el nuevo título en caché; `onSuccess` reemplaza con el
+ * registro del servidor; `onError` restaura el snapshot.
+ *
+ * @param requestId - ID del request al que pertenece el criterio.
+ * @param actorId - Usuario que realiza la acción (opcional).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useUpdateCriteriaTitle(requestId: string, actorId?: number) {
   const qc = useQueryClient();
 

@@ -6,8 +6,20 @@ import { config } from '@/config';
 import type { Team } from '@/types/commons';
 import type { DepartmentWithTeams } from './useDepartments';
 
+/**
+ * Hooks de TanStack Query para los equipos.
+ *
+ * Expone la query de equipos por departamento ({@link useTeams}) y las mutaciones
+ * de crear, actualizar y eliminar. Las mutaciones actualizan de forma optimista
+ * la caché anidada `departments-with-teams` (compartida con `useDepartments`) y
+ * hacen rollback por snapshot.
+ *
+ * @module useTeams
+ */
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+/** Equipos simulados para el modo mock. */
 const MOCK_TEAMS: Team[] = [
   { Team_ID: 1, Team_Name: 'Desarrollo & UX',         Team_Code: 'desarrollo', Department_ID: 1 },
   { Team_ID: 2, Team_Name: 'CRM',                     Team_Code: 'crm',        Department_ID: 1 },
@@ -18,6 +30,16 @@ const MOCK_TEAMS: Team[] = [
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
+/**
+ * Lista los equipos de un departamento.
+ *
+ * @remarks
+ * En modo mock filtra {@link MOCK_TEAMS} por departamento. Se deshabilita si
+ * `departmentId` es `null`. `staleTime: Infinity`.
+ *
+ * @param departmentId - ID del departamento, o `null` para no consultar.
+ * @returns El resultado de `useQuery` con los equipos del departamento.
+ */
 export function useTeams(departmentId: number | null) {
   return useQuery<Team[]>({
     queryKey: ['teams', departmentId],
@@ -31,6 +53,17 @@ export function useTeams(departmentId: number | null) {
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
+/**
+ * Crea un equipo (optimista).
+ *
+ * @remarks
+ * `onMutate` inserta un equipo temporal con `Team_ID` negativo dentro del
+ * departamento correspondiente en la caché `departments-with-teams`; `onError`
+ * restaura el snapshot; `onSettled` invalida los equipos del departamento y la
+ * caché anidada.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `{ departmentId, name, code }`.
+ */
 export function useCreateTeam() {
   const qc = useQueryClient();
   return useMutation({
@@ -65,6 +98,16 @@ export function useCreateTeam() {
   });
 }
 
+/**
+ * Actualiza un equipo (optimista).
+ *
+ * @remarks
+ * `onMutate` aplica nombre y código en el equipo dentro de cualquier departamento
+ * de la caché anidada; `onError` restaura el snapshot; `onSettled` invalida los
+ * equipos y la caché anidada.
+ *
+ * @returns El objeto de mutación de React Query. Variables: `{ id, name, code }`.
+ */
 export function useUpdateTeam() {
   const qc = useQueryClient();
   return useMutation({
@@ -96,6 +139,16 @@ export function useUpdateTeam() {
   });
 }
 
+/**
+ * Elimina un equipo (optimista).
+ *
+ * @remarks
+ * `onMutate` quita el equipo de todos los departamentos en la caché anidada;
+ * `onError` restaura el snapshot; `onSettled` invalida equipos,
+ * `departments-with-teams` y `allUsers` (los usuarios pueden depender del equipo).
+ *
+ * @returns El objeto de mutación de React Query. Variables: `id` del equipo.
+ */
 export function useDeleteTeam() {
   const qc = useQueryClient();
   return useMutation({
