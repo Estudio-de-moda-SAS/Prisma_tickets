@@ -1,6 +1,29 @@
+/**
+ * Handlers CRUD de plantillas de correo (`TBL_Email_Templates`).
+ *
+ * Registrados en {@link emailTemplateHandlers} y despachados desde el Edge
+ * Function único vía el envelope `{ action, payload }`. Cada plantilla está
+ * asociada a un board y a un `event_key` único (p. ej. `ticket_recibido`,
+ * `assignRequest`), con cuerpos HTML/texto que soportan interpolación de
+ * variables `{{variable}}`.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de plantillas de correo indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const emailTemplateHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista las plantillas de correo de un board.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Las plantillas del board ordenadas por ID ascendente.
+   */
   fetchEmailTemplates: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data, error } = await supabase
@@ -22,6 +45,15 @@ export const emailTemplateHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Actualiza el contenido (asunto, HTML y texto) de una plantilla.
+   *
+   * Refresca `Email_Template_Updated_At`. Para editar nombre/variables sin
+   * tocar el cuerpo, ver {@link emailTemplateHandlers.updateEmailTemplateMetadata}.
+   *
+   * @param payload - `{ id, subject, html, text }`.
+   * @returns `{ ok: true }` tras actualizar.
+   */
   updateEmailTemplate: async (payload, { supabase }) => {
     const p = payload as {
       id:      number;
@@ -42,6 +74,14 @@ export const emailTemplateHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Activa o desactiva una plantilla sin eliminarla.
+   *
+   * Una plantilla inactiva hace que su evento asociado no dispare correo.
+   *
+   * @param payload - `{ id, isActive }`.
+   * @returns `{ ok: true }` tras actualizar el estado.
+   */
   toggleEmailTemplate: async (payload, { supabase }) => {
     const { id, isActive } = payload as { id: number; isActive: boolean };
     const { error } = await supabase
@@ -52,6 +92,17 @@ export const emailTemplateHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Crea una plantilla nueva (activa, con cuerpos vacíos) para un event key.
+   *
+   * Valida que el `eventKey` no esté ya en uso —es único a nivel global— y
+   * lanza error si existe. Los cuerpos HTML/texto se inicializan vacíos para
+   * completarse luego vía {@link emailTemplateHandlers.updateEmailTemplate}.
+   *
+   * @param payload - `{ boardId, name, eventKey, subject, variables }`.
+   * @returns La plantilla creada.
+   * @throws Si ya existe una plantilla con el mismo `eventKey`.
+   */
   createEmailTemplate: async (payload, { supabase }) => {
     const p = payload as {
       boardId:   number;
@@ -93,6 +144,12 @@ export const emailTemplateHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Elimina una plantilla de correo de forma permanente.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ ok: true }` tras eliminar la plantilla.
+   */
   deleteEmailTemplate: async (payload, { supabase }) => {
     const { id } = payload as { id: number };
     const { error } = await supabase
@@ -103,6 +160,15 @@ export const emailTemplateHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Actualiza los metadatos de una plantilla (nombre, asunto y variables).
+   *
+   * A diferencia de {@link emailTemplateHandlers.updateEmailTemplate}, no toca
+   * los cuerpos HTML/texto.
+   *
+   * @param payload - `{ id, name, subject, variables }`.
+   * @returns `{ ok: true }` tras actualizar.
+   */
   updateEmailTemplateMetadata: async (payload, { supabase }) => {
     const p = payload as {
       id:        number;

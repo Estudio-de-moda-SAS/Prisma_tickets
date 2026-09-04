@@ -11,12 +11,35 @@ import type {
   SubmitClientFeedbackPayload,
 } from '../types';
 
+/**
+ * Hooks de TanStack Query para el feedback del cliente sobre un request.
+ *
+ * Expone la query del historial de feedback ({@link useClientFeedback}) y la
+ * mutación para enviarlo ({@link useSubmitClientFeedback}), que además mueve la
+ * card entre columnas del board de forma optimista según la decisión del cliente.
+ *
+ * @module useClientFeedback
+ */
+
 /* ── Query key ── */
+
+/** Fábrica de query keys del feedback del cliente, por request. */
 export const clientFeedbackKeys = {
   byRequest: (requestId: string) => ['clientFeedback', requestId] as const,
 };
 
 /* ── Fetch del historial completo de feedback ── */
+
+/**
+ * Lee el historial completo de feedback del cliente para un request.
+ *
+ * @remarks
+ * Se deshabilita en modo mock (`config.USE_MOCK`). `staleTime` de 30s y sin
+ * refetch al enfocar la ventana.
+ *
+ * @param requestId - ID del request cuyo feedback se consulta.
+ * @returns El resultado de `useQuery` con la lista de feedback.
+ */
 export function useClientFeedback(requestId: string) {
   const { Requests } = useGraphServices();
   return useQuery<ClientFeedback[]>({
@@ -29,8 +52,26 @@ export function useClientFeedback(requestId: string) {
 }
 
 /* ── Mutation: enviar feedback del cliente ── */
+
+/** Contexto de rollback: snapshot del board previo a la mutación. */
 type SubmitContext = { snapshot: BoardData | undefined };
 
+/**
+ * Mutación para enviar el feedback del cliente y mover la card en el board (optimista).
+ *
+ * @remarks
+ * En modo mock devuelve un `ClientFeedback` simulado tras un breve retardo. En
+ * `onMutate` mueve la card, dentro de la caché del board del equipo, a la columna
+ * destino según la decisión: `ready_to_deploy` si `approved`, o `en_revision_qas`
+ * si se pidieron ajustes. Para ello reconstruye el `BoardData` (copiando todas las
+ * columnas), quita la card de cualquier columna donde estuviera y la reinserta en
+ * la destino con la columna y `columnId` actualizados. `onError` restaura el
+ * snapshot; `onSettled` (fuera de mock) invalida el board, el feedback del request
+ * y su detalle.
+ *
+ * @param equipo - Equipo cuyo board se actualiza (define la query key).
+ * @returns El objeto de mutación de React Query.
+ */
 export function useSubmitClientFeedback(equipo: Equipo) {
   const queryClient  = useQueryClient();
   const { Requests } = useGraphServices();

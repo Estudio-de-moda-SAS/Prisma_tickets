@@ -108,15 +108,24 @@ async function refreshProviderTokenSilently(): Promise<string | null> {
 }
 
 /** Inicia el flujo de login con Microsoft a través de Supabase Auth.
- *  Con `silent: true` agrega prompt=none: usa la sesión SSO de Azure ya activa
- *  en el navegador para volver con un provider_token nuevo sin pedir credenciales. */
-export async function signInWithSupabaseAzure(opts?: { silent?: boolean }): Promise<void> {
+ *  Sin `silent`, fuerza prompt=select_account: si el usuario tiene más de una
+ *  cuenta de Microsoft activa en el navegador, elige explícitamente cuál usar
+ *  en vez de que Azure adivine (evita loguearse "solo" con la cuenta
+ *  equivocada por SSO ambiguo).
+ *  Con `silent: true` agrega prompt=none + login_hint: usa la sesión SSO de
+ *  Azure ya activa para renovar puntualmente esa cuenta sin pedir
+ *  credenciales ni arriesgarse a renovar la sesión de otra cuenta. */
+export async function signInWithSupabaseAzure(
+  opts?: { silent?: boolean; loginHint?: string },
+): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'azure',
     options: {
-      scopes:     SUPABASE_AZURE_SCOPES,
-      redirectTo: opts?.silent ? window.location.href : window.location.origin,
-      ...(opts?.silent ? { queryParams: { prompt: 'none' } } : {}),
+      scopes:      SUPABASE_AZURE_SCOPES,
+      redirectTo:  opts?.silent ? window.location.href : window.location.origin,
+      queryParams: opts?.silent
+        ? { prompt: 'none', ...(opts.loginHint ? { login_hint: opts.loginHint } : {}) }
+        : { prompt: 'select_account' },
     },
   });
   if (error) throw error;
@@ -172,7 +181,8 @@ function clearSilentReauthAttempt(): void {
 export async function trySilentGraphReauth(): Promise<boolean> {
   if (hasRecentSilentReauthAttempt()) return false;
   try { sessionStorage.setItem(SILENT_REAUTH_FLAG, String(Date.now())); } catch { /* noop */ }
-  await signInWithSupabaseAzure({ silent: true });
+  const session = await getSupabaseSession();
+  await signInWithSupabaseAzure({ silent: true, loginHint: session?.user?.email ?? undefined });
   return true;
 }
 

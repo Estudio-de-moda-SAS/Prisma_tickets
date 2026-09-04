@@ -1,10 +1,35 @@
+/**
+ * Handlers CRUD de plantillas de solicitudes y renombrado de campos.
+ *
+ * Registrados en {@link templateHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Cada plantilla
+ * (`TBL_Requests_Templates`) define un `Form_Schema` JSONB con los campos del
+ * ticket. Renombrar una key de campo es delicado: hay que propagar el cambio al
+ * `Form_Data` y al snapshot de esquema de todas las solicitudes existentes que
+ * usan la plantilla, cosa que se hace de forma síncrona (para pocos tickets) o
+ * como job en background (para muchos), con registro de auditoría.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { _collectSchemaKeys, _renameKeysInFormData, _renameKeysInSchema } from '../shared/templateKeys.ts';
 // @ts-ignore
 import { _kickoffJobChunk, _finalizeRenameJob } from '../jobs/renameJob.ts';
 
+/**
+ * Mapa de handlers de plantillas indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const templateHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista las plantillas de solicitud de un board.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns Las plantillas del board ordenadas por ID ascendente.
+   */
   fetchTemplatesByBoardId: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data, error } = await supabase
@@ -20,6 +45,12 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Crea una plantilla de solicitud nueva.
+   *
+   * @param payload - Datos de la plantilla (`name`, `formSchema`, `teamIds`, etc.).
+   * @returns La plantilla creada.
+   */
   createTemplate: async (payload, { supabase }) => {
     const p = payload as {
       boardId: number; name: string; description: string; icon: string; color: string;
@@ -49,6 +80,16 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Actualiza una plantilla sin tocar las solicitudes existentes.
+   *
+   * Para cambios que impliquen renombrar keys de campos y propagarlos, usar
+   * {@link templateHandlers.updateTemplateWithRenames} o
+   * {@link templateHandlers.createTemplateRenameJob}.
+   *
+   * @param payload - `{ id, ...datos de la plantilla }`.
+   * @returns `{ ok: true }` tras actualizar.
+   */
   updateTemplate: async (payload, { supabase }) => {
     const { id, ...p } = payload as {
       id: number; name: string; description: string; icon: string; color: string;
@@ -68,6 +109,12 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Elimina una plantilla de solicitud.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ ok: true }` tras eliminar la plantilla.
+   */
   deleteTemplate: async (payload, { supabase }) => {
     const { id } = payload as { id: number };
     const { error } = await supabase.from('TBL_Requests_Templates').delete().eq('Request_Template_ID', id);
@@ -75,6 +122,15 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Cuenta cuántas solicitudes se verían afectadas por un renombrado de campos.
+   *
+   * Sirve para decidir en el front si conviene la ruta síncrona o el job en
+   * background antes de renombrar.
+   *
+   * @param payload - `{ templateId }`.
+   * @returns `{ requestsCount }` — cantidad de solicitudes que usan la plantilla.
+   */
   getTemplateRenameImpact: async (payload, { supabase }) => {
     const { templateId } = payload as { templateId: number };
     const { count, error } = await supabase
@@ -85,6 +141,21 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return { requestsCount: count ?? 0 };
   },
 
+  /**
+   * Actualiza una plantilla y propaga renombrados de campos de forma síncrona.
+   *
+   * Valida los renombrados (oldKey/newKey presentes, newKey con formato válido,
+   * sin origen duplicado) y verifica que el esquema no tenga keys repetidas.
+   * Actualiza la plantilla y, si hay renombrados, recorre en lotes de 100 todas
+   * las solicitudes que la usan, reescribiendo su `Form_Data` y su snapshot de
+   * esquema según el mapa de renombrado. Finalmente registra la auditoría en
+   * `TBL_Template_Field_Renames`. Pensada para volúmenes chicos; para muchos
+   * tickets, usar {@link templateHandlers.createTemplateRenameJob}.
+   *
+   * @param payload - Datos de la plantilla + `renames` y `renamedBy`.
+   * @returns `{ ok: true, requestsUpdated, renames }`.
+   * @throws Si algún renombrado es inválido o hay keys duplicadas en el esquema.
+   */
   updateTemplateWithRenames: async (payload, { supabase }) => {
     const p = payload as {
       id: number; name: string; description: string; icon: string; color: string;
@@ -181,6 +252,19 @@ export const templateHandlers: Record<string, ActionHandler> = {
     return { ok: true, requestsUpdated: updated, renames: p.renames };
   },
 
+  /**
+   * Actualiza una plantilla y lanza el renombrado de campos como job en background.
+   *
+   * Misma validación de renombrados y de keys que
+   * {@link templateHandlers.updateTemplateWithRenames}, pero en vez de propagar
+   * síncronamente, crea un job `template_field_rename` en `TBL_Background_Jobs` y
+   * arranca su primer chunk vía `EdgeRuntime.waitUntil`. Si no hay solicitudes
+   * que actualizar, finaliza el job de inmediato. Pensada para volúmenes grandes.
+   *
+   * @param payload - Datos de la plantilla + `renames` y `renamedBy`.
+   * @returns `{ jobId, requestsTotal, ok }` — `jobId` es `null` si no hubo renombrados.
+   * @throws Si algún renombrado es inválido o hay keys duplicadas en el esquema.
+   */
   createTemplateRenameJob: async (payload, { supabase }) => {
     const p = payload as {
       id: number; name: string; description: string; icon: string; color: string;

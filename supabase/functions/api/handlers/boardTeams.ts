@@ -1,12 +1,38 @@
+/**
+ * Handlers de equipos/boards del Kanban y control de visibilidad por usuario.
+ *
+ * Registrados en {@link boardTeamHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Cubre el CRUD de boards
+ * (`TBL_Board_Teams`), su reordenamiento dentro de un mismo departamento, y los
+ * grants de acceso por usuario (`TBL_Board_Team_Access`).
+ *
+ * En el modelo, un board puede ser *externo* (link a otro sistema) o de
+ * *integración* (p. ej. SOLVI), pero nunca ambos: son excluyentes.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { resolveVisibleBoardIds } from '../shared/boardAccess.ts';
 
-// Select reutilizado: board team + su departamento (para agrupar en el sidebar).
+/**
+ * Select reutilizado: board team + su departamento (para agrupar en el sidebar).
+ */
 const BOARD_TEAM_SELECT =
   'Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Description, Board_Team_Icon, Board_Team_Is_Admin_Only, Board_Team_Is_External, Board_Team_External_URL, Board_Team_Is_Active, Board_Team_Is_Integration, Board_Team_Integration_Key, Board_Team_Sort_Order, Department_ID, department:TBL_Departments!Department_ID ( Department_ID, Department_Name )';
 
+/**
+ * Mapa de handlers de boards indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const boardTeamHandlers: Record<string, ActionHandler> = {
+  /**
+   * Lista todos los boards, ordenados por posición y luego por ID.
+   *
+   * @returns Todos los boards con su departamento embebido.
+   */
   fetchAllTeams: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Board_Teams')
@@ -17,6 +43,12 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Trae los datos básicos de un board por su ID.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns El board coincidente (campos reducidos).
+   */
   fetchTeamsByBoardId: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
     const { data, error } = await supabase
@@ -27,6 +59,18 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Crea un board nuevo y lo coloca al final del orden.
+   *
+   * Aplica las reglas de exclusión externo/integración: si es de integración,
+   * fuerza `external = false`; un board externo exige `externalUrl` y uno de
+   * integración exige `integrationKey`, lanzando error si faltan. El código se
+   * normaliza a minúsculas y la posición se calcula como el máximo actual + 1.
+   *
+   * @param payload - Datos del board (`name`, `code`, `color`, flags, etc.).
+   * @returns El board creado.
+   * @throws Si un board externo no trae URL o uno de integración no trae clave.
+   */
   createKanbanTeam: async (payload, { supabase }) => {
     const { name, code, color, description, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       name: string; code: string; color: string; description: string;
@@ -80,6 +124,16 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Actualiza un board existente por ID.
+   *
+   * Aplica las mismas reglas de exclusión externo/integración y normalización
+   * que {@link boardTeamHandlers.createKanbanTeam}, pero no altera el orden.
+   *
+   * @param payload - `{ id, ...datos del board }`.
+   * @returns `{ ok: true }` tras actualizar.
+   * @throws Si un board externo no trae URL o uno de integración no trae clave.
+   */
   updateKanbanTeam: async (payload, { supabase }) => {
     const { id, name, code, description, color, icon, isAdminOnly, isExternal, externalUrl, isActive, departmentId, isIntegration, integrationKey } = payload as {
       id: number; name: string; code: string; color: string; description: string;
@@ -121,6 +175,18 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Mueve un board una posición hacia arriba o abajo dentro de su departamento.
+   *
+   * El reordenamiento está acotado al subconjunto de boards del mismo
+   * `Department_ID` (incluido el grupo `null`): solo intercambia el
+   * `Board_Team_Sort_Order` con el vecino inmediato de ese grupo, dejando
+   * intactos los demás departamentos. Si el board ya está en el extremo de su
+   * grupo, no hace nada.
+   *
+   * @param payload - `{ teamId, direction: 'up' | 'down' }`.
+   * @returns `{ ok: true }` (idempotente aunque no haya movimiento).
+   */
   reorderBoardTeam: async (payload, { supabase }) => {
     const { teamId, direction } = payload as { teamId: number; direction: 'up' | 'down' };
 
@@ -170,7 +236,17 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
      VISIBILIDAD DE BOARDS — pass de acceso por usuario
      ============================================================ */
 
-  // Boards visibles para UN usuario, ya filtrados por su nivel de acceso.
+  /**
+   * Lista los boards visibles para un usuario según su nivel de acceso.
+   *
+   * Delega en `resolveVisibleBoardIds`, cuyo resultado se interpreta así:
+   * `null` = sin restricción (admin), no se filtra por ID; `[]` = sin acceso a
+   * nada, se devuelve vacío sin consultar la DB; una lista = se filtra por esos
+   * IDs.
+   *
+   * @param payload - `{ userId }`.
+   * @returns Los boards visibles para el usuario, con su departamento embebido.
+   */
   fetchMyBoardTeams: async (payload, { supabase }) => {
     const { userId } = payload as { userId: number };
     if (!userId) return [];
@@ -196,7 +272,14 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
-  // Grants actuales de un usuario. Alimenta el multi-select del UserEditForm.
+  /**
+   * Trae los IDs de boards a los que un usuario tiene acceso explícito.
+   *
+   * Alimenta el multi-select del formulario de edición de usuario.
+   *
+   * @param payload - `{ userId }`.
+   * @returns Arreglo de `Board_Team_ID` con grant activo para el usuario.
+   */
   fetchUserBoardAccess: async (payload, { supabase }) => {
     const { userId } = payload as { userId: number };
     if (!userId) return [];
@@ -208,7 +291,16 @@ export const boardTeamHandlers: Record<string, ActionHandler> = {
     return (data ?? []).map((r: { Board_Team_ID: number }) => r.Board_Team_ID);
   },
 
-  // Reemplaza el set completo de grants de un usuario (delete-all + insert).
+  /**
+   * Reemplaza el set completo de grants de acceso de un usuario.
+   *
+   * Estrategia delete-all + insert: borra todos los grants actuales del usuario
+   * y luego inserta los nuevos (si los hay), registrando quién los otorgó.
+   *
+   * @param payload - `{ userId, boardTeamIds, actorId? }`.
+   * @returns `{ ok: true, count }` con la cantidad de grants otorgados.
+   * @throws Si no se provee `userId`.
+   */
   setUserBoardAccess: async (payload, { supabase }) => {
     const { userId, boardTeamIds, actorId } = payload as {
       userId: number; boardTeamIds: number[]; actorId?: number | null;

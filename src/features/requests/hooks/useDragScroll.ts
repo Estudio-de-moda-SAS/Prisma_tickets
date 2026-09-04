@@ -1,8 +1,28 @@
 import { useRef, useCallback } from 'react';
 
 /**
- * Permite hacer scroll horizontal arrastrando con el mouse
- * en cualquier contenedor con overflow-x: auto/scroll.
+ * Hook de scroll horizontal por arrastre (drag-to-scroll).
+ *
+ * Permite desplazar horizontalmente cualquier contenedor con
+ * `overflow-x: auto/scroll` arrastrando con el mouse, útil para el board kanban.
+ *
+ * @module useDragScroll
+ */
+
+/**
+ * Habilita el scroll horizontal arrastrando con el mouse.
+ *
+ * @remarks
+ * Devuelve un `ref` para el contenedor y un conjunto de `handlers` de mouse. El
+ * arrastre solo inicia con el botón primario y se ignora si el click empezó sobre
+ * una `.request-card` (para no interferir con el drag-and-drop de las tarjetas).
+ * Al arrastrar aplica un factor de 1.2 al desplazamiento, cambia el cursor a
+ * `grabbing` y previene la selección de texto y el menú contextual. `onMouseLeave`
+ * también termina el arrastre para que no quede "pegado" al salir del contenedor.
+ *
+ * @returns `{ ref, handlers }` — el `ref` a colocar en el contenedor y los
+ *   `handlers` (`onMouseDown`, `onMouseMove`, `onMouseUp`, `onMouseLeave`,
+ *   `onContextMenu`) a esparcir sobre él.
  */
 export function useDragScroll() {
   const ref        = useRef<HTMLDivElement>(null);

@@ -1,9 +1,50 @@
 import type { DB } from '../lib/supabase.ts';
 
+/**
+ * Envío (registro) de correos por evento a partir de plantillas.
+ *
+ * Expone {@link renderTemplate} para interpolar variables en una plantilla y
+ * {@link sendEventEmail} para resolver la plantilla activa de un evento y
+ * registrar un correo por destinatario.
+ *
+ * @module email
+ */
+
+/**
+ * Interpola variables `{{clave}}` en una plantilla de texto/HTML.
+ *
+ * @remarks
+ * Reemplaza cada marcador `{{clave}}` por `vars[clave]`; si la clave no existe,
+ * usa cadena vacía. Solo reconoce claves alfanuméricas (`\w+`).
+ *
+ * @param html - Plantilla con marcadores `{{clave}}`.
+ * @param vars - Mapa de variables a interpolar.
+ * @returns La plantilla con las variables sustituidas.
+ */
 export function renderTemplate(html: string, vars: Record<string, string>): string {
   return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
 }
 
+/**
+ * Resuelve la plantilla activa de un evento y registra un correo por cada destinatario.
+ *
+ * @remarks
+ * Busca la plantilla activa (`Is_Active`) asociada al `eventKey`, resuelve los
+ * correos de los usuarios indicados, interpola asunto y cuerpo con `vars`
+ * ({@link renderTemplate}) e inserta una fila en `TBL_Email_Logs` por cada uno.
+ *
+ * Actualmente el estado se registra como `pending`: la función deja el correo
+ * *logueado* pero el envío real aún no está activado (ver comentario en el
+ * cuerpo). Sale temprano y sin error si no hay destinatarios, si no existe
+ * plantilla activa, o si no se resuelve ningún usuario.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param params - Parámetros del evento.
+ * @param params.eventKey - Clave del evento que selecciona la plantilla.
+ * @param params.requestId - Request asociado al correo (se guarda en el log).
+ * @param params.userIds - IDs de los usuarios destinatarios.
+ * @param params.vars - Variables para interpolar en asunto y cuerpo.
+ */
 export async function sendEventEmail(
   supabase: DB,
   params: {

@@ -1,9 +1,24 @@
 // supabase/functions/api/handlers/solvi.ts
 // Handlers de la integración SOLVI.
 // Lectura de TBL_Ticket_Solvi / TBL_Seguimientos_Solvi / TBL_Ticket_Attachments_Solvi.
-
+/**
+ * Handlers de la integración SOLVI (sistema de ticketing externo).
+ *
+ * Registrados en {@link solviHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. SOLVI comparte la infraestructura
+ * de Supabase pero vive en sus propias tablas (`TBL_Ticket_Solvi`,
+ * `TBL_Seguimientos_Solvi`, `TBL_Ticket_Attachments_Solvi`, y las de comentarios
+ * y participantes propias). Diferencias clave respecto al núcleo de PRISMA: los
+ * tickets SOLVI no tienen flag de confidencialidad, y el "resolutor"/
+ * "solicitante" se identifican por correo (texto), no por `User_ID`.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Forma de un ticket SOLVI completo, tal como se lee de `TBL_Ticket_Solvi`.
+ */
 export type SolviTicket = {
   ticket_solvi_id?: number;
   ticket_solvi_titulo: string;
@@ -23,37 +38,62 @@ export type SolviTicket = {
   ticket_solvi_articulo: string | null;
 };
 
-// Campos del listado (subconjunto liviano para la tabla).
+/** Campos del listado (subconjunto liviano para la tabla). */
 const SOLVI_LIST_SELECT =
   'ticket_solvi_id, ticket_solvi_titulo, ticket_solvi_estado, ticket_solvi_fuente, ' +
   'ticket_solvi_solicitante, ticket_solvi_correo_solicitante, ticket_solvi_resolutor, ' +
   'ticket_solvi_categoria, ticket_solvi_subcategoria, ticket_solvi_ans, ' +
   'ticket_solvi_fechaapertura, ticket_solvi_fechamaxima, "FechaCierreReal"';
 
-// Todos los campos del ticket (para el modal de detalle).
+/** Todos los campos del ticket (para el modal de detalle). */
 const SOLVI_FULL_SELECT = '*';
 
+/** Campos de un seguimiento SOLVI. */
 const SEGUIMIENTO_SELECT =
   'seguimientos_solvi_id, seguimientos_solvi_id_ticket, seguimientos_solvi_tipo_de_accion, ' +
   'seguimientos_solvi_action_date, seguimientos_solvi_descripcion, ' +
   'seguimientos_solvi_correo_actor, seguimientos_solvi_actor';
 
+/** Campos de un adjunto SOLVI. */
 const ATTACHMENT_SELECT =
   'id, created_at, attachment_path, attachment_type, id_ticket, seguimiento_id, storage_bucket, file_name';
 
+/** Tamaño de página por defecto del listado paginado (keyset). */
 const PAGE_SIZE = 300;
+/** Vigencia de las signed URLs de adjuntos (30 minutos). */
 const SIGNED_URL_TTL = 60 * 30; // 30 min
 
+/** Cursor keyset del listado: fecha de apertura + id como desempate. */
 type SolviCursor = { fecha: string | null; id: number };
 
+/**
+ * Destinatario en el formato que espera la API de Microsoft Graph.
+ */
 export type GraphRecipient = {
   emailAddress: {
     address: string;
   };
 };
 
+/**
+ * Mapa de handlers de SOLVI indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const solviHandlers: Record<string, ActionHandler> = {
-  // ── Listado paginado (keyset) + búsqueda global ──
+  /**
+   * Lista tickets SOLVI con paginación keyset y búsqueda global opcional.
+   *
+   * Pagina por cursor compuesto `(fechaapertura, id)` descendente (maneja el
+   * caso de fecha nula por separado). Con `search`, filtra por título,
+   * solicitante, resolutor o categoría (`ilike`), y además por ID exacto si el
+   * término es numérico. Pide un elemento de más para saber si hay página
+   * siguiente.
+   *
+   * @param payload - `{ cursor?, limit?, search? }` (limit tope 500).
+   * @returns `{ items, nextCursor }` — `nextCursor` es `null` si no hay más.
+   */
   fetchSolviTickets: async (payload, { supabase }) => {
     const { cursor, limit, search } = (payload ?? {}) as {
       cursor?: SolviCursor | null; limit?: number; search?: string;
@@ -105,7 +145,20 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return { items, nextCursor };
   },
 
-  // ── Detalle completo: ticket + seguimientos + adjuntos (con signed URLs) ──
+  /**
+   * Trae el detalle completo de un ticket SOLVI: ticket + seguimientos + adjuntos.
+   *
+   * Trae el ticket completo, sus seguimientos en orden cronológico, y los
+   * adjuntos tanto del ticket como de sus seguimientos (aunque `id_ticket` venga
+   * null). Por cada adjunto genera una signed URL best-effort: si el bucket o el
+   * path no resuelven, deja `signedUrl` en null y el front muestra solo el
+   * nombre (degradación elegante). Si `storage_bucket` viene null, cae al bucket
+   * fijo `ticket-attachments`.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ ticket, seguimientos, attachments }` con `signedUrl` por adjunto.
+   * @throws Si falta el `id` del ticket.
+   */
   fetchSolviTicketDetail: async (payload, { supabase }) => {
     const { id } = (payload ?? {}) as { id?: number };
     if (id == null) throw new Error('Falta el id del ticket.');
@@ -171,6 +224,15 @@ export const solviHandlers: Record<string, ActionHandler> = {
     };
   },
 
+  /**
+   * Lista los comentarios PRISMA sobre un ticket SOLVI.
+   *
+   * Estos comentarios viven en `TBL_Solvi_Comments` (capa de PRISMA sobre SOLVI),
+   * son distintos de los seguimientos nativos del ticket.
+   *
+   * @param payload - `{ ticketId }`.
+   * @returns Los comentarios ordenados cronológicamente, con su autor embebido.
+   */
   fetchSolviComments: async (payload, { supabase }) => {
     const { ticketId } = payload as { ticketId: number };
     const { data, error } = await supabase
@@ -183,6 +245,21 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Crea un comentario sobre un ticket SOLVI, con gate de acceso y menciones.
+   *
+   * Gate de autoría: solo puede comentar un admin, quien coincida por correo con
+   * el solicitante o el resolutor del ticket, o quien ya sea participante. Tras
+   * insertar, valida las menciones server-side: como SOLVI no tiene
+   * confidencialidad, aplica solo la regla de departamento (admin menciona a
+   * cualquiera; no-admin solo a TI o a su propio departamento; nunca
+   * auto-mención). Persiste las menciones permitidas y da acceso durable como
+   * participantes. Las notificaciones quedan pendientes para la Entrega 2.
+   *
+   * @param payload - `{ ticketId, userId, text, mentionedUserIds? }`.
+   * @returns El comentario creado, con su autor embebido.
+   * @throws Si el usuario no está autorizado a comentar en el ticket.
+   */
   createSolviComment: async (payload, { supabase }) => {
     const { ticketId, userId, text, mentionedUserIds = [] } =
       payload as { ticketId: number; userId: number; text: string; mentionedUserIds?: number[] };
@@ -262,6 +339,12 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Elimina un comentario PRISMA de un ticket SOLVI.
+   *
+   * @param payload - `{ commentId }`.
+   * @returns `{ ok: true }` tras eliminar el comentario.
+   */
   deleteSolviComment: async (payload, { supabase }) => {
     const { commentId } = payload as { commentId: number };
     const { error } = await supabase.from('TBL_Solvi_Comments').delete().eq('Comment_ID', commentId);
@@ -269,6 +352,15 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Lista los participantes de un ticket SOLVI (identificadores y procedencia).
+   *
+   * Igual que en el núcleo de PRISMA, devuelve `User_Name`/`User_Avatar_url`
+   * vacíos: el front los resuelve con su lista de usuarios.
+   *
+   * @param payload - `{ ticketId }`.
+   * @returns Participantes con `Added_Via`/`Added_By` y campos de nombre en blanco.
+   */
   fetchSolviParticipants: async (payload, { supabase }) => {
     const { ticketId } = payload as { ticketId: number };
     const { data, error } = await supabase
@@ -285,6 +377,17 @@ export const solviHandlers: Record<string, ActionHandler> = {
     }));
   },
 
+  /**
+   * Revoca a un participante de un ticket SOLVI (solo admin).
+   *
+   * A diferencia del núcleo de PRISMA, acá no se puede validar "resolutor" por
+   * asignación: en SOLVI el resolutor es texto, no un `User_ID`. Por eso el
+   * criterio es más estricto — solo un admin puede revocar.
+   *
+   * @param payload - `{ ticketId, userId, actorId }`.
+   * @returns `{ ok: true }` tras revocar al participante.
+   * @throws Si el actor no es admin.
+   */
   removeSolviParticipant: async (payload, { supabase }) => {
     const { ticketId, userId, actorId } =
       payload as { ticketId: number; userId: number; actorId: number };
@@ -302,7 +405,16 @@ export const solviHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return { ok: true };
   },
-  
+
+  /**
+   * Lista los tickets SOLVI donde el usuario fue mencionado.
+   *
+   * Resuelve los `Ticket_ID` de participación vía mención y trae esos tickets
+   * (campos reducidos), ordenados por fecha de apertura descendente.
+   *
+   * @param payload - `{ userId }`.
+   * @returns Los tickets SOLVI con mención al usuario.
+   */
   fetchMySolviMentions: async (payload, { supabase }) => {
     const { userId } = payload as { userId: number };
     const { data: links, error: linksErr } = await supabase
@@ -322,6 +434,16 @@ export const solviHandlers: Record<string, ActionHandler> = {
     return data ?? [];
   },
 
+  /**
+   * Lista los tickets SOLVI abiertos por un usuario, según su correo.
+   *
+   * Filtra por `correo_solicitante` con `ilike` (case-insensitive) y aplica un
+   * filtro extra en memoria por `trim`, porque `ilike` no maneja los espacios al
+   * borde.
+   *
+   * @param payload - `{ email }`.
+   * @returns Los tickets del solicitante; `[]` si el correo viene vacío.
+   */
   fetchMySolviTickets: async (payload, { supabase }) => {
     const { email } = payload as { email: string };
     const e = (email ?? '').toLowerCase().trim();
@@ -337,6 +459,16 @@ export const solviHandlers: Record<string, ActionHandler> = {
       (t.ticket_solvi_correo_solicitante ?? '').toLowerCase().trim() === e);
   },
 
+  /**
+   * Lista los adjuntos de un ticket SOLVI (sin generar signed URLs).
+   *
+   * Versión ligera de {@link solviHandlers.fetchSolviTicketDetail} acotada a los
+   * adjuntos directos del ticket (`id_ticket`), sin firmar URLs.
+   *
+   * @param payload - `{ id }`.
+   * @returns `{ attachments }` con los adjuntos del ticket.
+   * @throws Si falta el `id` del ticket.
+   */
   fetchTicketAttachments: async (payload, { supabase }) => {
     const { id } = (payload ?? {}) as { id?: number };
     if (id == null) throw new Error('Falta el id del ticket.');
