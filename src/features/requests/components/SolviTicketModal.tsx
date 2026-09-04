@@ -295,13 +295,9 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
 
               <Section title="Fechas y SLA">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-                  <Field label="Apertura"         value={fmtDateTime(t.ticket_solvi_fechaapertura as string)} />
-                  <Field label="Fecha máxima"     value={fmtDateTime(t.ticket_solvi_fechamaxima as string)} />
-                  <Field label="Cierre real"      value={fmtDateTime(t.FechaCierreReal as string)} />
-                  <Field label="Min. totales"     value={str(t.MinutosTotales)} />
-                  <Field label="Min. nocturnos"   value={str(t.MinutosNocturnos)} />
-                  <Field label="Min. festivos"    value={str(t.MinutosFestivos)} />
-                  <Field label="Min. dominicales" value={str(t.MinutosDominicales)} />
+                  <Field label="Fecha de apertura"         value={fmtDateTime(t.ticket_solvi_fechaapertura as string)} />
+                  <Field label="Fecha límite de resolución"     value={fmtDateTime(t.ticket_solvi_fechamaxima as string)} />
+                  <Field label="Fecha de cierre real"      value={fmtDateTime(t.FechaCierreReal as string)} />
                 </div>
               </Section>
 
