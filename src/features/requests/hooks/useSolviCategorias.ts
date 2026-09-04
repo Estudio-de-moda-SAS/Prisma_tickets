@@ -1,7 +1,8 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/auth/AuthProvider';
-import { GraphRest, } from '@/graph/GraphRest';
-import {CategoriasSPService, type CategoriaSP,} from '../services/CategoriasSharepointSolvi.service';
+import { GraphRest } from '@/graph/GraphRest';
+import { CategoriasSPService, type CategoriaSP } from '../services/CategoriasSharepointSolvi.service';
 
 /**
  * Hook para cargar las categorías de Solvi desde SharePoint.
@@ -37,16 +38,11 @@ type UseSolviCategoriasResult = {
 export function useSolviCategorias(): UseSolviCategoriasResult {
   const { getToken } = useAuth();
   const graphService = React.useMemo(() => new GraphRest(getToken), [getToken]);
-  const categoriasService = React.useMemo(() => new CategoriasSPService(graphService), [graphService],);
+  const categoriasService = React.useMemo(() => new CategoriasSPService(graphService), [graphService]);
 
-  const [data, setData] = React.useState<SolviCategoria[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
-
-  const refetch = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  return useQuery<SolviCategoria[]>({
+    queryKey: ['solvi-categorias'],
+    queryFn: async () => {
       const categorias = await categoriasService.getAll();
       categorias.sort((a, b) => a.Title.localeCompare(b.Title));
       setData(categorias);

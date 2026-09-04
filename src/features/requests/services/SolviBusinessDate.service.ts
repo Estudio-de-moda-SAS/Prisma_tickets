@@ -5,7 +5,9 @@ import { fetchHolidays, type Holiday } from './HolidayService.service';
 const TIMEZONE = 'America/Bogota';
 const WORK_START = 7;
 const WORK_END = 17;
-const SLA_MINUTES = 4 * 60;
+// Fallback cuando no hay ANS cargado en SharePoint para la combinación
+// categoría/subcategoría/artículo elegida (lista "ANS" vacía o incompleta).
+export const DEFAULT_SLA_HORAS = 4;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -68,9 +70,24 @@ export function isTurnoNocturnoAhora(): boolean {
   return hora < WORK_START || hora >= WORK_END;
 }
 
-// Suma 4h hábiles (L-V, 7:00-17:00, excluyendo festivos) a partir de "ahora".
-export async function calcularFechaSolucion(): Promise<TZDate> {
-  let restante = SLA_MINUTES;
+/** Formatea un ANS (en horas hábiles) para mostrarlo al usuario: si supera
+ *  las 24h lo expresa en días (horas/24) para que sea más legible. Siempre
+ *  aclara "hábil(es)" para no confundirlo con horas/días corridos. */
+export function formatSlaHorasHabiles(horas: number): string {
+  if (horas <= 24) {
+    return `${horas} ${horas === 1 ? 'hora hábil' : 'horas hábiles'}`;
+  }
+  const dias = horas / 24;
+  const diasLabel = Number.isInteger(dias) ? String(dias) : dias.toFixed(1);
+  return `${diasLabel} ${dias === 1 ? 'día hábil' : 'días hábiles'}`;
+}
+
+// Suma `ansHoras` horas hábiles (L-V, 7:00-17:00, excluyendo festivos) a partir
+// de "ahora". Si no se pasa un ANS válido (combinación sin match en la lista
+// "ANS" de SharePoint), cae al fallback de DEFAULT_SLA_HORAS.
+export async function calcularFechaSolucion(ansHoras?: number | null): Promise<TZDate> {
+  const horas = ansHoras != null && ansHoras > 0 ? ansHoras : DEFAULT_SLA_HORAS;
+  let restante = horas * 60;
   let actual = new TZDate(new Date(), TIMEZONE);
   const holidays = await fetchHolidays();
 
