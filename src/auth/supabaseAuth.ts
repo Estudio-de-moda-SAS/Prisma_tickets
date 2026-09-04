@@ -14,6 +14,99 @@ const SUPABASE_AZURE_SCOPES = [
   'Sites.ReadWrite.All',
 ].join(' ');
 
+const AZURE_CLIENT_ID = import.meta.env.VITE_AZURE_CLIENT_ID as string;
+const AZURE_TENANT_ID = import.meta.env.VITE_AZURE_TENANT_ID as string;
+
+// ── Cache del access token de Graph derivado de un refresh silencioso ──────
+// Supabase solo expone provider_token en el login inicial: cuando su propio
+// JWT se auto-refresca (o la app vuelve de background), provider_token
+// desaparece de la sesión aunque el usuario siga logueado. Este cache evita
+// pedirle un token nuevo a Microsoft en cada llamada a Graph mientras siga
+// vigente.
+let graphTokenCache: { token: string; expiresAt: number } | null = null;
+
+function cacheGraphAccessToken(token: string, expiresInSec: number): void {
+  // Margen de 60s para no devolver un token a punto de vencer.
+  graphTokenCache = { token, expiresAt: Date.now() + (expiresInSec - 60) * 1000 };
+}
+
+function getCachedGraphAccessToken(): string | null {
+  if (graphTokenCache && graphTokenCache.expiresAt > Date.now()) return graphTokenCache.token;
+  return null;
+}
+
+function clearGraphAccessTokenCache(): void {
+  graphTokenCache = null;
+}
+
+// ── Persistencia del provider_refresh_token de Microsoft ───────────────────
+// Azure solo lo entrega en el intercambio OAuth inicial (igual que
+// provider_token) y Supabase no lo vuelve a exponer en refreshes
+// posteriores. Se guarda aparte para poder canjearlo por un provider_token
+// nuevo sin pasar por Supabase ni por un redirect a Microsoft.
+const PROVIDER_REFRESH_TOKEN_KEY = 'sb_graph_provider_refresh_token';
+
+function saveProviderRefreshToken(token: string | null | undefined): void {
+  if (!token) return;
+  try { localStorage.setItem(PROVIDER_REFRESH_TOKEN_KEY, token); } catch { /* noop */ }
+}
+
+function getStoredProviderRefreshToken(): string | null {
+  try { return localStorage.getItem(PROVIDER_REFRESH_TOKEN_KEY); } catch { return null; }
+}
+
+function clearStoredProviderRefreshToken(): void {
+  try { localStorage.removeItem(PROVIDER_REFRESH_TOKEN_KEY); } catch { /* noop */ }
+}
+
+/**
+ * Canjea el provider_refresh_token guardado por un provider_token nuevo,
+ * hablando directo con el endpoint de token de Azure AD (grant_type=refresh_token).
+ * Es la renovación silenciosa real: un POST en background, sin redirect ni iframe.
+ * Devuelve null si no hay refresh token guardado o si el canje falla (refresh
+ * token revocado/vencido) — en ese caso el llamador cae al redirect completo.
+ */
+async function refreshProviderTokenSilently(): Promise<string | null> {
+  const refreshToken = getStoredProviderRefreshToken();
+  if (!refreshToken || !AZURE_CLIENT_ID || !AZURE_TENANT_ID) return null;
+
+  try {
+    const res = await fetch(
+      `https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: AZURE_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          scope: SUPABASE_AZURE_SCOPES,
+        }).toString(),
+      },
+    );
+
+    if (!res.ok) {
+      // Refresh token inválido/revocado: se limpia para no reintentar en vano.
+      if (res.status === 400 || res.status === 401) clearStoredProviderRefreshToken();
+      return null;
+    }
+
+    const data = (await res.json()) as {
+      access_token?:  string;
+      refresh_token?: string;
+      expires_in?:    number;
+    };
+    if (!data.access_token) return null;
+
+    // Azure AD rota el refresh token en cada canje: hay que guardar el nuevo.
+    if (data.refresh_token) saveProviderRefreshToken(data.refresh_token);
+    cacheGraphAccessToken(data.access_token, data.expires_in ?? 3300);
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
 /** Inicia el flujo de login con Microsoft a través de Supabase Auth.
  *  Con `silent: true` agrega prompt=none: usa la sesión SSO de Azure ya activa
  *  en el navegador para volver con un provider_token nuevo sin pedir credenciales. */
@@ -96,11 +189,24 @@ export async function getSupabaseSession() {
  */
 export async function getSupabaseProviderToken(): Promise<string> {
   const session = await getSupabaseSession();
-  const providerToken = session?.provider_token;
+  saveProviderRefreshToken(session?.provider_refresh_token);
 
+  const providerToken = session?.provider_token;
   if (providerToken) {
     clearSilentReauthAttempt();
     return providerToken;
+  }
+
+  // provider_token ausente en la sesión (típico tras un auto-refresh del JWT
+  // de Supabase, que no lo repite). Antes de recurrir al redirect completo a
+  // Microsoft, intentamos renovarlo en background con el refresh token guardado.
+  const cached = getCachedGraphAccessToken();
+  if (cached) return cached;
+
+  const refreshed = await refreshProviderTokenSilently();
+  if (refreshed) {
+    clearSilentReauthAttempt();
+    return refreshed;
   }
 
   if (await trySilentGraphReauth()) {
@@ -115,8 +221,15 @@ export async function getSupabaseProviderToken(): Promise<string> {
 
 /** Cierra la sesión de Supabase Auth. */
 export async function signOutSupabase(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  } finally {
+    // Evita que el próximo usuario en este navegador herede el refresh token
+    // (o un token cacheado) de la sesión de Graph anterior.
+    clearStoredProviderRefreshToken();
+    clearGraphAccessTokenCache();
+  }
 }
 
 /**

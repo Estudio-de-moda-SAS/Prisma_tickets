@@ -51,7 +51,7 @@ function buildCommentSnippet(commentText: string): string {
 }
 
 function buildTicketUrl(ticketId: string | number | undefined): string {
-  const baseUrl = 'https://prisma.estudiodemoda.co/ticket';
+  const baseUrl = 'https://prisma.estudiodemoda.co/integracion/solvi/tickets';
   const safeTicketId = String(ticketId ?? '').trim();
 
   if (!safeTicketId) {
