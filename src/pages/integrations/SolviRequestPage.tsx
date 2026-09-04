@@ -13,8 +13,8 @@ import { useSolviCategorias } from '@/features/requests/hooks/useSolviCategorias
 import { useSolviSubcategorias } from '@/features/requests/hooks/useSolviSubcategorias';
 import { useSolviArticulos } from '@/features/requests/hooks/useSolviArticulos';
 import React from 'react';
-import { useSolviAns } from '@/features/requests/hooks/useSolviANS';
 import { formatSlaHorasHabiles } from '@/features/requests/services/SolviBusinessDate.service';
+import { useSolviAns } from '@/features/requests/hooks/useSolviAns';
 
 /* ============================================================
    SOLVI — Página de creación de solicitud (integración externa)
