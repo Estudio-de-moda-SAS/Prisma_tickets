@@ -53,6 +53,24 @@ import { solviHandlers } from './handlers/solvi.ts';
 // @ts-ignore
 import { historyHandlers } from './handlers/history.ts';
 
+/**
+ * Router central de acciones.
+ *
+ * Agrega todos los mapas de handlers por dominio (requests, cierre, feedback,
+ * criterios, usuarios, etc.) en una única tabla `action → handler` y expone
+ * {@link createDispatch}, que construye la función de despacho usada por el
+ * entry point y por los propios handlers.
+ *
+ * @module router
+ */
+
+/**
+ * Tabla combinada de todos los handlers, indexados por nombre de acción.
+ *
+ * @remarks
+ * Se arma con *spread* de cada mapa de dominio. El orden importa ante colisiones:
+ * si dos módulos definen la misma clave de acción, gana el último en fusionarse.
+ */
 const handlers: Record<string, ActionHandler> = {
   ...requestHandlers,
   ...closureHandlers,
@@ -82,6 +100,19 @@ const handlers: Record<string, ActionHandler> = {
   ...historyHandlers,
 };
 
+/**
+ * Crea la función de despacho ligada a un cliente de Supabase.
+ *
+ * @remarks
+ * La `dispatch` resultante busca el handler por nombre de acción y lo invoca con
+ * el `payload` y un {@link ActionContext} que incluye el `supabase` recibido y la
+ * propia `dispatch` (referencia recursiva), de modo que un handler pueda invocar
+ * otras acciones. Si la acción no existe, lanza un error.
+ *
+ * @param supabase - Cliente de Supabase que se inyecta en el contexto de cada handler.
+ * @returns La función {@link Dispatch} lista para ejecutar acciones.
+ * @throws Al despachar una acción desconocida (`Acción desconocida: <action>`).
+ */
 export function createDispatch(supabase: DB): Dispatch {
   const dispatch: Dispatch = (action, payload) => {
     const handler = handlers[action];

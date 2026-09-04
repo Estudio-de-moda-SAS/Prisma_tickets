@@ -17,6 +17,7 @@ PRISMA centraliza, organiza y da trazabilidad a las solicitudes que los distinto
 - [Requisitos previos](#requisitos-previos)
 - [Configuración e instalación](#configuración-e-instalación)
 - [Desarrollo](#desarrollo)
+- [Documentación técnica](#documentación-técnica)
 - [Despliegue](#despliegue)
 - [Convenciones y principios de diseño](#convenciones-y-principios-de-diseño)
 - [Roles del sistema](#roles-del-sistema)
@@ -167,6 +168,33 @@ npm run dev
 # Verificar tipos (silencio = cero errores)
 npx tsc --noEmit
 ```
+
+---
+
+## Documentación técnica
+
+La referencia técnica del código se genera automáticamente con [TypeDoc](https://typedoc.org/) a partir de los comentarios **TSDoc** (`/** ... */`) escritos en el propio código y de los tipos de TypeScript.
+
+Como el proyecto combina dos entornos con configuraciones de TypeScript distintas —el frontend (`src/`) y el Edge Function de Deno (`supabase/functions/api/`)—, la documentación se construye en dos etapas: cada entorno se compila por separado a un modelo intermedio (JSON) y luego ambos se fusionan en un único sitio HTML con un índice de navegación común.
+
+```bash
+# Generar la documentación completa (frontend + backend, sitio unificado)
+npm run docs
+
+# Generar solo un modelo (útil para iterar sobre uno)
+npm run docs:frontend
+npm run docs:backend
+```
+
+El sitio resultante queda en `docs/site/index.html`. La carpeta `docs/` está excluida del control de versiones.
+
+**Archivos de configuración:**
+
+| Archivo | Propósito |
+|---------|-----------|
+| `typedoc.frontend.json` | Modelo del frontend (`src/`, con `tsconfig.app.json`). |
+| `typedoc.backend.json` | Modelo del Edge Function (`supabase/functions/api/`, con su propio `tsconfig.json`). |
+| `typedoc.json` | Fusiona ambos modelos y genera el sitio HTML final. |
 
 ---
 

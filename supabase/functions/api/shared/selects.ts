@@ -1,5 +1,29 @@
 // shared/selects.ts
 
+/**
+ * Cadenas de `select` de PostgREST reutilizables para leer requests.
+ *
+ * Centraliza los grafos de columnas y relaciones que se piden a Supabase, para
+ * no duplicarlos entre handlers. Cada constante representa un nivel de detalle:
+ * - {@link BASE_SELECT} — lectura completa del ticket (incluye adjuntos de cierre).
+ * - {@link DETAIL_SELECT} — {@link BASE_SELECT} + criterios de aceptación.
+ * - {@link BASE_SELECT_LIGHT} — versión aligerada (sin schema de plantilla ni
+ *   adjuntos de cierre).
+ * - {@link STATS_SELECT} — subconjunto mínimo para métricas/estadísticas.
+ *
+ * @module selects
+ */
+
+/**
+ * Select completo de un request.
+ *
+ * @remarks
+ * Incluye datos escalares, el schema de la plantilla (`template_schema`),
+ * solicitante con su departamento, equipo y departamento del solicitante,
+ * columna, asignaciones, equipos, etiquetas, subequipos, sprints, conteo de
+ * hijos y el bloque de cierre (`closure`) con sus adjuntos (`closure_attachments`).
+ * Es el select "pesado" usado, por ejemplo, en la exportación.
+ */
 export const BASE_SELECT = `
   Request_ID,
   Request_Board_Column_ID,
@@ -86,12 +110,27 @@ closure:TBL_Request_Closure (
   )
 `.trim();
 
+/**
+ * Select de detalle de un request.
+ *
+ * @remarks
+ * Extiende {@link BASE_SELECT} añadiendo los criterios de aceptación
+ * (`criteria`). Se usa en la vista de detalle del ticket.
+ */
 export const DETAIL_SELECT = `${BASE_SELECT},
   criteria:TBL_Acceptance_Criteria (
     Criteria_ID, Request_ID, Title, Status, Reviewer_Notes, Reviewed_By, Reviewed_At, Created_At, Updated_At
   )
 `.trim();
 
+/**
+ * Select aligerado de un request.
+ *
+ * @remarks
+ * Igual que {@link BASE_SELECT} pero sin el `template_schema` de la plantilla y
+ * con el bloque `closure` sin sus adjuntos (`closure_attachments`). Pensado para
+ * listados donde no hace falta el peso extra de esos joins.
+ */
 export const BASE_SELECT_LIGHT = `
   Request_ID,
   Request_Board_Column_ID,
@@ -167,6 +206,14 @@ export const BASE_SELECT_LIGHT = `
   )
 `.trim();
 
+/**
+ * Select mínimo para estadísticas/métricas.
+ *
+ * @remarks
+ * Trae solo lo necesario para calcular indicadores (puntaje, fechas, horas
+ * estimadas/registradas) junto con columna, asignados, equipos, sprints y
+ * etiquetas. Omite descripción, plantilla, cierre y demás campos pesados.
+ */
 export const STATS_SELECT = `
   Request_ID,
   Request_Board_Column_ID,

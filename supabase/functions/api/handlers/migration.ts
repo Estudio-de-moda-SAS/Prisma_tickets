@@ -1,3 +1,19 @@
+/**
+ * Handlers de migración de solicitudes históricas (Excel → PRISMA).
+ *
+ * Registrados en {@link migrationHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Las acciones son **atómicas**
+ * (una solicitud por llamada); el orquestador del lote —chunking y reintentos—
+ * vive en el script Node externo (*PRISMA Migrations*), no acá.
+ *
+ * A diferencia del flujo normal de creación, estos handlers reciben
+ * `Created_At`/`Finished_At`/`Progress` explícitos, permiten `Requested_By`
+ * nulo con campos legacy, insertan asignados directo (sin resolver por nombre),
+ * y **no** ejecutan automatizaciones, notificaciones ni auto-asignación de
+ * sprint.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { BASE_SELECT } from '../shared/selects.ts';
@@ -18,31 +34,59 @@ import { BASE_SELECT } from '../shared/selects.ts';
      · NO auto-asigna sprint.
    ============================================================ */
 
-// Autor de los comentarios migrados ("Notas"). Usuario de sistema.
+/** Autor de los comentarios migrados ("Notas"). Usuario de sistema. */
 const MIGRATION_COMMENT_USER_ID = 17;
 
-// Pool de estética para labels nuevos. Espejo de COLORS / EMOJIS
-// del ConfigPanel del front: emojis (no Lucide) → siempre válidos.
+/**
+ * Pool de colores para labels nuevos creados durante la migración.
+ *
+ * Espejo de los `COLORS` del ConfigPanel del front.
+ */
 const LABEL_COLORS = [
   '#ff4757', '#ff6b81', '#ff7f50', '#fdcb6e', '#f9ca24', '#a3cb38',
   '#00e5a0', '#00cec9', '#00c8ff', '#0984e3', '#6c5ce7', '#a29bfe',
   '#fd79a8', '#e84393', '#b2bec3', '#000000',
 ];
+
+/**
+ * Pool de emojis para labels nuevos creados durante la migración.
+ *
+ * Espejo de los `EMOJIS` del ConfigPanel del front: son emojis (no íconos
+ * Lucide), así que siempre son válidos.
+ */
 const LABEL_EMOJIS = [
   '🐛', '🎨', '🖼️', '📊', '⚙️', '🔧', '🚀', '💡', '📋', '🔒', '🌐', '📱',
   '💰', '🔔', '✅', '🧪', '🎯', '🏷️', '🛠️', '🏪', '📦', '🔍', '💬', '🗂️',
 ];
 
+/**
+ * Devuelve un elemento aleatorio de un arreglo.
+ *
+ * @typeParam T - Tipo de los elementos del arreglo.
+ * @param arr - Arreglo de origen (se asume no vacío).
+ * @returns Un elemento elegido al azar.
+ */
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/**
+ * Mapa de handlers de migración indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const migrationHandlers: Record<string, ActionHandler> = {
-  /* ----------------------------------------------------------
-     upsertSprintByName
-     Busca un sprint por texto exacto (el más antiguo si hubiera
-     repetidos). Si no existe, lo crea con fechas en null.
-     ---------------------------------------------------------- */
+  /**
+   * Resuelve un sprint por texto exacto, creándolo si no existe.
+   *
+   * Busca por `Sprint_Text` exacto (el de menor ID si hubiera repetidos). Si no
+   * existe, lo crea con fechas de inicio/fin en null.
+   *
+   * @param payload - `{ text }`.
+   * @returns `{ sprintId, created }` — `created` indica si se insertó uno nuevo.
+   * @throws Si el texto del sprint viene vacío.
+   */
   upsertSprintByName: async (payload, { supabase }) => {
     const { text } = payload as { text: string };
     const clean = text.trim();
@@ -70,13 +114,17 @@ export const migrationHandlers: Record<string, ActionHandler> = {
     return { sprintId: (inserted as { Sprint_ID: number }).Sprint_ID, created: true };
   },
 
-  /* ----------------------------------------------------------
-     upsertLabelByName
-     Resuelve por la tripleta (nombre, equipo, board). Dentro de
-     un equipo el nombre es único, así que el match es determinista.
-     Si no existe en ESE equipo, crea uno nuevo con emoji y color
-     aleatorios del pool (aunque exista el mismo nombre en otro equipo).
-     ---------------------------------------------------------- */
+  /**
+   * Resuelve un label por (nombre, equipo, board), creándolo si no existe.
+   *
+   * Dentro de un equipo el nombre es único, así que el match es determinista.
+   * Si no existe en ESE equipo, crea uno nuevo con emoji y color aleatorios del
+   * pool —aunque exista el mismo nombre en otro equipo.
+   *
+   * @param payload - `{ name, teamId, boardId }`.
+   * @returns `{ labelId, created }` — `created` indica si se insertó uno nuevo.
+   * @throws Si el nombre del label viene vacío.
+   */
   upsertLabelByName: async (payload, { supabase }) => {
     const { name, teamId, boardId } = payload as {
       name: string; teamId: number; boardId: number;
@@ -114,12 +162,14 @@ export const migrationHandlers: Record<string, ActionHandler> = {
     return { labelId: (inserted as { Label_ID: number }).Label_ID, created: true };
   },
 
-  /* ----------------------------------------------------------
-     migrationFetchUsers
-     Lista usuarios para resolver "Asignada" → User_ID en el script.
-     Devuelve todos (incluidos inactivos) para que asignados
-     históricos hagan match aunque hoy estén desactivados.
-     ---------------------------------------------------------- */
+  /**
+   * Lista usuarios para resolver "Asignada" → `User_ID` en el script.
+   *
+   * Devuelve todos los usuarios, incluidos los inactivos, para que los
+   * asignados históricos hagan match aunque hoy estén desactivados.
+   *
+   * @returns Lista de `{ User_ID, User_Name }`.
+   */
   migrationFetchUsers: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Users')
@@ -127,12 +177,30 @@ export const migrationHandlers: Record<string, ActionHandler> = {
     if (error) throw new Error(error.message);
     return data;
   },
-  
-  /* ----------------------------------------------------------
-     migrateRequest
-     Crea UNA solicitud histórica con todas sus relaciones.
-     Idempotente por (sourceFile, sourceRow) vía TBL_Migration_Map.
-     ---------------------------------------------------------- */
+
+  /**
+   * Crea UNA solicitud histórica con todas sus relaciones.
+   *
+   * Idempotente por la dupla `(sourceFile, sourceRow)` vía `TBL_Migration_Map`:
+   * si la fila ya fue migrada, retorna temprano con `skipped: true`. Flujo:
+   *
+   * 1. Chequea idempotencia contra `TBL_Migration_Map`.
+   * 2. Toma el snapshot del esquema de la plantilla (general = `[]`).
+   * 3. Inserta la solicitud como legacy (`Request_ID` lo genera el DEFAULT;
+   *    `Requested_By` nulo, requester textual en `Request_Legacy_Requester`).
+   * 4. Inserta en paralelo las relaciones (equipos, labels, sprint), los
+   *    asignados y la nota migrada (comentario del usuario de sistema).
+   * 5. Registra el mapeo **al final**: si algún paso previo falló, la fila no
+   *    queda marcada como migrada y el reintento la reprocesa.
+   * 6. Devuelve la solicitud completa vía `BASE_SELECT` (mismo contrato que el
+   *    flujo normal).
+   *
+   * @param payload - Datos completos de la fila histórica: identificación de
+   *                  origen, campos del ticket, fechas/progreso explícitos y las
+   *                  relaciones ya resueltas por el script.
+   * @returns `{ skipped, requestId, request? }` — `skipped: true` si ya estaba
+   *          migrada; con `request` incluido cuando se crea.
+   */
   migrateRequest: async (payload, { supabase }) => {
     const p = payload as {
       sourceFile: string;

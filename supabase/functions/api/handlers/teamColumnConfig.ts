@@ -1,6 +1,36 @@
+/**
+ * Handlers de configuración de columnas por equipo (`TBL_Team_Column_Config`).
+ *
+ * Registrados en {@link teamColumnConfigHandlers} y despachados desde el Edge
+ * Function único vía el envelope `{ action, payload }`. Un board tiene columnas
+ * globales (`TBL_Board_Columns`), pero cada equipo puede sobrescribir su
+ * comportamiento por columna: visibilidad, requerimiento de evidencia, si cierra
+ * el ticket, colores propios y cuál columna marca el inicio del conteo de
+ * estadísticas. Los valores efectivos se resuelven combinando la columna global
+ * con el override del equipo (con defaults cuando no hay config).
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 
+/**
+ * Mapa de handlers de configuración de columnas por equipo, indexado por acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const teamColumnConfigHandlers: Record<string, ActionHandler> = {
+  /**
+   * Devuelve las columnas de un board con la config efectiva de un equipo.
+   *
+   * Trae las columnas globales del board y las combina con los overrides del
+   * equipo (`TBL_Team_Column_Config`), aplicando defaults cuando el equipo no
+   * tiene config para una columna (visible, sin evidencia, no cierra, colores
+   * nulos, etc.).
+   *
+   * @param payload - `{ boardId, teamId }`.
+   * @returns Las columnas del board con la config resuelta para el equipo.
+   */
   fetchTeamColumnConfig: async (payload, { supabase }) => {
     const { boardId, teamId } = payload as { boardId: number; teamId: number };
     const { data: cols, error: colsErr } = await supabase
@@ -42,6 +72,16 @@ export const teamColumnConfigHandlers: Record<string, ActionHandler> = {
     });
   },
 
+  /**
+   * Crea o actualiza la config de una columna para un equipo (upsert).
+   *
+   * Upsert sobre la clave compuesta `(Team_ID, Column_ID)`. Los colores solo se
+   * incluyen en el update si vienen definidos en el payload (permite tocar
+   * visibilidad/evidencia sin pisar los colores existentes).
+   *
+   * @param payload - `{ teamId, columnId, isVisible, evidenceRequired, evidenceLabel, isCloseColumn?, teamColor?, teamTitleColor? }`.
+   * @returns `{ ok: true }` tras el upsert.
+   */
   upsertTeamColumnConfig: async (payload, { supabase }) => {
     const { teamId, columnId, isVisible, evidenceRequired, evidenceLabel, isCloseColumn, teamColor, teamTitleColor } = payload as {
       teamId: number; columnId: number;
@@ -66,6 +106,18 @@ export const teamColumnConfigHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Fija (o alterna) la columna que marca el inicio del conteo de estadísticas.
+   *
+   * Solo puede haber una columna de inicio de stats por equipo. Comportamiento:
+   * si se vuelve a fijar la que ya estaba, la desmarca (toggle off); si es otra,
+   * desmarca la anterior y marca la nueva —creando la fila de config si el equipo
+   * aún no tenía una para esa columna. Con `columnId` en null, solo desmarca la
+   * actual.
+   *
+   * @param payload - `{ teamId, columnId }` (`columnId` null para limpiar).
+   * @returns `{ ok: true }` tras aplicar el cambio.
+   */
   setStatsStartColumn: async (payload, { supabase }) => {
     const { teamId, columnId } = payload as { teamId: number; columnId: number | null };
 
@@ -121,6 +173,17 @@ export const teamColumnConfigHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Resuelve, para todo el board, la columna de inicio de stats de cada equipo.
+   *
+   * Devuelve dos mapas: `columnPositions` (slug de columna → posición) y
+   * `statsStartByTeam` (código de equipo → posición de su columna de inicio de
+   * stats). El front usa estas posiciones para saber a partir de qué punto del
+   * flujo empieza a contar cada equipo.
+   *
+   * @param payload - `{ boardId }`.
+   * @returns `{ columnPositions, statsStartByTeam }`.
+   */
   fetchStatsStartConfig: async (payload, { supabase }) => {
     const { boardId } = payload as { boardId: number };
 

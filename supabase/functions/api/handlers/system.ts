@@ -1,3 +1,14 @@
+/**
+ * Handlers de sistema: reportes de bugs, calificaciones de satisfacción y jobs.
+ *
+ * Registrados en {@link systemHandlers} y despachados desde el Edge Function
+ * único vía el envelope `{ action, payload }`. Agrupa funciones transversales:
+ * el ciclo de vida de los reportes de fallos (incluida su conversión en ticket),
+ * las calificaciones de satisfacción con rate limit, y el sondeo/reanudación de
+ * jobs en background.
+ *
+ * @module
+ */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { RATING_RATE_LIMIT_DAYS } from '../config.ts';
@@ -6,7 +17,24 @@ import { _kickoffJobChunk } from '../jobs/renameJob.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 
+/**
+ * Mapa de handlers de sistema indexado por nombre de acción.
+ *
+ * Consumido por el dispatcher del Edge Function; cada clave corresponde al
+ * `action` recibido en el envelope `{ action, payload }`.
+ */
 export const systemHandlers: Record<string, ActionHandler> = {
+  /**
+   * Crea un reporte de bug y notifica al equipo de Desarrollo TI.
+   *
+   * Inserta el reporte en estado `pendiente` y, best-effort, notifica a los
+   * integrantes de los sub-equipos del board team de Desarrollo TI (ID 11),
+   * excluyendo al reportante. Un fallo en la notificación no tumba la creación
+   * del reporte.
+   *
+   * @param payload - `{ userId, title, description, severity?, screenPath }`.
+   * @returns El reporte creado (campos reducidos).
+   */
   createBugReport: async (payload, { supabase }) => {
     const p = payload as {
       userId:     number;
@@ -71,6 +99,12 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Lista todos los reportes de bugs con reportante, resolutor y ticket vinculado.
+   *
+   * @returns Los reportes ordenados por fecha de creación descendente, con las
+   *          relaciones (`reporter`, `resolver`, `request`) embebidas.
+   */
   fetchBugReports: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Bug_Reports')
@@ -86,6 +120,12 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Cambia el estado de un reporte de bug.
+   *
+   * @param payload - `{ reportId, status }`.
+   * @returns `{ ok: true }` tras actualizar el estado.
+   */
   updateBugReportStatus: async (payload, { supabase }) => {
     const { reportId, status } = payload as { reportId: string; status: string };
     const { error } = await supabase
@@ -96,6 +136,26 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return { ok: true };
   },
 
+  /**
+   * Convierte un reporte de bug en un ticket y asigna resolutor.
+   *
+   * Flujo:
+   * 1. Lee el bug y evita la doble conversión (guard sobre `Linked_Request_ID`).
+   * 2. Resuelve la columna "Sin categorizar" del board destino.
+   * 3. Toma el snapshot del esquema de la plantilla "Fallo PRISMA" (ID 13).
+   * 4. Calcula el score: el elegido por el admin, o el mapeo por severidad como
+   *    fallback.
+   * 5. Crea el ticket (solicitante = quien reportó el bug), guardando en
+   *    `Request_Form_Data` la trazabilidad al reporte de origen.
+   * 6. Vincula equipo y, si se eligieron, sprint y labels.
+   * 7. Asigna al resolutor (mismo patrón que `assignRequest`) y lo notifica si
+   *    no es quien asigna.
+   * 8. Marca el bug como `asignado` y lo enlaza al ticket creado.
+   *
+   * @param payload - `{ reportId, boardId, teamId, resolverId, assignedBy, sprintId, estimatedHours, score, labelIds }`.
+   * @returns `{ ok: true, requestId }` con el ID del ticket creado.
+   * @throws Si el reporte ya fue convertido o el board no tiene columna "Sin categorizar".
+   */
   assignBugToRequest: async (payload, { supabase }) => {
     const p = payload as {
       reportId:       string;
@@ -224,6 +284,17 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return { ok: true, requestId: newId };
   },
 
+  /**
+   * Registra una calificación de satisfacción, con rate limit por usuario.
+   *
+   * Si `RATING_RATE_LIMIT_DAYS` es positivo, verifica que el usuario no haya
+   * calificado dentro de esa ventana; si lo hizo, lanza error. Luego inserta la
+   * calificación.
+   *
+   * @param payload - `{ userId, score, comment }`.
+   * @returns La calificación creada (campos reducidos).
+   * @throws Si el usuario calificó dentro de la ventana de rate limit.
+   */
   createSatisfactionRating: async (payload, { supabase }) => {
     const p = payload as {
       userId:  number;
@@ -258,6 +329,11 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Lista todas las calificaciones de satisfacción con su autor.
+   *
+   * @returns Las calificaciones ordenadas por fecha descendente, con `rater` embebido.
+   */
   fetchSatisfactionRatings: async (_payload, { supabase }) => {
     const { data, error } = await supabase
       .from('TBL_Satisfaction_Ratings')
@@ -270,6 +346,12 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Devuelve el estado y progreso de un job en background (para polling).
+   *
+   * @param payload - `{ jobId }`.
+   * @returns La fila del job con su estado, progreso, resultado y error.
+   */
   getBackgroundJob: async (payload, { supabase }) => {
     const { jobId } = payload as { jobId: string };
     const { data, error } = await supabase
@@ -281,6 +363,18 @@ export const systemHandlers: Record<string, ActionHandler> = {
     return data;
   },
 
+  /**
+   * Reanuda un job que quedó estancado (stalled).
+   *
+   * No hace nada si el job ya terminó (`done`/`failed`). Si sigue en proceso y su
+   * última actualización fue hace más de 60 segundos, lo considera estancado y
+   * dispara un nuevo chunk vía `EdgeRuntime.waitUntil` (o `.catch` silencioso
+   * como fallback local).
+   *
+   * @param payload - `{ jobId }`.
+   * @returns `{ resumed }` — `true` si se relanzó; incluye `status` si ya estaba terminado.
+   * @throws Si el job no existe.
+   */
   resumeStalledJob: async (payload, { supabase }) => {
     const { jobId } = payload as { jobId: string };
     const { data: job } = await supabase
