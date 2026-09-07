@@ -6,7 +6,7 @@ export type AnsSP = {
   Id_Categoria: string;
   Id_Subcategoria: string;
   Id_Articulo: string;
-  ANS: number;
+  ANS: string;
 };
 
 export class AnsSPService {
@@ -76,10 +76,10 @@ export class AnsSPService {
     const f = item?.fields ?? {};
     return {
       Id: String(item?.id ?? ''),
-      Id_Categoria: f.Id_Categoria,
-      Id_Subcategoria: f.Id_Subcategoria,
-      Id_Articulo: f.Id_Articulo,
-      ANS: Number(f.Title),
+      Id_Categoria: f.id_categoria,
+      Id_Subcategoria: f.id_subcategoria,
+      Id_Articulo: f.id_articulo,
+      ANS: String(f.Title ?? '').trim(),
     };
   }
 
@@ -97,13 +97,16 @@ export class AnsSPService {
     return (res.value ?? []).map((x: any) => this.toModel(x));
   }
 
-  /** Busca la fila de ANS que matchea la combinación exacta categoría/subcategoría/artículo. */
-  async getByCombinacion(categoriaId: string, subcategoriaId: string, articuloId: string): Promise<AnsSP[]> {
-    return this.getAll({
-      filter:
-        `fields/id_categoria eq '${this.esc(categoriaId)}' and ` +
-        `fields/id_subcategoria eq '${this.esc(subcategoriaId)}' and ` +
-        `fields/id_articulo eq '${this.esc(articuloId)}'`,
-    });
+  /** Busca la fila de ANS para categoría/subcategoría/artículo. `articuloId` es
+   *  opcional: cuando la subcategoría no tiene artículos asociados, se busca
+   *  solo por categoría + subcategoría. */
+  async getByCombinacion(categoriaId: string, subcategoriaId: string, articuloId?: string | null): Promise<AnsSP[]> {
+    const clauses = [
+      `fields/id_categoria eq '${this.esc(categoriaId)}'`,
+      `fields/id_subcategoria eq '${this.esc(subcategoriaId)}'`,
+    ];
+    if (articuloId) clauses.push(`fields/id_articulo eq '${this.esc(articuloId)}'`);
+
+    return this.getAll({ filter: clauses.join(' and ') });
   }
 }
