@@ -79,7 +79,7 @@ export function formatSlaHorasHabiles(horas: number): string {
   }
   const dias = horas / 24;
   const diasLabel = Number.isInteger(dias) ? String(dias) : dias.toFixed(1);
-  return `${diasLabel} ${dias === 1 ? 'día hábil' : 'días hábiles'}`;
+  return `${diasLabel} ${dias === 1 ? 'día hábil' : 'días hábiles'} (${horas} horas hábiles)`;
 }
 
 // Suma `ansHoras` horas hábiles (L-V, 7:00-17:00, excluyendo festivos) a partir
