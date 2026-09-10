@@ -12,6 +12,22 @@ export const horasPorANS: Record<string, number> = {
   "ANS 5": 160
 };
 
+// Normaliza mayúsculas/espacios: en SharePoint el Title se carga a mano y
+// pequeñas variaciones ("ans 1", "ANS  1") no deberían romper el match.
+const horasPorANSNormalizado: Record<string, number> = Object.fromEntries(
+  Object.entries(horasPorANS).map(([tier, horas]) => [normalizarAns(tier), horas]),
+);
+
+function normalizarAns(valor: string): string {
+  return valor.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function resolverAns(ans: string | undefined): { horas: number; nombre: string } | null {
+  if (!ans) return null;
+  const horas = horasPorANSNormalizado[normalizarAns(ans)];
+  return horas ? { horas, nombre: ans } : null;
+}
+
 /** ANS (SLA), en horas hábiles, para la combinación de categoría,
  *  subcategoría y artículo elegida en el formulario. Devuelve `null` si
  *  falta algún Id o si la combinación no tiene un ANS cargado en SharePoint
@@ -37,9 +53,7 @@ export function useSolviAns(
     queryKey: ['solvi-ans', categoriaId, subcategoriaId, articuloId, subcategoriaSinArticulos],
     queryFn: async () => {
       const rows = await ansService.getByCombinacion(categoriaId!, subcategoriaId!, articuloId || null);
-      const ans = rows[0]?.ANS;
-
-      return ans && horasPorANS[ans] ? { horas: horasPorANS[ans], nombre: ans } : null;
+      return resolverAns(rows[0]?.ANS);
     },
     enabled: !!categoriaId && !!subcategoriaId && (!!articuloId || subcategoriaSinArticulos),
     staleTime: Infinity,
