@@ -80,6 +80,11 @@ export function SolviRequestPage() {
   const articuloTitle     = articulos.find((a) => a.Id === articuloId)?.Title ?? '';
 
   const dataLoading = !currentUser;
+  // Mientras cualquiera de estas siga en vuelo, subcategories/articulos/ansInfo
+  // pueden estar en su valor por defecto (vacío) sin que eso signifique que la
+  // categoría/subcategoría elegida realmente no tiene opciones — hay que
+  // esperar a que resuelvan antes de validar o de guardar el ticket.
+  const treeLoading = subcategoriesLoading || articulosLoading || ansLoading;
 
   // Errores en vivo (solo tras el primer intento) → se limpian solos al corregir.
   // Subcategoría/artículo solo son obligatorios cuando la categoría/subcategoría
@@ -119,6 +124,14 @@ export function SolviRequestPage() {
     setSubmitAttempted(true); // a partir de acá los campos muestran su error en vivo
 
     if (!currentUser) { setError('Cargando datos del usuario...'); return; }
+
+    // Evita crear el ticket a mitad de camino: si todavía están resolviendo
+    // subcategorías/artículos/ANS, esperamos en vez de validar contra listas
+    // que todavía pueden estar vacías por no haber cargado.
+    if (treeLoading) {
+      setError('Esperá a que terminen de cargar las opciones antes de enviar.');
+      return;
+    }
 
     const titleMissing        = !titulo.trim();
     const categoriaMissing    = !categoriaId;
@@ -247,7 +260,7 @@ export function SolviRequestPage() {
           accent={ACCENT}
           isMobile={isMobile}
           isPending={isPending}
-          dataLoading={dataLoading}
+          dataLoading={dataLoading || treeLoading}
           onBack={() => navigate('/new')}
         />
       </div>
