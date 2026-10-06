@@ -24,7 +24,7 @@ import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail, maybeSendInProgressEmail } from '../shared/requests.ts';
+import { getRequestParticipants, maybeSendClientReviewEmail, maybeSendInProgressEmail, planColumnTransition } from '../shared/requests.ts';
 // @ts-ignore
 import { sendEventEmail } from '../email/send.ts';
 // @ts-ignore
@@ -583,9 +583,10 @@ export const requestHandlers: Record<string, ActionHandler> = {
   /**
    * Mueve una solicitud a otra columna, gestionando cierre/reapertura y efectos.
    *
-   * Detecta si la columna destino cierra el ticket (`isCloseColumn`): al cerrar
-   * fija `Request_Finished_At` y progreso 100; al reabrir (venía cerrado y la
-   * nueva columna no cierra) los limpia. Luego registra en auditoría el
+   * Decide el efecto sobre el cierre con `planColumnTransition`: al cerrar por
+   * primera vez fija `Request_Finished_At` y progreso 100; entre columnas que
+   * cierran conserva la fecha; al reabrir (venía cerrado y la nueva columna no
+   * cierra) los limpia. Luego registra en auditoría el
    * movimiento y el cierre/reapertura, sincroniza el bug report vinculado
    * (best-effort), deja un comentario automático si hubo reapertura, notifica a
    * los participantes, dispara los correos de cambio de columna (cada helper se
@@ -599,13 +600,16 @@ export const requestHandlers: Record<string, ActionHandler> = {
     const { id, columnId, movedBy } = payload as { id: string; columnId: number; movedBy?: number };
     console.log(`[move] id=${id} columnId=${columnId} movedBy=${movedBy}`);
     const [colRes, reqRes] = await Promise.all([
-      supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', columnId).single(),
+      supabase.from('TBL_Board_Columns').select('Board_Column_Name, Board_Column_Slug').eq('Board_Column_ID', columnId).single(),
       supabase.from('TBL_Requests').select('Request_Finished_At, Request_Board_Column_ID').eq('Request_ID', id).single(),
     ]);
     const colData   = colRes.data;
     const wasClosed = !!(reqRes.data as any)?.Request_Finished_At;
     const fromColumnId = (reqRes.data as any)?.Request_Board_Column_ID as number | undefined;
-    const willClose = await isCloseColumn(supabase, columnId, id);
+    const { closing, reopening, update: updateData } = await planColumnTransition(supabase, {
+      requestId: id, targetColumnId: columnId, wasClosed,
+      targetSlug: (colData as any)?.Board_Column_Slug ?? null,
+    });
 
     // Nombre de la columna de origen para un log legible
     let fromColName = 'otra columna';
@@ -613,15 +617,6 @@ export const requestHandlers: Record<string, ActionHandler> = {
       const { data: fromCol } = await supabase
         .from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', fromColumnId).single();
       fromColName = (fromCol as any)?.Board_Column_Name ?? fromColName;
-    }
-
-    const updateData: Record<string, unknown> = { Request_Board_Column_ID: columnId };
-    if (willClose) {
-      updateData['Request_Finished_At'] = new Date().toISOString();
-      updateData['Request_Progress']    = 100;
-    } else if (wasClosed) {
-      updateData['Request_Finished_At'] = null;
-      updateData['Request_Progress']    = 0;
     }
 
     const { error } = await supabase
@@ -639,9 +634,9 @@ export const requestHandlers: Record<string, ActionHandler> = {
           metadata: { fromColumnId, toColumnId: columnId },
         });
       }
-      if (willClose && !wasClosed)
+      if (closing)
         entries.push({ requestId: id, changedBy: movedBy ?? null, action: 'closed' as const, newValue: toColName });
-      if (!willClose && wasClosed)
+      if (reopening)
         entries.push({ requestId: id, changedBy: movedBy ?? null, action: 'reopened' as const, newValue: toColName });
       await logHistory(supabase, entries);
     }
@@ -650,9 +645,9 @@ export const requestHandlers: Record<string, ActionHandler> = {
     // Si este ticket nació de un bug report y acaba de cerrarse (o de
     // reabrirse), reflejarlo en TBL_Bug_Reports. El vínculo es
     // Linked_Request_ID; no dependemos del Form_Data para el match.
-    if (willClose || wasClosed) {
+    if (closing || reopening) {
       try {
-        const nextBugStatus = willClose ? 'cerrado' : 'asignado';
+        const nextBugStatus = closing ? 'cerrado' : 'asignado';
         await supabase
           .from('TBL_Bug_Reports')
           .update({ Status: nextBugStatus, Updated_At: new Date().toISOString() })
@@ -661,7 +656,7 @@ export const requestHandlers: Record<string, ActionHandler> = {
     }
     // ── /Sincronizar bug report ───────────────────────────────────────
 
-    if (!willClose && wasClosed && movedBy) {
+    if (reopening && movedBy) {
       const colName = (colData as any)?.Board_Column_Name ?? 'otra columna';
       const { data: moverData } = await supabase
         .from('TBL_Users').select('User_Name').eq('User_ID', movedBy).single();

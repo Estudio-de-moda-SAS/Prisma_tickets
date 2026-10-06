@@ -16,7 +16,7 @@ import { SIGNED_URL_EXPIRES_IN } from '../lib/storage.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants, isCloseColumn, maybeSendClientReviewEmail } from '../shared/requests.ts';
+import { getRequestParticipants, maybeSendClientReviewEmail, planColumnTransition } from '../shared/requests.ts';
 // @ts-ignore
 import { logHistory } from '../lib/history.ts';
 
@@ -119,14 +119,13 @@ export const closureHandlers: Record<string, ActionHandler> = {
     const fromColumnId = (beforeReq as any)?.Request_Board_Column_ID as number | undefined;
     const wasClosed    = !!(beforeReq as any)?.Request_Finished_At;
 
-    const willClose = await isCloseColumn(supabase, p.targetColumnId, p.requestId);
-    const updateData: Record<string, unknown> = {
-      Request_Board_Column_ID: p.targetColumnId,
-    };
-    if (willClose) {
-      updateData['Request_Finished_At'] = new Date().toISOString();
-      updateData['Request_Progress']    = 100;
-    }
+    // Esta ruta nunca reabre: el cierre con evidencia solo sella (primer cierre)
+    // o conserva la fecha, así que se descarta la rama de reapertura.
+    const { closing, update } = await planColumnTransition(supabase, {
+      requestId: p.requestId, targetColumnId: p.targetColumnId, wasClosed,
+    });
+    const updateData = { ...update };
+    if (!closing) { delete updateData['Request_Finished_At']; delete updateData['Request_Progress']; }
     const { error: updateErr } = await supabase
       .from('TBL_Requests')
       .update(updateData)
@@ -151,7 +150,7 @@ export const closureHandlers: Record<string, ActionHandler> = {
           metadata: { fromColumnId, toColumnId: p.targetColumnId, viaEvidence: true },
         });
       }
-      if (willClose && !wasClosed)
+      if (closing)
         entries.push({ requestId: p.requestId, changedBy: p.closedBy, action: 'closed' as const, newValue: toName });
       await logHistory(supabase, entries);
     }
