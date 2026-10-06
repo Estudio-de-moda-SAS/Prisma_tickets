@@ -13,7 +13,9 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { insertNotifications } from '../shared/notifications.ts';
 // @ts-ignore
-import { getRequestParticipants, maybeSendClientFeedbackEmail } from '../shared/requests.ts';
+import { getRequestParticipants, maybeSendClientFeedbackEmail, planColumnTransition } from '../shared/requests.ts';
+// @ts-ignore
+import { logHistory } from '../lib/history.ts';
 
 /**
  * Mapa de handlers de feedback del cliente indexado por nombre de acción.
@@ -98,11 +100,48 @@ export const feedbackHandlers: Record<string, ActionHandler> = {
       .single();
     if (fbErr) throw new Error(fbErr.message);
 
+    // Mover con la misma regla de cierre que moveToColumn: aprobar hacia Ready
+    // to Deploy cierra el ticket (sella Request_Finished_At); rechazar hacia una
+    // columna que no cierra lo reabre si estaba cerrado.
+    const { data: beforeReq } = await supabase
+      .from('TBL_Requests')
+      .select('Request_Board_Column_ID, Request_Finished_At')
+      .eq('Request_ID', p.requestId).single();
+    const fromColumnId = (beforeReq as any)?.Request_Board_Column_ID as number | undefined;
+    const { closing, reopening, update } = await planColumnTransition(supabase, {
+      requestId: p.requestId, targetColumnId: p.targetColumnId,
+      wasClosed: !!(beforeReq as any)?.Request_Finished_At,
+    });
     const { error: moveErr } = await supabase
       .from('TBL_Requests')
-      .update({ Request_Board_Column_ID: p.targetColumnId })
+      .update(update)
       .eq('Request_ID', p.requestId);
     if (moveErr) throw new Error(moveErr.message);
+
+    // ── Audit: movimiento + cierre/reapertura por feedback del cliente ──
+    {
+      const [fromColRes, toColRes] = await Promise.all([
+        fromColumnId
+          ? supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', fromColumnId).single()
+          : Promise.resolve({ data: null }),
+        supabase.from('TBL_Board_Columns').select('Board_Column_Name').eq('Board_Column_ID', p.targetColumnId).single(),
+      ]);
+      const fromName = (fromColRes.data as any)?.Board_Column_Name ?? 'otra columna';
+      const toName   = (toColRes.data   as any)?.Board_Column_Name ?? 'otra columna';
+      const entries = [];
+      if (fromColumnId && fromColumnId !== p.targetColumnId) {
+        entries.push({
+          requestId: p.requestId, changedBy: p.submittedBy, action: 'column_move' as const,
+          field: 'columna', oldValue: fromName, newValue: toName,
+          metadata: { fromColumnId, toColumnId: p.targetColumnId, viaClientFeedback: p.decision },
+        });
+      }
+      if (closing)
+        entries.push({ requestId: p.requestId, changedBy: p.submittedBy, action: 'closed' as const, newValue: toName });
+      if (reopening)
+        entries.push({ requestId: p.requestId, changedBy: p.submittedBy, action: 'reopened' as const, newValue: toName });
+      await logHistory(supabase, entries);
+    }
 
     const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
     const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]

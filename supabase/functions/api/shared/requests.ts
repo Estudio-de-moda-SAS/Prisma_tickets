@@ -565,3 +565,66 @@ export async function isCloseColumn(
 
   return cfg !== null;
 }
+
+/** Columnas terminales: siempre cuentan como cierre y moverse entre ellas nunca
+ *  reabre ni re-sella la fecha (mismo criterio que DONE_COLUMNS de las stats). */
+export const DONE_COLUMN_SLUGS = new Set(['ready_to_deploy', 'hecho', 'historial']);
+
+/** Resultado de planificar el movimiento de un ticket a otra columna. */
+export type ColumnTransition = {
+  /** La columna destino cierra el ticket (Is_Close_Column o columna terminal). */
+  willClose: boolean;
+  /** Primer cierre: se sella `Request_Finished_At`. */
+  closing:   boolean;
+  /** Reapertura: sale de cierre hacia una columna que no cierra. */
+  reopening: boolean;
+  /** Campos a aplicar en `TBL_Requests` (columna + fecha/progreso si cambian). */
+  update:    Record<string, unknown>;
+};
+
+/**
+ * Decide cómo afecta al cierre mover un ticket a otra columna.
+ *
+ * @remarks
+ * Fuente única de verdad para `moveToColumn`, `closeRequest` y
+ * `submitClientFeedback`:
+ * - La columna destino cierra si es `Is_Close_Column` para algún equipo del
+ *   ticket, o si es terminal ({@link DONE_COLUMN_SLUGS}).
+ * - La fecha se sella solo en el primer cierre; si ya estaba cerrado y va a otra
+ *   columna que cierra (Ready → Hecho → Historial) se conserva la original.
+ * - Solo se reabre (fecha `null`, progreso 0) al salir hacia una columna que no cierra.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param p.requestId - Ticket a mover.
+ * @param p.targetColumnId - Columna destino.
+ * @param p.wasClosed - Si el ticket tenía `Request_Finished_At` antes del movimiento.
+ * @param p.targetSlug - Slug de la columna destino si ya se consultó; si se omite, se busca.
+ * @returns El plan de transición con el `update` listo para aplicar.
+ */
+export async function planColumnTransition(
+  supabase: DB,
+  p: { requestId: string; targetColumnId: number; wasClosed: boolean; targetSlug?: string | null },
+): Promise<ColumnTransition> {
+  let slug = p.targetSlug;
+  if (slug === undefined) {
+    const { data: col } = await supabase
+      .from('TBL_Board_Columns').select('Board_Column_Slug')
+      .eq('Board_Column_ID', p.targetColumnId).maybeSingle();
+    slug = (col as { Board_Column_Slug: string } | null)?.Board_Column_Slug ?? null;
+  }
+
+  const willClose = DONE_COLUMN_SLUGS.has(slug ?? '')
+    || await isCloseColumn(supabase, p.targetColumnId, p.requestId);
+  const closing   = willClose && !p.wasClosed;
+  const reopening = !willClose && p.wasClosed;
+
+  const update: Record<string, unknown> = { Request_Board_Column_ID: p.targetColumnId };
+  if (closing) {
+    update['Request_Finished_At'] = new Date().toISOString();
+    update['Request_Progress']    = 100;
+  } else if (reopening) {
+    update['Request_Finished_At'] = null;
+    update['Request_Progress']    = 0;
+  }
+  return { willClose, closing, reopening, update };
+}
