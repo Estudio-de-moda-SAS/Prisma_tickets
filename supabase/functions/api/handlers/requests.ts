@@ -1098,27 +1098,24 @@ export const requestHandlers: Record<string, ActionHandler> = {
     const q = (query ?? '').trim();
     if (q.length < 2) return [];
 
-    const { data: teamData, error: teamErr } = await supabase
-      .from('TBL_Board_Teams').select('Board_Team_ID')
-      .eq('Board_Team_Code', teamCode).single();
-    if (teamErr) throw new Error(teamErr.message);
-    const { data: links, error: linksErr } = await supabase
-      .from('TBL_Request_Team').select('Request_Team_Request_ID')
-      .eq('Request_Team_ID', teamData.Board_Team_ID);
-    if (linksErr) throw new Error(linksErr.message);
-    const ids = (links as { Request_Team_Request_ID: string }[]).map((l) => l.Request_Team_Request_ID);
-    if (ids.length === 0) return [];
-
+    // Filtro por equipo con join !inner en vez de `.in('Request_ID', ids)`: con
+    // equipos grandes la lista de IDs reventaba la URL de PostgREST (error
+    // HTTP/2). Alias 'team_filter' distinto del 'teams' de BASE_SELECT_LIGHT
+    // para no recortar los equipos que se devuelven (mismo patrón que
+    // fetchByTeamCode del frontend).
+    const teamFilter = `team_filter:TBL_Request_Team!inner( bt:TBL_Board_Teams!inner(Board_Team_Code) )`;
     const escaped = q.replace(/[%_,()]/g, (m) => `\\${m}`);
     const { data, error } = await supabase
-      .from('TBL_Requests').select(BASE_SELECT_LIGHT)
-      .in('Request_ID', ids)
+      .from('TBL_Requests').select(`${BASE_SELECT_LIGHT}, ${teamFilter}`)
       .eq('Request_Board_ID', boardId)
+      .eq('team_filter.bt.Board_Team_Code', teamCode)
       .or(`Request_Title.ilike.%${escaped}%,Request_ID.ilike.%${escaped}%`)
       .order('Request_Created_At', { ascending: false })
       .limit(30);
     if (error) throw new Error(error.message);
-    return attachCriteriaSummary(data as Record<string, unknown>[], supabase);
+    // El alias solo sirve para filtrar; no se expone en la respuesta.
+    const rows = ((data ?? []) as unknown as Record<string, unknown>[]).map(({ team_filter: _tf, ...row }) => row);
+    return attachCriteriaSummary(rows, supabase);
   },
 
   /**
