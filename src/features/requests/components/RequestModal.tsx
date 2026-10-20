@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   X, ChevronUp, ChevronDown, ChevronDown as ChevDown,
   Trash2, Paperclip, Upload,
-  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, History,
+  GitFork, Plus, ExternalLink, CheckCircle, Lock, ShieldAlert, Copy, History, ArrowRightLeft,
 } from 'lucide-react';
 import { useMoveRequest } from '../hooks/useMoveRequests';
 import { useDeleteRequest } from '../hooks/useRequests';
@@ -30,6 +30,8 @@ import { ClosureModal } from './ClosureModal';
 import { ClientReviewBanner } from './ClientReviewBanner';
 import { ResolutionRatingModal } from './ResolutionRatingModal';
 import { RequestHistoryModal } from './RequestHistoryModal';
+import { TransferTicketModal } from './TransferTicketModal';
+import { useTransferTicket } from '@/features/requests/hooks/useTransferTicket';
 import { config } from '@/config';
 import { useSubTeamMembersGrouped } from '@/features/requests/hooks/useSubTeamMembers';
 import { CierreTimeline, FeedbackTimeline} from '@/features/requests/components/RequestTimelines';
@@ -178,11 +180,13 @@ export function RequestModal({
   const { mutate: createRequest, isPending: duplicating }  = useCreateRequest();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showHistory,        setShowHistory]       = useState(false);
+  const [showTransfer,       setShowTransfer]      = useState(false);
+  const { mutate: transferTicket, isPending: transferring, error: transferError, reset: resetTransfer } = useTransferTicket();
   const [duplicated,         setDuplicated]        = useState(false);
   const { data: currentUser } = useCurrentUser();
-const overlayRef   = useRef<HTMLDivElement>(null);
-const tituloRef    = useRef<HTMLTextAreaElement>(null);
-const commentsEndRef = useRef<HTMLDivElement>(null);
+  const overlayRef   = useRef<HTMLDivElement>(null);
+  const tituloRef    = useRef<HTMLTextAreaElement>(null);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const boardId      = config.DEFAULT_BOARD_ID;
   const columnMap    = useColumnMap(boardId);
@@ -569,24 +573,24 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
           {/* ── Header ── */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: 'wrap' }}>
             {onBack && (
-  <button 
-    onClick={onBack}
-    style={{
-      display: 'flex', alignItems: 'center', gap: 5,
-      padding: '3px 10px', borderRadius: 5,
-      fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
-      border: '1px solid rgba(167,139,250,0.4)',
-      background: 'rgba(167,139,250,0.1)',
-      color: '#a78bfa', cursor: 'pointer',
-      transition: 'all 0.15s', fontFamily: 'var(--font-body)',
-    }}
-    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.1)'; }}
-  >
-    <GitFork size={10} />
-    {backLabel ?? '← Volver'}
-  </button>
-)}
+            <button 
+              onClick={onBack}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '3px 10px', borderRadius: 5,
+                fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                border: '1px solid rgba(167,139,250,0.4)',
+                background: 'rgba(167,139,250,0.1)',
+                color: '#a78bfa', cursor: 'pointer',
+                transition: 'all 0.15s', fontFamily: 'var(--font-body)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(167,139,250,0.1)'; }}
+            >
+              <GitFork size={10} />
+              {backLabel ?? '← Volver'}
+            </button>
+          )}
 
             <div style={{ display: 'flex', gap: 2 }}>
               {/* Después de los botones ChevronUp/ChevronDown */}
@@ -693,6 +697,23 @@ onClick={(e) => { if (e.target === overlayRef.current) handleClose(); }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
     >
       <History size={14} />
+    </button>
+  )}
+
+  {!readOnly && !isCerrada && (
+    <button
+      onClick={() => setShowTransfer(true)}
+      title="Transferir a otro equipo"
+      style={{
+        width: 30, height: 30, borderRadius: 6,
+        border: '1px solid rgba(0,200,255,0.25)', color: 'var(--txt-muted)',
+        background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', transition: 'all 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.5)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,200,255,0.08)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(0,200,255,0.25)'; e.currentTarget.style.color = 'var(--txt-muted)'; e.currentTarget.style.background = 'transparent'; }}
+    >
+      <ArrowRightLeft size={14} />
     </button>
   )}
 
@@ -1623,6 +1644,24 @@ onToggleAssignee={(userId) => {
           sprints={sprints}
           subTeams={subTeams}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {showTransfer && (
+        <TransferTicketModal
+          ticketLabel={`#${requestId}`}
+          ticketTitle={effectiveRequest.titulo}
+          currentTeamId={boardTeamId}
+          submitting={transferring}
+          error={transferError?.message ?? null}
+          onClose={() => { resetTransfer(); setShowTransfer(false); }}
+          onConfirm={(draft) => {
+            if (!currentUser) return;
+            transferTicket(
+              { source: 'request', ticketId: requestId, actorId: currentUser.User_ID, ...draft },
+              { onSuccess: () => { setShowTransfer(false); onClose(); } },
+            );
+          }}
         />
       )}
 

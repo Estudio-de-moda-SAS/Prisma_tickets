@@ -52,6 +52,8 @@ import { resolutionRatingHandlers } from './handlers/resolutionRatings.ts';
 import { solviHandlers } from './handlers/solvi.ts';
 // @ts-ignore
 import { historyHandlers } from './handlers/history.ts';
+// @ts-ignore
+import { transferHandlers } from './handlers/transfers.ts';
 
 /**
  * Router central de acciones.
@@ -98,6 +100,7 @@ const handlers: Record<string, ActionHandler> = {
   ...resolutionRatingHandlers,
   ...solviHandlers,
   ...historyHandlers,
+  ...transferHandlers,
 };
 
 /**

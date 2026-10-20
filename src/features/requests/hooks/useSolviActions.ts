@@ -6,7 +6,7 @@ import type { UserProfile } from '@/types/commons';
 import type { SolviTicket } from '../types/SolviTicket';
 import { UsuariosSPService, type UsuariosSP } from '../services/TecnicosSharepointSolvi.service';
 import { calcularFechaSolucion, isTurnoNocturnoAhora, DEFAULT_SLA_HORAS } from '../services/SolviBusinessDate.service';
-import { pickTecnicoConMenosCasos } from '../services/SolviTicketAssignment.service';
+import { getAlexUser,} from '../services/SolviTicketAssignment.service';
 import { fetchPersonaDisponibleAhora } from '../services/SolviShifts.service';
 import { uploadSolviAttachment as uploadSolviAttachmentToStorage } from '../services/SolviAttachments.service';
 import {
@@ -69,20 +69,15 @@ function emptyTicket(user?: UserProfile | null): SolviTicket {
 }
 
 /**
- * Selecciona el técnico con menos casos y le incrementa la carga.
+ * Selecciona el usuario de alex (Jede de listo y le asigna el caso).
  *
- * @remarks
- * Efecto secundario: aumenta en 1 el `Numerodecasos` del técnico elegido.
  *
  * @param tecnicosService - Servicio de técnicos (SharePoint).
  * @returns El técnico asignado, o `null` si no hay ninguno disponible.
  */
-async function assignTechnicianAndBumpLoad(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
-  const resolutor = await pickTecnicoConMenosCasos(tecnicosService);
+async function assingToAlex(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
+  const resolutor = await getAlexUser(tecnicosService);
   if (!resolutor) return null;
-
-  const casosActuales = Number(resolutor.Numerodecasos ?? 0);
-  await tecnicosService.update(String(resolutor.Id), { Numerodecasos: casosActuales + 1 });
   return resolutor;
 }
 
@@ -93,10 +88,10 @@ type ResolutorAsignado = { correo: string; nombre: string };
  * Asigna el resolutor de un ticket según el horario.
  *
  * @remarks
- * Fuera de horario laboral (17:00–7:00) prioriza a quien esté activo ahora mismo
+ * Fuera de horario laboral (16:20–7:00) prioriza a quien esté activo ahora mismo
  * en el turno de Teams Shifts; en horario laboral, o si nadie está en turno o
- * falla la consulta de disponibilidad, cae al técnico con menos casos activos
- * ({@link assignTechnicianAndBumpLoad}).
+ * falla la consulta de disponibilidad, cae a alex para ser asignado al siguiente dia laboral
+ * ({@link assingToAlex}).
  *
  * @param tecnicosService - Servicio de técnicos (SharePoint).
  * @param isTurnoNocturnoAhora - Si el momento actual es turno nocturno.
@@ -116,7 +111,7 @@ async function assignResolutor(tecnicosService: UsuariosSPService, isTurnoNoctur
     }
   }
 
-  const resolutor = await assignTechnicianAndBumpLoad(tecnicosService);
+  const resolutor = await assingToAlex(tecnicosService);
   return resolutor ? { correo: resolutor.Correo, nombre: resolutor.Title } : null;
 }
 

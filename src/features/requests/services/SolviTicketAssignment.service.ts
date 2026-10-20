@@ -24,3 +24,10 @@ export async function pickTecnicoConMenosCasos(usuarios: UsuariosSPService): Pro
 
   return candidatos[Math.floor(Math.random() * candidatos.length)] ?? null;
 }
+
+export async function getAlexUser(usuarios: UsuariosSPService): Promise<UsuariosSP | null> {
+  const alexUser = await usuarios.get("121")
+  if (!alexUser) return null;
+
+  return alexUser;
+}

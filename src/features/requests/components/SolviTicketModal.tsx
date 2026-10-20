@@ -1,6 +1,8 @@
 // src/features/requests/components/SolviTicketModal.tsx
 import { useState, useMemo, useRef } from 'react';
-import { X, FileText, Paperclip, Clock, User, Download, Copy, Check, Trash2, Plus, Loader2 } from 'lucide-react';
+import { X, FileText, Paperclip, Clock, User, Download, Copy, Check, Trash2, Plus, Loader2, ArrowRightLeft } from 'lucide-react';
+import { TransferTicketModal } from './TransferTicketModal';
+import { useTransferTicket } from '@/features/requests/hooks/useTransferTicket';
 import { fetchTicketAttachments, useSolviTicketDetail } from '@/features/requests/hooks/useSolviTickets';
 import { useSolviComments, useCreateSolviComment, useDeleteSolviComment } from '@/features/requests/hooks/useSolviComments';
 import { useUsers } from '@/features/requests/hooks/useUsers';
@@ -119,6 +121,8 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
   const { data: participants = [] }          = useSolviParticipants(ticketId);
   const { mutate: removeParticipant }        = useRemoveSolviParticipant();
   const [revokingId, setRevokingId]          = useState<number | null>(null);
+  const [showTransfer, setShowTransfer]      = useState(false);
+  const { mutate: transferTicket, isPending: transferring, error: transferError, reset: resetTransfer } = useTransferTicket();
   const estadoLower = String(t?.ticket_solvi_estado ?? '').toLowerCase();
   const isCerrado = estadoLower.includes('cerrado') || estadoLower.includes('resuelto');
   const canRevokeParticipant = !isCerrado && currentUser?.User_Role === 'admin';
@@ -151,7 +155,6 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
     }
     return out;
   }, [t, reqEmail, resEmail, allUsers]);
-
   const handleCopyLink = async () => {
     const url = `${window.location.origin}/integracion/solvi/tickets/${ticketId}`;
     try {
@@ -220,6 +223,16 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
             {!isLoading && t?.ticket_solvi_estado ? <span style={estadoChip(t.ticket_solvi_estado)}>{String(t.ticket_solvi_estado)}</span> : null}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {!isLoading && t && !isCerrado && (
+              <button
+                onClick={() => setShowTransfer(true)}
+                title="Transferir el ticket a otro equipo"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, height: 28, padding: '0 10px', borderRadius: 6, border: '1px solid rgba(0,200,255,0.35)', background: 'rgba(0,200,255,0.08)', color: 'var(--accent)', cursor: 'pointer', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', transition: 'all .15s' }}
+              >
+                <ArrowRightLeft size={14} />
+                Transferir
+              </button>
+            )}
             <button
               onClick={handleCopyLink}
               title="Copiar enlace del ticket"
@@ -421,6 +434,25 @@ export function SolviTicketModal({ ticketId, onClose }: { ticketId: number; onCl
             </>
           )}
         </div>
+
+        {showTransfer && (
+          <TransferTicketModal
+            ticketLabel={`#${ticketId}`}
+            ticketTitle={String(t?.ticket_solvi_titulo ?? '')}
+            currentIntegrationKey="solvi"
+            currentLabel="SOLVI"
+            submitting={transferring}
+            error={transferError?.message ?? null}
+            onClose={() => { resetTransfer(); setShowTransfer(false); }}
+            onConfirm={(draft) => {
+              if (!currentUser) return;
+              transferTicket(
+                { source: 'solvi', ticketId, actorId: currentUser.User_ID, ...draft },
+                { onSuccess: () => setShowTransfer(false) },
+              );
+            }}
+          />
+        )}
       </div>
     </div>
   );
