@@ -32,6 +32,7 @@ const SOLVI_DEFAULTS = {
   estado:          'En Atención',
   resolutor:       'Alexander Garcia Palacio',
   correoResolutor: 'agarcia@estudiodemoda.com.co',
+  tipo_seguimiento: 'Transferencia'
 } as const;
 
 /** Payload de `transferTicket`. */
@@ -125,13 +126,20 @@ function isSolviTeam(team: TargetTeam): boolean {
 async function transferRequestToTeam({ supabase, payload, target }: TransferContext): Promise<TransferTicketResult> {
   const requestId = String(payload.ticketId);
 
+  //Obtener información del ticket
   const { data: req, error: reqErr } = await supabase
-    .from('TBL_Requests').select('Request_ID').eq('Request_ID', requestId).maybeSingle();
+    .from('TBL_Requests')
+    .select('Request_ID')
+    .eq('Request_ID', requestId)
+    .maybeSingle();
   if (reqErr) throw new Error(reqErr.message);
   if (!req)   throw new Error(`transferTicket: la solicitud ${requestId} no existe.`);
 
+  //Obtener información del equipo al que pertence
   const { data: teamRows, error: teamErr } = await supabase
-    .from('TBL_Request_Team').select('Request_Team_ID').eq('Request_Team_Request_ID', requestId);
+    .from('TBL_Request_Team')
+    .select('Request_Team_ID')
+    .eq('Request_Team_Request_ID', requestId);
   if (teamErr) throw new Error(teamErr.message);
   const beforeTeamIds = ((teamRows ?? []) as { Request_Team_ID: number }[]).map((r) => r.Request_Team_ID);
   const fromTeamId    = beforeTeamIds[0] ?? null;
@@ -140,24 +148,37 @@ async function transferRequestToTeam({ supabase, payload, target }: TransferCont
     throw new Error('transferTicket: la solicitud ya pertenece a ese equipo.');
   }
 
-  const { error: delErr } = await supabase.from('TBL_Request_Team').delete().eq('Request_Team_Request_ID', requestId);
+  //Eliminar conexión con el team de origen
+  const { error: delErr } = await supabase
+    .from('TBL_Request_Team')
+    .delete()
+    .eq('Request_Team_Request_ID', requestId);
   if (delErr) throw new Error(delErr.message);
-  const { error: insErr } = await supabase.from('TBL_Request_Team').insert({
-    Request_Team_Request_ID: requestId,
-    Request_Team_ID:         target.Board_Team_ID,
-  });
+
+
+  //Eliminar etiquetas del team de origen
+  const { error: delLabErr } = await supabase
+    .from('TBL_Request_Labels')
+    .delete()
+    .eq('Request_Labels_Request_ID', requestId);
+  if (delLabErr) throw new Error(delLabErr.message);
+
+  //Crear conexión con el team objetivo
+  const { error: insErr } = await supabase
+    .from('TBL_Request_Team')
+    .insert({
+      Request_Team_Request_ID: requestId,
+      Request_Team_ID: target.Board_Team_ID,
+    });
   if (insErr) throw new Error(insErr.message);
 
+  //Mover a la columna sin categorizar
   const {error: updateErr} = await supabase
     .from("TBL_Requests")
     .update({Request_Board_Column_ID: 1})
     .eq("Request_ID", requestId)
   if (updateErr) throw new Error(updateErr.message);
 
-  // TODO(transfer): validar que `actorId` tenga acceso al equipo de origen (shared/boardAccess.ts).
-  // TODO(transfer): columna destino (¿columna inicial del equipo nuevo?).
-  // TODO(transfer): sub-equipos y asignados del equipo anterior.
-  // TODO(transfer): etiquetas y sprint ligados al equipo anterior.
 
   await logHistory(supabase, {
     requestId,
@@ -169,9 +190,6 @@ async function transferRequestToTeam({ supabase, payload, target }: TransferCont
     metadata:  { kind: 'team_transfer', reason: payload.reason, toTeamName: target.Board_Team_Name },
   });
 
-  if (payload.notify) {
-    // TODO(transfer): notificar al solicitante y al equipo destino (best-effort, try/catch).
-  }
 
   return { ok: true, source: 'request', ticketId: requestId, fromTeamId, toTeamId: target.Board_Team_ID };
 }
@@ -187,6 +205,7 @@ async function transferRequestToTeam({ supabase, payload, target }: TransferCont
 async function transferRequestToSolvi({ supabase, dispatch, payload, target }: TransferContext): Promise<TransferTicketResult> {
   const requestId = String(payload.ticketId);
 
+  //Obtener info del ticket original
   const { data: req, error: reqErr } = await supabase
     .from('TBL_Requests')
     .select('Request_ID, Request_Title, Request_Description, Request_Requested_By')
@@ -201,11 +220,15 @@ async function transferRequestToSolvi({ supabase, dispatch, payload, target }: T
     Request_Requested_By: number | null;
   };
 
+  //Obtener la info del equipo de origen
   const { data: teamRows, error: teamErr } = await supabase
-    .from('TBL_Request_Team').select('Request_Team_ID').eq('Request_Team_Request_ID', requestId);
+    .from('TBL_Request_Team')
+    .select('Request_Team_ID')
+    .eq('Request_Team_Request_ID', requestId);
   if (teamErr) throw new Error(teamErr.message);
   const fromTeamId = ((teamRows ?? []) as { Request_Team_ID: number }[])[0]?.Request_Team_ID ?? null;
 
+  //Obtener info del solcitante
   if (request.Request_Requested_By == null) {
     throw new Error('transferTicket: la solicitud no tiene solicitante.');
   }
@@ -217,6 +240,19 @@ async function transferRequestToSolvi({ supabase, dispatch, payload, target }: T
   if (userErr) throw new Error(userErr.message);
   if (!user)   throw new Error('transferTicket: el solicitante no existe o no se encuentra activo.');
   const requester = user as { User_Name: string; User_Email: string };
+
+  //Obtener info del actor
+  if (payload.actorId == null) {
+    throw new Error('transferTicket: la acción no tiene actor.');
+  }
+  const { data: actorUser, error: actorUserErr } = await supabase
+    .from('TBL_Users')
+    .select('User_Name, User_Email')
+    .eq('User_ID', payload.actorId)
+    .maybeSingle();
+  if (actorUserErr) throw new Error(actorUserErr.message);
+  if (!actorUser)    throw new Error('transferTicket: el actor no existe o no se encuentra activo.');
+  const actor = actorUser as { User_Name: string; User_Email: string };
 
   // 1) Crear el ticket SOLVI.
   const { data: created, error: solviErr } = await supabase
@@ -237,10 +273,78 @@ async function transferRequestToSolvi({ supabase, dispatch, payload, target }: T
   if (solviErr) throw new Error(solviErr.message);
   const createdSolviTicketId = (created as { ticket_solvi_id: number }).ticket_solvi_id;
 
-  // 2) Eliminar la solicitud original con todas sus relaciones.
+  // Seguimiento con el actor que transfiere y el motivo.
+  const { error: seguimientoErr } = await supabase
+    .from('TBL_Seguimientos_Solvi')
+    .insert({
+      seguimientos_solvi_id_ticket:      createdSolviTicketId,
+      seguimientos_solvi_tipo_de_accion: SOLVI_DEFAULTS.tipo_seguimiento,
+      seguimientos_solvi_action_date:    new Date().toISOString(),
+      seguimientos_solvi_descripcion:    `Este ticket ha sido reasignado por otro equipo con la razon: ${payload.reason}`,
+      seguimientos_solvi_correo_actor:   actor.User_Email,
+      seguimientos_solvi_actor:          actor.User_Name,
+    });
+  if (seguimientoErr) throw new Error(seguimientoErr.message);
+
+  //2) Crear las relaciones de adjuntos
+
+  //Obtener los adjuntos del ticket
+  const { data: adjuntos, error: adjuntosErr } = await supabase
+    .from("TBL_Attachments")
+    .select("*")
+    .eq("Attachment_Request_ID", payload.ticketId);
+  if (adjuntosErr) throw new Error(adjuntosErr.message);
+
+  const fallidos: string[] = [];
+
+  for (const adjunto of adjuntos ?? []) {
+    const rutaDestino = `${createdSolviTicketId}/Creacion/${adjunto.Attachment_File_Name}`;
+
+    // 1. Mover el archivo
+    const { error: moveErr } = await supabase.storage
+      .from("attachments")
+      .move(adjunto.Attachment_File_url, rutaDestino, {
+        destinationBucket: "ticket-attachments",
+      });
+
+    if (moveErr) {
+      console.error(`No se pudo mover ${adjunto.Attachment_File_url}:`, moveErr.message);
+      fallidos.push(adjunto.Attachment_File_Name);
+      continue;
+    }
+
+    // 2. Obtener la URL pública (llamada aparte, sin await)
+    const { data: urlData } = supabase.storage
+      .from("ticket-attachments")
+      .getPublicUrl(rutaDestino);
+
+    // 3. Registrar en la tabla nueva
+    const { error: insErr } = await supabase
+      .from("TBL_Ticket_Attachments_Solvi")
+      .insert({
+        id_ticket: createdSolviTicketId,
+        file_name: adjunto.Attachment_File_Name,
+        attachment_path: urlData.publicUrl,
+        attachment_type: "Creacion",
+        created_at: new Date(),
+        storage_bucket: "ticket-attachments"
+      });
+
+    if (insErr) {
+      console.error(`Archivo movido pero no se registró:`, insErr.message);
+      fallidos.push(adjunto.Attachment_File_Name);
+    }
+  }
+
+  if (fallidos.length) {
+    throw new Error(`Fallaron: ${fallidos.join(", ")}`);
+  }
+
+
+  // 3) Eliminar la solicitud original con todas sus relaciones.
   await dispatch('deleteRequest', { id: requestId });
 
-  // TODO(transfer): copiar adjuntos/comentarios relevantes al ticket SOLVI.
+  // TODO(transfer): copiar comentarios relevantes al ticket SOLVI.
   if (payload.notify) {
     // TODO(transfer): notificar al solicitante y al resolutor SOLVI (best-effort, try/catch).
   }
