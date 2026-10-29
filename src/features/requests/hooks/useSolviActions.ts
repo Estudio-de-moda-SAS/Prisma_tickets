@@ -6,7 +6,7 @@ import type { UserProfile } from '@/types/commons';
 import type { SolviTicket } from '../types/SolviTicket';
 import { UsuariosSPService, type UsuariosSP } from '../services/TecnicosSharepointSolvi.service';
 import { calcularFechaSolucion, isTurnoNocturnoAhora, DEFAULT_SLA_HORAS } from '../services/SolviBusinessDate.service';
-import { getAlexUser,} from '../services/SolviTicketAssignment.service';
+import { pickTecnicoConMenosCasos,} from '../services/SolviTicketAssignment.service';
 import { fetchPersonaDisponibleAhora } from '../services/SolviShifts.service';
 import { uploadSolviAttachment as uploadSolviAttachmentToStorage } from '../services/SolviAttachments.service';
 import {
@@ -75,11 +75,31 @@ function emptyTicket(user?: UserProfile | null): SolviTicket {
  * @param tecnicosService - Servicio de técnicos (SharePoint).
  * @returns El técnico asignado, o `null` si no hay ninguno disponible.
  */
-async function assingToAlex(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
-  const resolutor = await getAlexUser(tecnicosService);
+// async function assingToAlex(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
+//   const resolutor = await getAlexUser(tecnicosService);
+//   if (!resolutor) return null;
+//   return resolutor;
+// }
+
+
+/**
+ * Selecciona el técnico con menos casos y le incrementa la carga.
+ *
+ * @remarks
+ * Efecto secundario: aumenta en 1 el `Numerodecasos` del técnico elegido.
+ *
+ * @param tecnicosService - Servicio de técnicos (SharePoint).
+ * @returns El técnico asignado, o `null` si no hay ninguno disponible.
+ */
+async function assignTechnicianAndBumpLoad(tecnicosService: UsuariosSPService): Promise<UsuariosSP | null> {
+  const resolutor = await pickTecnicoConMenosCasos(tecnicosService);
   if (!resolutor) return null;
+
+  const casosActuales = Number(resolutor.Numerodecasos ?? 0);
+  await tecnicosService.update(String(resolutor.Id), { Numerodecasos: casosActuales + 1 });
   return resolutor;
 }
+
 
 /** Resolutor asignado a un ticket: su correo y nombre. */
 type ResolutorAsignado = { correo: string; nombre: string };
@@ -111,7 +131,7 @@ async function assignResolutor(tecnicosService: UsuariosSPService, isTurnoNoctur
     }
   }
 
-  const resolutor = await assingToAlex(tecnicosService);
+  const resolutor = await assignTechnicianAndBumpLoad(tecnicosService);
   return resolutor ? { correo: resolutor.Correo, nombre: resolutor.Title } : null;
 }
 
