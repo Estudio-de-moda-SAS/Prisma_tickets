@@ -8,8 +8,8 @@ export const horasPorANS: Record<string, number> = {
   "ANS 1": 4,
   "ANS 2": 8,
   "ANS 3": 24,
-  "ANS 4": 120,
-  "ANS 5": 160
+  "ANS 4": 142.5, // 15 días hábiles de 9,5 h (7:00-16:30)
+  "ANS 5": 285 // 30 días hábiles de 9,5 h (7:00-16:30)
 };
 
 // Normaliza mayúsculas/espacios: en SharePoint el Title se carga a mano y
