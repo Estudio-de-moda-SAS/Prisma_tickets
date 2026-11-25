@@ -1,9 +1,9 @@
 // src/components/layout/Sidebar.tsx
 import { useState, useEffect, useMemo } from 'react';
-import { NavLink, useNavigate, useMatch, useLocation } from 'react-router';
+import { NavLink, useNavigate, useMatch, useLocation, redirect } from 'react-router';
 import {
   BarChart2, Home, LogOut, Plus, Star,
-  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink, AtSign
+  LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink, AtSign, TrendingUp
 } from 'lucide-react';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -306,15 +306,27 @@ function handleEquipo(team: MyBoardTeam) {
 
               {/* ── ESTADÍSTICAS ── */}
               {showStats && (
-                <NavLink
-                  to="/stats"
-                  className={({ isActive }) =>
-                    ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
-                  }
-                >
-                  <BarChart2 size={16} />
-                  {sidebarAbierto && <span>Dashboard</span>}
-                </NavLink>
+                <>
+                  <NavLink
+                    to="/stats"
+                    className={({ isActive }) =>
+                      ['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join(' ')
+                    }
+                  >
+                    <BarChart2 size={16} />
+                    {sidebarAbierto && <span>Dashboard</span>}
+                  </NavLink>
+
+                  <button
+                    className='sidebar__nav-item'
+                    title={sidebarAbierto ? undefined : 'Métricas'}
+                    onClick={() => window.open("https://brave-wave-0e04f4b0f.4.azurestaticapps.net/", "_blank", "noopener,noreferrer")}
+                  >
+                    <TrendingUp size={16} />
+                    {sidebarAbierto && <span style={{ flex: 1 }}>Métricas</span>}
+                    {sidebarAbierto && <ExternalLink size={12} style={{ opacity: 0.45, flexShrink: 0 }} />}
+                  </button>
+                </>
               )}
 
               {/* ── AUTOMATIZACIONES ── */}
