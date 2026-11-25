@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
 import { useState, useEffect, useMemo } from 'react';
-import { NavLink, useNavigate, useMatch, useLocation, redirect } from 'react-router';
+import { NavLink, useNavigate, useMatch, useLocation, } from 'react-router';
 import {
   BarChart2, Home, LogOut, Plus, Star,
   LayoutGrid, LayoutList, Zap, PanelLeftClose, PanelLeftOpen, Shield, ClipboardList, ExternalLink, AtSign, TrendingUp
