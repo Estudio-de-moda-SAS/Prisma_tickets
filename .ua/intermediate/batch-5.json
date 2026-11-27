@@ -1,0 +1,830 @@
+{
+  "nodes": [
+    {
+      "id": "file:supabase/functions/api/handlers/assignments.ts",
+      "type": "file",
+      "name": "assignments.ts",
+      "filePath": "supabase/functions/api/handlers/assignments.ts",
+      "summary": "Handlers para asignar y desasignar resolutores a solicitudes; la asignación despacha en segundo plano, vía `dispatchEvent`, la notificación in-app y el correo construidos por `notifyAssignment`.",
+      "tags": [
+        "api-handler",
+        "asignaciones",
+        "notificaciones",
+        "edge-function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+      "type": "function",
+      "name": "assignmentHandlers",
+      "filePath": "supabase/functions/api/handlers/assignments.ts",
+      "lineRange": [
+        23,
+        68
+      ],
+      "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: assignRequest (inserta la asignación y llama a `dispatchEvent('assignRequest', notifyAssignment(...))`) y unassignRequest.",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "asignaciones"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/closure.ts",
+      "type": "file",
+      "name": "closure.ts",
+      "filePath": "supabase/functions/api/handlers/closure.ts",
+      "summary": "Handlers de cierre de solicitudes con evidencia: registra el cierre en `TBL_Request_Closure`, aplica la transición de columna con `planColumnTransition`, escribe el audit log, gestiona adjuntos en Storage con URLs firmadas y despacha la notificación de cierre con `notifyClosure`.",
+      "tags": [
+        "api-handler",
+        "cierre",
+        "workflow",
+        "auditoria",
+        "storage"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "type": "function",
+      "name": "closureHandlers",
+      "filePath": "supabase/functions/api/handlers/closure.ts",
+      "lineRange": [
+        29,
+        260
+      ],
+      "summary": "Registro exportado de acciones que el router despacha por nombre: closeRequest (cierre + movimiento de columna + historial + `dispatchEvent('closeRequest', notifyClosure(...))`), fetchClosureAttachments y uploadClosureAttachment (subida a Storage y URL firmada).",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "cierre"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/comments.ts",
+      "type": "file",
+      "name": "comments.ts",
+      "filePath": "supabase/functions/api/handlers/comments.ts",
+      "summary": "Handlers de comentarios, menciones y participantes de una solicitud; revalida las menciones en servidor, persiste a los mencionados como participantes y despacha la notificación del comentario con `notifyComment`.",
+      "tags": [
+        "api-handler",
+        "comentarios",
+        "menciones",
+        "participantes"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "type": "function",
+      "name": "commentHandlers",
+      "filePath": "supabase/functions/api/handlers/comments.ts",
+      "lineRange": [
+        24,
+        218
+      ],
+      "summary": "Registro exportado de acciones que el router despacha por nombre: fetchComments, fetchRequestParticipants, createComment (con `dispatchEvent('createComment', notifyComment(...))`), removeParticipant y deleteComment.",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "comentarios"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/criteria.ts",
+      "type": "file",
+      "name": "criteria.ts",
+      "filePath": "supabase/functions/api/handlers/criteria.ts",
+      "summary": "Handlers CRUD de criterios de aceptación (`TBL_Acceptance_Criteria`) con audit log en cada cambio; al aceptar o rechazar un criterio notifica a los resolutores mediante `notifyEvent` despachado en segundo plano.",
+      "tags": [
+        "api-handler",
+        "criterios-de-aceptacion",
+        "auditoria",
+        "crud"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "type": "function",
+      "name": "criteriaHandlers",
+      "filePath": "supabase/functions/api/handlers/criteria.ts",
+      "lineRange": [
+        28,
+        240
+      ],
+      "summary": "Registro exportado de acciones que el router despacha por nombre: fetchAcceptanceCriteria, createAcceptanceCriteria, updateAcceptanceCriteriaStatus (emite el evento `criteriaReviewed`), deleteAcceptanceCriteria y updateCriteriaTitle; devuelve filas mapeadas con `mapCriteria`.",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "criterios-de-aceptacion"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/feedback.ts",
+      "type": "file",
+      "name": "feedback.ts",
+      "filePath": "supabase/functions/api/handlers/feedback.ts",
+      "summary": "Handlers de feedback del cliente sobre solicitudes en revisión: registra el veredicto, mueve el ticket según `planColumnTransition` (cierre o reapertura), escribe historial y despacha la notificación con `notifyClientFeedback`.",
+      "tags": [
+        "api-handler",
+        "feedback",
+        "workflow",
+        "notificaciones"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "type": "function",
+      "name": "feedbackHandlers",
+      "filePath": "supabase/functions/api/handlers/feedback.ts",
+      "lineRange": [
+        26,
+        162
+      ],
+      "summary": "Registro exportado de acciones que el router despacha por nombre: fetchClientFeedback y submitClientFeedback (veredicto + transición de columna + historial + `dispatchEvent('submitClientFeedback', notifyClientFeedback(...))`).",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "feedback"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "file",
+      "name": "notifyEvent.ts",
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "summary": "Punto único de notificación de eventos del ticket: `notifyEvent` combina la notificación in-app y el correo por template (best-effort, nunca lanza) y `dispatchEvent` la ejecuta en segundo plano con `EdgeRuntime.waitUntil` para no bloquear la respuesta.",
+      "tags": [
+        "utility",
+        "notificaciones",
+        "email",
+        "facade",
+        "background-task"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Usa `EdgeRuntime.waitUntil` del runtime de Supabase Edge Functions (Deno) para mantener viva la invocación tras responder; el parámetro `vars` admite un objeto o una función por destinatario (unión de tipos)."
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "function",
+      "name": "notifyEvent",
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "lineRange": [
+        62,
+        109
+      ],
+      "summary": "Inserta las notificaciones in-app (si hay `inApp`) y envía el correo del evento (si hay `email` y `requestId`); con `vars` como función hace un envío por destinatario consultando `TBL_Users`. Captura todos los errores para no tumbar la operación origen.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "best-effort",
+        "facade"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "function",
+      "name": "dispatchEvent",
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "lineRange": [
+        121,
+        126
+      ],
+      "summary": "Envuelve una promesa de notificación con un `catch` que loguea errores y, si existe `EdgeRuntime.waitUntil`, la registra para que corra en segundo plano tras enviar la respuesta.",
+      "tags": [
+        "background-task",
+        "notificaciones",
+        "edge-runtime"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:supabase/functions/api/handlers/requests.ts",
+      "type": "file",
+      "name": "requests.ts",
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "summary": "Módulo central de PRISMA con los handlers del ciclo de vida del ticket: lectura por múltiples criterios, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas, orquestando auto-asignación de sprint, reglas de automatización, historial y notificaciones despachadas con `dispatchEvent` y los `notify*` compartidos.",
+      "tags": [
+        "api-handler",
+        "solicitudes",
+        "nucleo",
+        "workflow",
+        "kanban"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Patrón de lotes (`chunkedIn`) para sortear el límite de longitud de URL de PostgREST en consultas `.in()` con muchos IDs."
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+      "type": "function",
+      "name": "chunkedIn",
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "lineRange": [
+        56,
+        68
+      ],
+      "summary": "Ejecuta consultas `.in()` por lotes de `IN_CHUNK` IDs para evitar el 500 de PostgREST por URL demasiado larga y concatena los resultados sin reordenar.",
+      "tags": [
+        "utility",
+        "paginacion",
+        "consultas",
+        "postgrest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "type": "function",
+      "name": "requestHandlers",
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "lineRange": [
+        76,
+        1126
+      ],
+      "summary": "Registro exportado de acciones que el router despacha por nombre: fetchAllByBoard, fetchMyMentions, fetchByTeamCode, fetchById, createRequest (con `notifyRequestCreated` y reglas de automatización), moveToColumn (con `notifyColumnMove`), updateRequest, deleteRequest, searchRequests, filterRequests, fetchAllByBoardStats y fetchTeamHistorialPage, entre otras.",
+      "tags": [
+        "api-handler",
+        "registro-de-acciones",
+        "dispatch",
+        "solicitudes"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:supabase/functions/api/handlers/assignments.ts",
+      "target": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/assignments.ts",
+      "target": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/comments.ts",
+      "target": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/comments.ts",
+      "target": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+      "target": "function:supabase/functions/api/shared/mappers.ts:mapCriteria",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "target": "function:supabase/functions/api/shared/notifications.ts:insertNotifications",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "target": "function:supabase/functions/api/email/send.ts:sendEventEmail",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyRequestCreated",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:diffFields",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/lib/history.ts:diffFormData",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+      "target": "function:supabase/functions/api/shared/criteria.ts:attachCriteriaSummary",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/assignments.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/assignments.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/assignments.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "file:supabase/functions/api/lib/history.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "file:supabase/functions/api/lib/storage.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/closure.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/comments.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/comments.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/comments.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "file:supabase/functions/api/lib/history.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "file:supabase/functions/api/shared/mappers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/criteria.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "file:supabase/functions/api/lib/history.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/feedback.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "file:supabase/functions/api/email/send.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "file:supabase/functions/api/lib/supabase.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "target": "file:supabase/functions/api/shared/notifications.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/lib/history.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/shared/criteria.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/shared/selects.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/requests.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

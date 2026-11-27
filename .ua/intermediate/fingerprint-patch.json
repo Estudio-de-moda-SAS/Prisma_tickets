@@ -1,0 +1,956 @@
+{
+  "version": "1.0.0",
+  "baseCommit": "baaf6688c924718f7ecf41d1f157e2b0347d8158",
+  "headCommit": "bd38d79b07e40e0d6b0921db63ebc9865e821204",
+  "generatedAt": "2026-11-27T21:09:23.731Z",
+  "files": {
+    "public/version.json": {
+      "filePath": "public/version.json",
+      "contentHash": "8a100b6acae0f98dbdc79846615cc7cc70c72fcae80ed49b4b155f34a7f4cdb3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "src/features/requests/hooks/useEmailTemplates.ts": {
+      "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+      "contentHash": "bf63b2eda0317af01b29a70c9af200e533bb0d4800683b63bb3338182551619e",
+      "functions": [
+        {
+          "name": "QUERY_KEY",
+          "params": [
+            "boardId"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "useEmailTemplates",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "useUpdateEmailTemplate",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "useToggleEmailTemplate",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "useCreateEmailTemplate",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "useDeleteEmailTemplate",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "getTemplateVariables",
+          "params": [
+            "template"
+          ],
+          "returnType": "string[]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "useUpdateEmailTemplateMetadata",
+          "params": [
+            "boardId"
+          ],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@tanstack/react-query",
+          "specifiers": [
+            "useQuery",
+            "useMutation",
+            "useQueryClient"
+          ]
+        },
+        {
+          "source": "@/lib/apiClient",
+          "specifiers": [
+            "apiClient"
+          ]
+        }
+      ],
+      "exports": [
+        "useEmailTemplates",
+        "useUpdateEmailTemplate",
+        "useToggleEmailTemplate",
+        "useCreateEmailTemplate",
+        "useDeleteEmailTemplate",
+        "EMAIL_EVENT_VARIABLES_FALLBACK",
+        "getTemplateVariables",
+        "useUpdateEmailTemplateMetadata"
+      ],
+      "totalLines": 197,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/email/send.ts": {
+      "filePath": "supabase/functions/api/email/send.ts",
+      "contentHash": "63317e571f117d35dfbfb6132df958dfd34f25db552c80e734b8a1d118fd5f1b",
+      "functions": [
+        {
+          "name": "renderTemplate",
+          "params": [
+            "html",
+            "vars"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "sendEventEmail",
+          "params": [
+            "supabase",
+            "params"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 149
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../lib/supabase.ts",
+          "specifiers": [
+            "DB"
+          ]
+        }
+      ],
+      "exports": [
+        "renderTemplate",
+        "sendEventEmail"
+      ],
+      "totalLines": 167,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/assignments.ts": {
+      "filePath": "supabase/functions/api/handlers/assignments.ts",
+      "contentHash": "7ab4e390efe27ce57e52cfc396d9717a083db2ae519ac3c348d11953f3bda781",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "notifyAssignment"
+          ]
+        }
+      ],
+      "exports": [
+        "assignmentHandlers"
+      ],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/closure.ts": {
+      "filePath": "supabase/functions/api/handlers/closure.ts",
+      "contentHash": "7ba08b859e30b774cdf193ba6132cf51bd134cdef079672820d2ee51d38b57d6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "../lib/storage.ts",
+          "specifiers": [
+            "SIGNED_URL_EXPIRES_IN"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "getRequestParticipants",
+            "notifyClosure",
+            "planColumnTransition"
+          ]
+        },
+        {
+          "source": "../lib/history.ts",
+          "specifiers": [
+            "logHistory"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "closureHandlers"
+      ],
+      "totalLines": 260,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/comments.ts": {
+      "filePath": "supabase/functions/api/handlers/comments.ts",
+      "contentHash": "cfa6b90026c084d50d55a2302c37311d9cb4e53b403745858c8841409814bc5d",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "getRequestParticipants",
+            "notifyComment"
+          ]
+        }
+      ],
+      "exports": [
+        "commentHandlers"
+      ],
+      "totalLines": 218,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/criteria.ts": {
+      "filePath": "supabase/functions/api/handlers/criteria.ts",
+      "contentHash": "57626aa196d61edc3d77924d269dae25855a42918e14ae07e051cb3f084639bf",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "../shared/mappers.ts",
+          "specifiers": [
+            "mapCriteria"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent",
+            "notifyEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "getRequestParticipants"
+          ]
+        },
+        {
+          "source": "../lib/history.ts",
+          "specifiers": [
+            "logHistory"
+          ]
+        }
+      ],
+      "exports": [
+        "criteriaHandlers"
+      ],
+      "totalLines": 240,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/feedback.ts": {
+      "filePath": "supabase/functions/api/handlers/feedback.ts",
+      "contentHash": "be1709a61e6cabf49d39706c4303627179702148326a144f48e1fa0ae86970f6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "getRequestParticipants",
+            "notifyClientFeedback",
+            "planColumnTransition"
+          ]
+        },
+        {
+          "source": "../lib/history.ts",
+          "specifiers": [
+            "logHistory"
+          ]
+        }
+      ],
+      "exports": [
+        "feedbackHandlers"
+      ],
+      "totalLines": 162,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/notifyEvent.ts": {
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "contentHash": "49542f86de94abdb9016f9c5ce4fce734bd1f4ef61525fb42273f39568cc3198",
+      "functions": [
+        {
+          "name": "notifyEvent",
+          "params": [
+            "supabase",
+            "params"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 48
+        },
+        {
+          "name": "dispatchEvent",
+          "params": [
+            "label",
+            "task"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../lib/supabase.ts",
+          "specifiers": [
+            "DB"
+          ]
+        },
+        {
+          "source": "../shared/notifications.ts",
+          "specifiers": [
+            "insertNotifications"
+          ]
+        },
+        {
+          "source": "../email/send.ts",
+          "specifiers": [
+            "sendEventEmail"
+          ]
+        }
+      ],
+      "exports": [
+        "notifyEvent",
+        "dispatchEvent"
+      ],
+      "totalLines": 127,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/requests.ts": {
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "contentHash": "fb63c1979061d3687ed5fd34425214a2f08d9f2c2c8886f4dfa3a0fc2c344f3d",
+      "functions": [
+        {
+          "name": "chunkedIn",
+          "params": [
+            "supabase",
+            "ids",
+            "build"
+          ],
+          "returnType": "Promise<Record<string, unknown>[]>",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "../shared/criteria.ts",
+          "specifiers": [
+            "attachCriteriaSummary"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent",
+            "notifyEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "getRequestParticipants",
+            "notifyAssignment",
+            "notifyColumnMove",
+            "notifyRequestCreated",
+            "planColumnTransition"
+          ]
+        },
+        {
+          "source": "../shared/selects.ts",
+          "specifiers": [
+            "BASE_SELECT",
+            "BASE_SELECT_LIGHT",
+            "DETAIL_SELECT",
+            "STATS_SELECT"
+          ]
+        },
+        {
+          "source": "../lib/history.ts",
+          "specifiers": [
+            "logHistory",
+            "diffFields",
+            "diffFormData"
+          ]
+        }
+      ],
+      "exports": [
+        "requestHandlers"
+      ],
+      "totalLines": 1126,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/handlers/system.ts": {
+      "filePath": "supabase/functions/api/handlers/system.ts",
+      "contentHash": "f3c828728bd9f18fe49d0a403fd94564cfddfc1293e3a719567054dda1348e18",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ActionHandler"
+          ]
+        },
+        {
+          "source": "../config.ts",
+          "specifiers": [
+            "RATING_RATE_LIMIT_DAYS"
+          ]
+        },
+        {
+          "source": "../jobs/renameJob.ts",
+          "specifiers": [
+            "_kickoffJobChunk"
+          ]
+        },
+        {
+          "source": "./notifyEvent.ts",
+          "specifiers": [
+            "dispatchEvent",
+            "notifyEvent"
+          ]
+        },
+        {
+          "source": "../shared/requests.ts",
+          "specifiers": [
+            "notifyAssignment"
+          ]
+        }
+      ],
+      "exports": [
+        "systemHandlers"
+      ],
+      "totalLines": 400,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/jobs/exportJob.ts": {
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "contentHash": "1b226083ce1e7221800ab7931948c969d0d64d8381d06bc6ed6b3774b1a83be4",
+      "functions": [
+        {
+          "name": "_chunk",
+          "params": [
+            "arr",
+            "size"
+          ],
+          "returnType": "T[][]",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "_parseTs",
+          "params": [
+            "v"
+          ],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "_collectAll",
+          "params": [
+            "build"
+          ],
+          "returnType": "Promise<T[]>",
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "_resolveExportCandidateIds",
+          "params": [
+            "supabase",
+            "filters"
+          ],
+          "returnType": "Promise<string[] | null>",
+          "exported": true,
+          "lineCount": 53
+        },
+        {
+          "name": "_applyScalarFilters",
+          "params": [
+            "query",
+            "filters"
+          ],
+          "returnType": "Q",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "_applyExportDirectFilters",
+          "params": [
+            "query",
+            "filters",
+            "candidateIds"
+          ],
+          "returnType": "Q",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "_resolveOrderedExportIds",
+          "params": [
+            "supabase",
+            "filters",
+            "candidateIds"
+          ],
+          "returnType": "Promise<string[]>",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "_countExportMatches",
+          "params": [
+            "supabase",
+            "filters",
+            "candidateIds"
+          ],
+          "returnType": "Promise<number>",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "_uploadExportArtifact",
+          "params": [
+            "supabase",
+            "storagePath",
+            "fileName",
+            "jsonObject"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_downloadCandidateIds",
+          "params": [
+            "supabase",
+            "path"
+          ],
+          "returnType": "Promise<string[]>",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "_kickoffExportChunk",
+          "params": [
+            "jobId"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_finalizeExportJob",
+          "params": [
+            "supabase",
+            "jobId",
+            "exportId",
+            "userId",
+            "totalChunks",
+            "totalTickets",
+            "format",
+            "fileName",
+            "prefix"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 43
+        },
+        {
+          "name": "_failExportJob",
+          "params": [
+            "supabase",
+            "jobId",
+            "exportId",
+            "error"
+          ],
+          "returnType": "Promise<void>",
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "_processExportChunks",
+          "params": [
+            "jobId",
+            "supabase"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 137
+        },
+        {
+          "name": "_cleanupExportArtifacts",
+          "params": [
+            "supabase",
+            "storagePrefix"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../lib/supabase.ts",
+          "specifiers": [
+            "DB"
+          ]
+        },
+        {
+          "source": "../shared/types.ts",
+          "specifiers": [
+            "ExportFilters"
+          ]
+        },
+        {
+          "source": "../config.ts",
+          "specifiers": [
+            "EXPORT_BUCKET",
+            "EXPORT_JOB_CHUNK_SIZE",
+            "EXPORT_MAX_CHUNKS_PER_INVOKE",
+            "SELF_URL",
+            "INTERNAL_JOB_SECRET"
+          ]
+        },
+        {
+          "source": "../shared/selects.ts",
+          "specifiers": [
+            "BASE_SELECT"
+          ]
+        },
+        {
+          "source": "../shared/criteria.ts",
+          "specifiers": [
+            "attachCriteriaSummary"
+          ]
+        },
+        {
+          "source": "../handlers/notifyEvent.ts",
+          "specifiers": [
+            "notifyEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "_resolveExportCandidateIds",
+        "_resolveOrderedExportIds",
+        "_countExportMatches",
+        "_uploadExportArtifact",
+        "_kickoffExportChunk",
+        "_processExportChunks",
+        "_cleanupExportArtifacts"
+      ],
+      "totalLines": 648,
+      "hasStructuralAnalysis": true
+    },
+    "supabase/functions/api/shared/requests.ts": {
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "contentHash": "124677fa2ae2ed1ff62f77b50ca33b8fb01f9064c0126876171dc51b9f366e89",
+      "functions": [
+        {
+          "name": "escapeHtml",
+          "params": [
+            "s"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "shortName",
+          "params": [
+            "fullName"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "ticketUrl",
+          "params": [
+            "requestId"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "clipHtml",
+          "params": [
+            "text",
+            "max"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "getRequestInfo",
+          "params": [
+            "supabase",
+            "requestId"
+          ],
+          "returnType": "Promise<{ title: string; isConfidential: boolean }>",
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "getColumnSlug",
+          "params": [
+            "supabase",
+            "columnId"
+          ],
+          "returnType": "Promise<string | null>",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "getShortUserName",
+          "params": [
+            "supabase",
+            "userId",
+            "fallback"
+          ],
+          "returnType": "Promise<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "notifyRequestCreated",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 82
+        },
+        {
+          "name": "notifyAssignment",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 55
+        },
+        {
+          "name": "notifyColumnMove",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "notifyInProgress",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 56
+        },
+        {
+          "name": "notifyClientReview",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "notifyComment",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 66
+        },
+        {
+          "name": "notifyClosure",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 57
+        },
+        {
+          "name": "notifyClientFeedback",
+          "params": [
+            "supabase",
+            "args"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 101
+        },
+        {
+          "name": "getRequestParticipants",
+          "params": [
+            "supabase",
+            "requestId"
+          ],
+          "returnType": "Promise<{ assigneeIds: number[]; requestedBy: number | null }>",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "isCloseColumn",
+          "params": [
+            "supabase",
+            "columnId",
+            "requestId"
+          ],
+          "returnType": "Promise<boolean>",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "planColumnTransition",
+          "params": [
+            "supabase",
+            "p"
+          ],
+          "returnType": "Promise<ColumnTransition>",
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "../lib/supabase.ts",
+          "specifiers": [
+            "DB"
+          ]
+        },
+        {
+          "source": "../handlers/notifyEvent.ts",
+          "specifiers": [
+            "notifyEvent"
+          ]
+        }
+      ],
+      "exports": [
+        "notifyRequestCreated",
+        "notifyAssignment",
+        "notifyColumnMove",
+        "notifyInProgress",
+        "notifyClientReview",
+        "notifyComment",
+        "notifyClosure",
+        "notifyClientFeedback",
+        "getRequestParticipants",
+        "isCloseColumn",
+        "DONE_COLUMN_SLUGS",
+        "planColumnTransition"
+      ],
+      "totalLines": 864,
+      "hasStructuralAnalysis": true
+    }
+  },
+  "deletedFiles": []
+}

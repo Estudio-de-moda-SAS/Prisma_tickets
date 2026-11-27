@@ -35,12 +35,6 @@
       "fileCategory": "infra"
     },
     {
-      "path": ".ua/config.json",
-      "language": "json",
-      "sizeLines": 2,
-      "fileCategory": "config"
-    },
-    {
       "path": "README.md",
       "language": "markdown",
       "sizeLines": 246,
@@ -955,7 +949,7 @@
     {
       "path": "src/features/requests/hooks/useEmailTemplates.ts",
       "language": "typescript",
-      "sizeLines": 194,
+      "sizeLines": 196,
       "fileCategory": "code"
     },
     {
@@ -1633,7 +1627,7 @@
     {
       "path": "supabase/functions/api/email/send.ts",
       "language": "typescript",
-      "sizeLines": 155,
+      "sizeLines": 166,
       "fileCategory": "code"
     },
     {
@@ -1651,7 +1645,7 @@
     {
       "path": "supabase/functions/api/handlers/assignments.ts",
       "language": "typescript",
-      "sizeLines": 128,
+      "sizeLines": 67,
       "fileCategory": "code"
     },
     {
@@ -1675,7 +1669,7 @@
     {
       "path": "supabase/functions/api/handlers/closure.ts",
       "language": "typescript",
-      "sizeLines": 271,
+      "sizeLines": 259,
       "fileCategory": "code"
     },
     {
@@ -1687,13 +1681,13 @@
     {
       "path": "supabase/functions/api/handlers/comments.ts",
       "language": "typescript",
-      "sizeLines": 230,
+      "sizeLines": 217,
       "fileCategory": "code"
     },
     {
       "path": "supabase/functions/api/handlers/criteria.ts",
       "language": "typescript",
-      "sizeLines": 236,
+      "sizeLines": 239,
       "fileCategory": "code"
     },
     {
@@ -1711,7 +1705,7 @@
     {
       "path": "supabase/functions/api/handlers/feedback.ts",
       "language": "typescript",
-      "sizeLines": 180,
+      "sizeLines": 161,
       "fileCategory": "code"
     },
     {
@@ -1741,7 +1735,7 @@
     {
       "path": "supabase/functions/api/handlers/notifyEvent.ts",
       "language": "typescript",
-      "sizeLines": 70,
+      "sizeLines": 126,
       "fileCategory": "code"
     },
     {
@@ -1753,7 +1747,7 @@
     {
       "path": "supabase/functions/api/handlers/requests.ts",
       "language": "typescript",
-      "sizeLines": 1224,
+      "sizeLines": 1125,
       "fileCategory": "code"
     },
     {
@@ -1819,7 +1813,7 @@
     {
       "path": "supabase/functions/api/jobs/exportJob.ts",
       "language": "typescript",
-      "sizeLines": 643,
+      "sizeLines": 647,
       "fileCategory": "code"
     },
     {
@@ -1897,7 +1891,7 @@
     {
       "path": "supabase/functions/api/shared/requests.ts",
       "language": "typescript",
-      "sizeLines": 629,
+      "sizeLines": 863,
       "fileCategory": "code"
     },
     {
@@ -1979,12 +1973,11 @@
       "fileCategory": "code"
     }
   ],
-  "totalFiles": 325,
+  "totalFiles": 324,
   "filteredByIgnore": 28,
   "estimatedComplexity": "large",
   "importMap": {
     ".github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml": [],
-    ".ua/config.json": [],
     "README.md": [],
     "eslint.config.js": [],
     "index.html": [],
@@ -2804,9 +2797,7 @@
       "src/types/commons.ts"
     ],
     "src/features/requests/hooks/useDragScroll.ts": [],
-    "src/features/requests/hooks/useEmailTemplates.ts": [
-      "src/lib/apiClient.ts"
-    ],
+    "src/features/requests/hooks/useEmailTemplates.ts": [],
     "src/features/requests/hooks/useFilteredBoard.ts": [
       "src/features/requests/templates/types.ts",
       "src/features/requests/types.ts",
@@ -3278,8 +3269,8 @@
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/assignments.ts": [
-      "supabase/functions/api/email/send.ts",
-      "supabase/functions/api/shared/notifications.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/attachments.ts": [
@@ -3294,9 +3285,9 @@
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/closure.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/history.ts",
       "supabase/functions/api/lib/storage.ts",
-      "supabase/functions/api/shared/notifications.ts",
       "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
@@ -3304,14 +3295,14 @@
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/comments.ts": [
-      "supabase/functions/api/shared/notifications.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/criteria.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/history.ts",
       "supabase/functions/api/shared/mappers.ts",
-      "supabase/functions/api/shared/notifications.ts",
       "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
@@ -3325,8 +3316,8 @@
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/feedback.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/history.ts",
-      "supabase/functions/api/shared/notifications.ts",
       "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
@@ -3352,10 +3343,9 @@
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/requests.ts": [
-      "supabase/functions/api/email/send.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/history.ts",
       "supabase/functions/api/shared/criteria.ts",
-      "supabase/functions/api/shared/notifications.ts",
       "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/selects.ts",
       "supabase/functions/api/shared/types.ts"
@@ -3374,8 +3364,9 @@
     ],
     "supabase/functions/api/handlers/system.ts": [
       "supabase/functions/api/config.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/jobs/renameJob.ts",
-      "supabase/functions/api/shared/notifications.ts",
+      "supabase/functions/api/shared/requests.ts",
       "supabase/functions/api/shared/types.ts"
     ],
     "supabase/functions/api/handlers/teamColumnConfig.ts": [
@@ -3406,9 +3397,9 @@
     ],
     "supabase/functions/api/jobs/exportJob.ts": [
       "supabase/functions/api/config.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/supabase.ts",
       "supabase/functions/api/shared/criteria.ts",
-      "supabase/functions/api/shared/notifications.ts",
       "supabase/functions/api/shared/selects.ts",
       "supabase/functions/api/shared/types.ts"
     ],
@@ -3475,7 +3466,7 @@
       "supabase/functions/api/lib/supabase.ts"
     ],
     "supabase/functions/api/shared/requests.ts": [
-      "supabase/functions/api/email/send.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
       "supabase/functions/api/lib/supabase.ts"
     ],
     "supabase/functions/api/shared/selects.ts": [],
@@ -3493,5 +3484,6 @@
     "typedoc.frontend.json": [],
     "typedoc.json": [],
     "vite.config.ts": []
-  }
+  },
+  "contentDigest": "4d46fe0dfa57081521ddb8ef7da83092be0035c3591c5b9d8e27692dd64aef70"
 }

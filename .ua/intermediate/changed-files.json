@@ -1,0 +1,12 @@
+[
+  "supabase/functions/api/handlers/assignments.ts",
+  "supabase/functions/api/handlers/closure.ts",
+  "supabase/functions/api/handlers/comments.ts",
+  "supabase/functions/api/handlers/criteria.ts",
+  "supabase/functions/api/handlers/feedback.ts",
+  "supabase/functions/api/handlers/notifyEvent.ts",
+  "supabase/functions/api/handlers/requests.ts",
+  "supabase/functions/api/handlers/system.ts",
+  "supabase/functions/api/jobs/exportJob.ts",
+  "supabase/functions/api/shared/requests.ts"
+]

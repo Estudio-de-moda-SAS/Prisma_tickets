@@ -1,0 +1,1979 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 3,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "supabase/functions/api/handlers/system.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 400,
+      "nonEmptyLines": 372,
+      "exports": [
+        {
+          "name": "systemHandlers",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/jobs/exportJob.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 648,
+      "nonEmptyLines": 597,
+      "functions": [
+        {
+          "name": "_chunk",
+          "startLine": 71,
+          "endLine": 75,
+          "params": [
+            "arr",
+            "size"
+          ]
+        },
+        {
+          "name": "_parseTs",
+          "startLine": 87,
+          "endLine": 92,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "_collectAll",
+          "startLine": 105,
+          "endLine": 119,
+          "params": [
+            "build"
+          ]
+        },
+        {
+          "name": "_resolveExportCandidateIds",
+          "startLine": 137,
+          "endLine": 189,
+          "params": [
+            "supabase",
+            "filters"
+          ]
+        },
+        {
+          "name": "_applyScalarFilters",
+          "startLine": 203,
+          "endLine": 218,
+          "params": [
+            "query",
+            "filters"
+          ]
+        },
+        {
+          "name": "_applyExportDirectFilters",
+          "startLine": 229,
+          "endLine": 237,
+          "params": [
+            "query",
+            "filters",
+            "candidateIds"
+          ]
+        },
+        {
+          "name": "_resolveOrderedExportIds",
+          "startLine": 253,
+          "endLine": 277,
+          "params": [
+            "supabase",
+            "filters",
+            "candidateIds"
+          ]
+        },
+        {
+          "name": "_countExportMatches",
+          "startLine": 292,
+          "endLine": 314,
+          "params": [
+            "supabase",
+            "filters",
+            "candidateIds"
+          ]
+        },
+        {
+          "name": "_uploadExportArtifact",
+          "startLine": 325,
+          "endLine": 339,
+          "params": [
+            "supabase",
+            "storagePath",
+            "fileName",
+            "jsonObject"
+          ]
+        },
+        {
+          "name": "_downloadCandidateIds",
+          "startLine": 349,
+          "endLine": 355,
+          "params": [
+            "supabase",
+            "path"
+          ]
+        },
+        {
+          "name": "_kickoffExportChunk",
+          "startLine": 367,
+          "endLine": 381,
+          "params": [
+            "jobId"
+          ]
+        },
+        {
+          "name": "_finalizeExportJob",
+          "startLine": 396,
+          "endLine": 438,
+          "params": [
+            "supabase",
+            "jobId",
+            "exportId",
+            "userId",
+            "totalChunks",
+            "totalTickets",
+            "format",
+            "fileName",
+            "prefix"
+          ]
+        },
+        {
+          "name": "_failExportJob",
+          "startLine": 448,
+          "endLine": 467,
+          "params": [
+            "supabase",
+            "jobId",
+            "exportId",
+            "error"
+          ]
+        },
+        {
+          "name": "_processExportChunks",
+          "startLine": 489,
+          "endLine": 625,
+          "params": [
+            "jobId",
+            "supabase"
+          ]
+        },
+        {
+          "name": "_cleanupExportArtifacts",
+          "startLine": 637,
+          "endLine": 648,
+          "params": [
+            "supabase",
+            "storagePrefix"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_resolveExportCandidateIds",
+          "line": 137,
+          "isDefault": false
+        },
+        {
+          "name": "_resolveOrderedExportIds",
+          "line": 253,
+          "isDefault": false
+        },
+        {
+          "name": "_countExportMatches",
+          "line": 292,
+          "isDefault": false
+        },
+        {
+          "name": "_uploadExportArtifact",
+          "line": 325,
+          "isDefault": false
+        },
+        {
+          "name": "_kickoffExportChunk",
+          "line": 367,
+          "isDefault": false
+        },
+        {
+          "name": "_processExportChunks",
+          "line": 489,
+          "isDefault": false
+        },
+        {
+          "name": "_cleanupExportArtifacts",
+          "line": 637,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_chunk",
+          "callee": "out.push",
+          "lineNumber": 73
+        },
+        {
+          "caller": "_chunk",
+          "callee": "arr.slice",
+          "lineNumber": 73
+        },
+        {
+          "caller": "_parseTs",
+          "callee": "String",
+          "lineNumber": 88
+        },
+        {
+          "caller": "_parseTs",
+          "callee": "new Date(s.endsWith('Z') ? s : `${s}Z`).getTime",
+          "lineNumber": 90
+        },
+        {
+          "caller": "_parseTs",
+          "callee": "s.endsWith",
+          "lineNumber": 90
+        },
+        {
+          "caller": "_parseTs",
+          "callee": "Number.isNaN",
+          "lineNumber": 91
+        },
+        {
+          "caller": "_collectAll",
+          "callee": "build",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_collectAll",
+          "callee": "all.push",
+          "lineNumber": 114
+        },
+        {
+          "caller": "intersect",
+          "callee": "a.filter",
+          "lineNumber": 145
+        },
+        {
+          "caller": "intersect",
+          "callee": "setB.has",
+          "lineNumber": 145
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "await _collectAll",
+          "lineNumber": 149
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Team')\r\n        .select('Request_Team_Request_ID')\r\n        .in('Request_Team_ID', filters.teamIds!)\r\n        .range",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Team')\r\n        .select('Request_Team_Request_ID')\r\n        .in",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Team')\r\n        .select",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "intersect",
+          "lineNumber": 154
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "rows.map",
+          "lineNumber": 154
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "await _collectAll",
+          "lineNumber": 159
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Sprint')\r\n        .select('Request_Sprint_Request_ID')\r\n        .in('Request_Sprint_ID', filters.sprintIds!)\r\n        .range",
+          "lineNumber": 160
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Sprint')\r\n        .select('Request_Sprint_Request_ID')\r\n        .in",
+          "lineNumber": 160
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Sprint')\r\n        .select",
+          "lineNumber": 160
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from",
+          "lineNumber": 160
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "intersect",
+          "lineNumber": 164
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "rows.map",
+          "lineNumber": 164
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "await _collectAll",
+          "lineNumber": 169
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Requests_Assignments')\r\n        .select('Request_Assignment_ID')\r\n        .in('Request_Assignment_User_ID', filters.assignedToIds!)\r\n        .range",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Requests_Assignments')\r\n        .select('Request_Assignment_ID')\r\n        .in",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Requests_Assignments')\r\n        .select",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "intersect",
+          "lineNumber": 174
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "rows.map",
+          "lineNumber": 174
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "await _collectAll",
+          "lineNumber": 179
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Labels')\r\n        .select('Request_Labels_Request_ID')\r\n        .in('Request_Labels_Label_ID', filters.labelIds!)\r\n        .range",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Labels')\r\n        .select('Request_Labels_Request_ID')\r\n        .in",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from('TBL_Request_Labels')\r\n        .select",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "supabase.from",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "intersect",
+          "lineNumber": 184
+        },
+        {
+          "caller": "_resolveExportCandidateIds",
+          "callee": "rows.map",
+          "lineNumber": 184
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.in",
+          "lineNumber": 208
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.in",
+          "lineNumber": 209
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.in",
+          "lineNumber": 210
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.in",
+          "lineNumber": 211
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.eq",
+          "lineNumber": 213
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.gte",
+          "lineNumber": 215
+        },
+        {
+          "caller": "_applyScalarFilters",
+          "callee": "q.lte",
+          "lineNumber": 216
+        },
+        {
+          "caller": "_applyExportDirectFilters",
+          "callee": "query.eq",
+          "lineNumber": 234
+        },
+        {
+          "caller": "_applyExportDirectFilters",
+          "callee": "q.in",
+          "lineNumber": 235
+        },
+        {
+          "caller": "_applyExportDirectFilters",
+          "callee": "_applyScalarFilters",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "_chunk",
+          "lineNumber": 261
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "supabase\r\n      .from('TBL_Requests')\r\n      .select('Request_ID, Request_Created_At')\r\n      .eq('Request_Board_ID', filters.boardId)\r\n      .in",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "supabase\r\n      .from('TBL_Requests')\r\n      .select('Request_ID, Request_Created_At')\r\n      .eq",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "supabase\r\n      .from('TBL_Requests')\r\n      .select",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "_applyScalarFilters",
+          "lineNumber": 267
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "collected.push",
+          "lineNumber": 271
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "_parseTs",
+          "lineNumber": 271
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "collected.sort",
+          "lineNumber": 275
+        },
+        {
+          "caller": "_resolveOrderedExportIds",
+          "callee": "collected.map",
+          "lineNumber": 276
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "supabase.from('TBL_Requests').select",
+          "lineNumber": 300
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "supabase.from",
+          "lineNumber": 300
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "_applyExportDirectFilters",
+          "lineNumber": 301
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "_chunk",
+          "lineNumber": 307
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "supabase.from('TBL_Requests').select",
+          "lineNumber": 308
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "supabase.from",
+          "lineNumber": 308
+        },
+        {
+          "caller": "_countExportMatches",
+          "callee": "_applyExportDirectFilters",
+          "lineNumber": 309
+        },
+        {
+          "caller": "_uploadExportArtifact",
+          "callee": "new TextEncoder().encode",
+          "lineNumber": 331
+        },
+        {
+          "caller": "_uploadExportArtifact",
+          "callee": "JSON.stringify",
+          "lineNumber": 331
+        },
+        {
+          "caller": "_uploadExportArtifact",
+          "callee": "supabase.storage\r\n    .from(EXPORT_BUCKET)\r\n    .upload",
+          "lineNumber": 332
+        },
+        {
+          "caller": "_uploadExportArtifact",
+          "callee": "supabase.storage\r\n    .from",
+          "lineNumber": 332
+        },
+        {
+          "caller": "_downloadCandidateIds",
+          "callee": "supabase.storage.from(EXPORT_BUCKET).download",
+          "lineNumber": 350
+        },
+        {
+          "caller": "_downloadCandidateIds",
+          "callee": "supabase.storage.from",
+          "lineNumber": 350
+        },
+        {
+          "caller": "_downloadCandidateIds",
+          "callee": "data.text",
+          "lineNumber": 352
+        },
+        {
+          "caller": "_downloadCandidateIds",
+          "callee": "JSON.parse",
+          "lineNumber": 353
+        },
+        {
+          "caller": "_kickoffExportChunk",
+          "callee": "fetch",
+          "lineNumber": 369
+        },
+        {
+          "caller": "_kickoffExportChunk",
+          "callee": "JSON.stringify",
+          "lineNumber": 375
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "new Date().toISOString",
+          "lineNumber": 407
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from('TBL_Background_Jobs').update({\r\n    Job_Status:           'done',\r\n    Job_Progress_Current: totalTickets,\r\n    Job_Result:           {\r\n      exportId, totalChunks, totalTickets, storagePrefix: prefix, fileName, format,\r\n    },\r\n    Job_Updated_At:       completedAt,\r\n    Job_Completed_At:     completedAt,\r\n  }).eq",
+          "lineNumber": 409
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from('TBL_Background_Jobs').update",
+          "lineNumber": 409
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from",
+          "lineNumber": 409
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from('TBL_Export_History').update({\r\n    Export_Status:         'done',\r\n    Export_File_Name:      fileName,\r\n    Export_Storage_Prefix: prefix,\r\n    Export_Completed_At:   completedAt,\r\n  }).eq",
+          "lineNumber": 419
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from('TBL_Export_History').update",
+          "lineNumber": 419
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "supabase.from",
+          "lineNumber": 419
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "notifyEvent",
+          "lineNumber": 427
+        },
+        {
+          "caller": "_finalizeExportJob",
+          "callee": "format.toUpperCase",
+          "lineNumber": 435
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "new Date().toISOString",
+          "lineNumber": 454
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from('TBL_Background_Jobs').update({\r\n    Job_Status:       'failed',\r\n    Job_Error:        error,\r\n    Job_Updated_At:   now,\r\n    Job_Completed_At: now,\r\n  }).eq",
+          "lineNumber": 455
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from('TBL_Background_Jobs').update",
+          "lineNumber": 455
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from",
+          "lineNumber": 455
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from('TBL_Export_History').update({\r\n    Export_Status:       'failed',\r\n    Export_Error:        error,\r\n    Export_Completed_At: now,\r\n  }).eq",
+          "lineNumber": 462
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from('TBL_Export_History').update",
+          "lineNumber": 462
+        },
+        {
+          "caller": "_failExportJob",
+          "callee": "supabase.from",
+          "lineNumber": 462
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n    .from('TBL_Background_Jobs')\r\n    .select('Job_ID, Job_Type, Job_Status, Job_Payload, Job_Progress_Current, Job_Progress_Total')\r\n    .eq('Job_ID', jobId)\r\n    .single",
+          "lineNumber": 493
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n    .from('TBL_Background_Jobs')\r\n    .select('Job_ID, Job_Type, Job_Status, Job_Payload, Job_Progress_Current, Job_Progress_Total')\r\n    .eq",
+          "lineNumber": 493
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n    .from('TBL_Background_Jobs')\r\n    .select",
+          "lineNumber": 493
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 493
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Background_Jobs').update({\r\n      Job_Status:     'running',\r\n      Job_Updated_At: new Date().toISOString(),\r\n    }).eq",
+          "lineNumber": 524
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Background_Jobs').update",
+          "lineNumber": 524
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from",
+          "lineNumber": 524
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "new Date().toISOString",
+          "lineNumber": 526
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Export_History').update({\r\n      Export_Status: 'running',\r\n    }).eq",
+          "lineNumber": 529
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Export_History').update",
+          "lineNumber": 529
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from",
+          "lineNumber": 529
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_downloadCandidateIds",
+          "lineNumber": 543
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "Math.floor",
+          "lineNumber": 547
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "orderedIds.slice",
+          "lineNumber": 557
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_chunk",
+          "lineNumber": 561
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n            .from('TBL_Requests')\r\n            .select(BASE_SELECT)\r\n            .eq('Request_Board_ID', filters.boardId)\r\n            .in",
+          "lineNumber": 562
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n            .from('TBL_Requests')\r\n            .select(BASE_SELECT)\r\n            .eq",
+          "lineNumber": 562
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n            .from('TBL_Requests')\r\n            .select",
+          "lineNumber": 562
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n            .from",
+          "lineNumber": 562
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "rows.push",
+          "lineNumber": 568
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "rows.sort",
+          "lineNumber": 571
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_parseTs",
+          "lineNumber": 571
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_parseTs",
+          "lineNumber": 571
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "attachCriteriaSummary",
+          "lineNumber": 573
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n          .from('TBL_Requests')\r\n          .select(BASE_SELECT)\r\n          .order('Request_Created_At', { ascending: false })\r\n          .range",
+          "lineNumber": 578
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n          .from('TBL_Requests')\r\n          .select(BASE_SELECT)\r\n          .order",
+          "lineNumber": 578
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n          .from('TBL_Requests')\r\n          .select",
+          "lineNumber": 578
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase\r\n          .from",
+          "lineNumber": 578
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_applyExportDirectFilters",
+          "lineNumber": 583
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "attachCriteriaSummary",
+          "lineNumber": 586
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "String(chunkIndex + 1).padStart",
+          "lineNumber": 591
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "String",
+          "lineNumber": 591
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_uploadExportArtifact",
+          "lineNumber": 592
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Background_Jobs').update({\r\n        Job_Progress_Current: processed,\r\n        Job_Updated_At:       new Date().toISOString(),\r\n      }).eq",
+          "lineNumber": 596
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from('TBL_Background_Jobs').update",
+          "lineNumber": 596
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "supabase.from",
+          "lineNumber": 596
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "new Date().toISOString",
+          "lineNumber": 598
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "Math.floor",
+          "lineNumber": 604
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "new Date().toISOString().slice(0, 16).replace",
+          "lineNumber": 611
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "new Date().toISOString().slice",
+          "lineNumber": 611
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "new Date().toISOString",
+          "lineNumber": 611
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_finalizeExportJob",
+          "lineNumber": 614
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "EdgeRuntime.waitUntil",
+          "lineNumber": 617
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_kickoffExportChunk",
+          "lineNumber": 617
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_kickoffExportChunk(jobId).catch",
+          "lineNumber": 619
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_kickoffExportChunk",
+          "lineNumber": 619
+        },
+        {
+          "caller": "_processExportChunks",
+          "callee": "_failExportJob",
+          "lineNumber": 623
+        },
+        {
+          "caller": "_cleanupExportArtifacts",
+          "callee": "supabase.storage.from(EXPORT_BUCKET).list",
+          "lineNumber": 642
+        },
+        {
+          "caller": "_cleanupExportArtifacts",
+          "callee": "supabase.storage.from",
+          "lineNumber": 642
+        },
+        {
+          "caller": "_cleanupExportArtifacts",
+          "callee": "(files as Array<{ name: string }>).map",
+          "lineNumber": 644
+        },
+        {
+          "caller": "_cleanupExportArtifacts",
+          "callee": "supabase.storage.from(EXPORT_BUCKET).remove",
+          "lineNumber": 645
+        },
+        {
+          "caller": "_cleanupExportArtifacts",
+          "callee": "supabase.storage.from",
+          "lineNumber": 645
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 7,
+        "functionCount": 15,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/shared/requests.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 863,
+      "nonEmptyLines": 802,
+      "functions": [
+        {
+          "name": "escapeHtml",
+          "startLine": 39,
+          "endLine": 43,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "shortName",
+          "startLine": 55,
+          "endLine": 58,
+          "params": [
+            "fullName"
+          ]
+        },
+        {
+          "name": "ticketUrl",
+          "startLine": 61,
+          "endLine": 63,
+          "params": [
+            "requestId"
+          ]
+        },
+        {
+          "name": "clipHtml",
+          "startLine": 66,
+          "endLine": 70,
+          "params": [
+            "text",
+            "max"
+          ]
+        },
+        {
+          "name": "getRequestInfo",
+          "startLine": 73,
+          "endLine": 86,
+          "params": [
+            "supabase",
+            "requestId"
+          ]
+        },
+        {
+          "name": "getColumnSlug",
+          "startLine": 89,
+          "endLine": 96,
+          "params": [
+            "supabase",
+            "columnId"
+          ]
+        },
+        {
+          "name": "getShortUserName",
+          "startLine": 99,
+          "endLine": 103,
+          "params": [
+            "supabase",
+            "userId",
+            "fallback"
+          ]
+        },
+        {
+          "name": "notifyRequestCreated",
+          "startLine": 122,
+          "endLine": 203,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyAssignment",
+          "startLine": 221,
+          "endLine": 275,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyColumnMove",
+          "startLine": 293,
+          "endLine": 321,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyInProgress",
+          "startLine": 342,
+          "endLine": 397,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyClientReview",
+          "startLine": 413,
+          "endLine": 443,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyComment",
+          "startLine": 463,
+          "endLine": 528,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyClosure",
+          "startLine": 548,
+          "endLine": 604,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "notifyClientFeedback",
+          "startLine": 623,
+          "endLine": 723,
+          "params": [
+            "supabase",
+            "args"
+          ]
+        },
+        {
+          "name": "getRequestParticipants",
+          "startLine": 736,
+          "endLine": 761,
+          "params": [
+            "supabase",
+            "requestId"
+          ]
+        },
+        {
+          "name": "isCloseColumn",
+          "startLine": 776,
+          "endLine": 800,
+          "params": [
+            "supabase",
+            "columnId",
+            "requestId"
+          ]
+        },
+        {
+          "name": "planColumnTransition",
+          "startLine": 837,
+          "endLine": 863,
+          "params": [
+            "supabase",
+            "p"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "notifyRequestCreated",
+          "line": 122,
+          "isDefault": false
+        },
+        {
+          "name": "notifyAssignment",
+          "line": 221,
+          "isDefault": false
+        },
+        {
+          "name": "notifyColumnMove",
+          "line": 293,
+          "isDefault": false
+        },
+        {
+          "name": "notifyInProgress",
+          "line": 342,
+          "isDefault": false
+        },
+        {
+          "name": "notifyClientReview",
+          "line": 413,
+          "isDefault": false
+        },
+        {
+          "name": "notifyComment",
+          "line": 463,
+          "isDefault": false
+        },
+        {
+          "name": "notifyClosure",
+          "line": 548,
+          "isDefault": false
+        },
+        {
+          "name": "notifyClientFeedback",
+          "line": 623,
+          "isDefault": false
+        },
+        {
+          "name": "getRequestParticipants",
+          "line": 736,
+          "isDefault": false
+        },
+        {
+          "name": "isCloseColumn",
+          "line": 776,
+          "isDefault": false
+        },
+        {
+          "name": "DONE_COLUMN_SLUGS",
+          "line": 804,
+          "isDefault": false
+        },
+        {
+          "name": "planColumnTransition",
+          "line": 837,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "escapeHtml",
+          "callee": "s\n    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;').replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "s\n    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')\n    .replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "s\n    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "s\n    .replace(/&/g, '&amp;').replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "s\n    .replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "shortName",
+          "callee": "(fullName ?? '').trim().split",
+          "lineNumber": 56
+        },
+        {
+          "caller": "shortName",
+          "callee": "(fullName ?? '').trim",
+          "lineNumber": 56
+        },
+        {
+          "caller": "shortName",
+          "callee": "(fullName ?? '').trim",
+          "lineNumber": 57
+        },
+        {
+          "caller": "ticketUrl",
+          "callee": "Deno.env.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "clipHtml",
+          "callee": "(text ?? '').trim",
+          "lineNumber": 67
+        },
+        {
+          "caller": "clipHtml",
+          "callee": "raw.slice",
+          "lineNumber": 68
+        },
+        {
+          "caller": "clipHtml",
+          "callee": "escapeHtml(clipped).replace",
+          "lineNumber": 69
+        },
+        {
+          "caller": "clipHtml",
+          "callee": "escapeHtml",
+          "lineNumber": 69
+        },
+        {
+          "caller": "getRequestInfo",
+          "callee": "supabase\n    .from('TBL_Requests')\n    .select('Request_Title, Request_Is_Confidential')\n    .eq('Request_ID', requestId)\n    .single",
+          "lineNumber": 77
+        },
+        {
+          "caller": "getRequestInfo",
+          "callee": "supabase\n    .from('TBL_Requests')\n    .select('Request_Title, Request_Is_Confidential')\n    .eq",
+          "lineNumber": 77
+        },
+        {
+          "caller": "getRequestInfo",
+          "callee": "supabase\n    .from('TBL_Requests')\n    .select",
+          "lineNumber": 77
+        },
+        {
+          "caller": "getRequestInfo",
+          "callee": "supabase\n    .from",
+          "lineNumber": 77
+        },
+        {
+          "caller": "getColumnSlug",
+          "callee": "supabase\n    .from('TBL_Board_Columns')\n    .select('Board_Column_Slug')\n    .eq('Board_Column_ID', columnId)\n    .maybeSingle",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getColumnSlug",
+          "callee": "supabase\n    .from('TBL_Board_Columns')\n    .select('Board_Column_Slug')\n    .eq",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getColumnSlug",
+          "callee": "supabase\n    .from('TBL_Board_Columns')\n    .select",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getColumnSlug",
+          "callee": "supabase\n    .from",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getShortUserName",
+          "callee": "supabase\n    .from('TBL_Users').select('User_Name').eq('User_ID', userId).maybeSingle",
+          "lineNumber": 100
+        },
+        {
+          "caller": "getShortUserName",
+          "callee": "supabase\n    .from('TBL_Users').select('User_Name').eq",
+          "lineNumber": 100
+        },
+        {
+          "caller": "getShortUserName",
+          "callee": "supabase\n    .from('TBL_Users').select",
+          "lineNumber": 100
+        },
+        {
+          "caller": "getShortUserName",
+          "callee": "supabase\n    .from",
+          "lineNumber": 100
+        },
+        {
+          "caller": "getShortUserName",
+          "callee": "shortName",
+          "lineNumber": 102
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n        .from('TBL_Sub_Teams')\n        .select('Sub_Team_ID')\n        .in",
+          "lineNumber": 138
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n        .from('TBL_Sub_Teams')\n        .select",
+          "lineNumber": 138
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n        .from",
+          "lineNumber": 138
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "((subTeamRows ?? []) as { Sub_Team_ID: number }[]).map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n          .from('TBL_Sub_Team_Members')\n          .select('Sub_Team_Member_User_ID')\n          .in",
+          "lineNumber": 145
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n          .from('TBL_Sub_Team_Members')\n          .select",
+          "lineNumber": 145
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "supabase\n          .from",
+          "lineNumber": 145
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "[...new Set(\n          ((memberRows ?? []) as { Sub_Team_Member_User_ID: number }[])\n            .map((m) => m.Sub_Team_Member_User_ID),\n        )].filter",
+          "lineNumber": 149
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "((memberRows ?? []) as { Sub_Team_Member_User_ID: number }[])\n            .map",
+          "lineNumber": 150
+        },
+        {
+          "caller": "fmtFecha",
+          "callee": "iso.includes",
+          "lineNumber": 158
+        },
+        {
+          "caller": "fmtFecha",
+          "callee": "new Date(clean).toLocaleDateString",
+          "lineNumber": 159
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "fmtFecha",
+          "lineNumber": 167
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "fmtFecha",
+          "lineNumber": 168
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "getShortUserName",
+          "lineNumber": 175
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "notifyEvent",
+          "lineNumber": 177
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "ticketUrl",
+          "lineNumber": 194
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "String",
+          "lineNumber": 196
+        },
+        {
+          "caller": "notifyRequestCreated",
+          "callee": "console.error",
+          "lineNumber": 201
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select('Notification_ID')\n      .eq('Notification_User_ID', args.userId)\n      .eq('Notification_Type', 'assignment')\n      .eq('Notification_Request_ID', args.requestId)\n      .eq('Notification_Is_Read', false)\n      .limit",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select('Notification_ID')\n      .eq('Notification_User_ID', args.userId)\n      .eq('Notification_Type', 'assignment')\n      .eq('Notification_Request_ID', args.requestId)\n      .eq",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select('Notification_ID')\n      .eq('Notification_User_ID', args.userId)\n      .eq('Notification_Type', 'assignment')\n      .eq",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select('Notification_ID')\n      .eq('Notification_User_ID', args.userId)\n      .eq",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select('Notification_ID')\n      .eq",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from('TBL_Notifications')\n      .select",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "supabase\n      .from",
+          "lineNumber": 228
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "Promise.all",
+          "lineNumber": 238
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "getRequestInfo",
+          "lineNumber": 239
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "getShortUserName",
+          "lineNumber": 240
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "getShortUserName",
+          "lineNumber": 241
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "Promise.resolve",
+          "lineNumber": 241
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "notifyEvent",
+          "lineNumber": 244
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "ticketUrl",
+          "lineNumber": 268
+        },
+        {
+          "caller": "notifyAssignment",
+          "callee": "console.error",
+          "lineNumber": 273
+        },
+        {
+          "caller": "notifyColumnMove",
+          "callee": "[...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]\n    .filter",
+          "lineNumber": 304
+        },
+        {
+          "caller": "notifyColumnMove",
+          "callee": "notifyEvent",
+          "lineNumber": 307
+        },
+        {
+          "caller": "notifyColumnMove",
+          "callee": "notifyClientReview",
+          "lineNumber": 319
+        },
+        {
+          "caller": "notifyColumnMove",
+          "callee": "notifyInProgress",
+          "lineNumber": 320
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "getColumnSlug",
+          "lineNumber": 348
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "args.assigneeIds.includes",
+          "lineNumber": 350
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "console.log",
+          "lineNumber": 351
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Users')\n      .select('User_Name, Department_ID')\n      .eq('User_ID', args.requestedBy)\n      .single",
+          "lineNumber": 355
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Users')\n      .select('User_Name, Department_ID')\n      .eq",
+          "lineNumber": 355
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Users')\n      .select",
+          "lineNumber": 355
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from",
+          "lineNumber": 355
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "console.log",
+          "lineNumber": 361
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select('Email_Log_ID')\n      .eq('Email_Log_Request_ID', args.requestId)\n      .eq('Email_Log_Event_Key', 'movido_en_progreso')\n      .eq('Email_Log_Status', 'sent')\n      .limit(1)\n      .maybeSingle",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select('Email_Log_ID')\n      .eq('Email_Log_Request_ID', args.requestId)\n      .eq('Email_Log_Event_Key', 'movido_en_progreso')\n      .eq('Email_Log_Status', 'sent')\n      .limit",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select('Email_Log_ID')\n      .eq('Email_Log_Request_ID', args.requestId)\n      .eq('Email_Log_Event_Key', 'movido_en_progreso')\n      .eq",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select('Email_Log_ID')\n      .eq('Email_Log_Request_ID', args.requestId)\n      .eq",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select('Email_Log_ID')\n      .eq",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from('TBL_Email_Logs')\n      .select",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "supabase\n      .from",
+          "lineNumber": 365
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "console.log",
+          "lineNumber": 374
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "getRequestInfo",
+          "lineNumber": 378
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "notifyEvent",
+          "lineNumber": 380
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "shortName",
+          "lineNumber": 387
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "ticketUrl",
+          "lineNumber": 390
+        },
+        {
+          "caller": "notifyInProgress",
+          "callee": "console.error",
+          "lineNumber": 395
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "getColumnSlug",
+          "lineNumber": 419
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "Promise.all",
+          "lineNumber": 421
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "getRequestInfo",
+          "lineNumber": 422
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "getShortUserName",
+          "lineNumber": 423
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "notifyEvent",
+          "lineNumber": 426
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "ticketUrl",
+          "lineNumber": 436
+        },
+        {
+          "caller": "notifyClientReview",
+          "callee": "console.error",
+          "lineNumber": 441
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "(args.commentText ?? '').trim",
+          "lineNumber": 475
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "trimmed.slice",
+          "lineNumber": 476
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "[...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]\n      .filter",
+          "lineNumber": 477
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "notifyEvent",
+          "lineNumber": 481
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "Promise.all",
+          "lineNumber": 494
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "getRequestInfo",
+          "lineNumber": 495
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "getShortUserName",
+          "lineNumber": 496
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "clipHtml",
+          "lineNumber": 500
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "notifyEvent",
+          "lineNumber": 502
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "participants.filter",
+          "lineNumber": 507
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "args.mentionedIds.includes",
+          "lineNumber": 507
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "shortName",
+          "lineNumber": 515
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "ticketUrl",
+          "lineNumber": 519
+        },
+        {
+          "caller": "notifyComment",
+          "callee": "console.error",
+          "lineNumber": 526
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "[...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]\n      .filter",
+          "lineNumber": 560
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "getColumnSlug",
+          "lineNumber": 562
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "Promise.all",
+          "lineNumber": 565
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "getRequestInfo",
+          "lineNumber": 566
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "getShortUserName",
+          "lineNumber": 567
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "clipHtml",
+          "lineNumber": 571
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "notifyEvent",
+          "lineNumber": 573
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "note.slice",
+          "lineNumber": 581
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "recipientIds.filter",
+          "lineNumber": 584
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "shortName",
+          "lineNumber": 586
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "ticketUrl",
+          "lineNumber": 590
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "notifyClientReview",
+          "lineNumber": 596
+        },
+        {
+          "caller": "notifyClosure",
+          "callee": "console.error",
+          "lineNumber": 602
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "args.feedbackNote.slice",
+          "lineNumber": 635
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "Promise.all",
+          "lineNumber": 637
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "getRequestInfo",
+          "lineNumber": 638
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "getShortUserName",
+          "lineNumber": 639
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "escapeHtml",
+          "lineNumber": 671
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "escapeHtml",
+          "lineNumber": 672
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "(args.feedbackNote ?? '').trim",
+          "lineNumber": 679
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "clipHtml",
+          "lineNumber": 684
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "notifyEvent",
+          "lineNumber": 687
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "shortName",
+          "lineNumber": 704
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "ticketUrl",
+          "lineNumber": 708
+        },
+        {
+          "caller": "notifyClientFeedback",
+          "callee": "console.error",
+          "lineNumber": 721
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "Promise.all",
+          "lineNumber": 740
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from('TBL_Requests_Assignments')\n      .select('Request_Assignment_User_ID')\n      .eq",
+          "lineNumber": 741
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from('TBL_Requests_Assignments')\n      .select",
+          "lineNumber": 741
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from",
+          "lineNumber": 741
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from('TBL_Requests')\n      .select('Request_Requested_By')\n      .eq('Request_ID', requestId)\n      .single",
+          "lineNumber": 745
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from('TBL_Requests')\n      .select('Request_Requested_By')\n      .eq",
+          "lineNumber": 745
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from('TBL_Requests')\n      .select",
+          "lineNumber": 745
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "supabase\n      .from",
+          "lineNumber": 745
+        },
+        {
+          "caller": "getRequestParticipants",
+          "callee": "(\n    (assignmentsRes.data ?? []) as { Request_Assignment_User_ID: number }[]\n  ).map",
+          "lineNumber": 752
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Request_Team')\n    .select('Request_Team_ID')\n    .eq",
+          "lineNumber": 781
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Request_Team')\n    .select",
+          "lineNumber": 781
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from",
+          "lineNumber": 781
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "((reqTeams ?? []) as { Request_Team_ID: number }[])\n    .map",
+          "lineNumber": 786
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select('Config_ID')\n    .eq('Column_ID', columnId)\n    .in('Team_ID', teamIds)\n    .eq('Is_Close_Column', true)\n    .limit(1)\n    .maybeSingle",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select('Config_ID')\n    .eq('Column_ID', columnId)\n    .in('Team_ID', teamIds)\n    .eq('Is_Close_Column', true)\n    .limit",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select('Config_ID')\n    .eq('Column_ID', columnId)\n    .in('Team_ID', teamIds)\n    .eq",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select('Config_ID')\n    .eq('Column_ID', columnId)\n    .in",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select('Config_ID')\n    .eq",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from('TBL_Team_Column_Config')\n    .select",
+          "lineNumber": 790
+        },
+        {
+          "caller": "isCloseColumn",
+          "callee": "supabase\n    .from",
+          "lineNumber": 790
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "supabase\n      .from('TBL_Board_Columns').select('Board_Column_Slug')\n      .eq('Board_Column_ID', p.targetColumnId).maybeSingle",
+          "lineNumber": 843
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "supabase\n      .from('TBL_Board_Columns').select('Board_Column_Slug')\n      .eq",
+          "lineNumber": 843
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "supabase\n      .from('TBL_Board_Columns').select",
+          "lineNumber": 843
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "supabase\n      .from",
+          "lineNumber": 843
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "DONE_COLUMN_SLUGS.has",
+          "lineNumber": 849
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "isCloseColumn",
+          "lineNumber": 850
+        },
+        {
+          "caller": "planColumnTransition",
+          "callee": "new Date().toISOString",
+          "lineNumber": 856
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 12,
+        "functionCount": 18,
+        "classCount": 0
+      }
+    }
+  ]
+}

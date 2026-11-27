@@ -1,0 +1,1034 @@
+{
+  "version": 1,
+  "baseCommit": "baaf6688c924718f7ecf41d1f157e2b0347d8158",
+  "headCommit": "bd38d79b07e40e0d6b0921db63ebc9865e821204",
+  "files": [
+    {
+      "filePath": "supabase/functions/api/handlers/assignments.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/assignments.ts",
+          "type": "file",
+          "name": "assignments.ts",
+          "filePath": "supabase/functions/api/handlers/assignments.ts",
+          "summary": "Handlers para asignar y desasignar resolutores a solicitudes, disparando de forma best-effort una notificación in-app y un correo al resolutor.",
+          "tags": [
+            "api-handler",
+            "asignaciones",
+            "notificaciones",
+            "email"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+          "type": "function",
+          "name": "assignmentHandlers",
+          "filePath": "supabase/functions/api/handlers/assignments.ts",
+          "lineRange": [
+            23,
+            129
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: assignRequest, unassignRequest.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "moderate"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/assignments.ts",
+          "target": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/assignments.ts",
+          "target": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/closure.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/closure.ts",
+          "type": "file",
+          "name": "closure.ts",
+          "filePath": "supabase/functions/api/handlers/closure.ts",
+          "summary": "Handlers de cierre de solicitudes con evidencia: registra el cierre, mueve el ticket a la columna destino, escribe audit log, notifica a los participantes y envía el correo de revisión del cliente.",
+          "tags": [
+            "api-handler",
+            "cierre",
+            "workflow",
+            "auditoria",
+            "notificaciones"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+          "type": "function",
+          "name": "closureHandlers",
+          "filePath": "supabase/functions/api/handlers/closure.ts",
+          "lineRange": [
+            29,
+            272
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: closeRequest, uploadClosureAttachment, fetchClosureAttachments.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "complex"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/closure.ts",
+          "target": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/closure.ts",
+          "target": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/comments.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/comments.ts",
+          "type": "file",
+          "name": "comments.ts",
+          "filePath": "supabase/functions/api/handlers/comments.ts",
+          "summary": "Handlers de comentarios, menciones y participantes de una solicitud; revalida las menciones en servidor, persiste a los mencionados como participantes y notifica por in-app y correo.",
+          "tags": [
+            "api-handler",
+            "comentarios",
+            "menciones",
+            "participantes"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+          "type": "function",
+          "name": "commentHandlers",
+          "filePath": "supabase/functions/api/handlers/comments.ts",
+          "lineRange": [
+            24,
+            231
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchComments, createComment, deleteComment, fetchRequestParticipants, removeParticipant.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "complex"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/comments.ts",
+          "target": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/comments.ts",
+          "target": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/criteria.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/criteria.ts",
+          "type": "file",
+          "name": "criteria.ts",
+          "filePath": "supabase/functions/api/handlers/criteria.ts",
+          "summary": "Handlers CRUD de criterios de aceptación (`TBL_Acceptance_Criteria`) con audit log en cada cambio y notificación a resolutores cuando un criterio se acepta o rechaza.",
+          "tags": [
+            "api-handler",
+            "criterios-de-aceptacion",
+            "auditoria",
+            "crud"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+          "type": "function",
+          "name": "criteriaHandlers",
+          "filePath": "supabase/functions/api/handlers/criteria.ts",
+          "lineRange": [
+            28,
+            237
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchAcceptanceCriteria, createAcceptanceCriteria, updateAcceptanceCriteriaStatus, updateCriteriaTitle, deleteAcceptanceCriteria.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "complex"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/criteria.ts",
+          "target": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/criteria.ts",
+          "target": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/feedback.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/feedback.ts",
+          "type": "file",
+          "name": "feedback.ts",
+          "filePath": "supabase/functions/api/handlers/feedback.ts",
+          "summary": "Handlers de feedback del cliente sobre solicitudes en revisión: registra el veredicto, mueve el ticket de columna, notifica a los resolutores y envía el correo de respuesta.",
+          "tags": [
+            "api-handler",
+            "feedback",
+            "workflow",
+            "notificaciones"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+          "type": "function",
+          "name": "feedbackHandlers",
+          "filePath": "supabase/functions/api/handlers/feedback.ts",
+          "lineRange": [
+            26,
+            181
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchClientFeedback, submitClientFeedback.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "moderate"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/feedback.ts",
+          "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/feedback.ts",
+          "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/notifyEvent.ts",
+          "type": "file",
+          "name": "notifyEvent.ts",
+          "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+          "summary": "Helper que combina la notificación in-app obligatoria con un correo condicional best-effort en una sola llamada para los handlers de dominio.",
+          "tags": [
+            "utility",
+            "notificaciones",
+            "email",
+            "facade"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+          "type": "function",
+          "name": "notifyEvent",
+          "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+          "lineRange": [
+            38,
+            71
+          ],
+          "summary": "Inserta notificaciones in-app para los destinatarios y, si se indica un `eventKey`, envía además el correo del evento sin propagar errores.",
+          "tags": [
+            "utility",
+            "notificaciones",
+            "email"
+          ],
+          "complexity": "simple"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+          "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+          "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/requests.ts",
+          "type": "file",
+          "name": "requests.ts",
+          "filePath": "supabase/functions/api/handlers/requests.ts",
+          "summary": "Módulo central de PRISMA con los handlers del ciclo de vida del ticket: lectura por múltiples criterios, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas, orquestando sprints, automatizaciones, notificaciones, correos e historial.",
+          "tags": [
+            "api-handler",
+            "solicitudes",
+            "nucleo",
+            "workflow",
+            "kanban"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+          "type": "function",
+          "name": "chunkedIn",
+          "filePath": "supabase/functions/api/handlers/requests.ts",
+          "lineRange": [
+            56,
+            68
+          ],
+          "summary": "Ejecuta consultas `.in()` por lotes de IDs para evitar límites de longitud de URL y concatena los resultados.",
+          "tags": [
+            "utility",
+            "paginacion",
+            "consultas"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+          "type": "function",
+          "name": "requestHandlers",
+          "filePath": "supabase/functions/api/handlers/requests.ts",
+          "lineRange": [
+            76,
+            1225
+          ],
+          "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchById, fetchAllByBoard, createRequest, moveToColumn, updateRequest, deleteRequest, searchRequests, filterRequests, fetchAllByBoardStats, fetchTeamHistorialPage, entre otras.",
+          "tags": [
+            "api-handler",
+            "registro-de-acciones",
+            "dispatch"
+          ],
+          "complexity": "complex"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/handlers/requests.ts",
+          "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/requests.ts",
+          "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/handlers/requests.ts",
+          "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+          "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/system.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/handlers/system.ts",
+          "type": "file",
+          "name": "system.ts",
+          "filePath": "supabase/functions/api/handlers/system.ts",
+          "summary": "Handlers transversales de sistema: ciclo de vida de reportes de bugs (incluida su conversión en ticket), calificaciones de satisfacción con rate limit y consulta/reanudación de jobs en background.",
+          "tags": [
+            "api-handler",
+            "bug-reports",
+            "satisfaccion",
+            "background-jobs"
+          ],
+          "complexity": "complex"
+        }
+      ],
+      "edges": []
+    },
+    {
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/jobs/exportJob.ts",
+          "type": "file",
+          "name": "exportJob.ts",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "summary": "Pipeline de exportación de tickets por lotes en background: resuelve IDs candidatos con filtros, genera archivos JSON parciales en Storage por chunks, se auto-invoca para continuar y finaliza notificando al usuario.",
+          "tags": [
+            "background-jobs",
+            "exportacion",
+            "storage",
+            "pipeline",
+            "supabase"
+          ],
+          "complexity": "complex",
+          "languageNotes": "Patrón de auto-invocación por chunks para no exceder el límite de tiempo de una Edge Function."
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_collectAll",
+          "type": "function",
+          "name": "_collectAll",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            105,
+            119
+          ],
+          "summary": "Recorre consultas paginadas y acumula todas las filas resultantes.",
+          "tags": [
+            "paginacion",
+            "utility",
+            "supabase"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+          "type": "function",
+          "name": "_resolveExportCandidateIds",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            137,
+            189
+          ],
+          "summary": "Resuelve el conjunto de IDs de requests candidatos a exportar aplicando filtros relacionales.",
+          "tags": [
+            "exportacion",
+            "filtros",
+            "consulta"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+          "type": "function",
+          "name": "_applyScalarFilters",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            203,
+            218
+          ],
+          "summary": "Aplica los filtros escalares de exportación (fechas, estado, board, etc.) a una consulta PostgREST.",
+          "tags": [
+            "filtros",
+            "query-builder",
+            "exportacion"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+          "type": "function",
+          "name": "_resolveOrderedExportIds",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            253,
+            277
+          ],
+          "summary": "Obtiene los IDs a exportar en orden estable para paginar por chunks.",
+          "tags": [
+            "exportacion",
+            "ordenamiento",
+            "consulta"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+          "type": "function",
+          "name": "_countExportMatches",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            292,
+            314
+          ],
+          "summary": "Cuenta cuántos tickets coinciden con los filtros de exportación para validar el tamaño máximo.",
+          "tags": [
+            "exportacion",
+            "conteo",
+            "validation"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+          "type": "function",
+          "name": "_uploadExportArtifact",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            325,
+            339
+          ],
+          "summary": "Sube un archivo JSON parcial de exportación al bucket de Storage.",
+          "tags": [
+            "storage",
+            "exportacion",
+            "upload"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+          "type": "function",
+          "name": "_kickoffExportChunk",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            367,
+            381
+          ],
+          "summary": "Auto-invoca la Edge Function con el secreto interno para procesar el siguiente chunk de exportación.",
+          "tags": [
+            "background-jobs",
+            "auto-invocacion",
+            "http"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+          "type": "function",
+          "name": "_finalizeExportJob",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            396,
+            434
+          ],
+          "summary": "Marca el job y la exportación como completados y notifica al usuario solicitante.",
+          "tags": [
+            "background-jobs",
+            "finalizacion",
+            "notificaciones"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+          "type": "function",
+          "name": "_failExportJob",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            444,
+            463
+          ],
+          "summary": "Marca el job y la exportación como fallidos registrando el mensaje de error.",
+          "tags": [
+            "background-jobs",
+            "error-handling"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "type": "function",
+          "name": "_processExportChunks",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            485,
+            621
+          ],
+          "summary": "Procesa varios chunks de exportación por invocación: lee tickets, los enriquece con criterios, sube artefactos y continúa o finaliza el job.",
+          "tags": [
+            "background-jobs",
+            "exportacion",
+            "pipeline",
+            "orquestacion"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+          "type": "function",
+          "name": "_cleanupExportArtifacts",
+          "filePath": "supabase/functions/api/jobs/exportJob.ts",
+          "lineRange": [
+            633,
+            644
+          ],
+          "summary": "Elimina los artefactos de Storage de una exportación.",
+          "tags": [
+            "storage",
+            "limpieza",
+            "exportacion"
+          ],
+          "complexity": "simple"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_collectAll",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/jobs/exportJob.ts",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+          "target": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+          "type": "calls",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    },
+    {
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "nodes": [
+        {
+          "id": "file:supabase/functions/api/shared/requests.ts",
+          "type": "file",
+          "name": "requests.ts",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "summary": "Orquestación de correos transaccionales del ticket (inicio de trabajo, revisión del cliente, comentario, feedback) según reglas de negocio, más helpers de participantes, columnas de cierre y planificación de transiciones de columna.",
+          "tags": [
+            "email",
+            "reglas-negocio",
+            "tickets",
+            "kanban",
+            "service"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail",
+          "type": "function",
+          "name": "maybeSendInProgressEmail",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            53,
+            127
+          ],
+          "summary": "Envía el correo de inicio de trabajo cuando el ticket entra por primera vez a una columna en progreso.",
+          "tags": [
+            "email",
+            "reglas-negocio",
+            "tickets"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail",
+          "type": "function",
+          "name": "maybeSendClientReviewEmail",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            152,
+            223
+          ],
+          "summary": "Envía el correo al cliente cuando el ticket pasa a revisión.",
+          "tags": [
+            "email",
+            "revision",
+            "tickets"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendCommentEmail",
+          "type": "function",
+          "name": "maybeSendCommentEmail",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            278,
+            362
+          ],
+          "summary": "Notifica por correo a los participantes de un nuevo comentario, con el texto recortado y escapado.",
+          "tags": [
+            "email",
+            "comentarios",
+            "participantes"
+          ],
+          "complexity": "moderate"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail",
+          "type": "function",
+          "name": "maybeSendClientFeedbackEmail",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            384,
+            490
+          ],
+          "summary": "Notifica al equipo el feedback del cliente (aprobación o solicitud de ajustes).",
+          "tags": [
+            "email",
+            "feedback",
+            "tickets"
+          ],
+          "complexity": "complex"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+          "type": "function",
+          "name": "getRequestParticipants",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            503,
+            528
+          ],
+          "summary": "Resuelve los participantes (solicitante y asignados) de un request con sus correos.",
+          "tags": [
+            "participantes",
+            "consulta",
+            "supabase"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+          "type": "function",
+          "name": "isCloseColumn",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            543,
+            567
+          ],
+          "summary": "Determina si una columna cierra el ticket considerando el override del equipo y slugs de cierre.",
+          "tags": [
+            "kanban",
+            "columnas",
+            "reglas-negocio"
+          ],
+          "complexity": "simple"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+          "type": "function",
+          "name": "planColumnTransition",
+          "filePath": "supabase/functions/api/shared/requests.ts",
+          "lineRange": [
+            604,
+            630
+          ],
+          "summary": "Planifica los efectos de mover un ticket entre columnas (cierre, reapertura, fechas).",
+          "tags": [
+            "kanban",
+            "transiciones",
+            "reglas-negocio"
+          ],
+          "complexity": "simple"
+        }
+      ],
+      "edges": [
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendCommentEmail",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendCommentEmail",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+          "type": "contains",
+          "direction": "forward",
+          "weight": 1
+        },
+        {
+          "source": "file:supabase/functions/api/shared/requests.ts",
+          "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+          "type": "exports",
+          "direction": "forward",
+          "weight": 0.8
+        }
+      ]
+    }
+  ]
+}

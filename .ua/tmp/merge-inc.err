@@ -1,0 +1,35 @@
+Found 3 batch files (3 logical batches, 0 multi-part):
+  batch-existing.json: 1091 nodes, 2724 edges
+  batch-5.json: 16 nodes, 80 edges
+  batch-7.json: 27 nodes, 86 edges
+
+Input: 1134 nodes, 2890 edges
+
+Output: 1134 nodes, 2890 edges
+
+Imports edge recovery:
+  Recovered 10 `imports` edges from importMap (324 entries scanned)
+
+Written to C:\Dev\Prisma_tickets\.ua\intermediate\assembled-graph.json (1284 KB)
+Incremental symbol validation:
+  "supabase/functions/api/handlers/assignments.ts": nodes 2 -> 2; symbols 1 -> 1
+    unknown: "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers" ("assignmentHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/closure.ts": nodes 2 -> 2; symbols 1 -> 1
+    unknown: "function:supabase/functions/api/handlers/closure.ts:closureHandlers" ("closureHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/comments.ts": nodes 2 -> 2; symbols 1 -> 1
+    unknown: "function:supabase/functions/api/handlers/comments.ts:commentHandlers" ("commentHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/criteria.ts": nodes 2 -> 2; symbols 1 -> 1
+    unknown: "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers" ("criteriaHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/feedback.ts": nodes 2 -> 2; symbols 1 -> 1
+    unknown: "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers" ("feedbackHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/notifyEvent.ts": nodes 2 -> 3; symbols 1 -> 2
+  "supabase/functions/api/handlers/requests.ts": nodes 3 -> 3; symbols 2 -> 2
+    unknown: "function:supabase/functions/api/handlers/requests.ts:requestHandlers" ("requestHandlers") — Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed
+  "supabase/functions/api/handlers/system.ts": nodes 1 -> 2; symbols 0 -> 1
+  "supabase/functions/api/jobs/exportJob.ts": nodes 12 -> 12; symbols 11 -> 11
+  "supabase/functions/api/shared/requests.ts": nodes 8 -> 13; symbols 7 -> 12
+    deleted: "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail" ("maybeSendInProgressEmail") — Old identity is absent under the declaration coverage profile, with no compatible gaps or effects
+    deleted: "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail" ("maybeSendClientReviewEmail") — Old identity is absent under the declaration coverage profile, with no compatible gaps or effects
+    deleted: "function:supabase/functions/api/shared/requests.ts:maybeSendCommentEmail" ("maybeSendCommentEmail") — Old identity is absent under the declaration coverage profile, with no compatible gaps or effects
+    deleted: "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail" ("maybeSendClientFeedbackEmail") — Old identity is absent under the declaration coverage profile, with no compatible gaps or effects
+Symbol validation blocked publication; baseline not advanced

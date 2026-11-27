@@ -2,7 +2,30 @@ import type { DB } from '../lib/supabase.ts';
 
 const MAIL_API_URL   = Deno.env.get('MAIL_API_URL')   ?? '';
 const MAIL_API_TOKEN = Deno.env.get('MAIL_API_TOKEN') ?? '';
-const MAIL_SENDER    = Deno.env.get('MAIL_SENDER')    ?? '';
+
+// Remitente según el equipo del ticket (Board_Team_Code de TBL_Board_Teams).
+// Un ticket va dirigido a un solo equipo; los que no están aquí salen desde
+// DEFAULT_SENDER. Listo es la integración SOLVI (sus correos salen desde el
+// front, SolviTicketNotifications.service.ts); se mapea por si algún ticket de
+// tablero queda asociado a ese equipo.
+const SENDER_BY_TEAM_CODE: Record<string, string> = {
+  desarrollo_ti:           'desarrollo@estudiodemoda.com.co',
+  listo:                   'listo@estudiodemoda.com.co',
+  sistemas_de_informacion: 'sisinfo@estudiodemoda.com.co',
+};
+const DEFAULT_SENDER = 'alert@estudiodemoda.com.co';
+
+/** Remitente del correo según el equipo al que va dirigido el ticket. */
+async function resolveSender(supabase: DB, requestId: string): Promise<string> {
+  const { data } = await supabase
+    .from('TBL_Request_Team')
+    .select('team:TBL_Board_Teams!Request_Team_ID ( Board_Team_Code )')
+    .eq('Request_Team_Request_ID', requestId)
+    .limit(1)
+    .maybeSingle();
+  const code = (data as any)?.team?.Board_Team_Code as string | undefined;
+  return (code && SENDER_BY_TEAM_CODE[code]) || DEFAULT_SENDER;
+}
 
 // Poné en true SOLO cuando el dueño de la API confirme que:
 //  (a) el endpoint acepta message.internetMessageHeaders, y
@@ -28,8 +51,8 @@ export async function sendEventEmail(
 ): Promise<void> {
   // El correo NUNCA debe romper la acción principal.
   try {
-    if (!MAIL_API_URL || !MAIL_SENDER) {
-      console.warn('[email] MAIL_API_URL / MAIL_SENDER sin configurar — se omite envío');
+    if (!MAIL_API_URL) {
+      console.warn('[email] MAIL_API_URL sin configurar — se omite envío');
       return;
     }
     if (params.userIds.length === 0) return;
@@ -67,6 +90,7 @@ export async function sendEventEmail(
     }
     if (recipients.length === 0) return;
 
+    const sender  = await resolveSender(supabase, params.requestId);
     const subject = renderTemplate((tpl as any).Email_Template_Subject,   params.vars);
     const html    = renderTemplate((tpl as any).Email_Template_Body_html, params.vars);
     const nowIso  = new Date().toISOString();
@@ -121,7 +145,7 @@ export async function sendEventEmail(
             ...(MAIL_API_TOKEN ? { Authorization: `Bearer ${MAIL_API_TOKEN}` } : {}),
           },
           body: JSON.stringify({             
-            senderMail: MAIL_SENDER, 
+            senderMail: sender,
             message, 
             saveToSentItems: true 
           }),

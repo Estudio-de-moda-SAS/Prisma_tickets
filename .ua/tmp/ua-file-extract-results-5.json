@@ -1,0 +1,275 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 7,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 7,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "supabase/functions/api/handlers/assignments.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 68,
+      "nonEmptyLines": 65,
+      "exports": [
+        {
+          "name": "assignmentHandlers",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/closure.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 260,
+      "nonEmptyLines": 244,
+      "exports": [
+        {
+          "name": "closureHandlers",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/comments.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 218,
+      "nonEmptyLines": 202,
+      "exports": [
+        {
+          "name": "commentHandlers",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/criteria.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 240,
+      "nonEmptyLines": 220,
+      "exports": [
+        {
+          "name": "criteriaHandlers",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/feedback.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 162,
+      "nonEmptyLines": 154,
+      "exports": [
+        {
+          "name": "feedbackHandlers",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/notifyEvent.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 126,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "notifyEvent",
+          "startLine": 62,
+          "endLine": 109,
+          "params": [
+            "supabase",
+            "params"
+          ]
+        },
+        {
+          "name": "dispatchEvent",
+          "startLine": 121,
+          "endLine": 126,
+          "params": [
+            "label",
+            "task"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "notifyEvent",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "dispatchEvent",
+          "line": 121,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "notifyEvent",
+          "callee": "insertNotifications",
+          "lineNumber": 65
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "console.error",
+          "lineNumber": 74
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "sendEventEmail",
+          "lineNumber": 84
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "supabase\n      .from('TBL_Users').select('User_ID, User_Name').in",
+          "lineNumber": 95
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "supabase\n      .from('TBL_Users').select",
+          "lineNumber": 95
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "supabase\n      .from",
+          "lineNumber": 95
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "sendEventEmail",
+          "lineNumber": 98
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "vars",
+          "lineNumber": 102
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "console.error",
+          "lineNumber": 107
+        },
+        {
+          "caller": "dispatchEvent",
+          "callee": "task.catch",
+          "lineNumber": 122
+        },
+        {
+          "caller": "dispatchEvent",
+          "callee": "console.error",
+          "lineNumber": 122
+        },
+        {
+          "caller": "dispatchEvent",
+          "callee": "EdgeRuntime.waitUntil",
+          "lineNumber": 124
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/requests.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1126,
+      "nonEmptyLines": 1059,
+      "functions": [
+        {
+          "name": "chunkedIn",
+          "startLine": 56,
+          "endLine": 68,
+          "params": [
+            "supabase",
+            "ids",
+            "build"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "requestHandlers",
+          "line": 76,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "chunkedIn",
+          "callee": "build",
+          "lineNumber": 63
+        },
+        {
+          "caller": "chunkedIn",
+          "callee": "ids.slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "chunkedIn",
+          "callee": "out.push",
+          "lineNumber": 65
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

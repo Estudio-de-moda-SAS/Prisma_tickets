@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "ok": false,
+  "files": [
+    {
+      "filePath": "supabase/functions/api/handlers/assignments.ts",
+      "beforeCount": 2,
+      "afterCount": 2,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 1,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/assignments.ts:assignmentHandlers",
+          "name": "assignmentHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/closure.ts",
+      "beforeCount": 2,
+      "afterCount": 2,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 1,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/closure.ts:closureHandlers",
+          "name": "closureHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/comments.ts",
+      "beforeCount": 2,
+      "afterCount": 2,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 1,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/comments.ts:commentHandlers",
+          "name": "commentHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/criteria.ts",
+      "beforeCount": 2,
+      "afterCount": 2,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 1,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/criteria.ts:criteriaHandlers",
+          "name": "criteriaHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/feedback.ts",
+      "beforeCount": 2,
+      "afterCount": 2,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 1,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+          "name": "feedbackHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+      "beforeCount": 2,
+      "afterCount": 3,
+      "beforeSymbolCount": 1,
+      "afterSymbolCount": 2,
+      "missing": [],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/requests.ts",
+      "beforeCount": 3,
+      "afterCount": 3,
+      "beforeSymbolCount": 2,
+      "afterSymbolCount": 2,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+          "name": "requestHandlers",
+          "type": "function",
+          "status": "unknown",
+          "reason": "Old symbol cannot be mapped uniquely, or source parsing is unavailable/failed"
+        }
+      ],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/handlers/system.ts",
+      "beforeCount": 1,
+      "afterCount": 2,
+      "beforeSymbolCount": 0,
+      "afterSymbolCount": 1,
+      "missing": [],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "beforeCount": 12,
+      "afterCount": 12,
+      "beforeSymbolCount": 11,
+      "afterSymbolCount": 11,
+      "missing": [],
+      "replacements": []
+    },
+    {
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "beforeCount": 8,
+      "afterCount": 13,
+      "beforeSymbolCount": 7,
+      "afterSymbolCount": 12,
+      "missing": [
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail",
+          "name": "maybeSendInProgressEmail",
+          "type": "function",
+          "status": "deleted",
+          "reason": "Old identity is absent under the declaration coverage profile, with no compatible gaps or effects"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail",
+          "name": "maybeSendClientReviewEmail",
+          "type": "function",
+          "status": "deleted",
+          "reason": "Old identity is absent under the declaration coverage profile, with no compatible gaps or effects"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendCommentEmail",
+          "name": "maybeSendCommentEmail",
+          "type": "function",
+          "status": "deleted",
+          "reason": "Old identity is absent under the declaration coverage profile, with no compatible gaps or effects"
+        },
+        {
+          "id": "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail",
+          "name": "maybeSendClientFeedbackEmail",
+          "type": "function",
+          "status": "deleted",
+          "reason": "Old identity is absent under the declaration coverage profile, with no compatible gaps or effects"
+        }
+      ],
+      "replacements": []
+    }
+  ],
+  "unresolvedFiles": [
+    "supabase/functions/api/handlers/assignments.ts",
+    "supabase/functions/api/handlers/closure.ts",
+    "supabase/functions/api/handlers/comments.ts",
+    "supabase/functions/api/handlers/criteria.ts",
+    "supabase/functions/api/handlers/feedback.ts",
+    "supabase/functions/api/handlers/requests.ts"
+  ],
+  "errors": [],
+  "baseCommit": "baaf6688c924718f7ecf41d1f157e2b0347d8158",
+  "headCommit": "bd38d79b07e40e0d6b0921db63ebc9865e821204",
+  "graphHash": "b328f8270b0efa1ac270c42d4a79ea1e1dc4455058313f1ffa1300c4ac8a2694"
+}

@@ -1,0 +1,78 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 13,
+    "filesWithImports": 11,
+    "totalEdges": 43
+  },
+  "failures": [],
+  "importMap": {
+    "public/version.json": [],
+    "src/features/requests/hooks/useEmailTemplates.ts": [],
+    "supabase/functions/api/email/send.ts": [
+      "supabase/functions/api/lib/supabase.ts"
+    ],
+    "supabase/functions/api/handlers/assignments.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/closure.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/history.ts",
+      "supabase/functions/api/lib/storage.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/comments.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/criteria.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/history.ts",
+      "supabase/functions/api/shared/mappers.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/feedback.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/history.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/notifyEvent.ts": [
+      "supabase/functions/api/email/send.ts",
+      "supabase/functions/api/lib/supabase.ts",
+      "supabase/functions/api/shared/notifications.ts"
+    ],
+    "supabase/functions/api/handlers/requests.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/history.ts",
+      "supabase/functions/api/shared/criteria.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/selects.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/handlers/system.ts": [
+      "supabase/functions/api/config.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/jobs/renameJob.ts",
+      "supabase/functions/api/shared/requests.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/jobs/exportJob.ts": [
+      "supabase/functions/api/config.ts",
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/supabase.ts",
+      "supabase/functions/api/shared/criteria.ts",
+      "supabase/functions/api/shared/selects.ts",
+      "supabase/functions/api/shared/types.ts"
+    ],
+    "supabase/functions/api/shared/requests.ts": [
+      "supabase/functions/api/handlers/notifyEvent.ts",
+      "supabase/functions/api/lib/supabase.ts"
+    ]
+  }
+}

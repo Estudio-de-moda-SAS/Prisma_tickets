@@ -1,0 +1,1074 @@
+{
+  "nodes": [
+    {
+      "id": "file:supabase/functions/api/handlers/system.ts",
+      "type": "file",
+      "name": "system.ts",
+      "filePath": "supabase/functions/api/handlers/system.ts",
+      "summary": "Handlers de sistema del Edge Function: ciclo de vida de reportes de bugs (incluida su conversión en ticket con asignación de resolutor), calificaciones de satisfacción con rate limit y sondeo/reanudación de jobs en background. Las notificaciones se emiten en segundo plano mediante dispatchEvent/notifyEvent y notifyAssignment.",
+      "tags": [
+        "api-handler",
+        "reportes-de-bugs",
+        "notificaciones",
+        "background-jobs",
+        "satisfaccion"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:supabase/functions/api/jobs/exportJob.ts",
+      "type": "file",
+      "name": "exportJob.ts",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "summary": "Pipeline de exportación de tickets por lotes en background: resuelve e intersecta IDs según filtros, procesa chunks que sube como JSON a Storage, se auto-invoca para continuar y, al terminar, notifica al usuario vía notifyEvent (evento exportReady).",
+      "tags": [
+        "background-jobs",
+        "exportacion",
+        "storage",
+        "paginacion",
+        "notificaciones"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Usa genéricos acotados (Q extends { eq; in; gte; lte }) para encadenar filtros sobre el query builder de Supabase sin depender de sus tipos concretos."
+    },
+    {
+      "id": "file:supabase/functions/api/shared/requests.ts",
+      "type": "file",
+      "name": "requests.ts",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "summary": "Notificadores por evento del ticket (notify*: creación, asignación, movimiento de columna, en progreso, revisión del cliente, comentario, cierre y feedback) que deciden destinatarios y contenido y emiten siempre vía notifyEvent; además expone helpers de participantes y la planificación de cierre/reapertura al mover columnas.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "service",
+        "reglas-de-negocio",
+        "tablero-kanban"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Todas las funciones notify* son best-effort: envuelven su lógica en try/catch y solo registran el error, para que la notificación nunca tumbe la operación principal."
+    },
+    {
+      "id": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "type": "function",
+      "name": "systemHandlers",
+      "filePath": "supabase/functions/api/handlers/system.ts",
+      "lineRange": [
+        28,
+        399
+      ],
+      "summary": "Registro exportado de acciones de sistema (createBugReport, fetchBugReports, updateBugReportStatus, assignBugToRequest, createSatisfactionRating, fetchSatisfactionRatings, getBackgroundJob, resumeStalledJob) despachado por nombre desde el router. Notifica a Desarrollo TI al crear bugs y al resolutor al convertir un bug en ticket, y reanuda jobs atascados.",
+      "tags": [
+        "api-handler",
+        "dispatcher",
+        "reportes-de-bugs",
+        "notificaciones",
+        "background-jobs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_collectAll",
+      "type": "function",
+      "name": "_collectAll",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        105,
+        119
+      ],
+      "summary": "Recolecta todas las filas de una lectura grande paginando con .range() en ventanas de 1000, evitando el truncado silencioso de Supabase.",
+      "tags": [
+        "paginacion",
+        "utility",
+        "supabase"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+      "type": "function",
+      "name": "_resolveExportCandidateIds",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        137,
+        189
+      ],
+      "summary": "Intersecta los Request_ID candidatos según filtros relacionales (equipo, sprint, asignado, etiqueta); devuelve [] si la intersección queda vacía o null si no hay filtros relacionales.",
+      "tags": [
+        "filtros",
+        "exportacion",
+        "consulta"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+      "type": "function",
+      "name": "_applyScalarFilters",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        203,
+        218
+      ],
+      "summary": "Aplica los filtros escalares comunes (columna, solicitante, prioridad, plantilla, confidencialidad y rango de fechas) sobre un query builder genérico.",
+      "tags": [
+        "filtros",
+        "query-builder",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+      "type": "function",
+      "name": "_resolveOrderedExportIds",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        253,
+        277
+      ],
+      "summary": "Obtiene la lista final de IDs filtrada por escalares y ordenada por fecha de creación descendente, troceando el .in() en lotes para no exceder la longitud de URL.",
+      "tags": [
+        "exportacion",
+        "ordenamiento",
+        "consulta"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+      "type": "function",
+      "name": "_countExportMatches",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        292,
+        314
+      ],
+      "summary": "Cuenta los tickets que coinciden con los filtros usando count exact sin traer filas, sumando por lotes disjuntos cuando hay IDs candidatos.",
+      "tags": [
+        "conteo",
+        "exportacion",
+        "consulta"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+      "type": "function",
+      "name": "_uploadExportArtifact",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        325,
+        339
+      ],
+      "summary": "Serializa un objeto como JSON y lo sube (upsert) al bucket de exports en Storage.",
+      "tags": [
+        "storage",
+        "exportacion",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+      "type": "function",
+      "name": "_kickoffExportChunk",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        367,
+        381
+      ],
+      "summary": "Auto-invoca la propia Edge Function con la acción _processExportJobChunk para continuar el export; ignora errores porque el watchdog reintenta.",
+      "tags": [
+        "background-jobs",
+        "auto-invocacion",
+        "exportacion"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+      "type": "function",
+      "name": "_finalizeExportJob",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        396,
+        438
+      ],
+      "summary": "Marca el job y el historial de exportación como done con el resultado final y emite la notificación in-app export_ready al usuario mediante notifyEvent.",
+      "tags": [
+        "background-jobs",
+        "notificaciones",
+        "exportacion"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+      "type": "function",
+      "name": "_failExportJob",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        448,
+        467
+      ],
+      "summary": "Marca el job de background y su entrada en TBL_Export_History como failed, persistiendo el mensaje de error.",
+      "tags": [
+        "background-jobs",
+        "manejo-de-errores",
+        "exportacion"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "type": "function",
+      "name": "_processExportChunks",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        489,
+        625
+      ],
+      "summary": "Punto de entrada del procesamiento en background: transiciona el job a running, procesa hasta N chunks (leyendo BASE_SELECT, enriqueciendo con criterios y subiendo cada chunk a Storage), actualiza el progreso y se auto-invoca, finaliza o marca el fallo.",
+      "tags": [
+        "background-jobs",
+        "exportacion",
+        "entry-point",
+        "storage"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+      "type": "function",
+      "name": "_cleanupExportArtifacts",
+      "filePath": "supabase/functions/api/jobs/exportJob.ts",
+      "lineRange": [
+        637,
+        648
+      ],
+      "summary": "Elimina de Storage todos los artifacts bajo el prefijo de un export, ignorando errores (un cron de limpieza recoge los restos).",
+      "tags": [
+        "storage",
+        "limpieza",
+        "exportacion"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "function",
+      "name": "getRequestInfo",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        73,
+        86
+      ],
+      "summary": "Lee el título y la marca de confidencialidad de un ticket desde TBL_Requests, usados para armar el contenido de las notificaciones.",
+      "tags": [
+        "consulta",
+        "helper",
+        "notificaciones"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyRequestCreated",
+      "type": "function",
+      "name": "notifyRequestCreated",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        122,
+        203
+      ],
+      "summary": "Evento de solicitud creada por formulario: envía el correo ticket_recibido al solicitante y, si la solicitud es externa (no de TI), la in-app new_external_request a los miembros de los sub-equipos destino.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "function",
+      "name": "notifyAssignment",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        221,
+        275
+      ],
+      "summary": "Evento de asignación de resolutor: emite la in-app assignment y el correo assignRequest al asignado, omitiendo autoasignaciones y duplicados no leídos; cubre asignación manual y automática por reglas.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "type": "function",
+      "name": "notifyColumnMove",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        293,
+        321
+      ],
+      "summary": "Evento de movimiento de columna: emite la in-app moveToColumn a participantes (sin quien movió) y delega en notifyClientReview y notifyInProgress los correos según la columna destino.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "type": "function",
+      "name": "notifyInProgress",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        342,
+        397
+      ],
+      "summary": "Correo movido_en_progreso al solicitante externo la primera vez que el ticket entra a en_progreso, verificando que no sea resolutor ni de TI y que no se haya enviado antes (TBL_Email_Logs).",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "type": "function",
+      "name": "notifyClientReview",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        413,
+        443
+      ],
+      "summary": "Correo movido_client_review al solicitante cuando el ticket llega a la columna cliente_review, ya sea por movimiento o por cierre con evidencia.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "type": "function",
+      "name": "notifyComment",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        463,
+        528
+      ],
+      "summary": "Evento de nuevo comentario: in-app mention a los mencionados, in-app comment y correo createComment a resolutores y solicitante sin el autor, ocultando el contenido si el ticket es confidencial.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "type": "function",
+      "name": "notifyClosure",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        548,
+        604
+      ],
+      "summary": "Evento de cierre con evidencia: in-app y correo closeRequest a participantes con la nota de cierre (oculta si es confidencial), y dispara notifyClientReview si el cierre lleva a revisión del cliente.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "type": "function",
+      "name": "notifyClientFeedback",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        623,
+        723
+      ],
+      "summary": "Evento de respuesta del cliente a la revisión: in-app client_approved/client_rejected y correo submitClientFeedback con stepper visual y paleta según la decisión.",
+      "tags": [
+        "notificaciones",
+        "email",
+        "event-handler",
+        "best-effort"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "function",
+      "name": "getRequestParticipants",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        736,
+        761
+      ],
+      "summary": "Resuelve en paralelo los resolutores asignados y el solicitante de un ticket, usados para calcular destinatarios de las notificaciones.",
+      "tags": [
+        "participantes",
+        "consulta",
+        "helper"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+      "type": "function",
+      "name": "isCloseColumn",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        776,
+        800
+      ],
+      "summary": "Indica si una columna es de cierre para alguno de los equipos del ticket consultando TBL_Team_Column_Config (Is_Close_Column).",
+      "tags": [
+        "reglas-de-negocio",
+        "tablero-kanban",
+        "consulta"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "function",
+      "name": "planColumnTransition",
+      "filePath": "supabase/functions/api/shared/requests.ts",
+      "lineRange": [
+        837,
+        863
+      ],
+      "summary": "Fuente única de verdad para decidir cierre, primer sellado de fecha o reapertura al mover un ticket de columna, devolviendo el update listo para TBL_Requests.",
+      "tags": [
+        "reglas-de-negocio",
+        "tablero-kanban",
+        "cierre"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:dispatchEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/handlers/system.ts:systemHandlers",
+      "target": "function:supabase/functions/api/jobs/renameJob.ts:_kickoffJobChunk",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_collectAll",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_collectAll",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_applyScalarFilters",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "target": "function:supabase/functions/api/jobs/exportJob.ts:_failExportJob",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_processExportChunks",
+      "target": "function:supabase/functions/api/shared/criteria.ts:attachCriteriaSummary",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/jobs/exportJob.ts:_finalizeExportJob",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyRequestCreated",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyRequestCreated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyRequestCreated",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyAssignment",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyComment",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClientFeedback",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestInfo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyColumnMove",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyInProgress",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:notifyClosure",
+      "target": "function:supabase/functions/api/shared/requests.ts:notifyClientReview",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+      "target": "function:supabase/functions/api/shared/requests.ts:isCloseColumn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "file:supabase/functions/api/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "file:supabase/functions/api/jobs/renameJob.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "file:supabase/functions/api/shared/requests.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/handlers/system.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/lib/supabase.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/shared/criteria.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/shared/selects.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/jobs/exportJob.ts",
+      "target": "file:supabase/functions/api/shared/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "file:supabase/functions/api/handlers/notifyEvent.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:supabase/functions/api/shared/requests.ts",
+      "target": "file:supabase/functions/api/lib/supabase.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}
