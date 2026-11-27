@@ -1,0 +1,1487 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/pages/OnBoardingPage.tsx",
+   "type": "file",
+   "name": "OnBoardingPage.tsx",
+   "filePath": "src/pages/OnBoardingPage.tsx",
+   "summary": "Página de onboarding que obliga al usuario nuevo a elegir su departamento vía apiClient (getDepartments/completeOnboarding) antes de entrar a la aplicación.",
+   "tags": [
+    "page",
+    "onboarding",
+    "form",
+    "api-client"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/OnBoardingPage.tsx:OnboardingPage",
+   "type": "function",
+   "name": "OnboardingPage",
+   "filePath": "src/pages/OnBoardingPage.tsx",
+   "lineRange": [
+    27,
+    220
+   ],
+   "summary": "Carga departamentos y envía completeOnboarding antes de redirigir al inicio.",
+   "tags": [
+    "page",
+    "component",
+    "onboarding"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/pages/PrismaAdminPage.tsx",
+   "type": "file",
+   "name": "PrismaAdminPage.tsx",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "summary": "Panel de administración de PRISMA con pestañas de reportes de bugs (cambio de estado y asignación), calificaciones de satisfacción y calificaciones de resolución con ranking de resolutores.",
+   "tags": [
+    "page",
+    "admin",
+    "dashboard",
+    "component",
+    "api-client"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:PrismaAdminPage",
+   "type": "function",
+   "name": "PrismaAdminPage",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    105,
+    319
+   ],
+   "summary": "Componente principal del panel admin que carga bugs y calificaciones y gestiona las pestañas.",
+   "tags": [
+    "page",
+    "component",
+    "admin"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:TabBtn",
+   "type": "function",
+   "name": "TabBtn",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    324,
+    352
+   ],
+   "summary": "Botón de pestaña con badge.",
+   "tags": [
+    "component",
+    "ui",
+    "tabs"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:RefreshBtn",
+   "type": "function",
+   "name": "RefreshBtn",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    357,
+    379
+   ],
+   "summary": "Botón para recargar los datos de la pestaña activa.",
+   "tags": [
+    "component",
+    "ui",
+    "refresh"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:BugReportsTab",
+   "type": "function",
+   "name": "BugReportsTab",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    384,
+    479
+   ],
+   "summary": "Pestaña con listado y filtros de reportes de bugs.",
+   "tags": [
+    "component",
+    "bugs",
+    "admin"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:BugCard",
+   "type": "function",
+   "name": "BugCard",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    484,
+    602
+   ],
+   "summary": "Tarjeta de reporte de bug con cambio de estado y asignación.",
+   "tags": [
+    "component",
+    "bugs",
+    "card"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:SatisfactionTab",
+   "type": "function",
+   "name": "SatisfactionTab",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    606,
+    691
+   ],
+   "summary": "Pestaña de calificaciones de satisfacción.",
+   "tags": [
+    "component",
+    "ratings",
+    "admin"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:RatingCard",
+   "type": "function",
+   "name": "RatingCard",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    696,
+    760
+   ],
+   "summary": "Tarjeta de una calificación de satisfacción.",
+   "tags": [
+    "component",
+    "card",
+    "ratings"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:ScoreStars",
+   "type": "function",
+   "name": "ScoreStars",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    765,
+    778
+   ],
+   "summary": "Muestra un puntaje en estrellas.",
+   "tags": [
+    "component",
+    "ui",
+    "ratings"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:ResolutionTab",
+   "type": "function",
+   "name": "ResolutionTab",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    785,
+    938
+   ],
+   "summary": "Pestaña de calificaciones de resolución con ranking de resolutores.",
+   "tags": [
+    "component",
+    "ratings",
+    "admin"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:ResolverRankRow",
+   "type": "function",
+   "name": "ResolverRankRow",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    943,
+    1009
+   ],
+   "summary": "Fila del ranking de resolutores.",
+   "tags": [
+    "component",
+    "row",
+    "ratings"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:ResolutionRatingCard",
+   "type": "function",
+   "name": "ResolutionRatingCard",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    1014,
+    1093
+   ],
+   "summary": "Tarjeta de una calificación de resolución.",
+   "tags": [
+    "component",
+    "card",
+    "ratings"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:PSelect",
+   "type": "function",
+   "name": "PSelect",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    1097,
+    1113
+   ],
+   "summary": "Select estilizado del panel admin.",
+   "tags": [
+    "component",
+    "ui",
+    "form"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:PSkeletonList",
+   "type": "function",
+   "name": "PSkeletonList",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    1115,
+    1128
+   ],
+   "summary": "Skeleton de carga en forma de lista.",
+   "tags": [
+    "component",
+    "skeleton",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:PEmptyCard",
+   "type": "function",
+   "name": "PEmptyCard",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    1130,
+    1140
+   ],
+   "summary": "Tarjeta de estado vacío.",
+   "tags": [
+    "component",
+    "empty-state",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/PrismaAdminPage.tsx:PErrorCard",
+   "type": "function",
+   "name": "PErrorCard",
+   "filePath": "src/pages/PrismaAdminPage.tsx",
+   "lineRange": [
+    1142,
+    1165
+   ],
+   "summary": "Tarjeta de error con opción de reintento.",
+   "tags": [
+    "component",
+    "error",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/pages/RequestsPage.tsx",
+   "type": "file",
+   "name": "RequestsPage.tsx",
+   "filePath": "src/pages/RequestsPage.tsx",
+   "summary": "Página de listado general de solicitudes de todos los boards con panel de detalle y movimiento de columnas, con soporte de datos mock.",
+   "tags": [
+    "page",
+    "component",
+    "solicitudes",
+    "mock-data"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/RequestsPage.tsx:RequestsPage",
+   "type": "function",
+   "name": "RequestsPage",
+   "filePath": "src/pages/RequestsPage.tsx",
+   "lineRange": [
+    37,
+    148
+   ],
+   "summary": "Componente que lista todas las solicitudes y muestra el detalle de la seleccionada.",
+   "tags": [
+    "page",
+    "component",
+    "solicitudes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/RequestsPage.tsx:RequestRow",
+   "type": "function",
+   "name": "RequestRow",
+   "filePath": "src/pages/RequestsPage.tsx",
+   "lineRange": [
+    150,
+    179
+   ],
+   "summary": "Fila de solicitud en el listado.",
+   "tags": [
+    "component",
+    "row",
+    "solicitudes"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/RequestsPage.tsx:RequestDetail",
+   "type": "function",
+   "name": "RequestDetail",
+   "filePath": "src/pages/RequestsPage.tsx",
+   "lineRange": [
+    181,
+    250
+   ],
+   "summary": "Panel de detalle de una solicitud con acciones para moverla de columna.",
+   "tags": [
+    "component",
+    "detail",
+    "solicitudes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/pages/StatsPage.tsx",
+   "type": "file",
+   "name": "StatsPage.tsx",
+   "filePath": "src/pages/StatsPage.tsx",
+   "summary": "Página de métricas que compone las secciones global, de flujo, de sprint y de detalle por equipo según los equipos visibles para el usuario.",
+   "tags": [
+    "page",
+    "stats",
+    "metricas",
+    "component"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/StatsPage.tsx:useVisibleBoardTeams",
+   "type": "function",
+   "name": "useVisibleBoardTeams",
+   "filePath": "src/pages/StatsPage.tsx",
+   "lineRange": [
+    23,
+    34
+   ],
+   "summary": "Hook local que devuelve los equipos visibles para métricas (admin ve todos; excluye externos e integraciones).",
+   "tags": [
+    "hook",
+    "permisos",
+    "stats"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/StatsPage.tsx:StatsPage",
+   "type": "function",
+   "name": "StatsPage",
+   "filePath": "src/pages/StatsPage.tsx",
+   "lineRange": [
+    39,
+    143
+   ],
+   "summary": "Componente de métricas que compone barra de control, pestañas de equipo y secciones de estadísticas.",
+   "tags": [
+    "page",
+    "component",
+    "stats"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/pages/TasksPage.tsx",
+   "type": "file",
+   "name": "TasksPage.tsx",
+   "filePath": "src/pages/TasksPage.tsx",
+   "summary": "Página mínima que lee el equipo desde la URL y renderiza la tabla de tareas TasksTable para ese equipo.",
+   "tags": [
+    "page",
+    "component",
+    "wrapper",
+    "tareas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/TasksPage.tsx:TasksPage",
+   "type": "function",
+   "name": "TasksPage",
+   "filePath": "src/pages/TasksPage.tsx",
+   "lineRange": [
+    6,
+    11
+   ],
+   "summary": "Renderiza TasksTable con el código de equipo obtenido de la URL.",
+   "tags": [
+    "page",
+    "component",
+    "tareas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/pages/TeamRequestsPage.tsx",
+   "type": "file",
+   "name": "TeamRequestsPage.tsx",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "summary": "Página de solicitudes de un equipo con pestañas \"mías\"/\"asignadas\", vistas alternables, filtros por sprint, etiquetas, subequipos y miembros, y apertura del modal de solicitud.",
+   "tags": [
+    "page",
+    "component",
+    "filtros",
+    "sprints",
+    "solicitudes"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/TeamRequestsPage.tsx:TeamRequestsPage",
+   "type": "function",
+   "name": "TeamRequestsPage",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "lineRange": [
+    79,
+    562
+   ],
+   "summary": "Componente que carga las solicitudes propias y asignadas del equipo y aplica filtros y vistas.",
+   "tags": [
+    "page",
+    "component",
+    "solicitudes"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/TeamRequestsPage.tsx:SprintDropdown",
+   "type": "function",
+   "name": "SprintDropdown",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "lineRange": [
+    567,
+    686
+   ],
+   "summary": "Dropdown de selección de sprint con indicador de estado.",
+   "tags": [
+    "component",
+    "filtros",
+    "sprints"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/TeamRequestsPage.tsx:MultiFilterDropdown",
+   "type": "function",
+   "name": "MultiFilterDropdown",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "lineRange": [
+    691,
+    758
+   ],
+   "summary": "Dropdown de selección múltiple genérico para filtros.",
+   "tags": [
+    "component",
+    "filtros",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/TeamRequestsPage.tsx:VistaBtn",
+   "type": "function",
+   "name": "VistaBtn",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "lineRange": [
+    760,
+    773
+   ],
+   "summary": "Botón para alternar la vista.",
+   "tags": [
+    "component",
+    "ui",
+    "vistas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/TeamRequestsPage.tsx:RequestRow",
+   "type": "function",
+   "name": "RequestRow",
+   "filePath": "src/pages/TeamRequestsPage.tsx",
+   "lineRange": [
+    785,
+    850
+   ],
+   "summary": "Fila de solicitud del equipo.",
+   "tags": [
+    "component",
+    "row",
+    "solicitudes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/pages/TicketPage.tsx",
+   "type": "file",
+   "name": "TicketPage.tsx",
+   "filePath": "src/pages/TicketPage.tsx",
+   "summary": "Ruta de ticket individual que resuelve el ticket desde la URL y lo muestra en RequestModal o HomeRequestModal, con estados de carga y de no encontrado.",
+   "tags": [
+    "page",
+    "component",
+    "ticket",
+    "modal-route"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/pages/TicketPage.tsx:Loader",
+   "type": "function",
+   "name": "Loader",
+   "filePath": "src/pages/TicketPage.tsx",
+   "lineRange": [
+    28,
+    43
+   ],
+   "summary": "Indicador de carga del ticket.",
+   "tags": [
+    "component",
+    "loading",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/TicketPage.tsx:NotFound",
+   "type": "function",
+   "name": "NotFound",
+   "filePath": "src/pages/TicketPage.tsx",
+   "lineRange": [
+    45,
+    84
+   ],
+   "summary": "Pantalla de ticket no encontrado con opción de volver.",
+   "tags": [
+    "component",
+    "error",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/pages/TicketPage.tsx:TicketPage",
+   "type": "function",
+   "name": "TicketPage",
+   "filePath": "src/pages/TicketPage.tsx",
+   "lineRange": [
+    86,
+    160
+   ],
+   "summary": "Resuelve el ticket por URL y decide qué modal mostrar y cómo cerrarlo.",
+   "tags": [
+    "page",
+    "component",
+    "ticket"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "type": "file",
+   "name": "SolviRequestPage.tsx",
+   "filePath": "src/pages/integrations/SolviRequestPage.tsx",
+   "summary": "Formulario para crear tickets en la integración SOLVI con selección en cascada de categoría, subcategoría y artículo (listas de SharePoint), cálculo de ANS y adjuntos comprimidos.",
+   "tags": [
+    "page",
+    "form",
+    "solvi",
+    "integracion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/integrations/SolviRequestPage.tsx:SolviRequestPage",
+   "type": "function",
+   "name": "SolviRequestPage",
+   "filePath": "src/pages/integrations/SolviRequestPage.tsx",
+   "lineRange": [
+    36,
+    269
+   ],
+   "summary": "Componente del formulario de ticket SOLVI con cascada de categorías y envío vía useSolviActionsTickets.",
+   "tags": [
+    "page",
+    "component",
+    "solvi"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "type": "file",
+   "name": "SolviTicketsPage.tsx",
+   "filePath": "src/pages/integrations/SolviTicketsPage.tsx",
+   "summary": "Tabla de tickets SOLVI con columnas congeladas, colores por estado, skeleton de carga y modal de detalle enrutado por ticketId.",
+   "tags": [
+    "page",
+    "component",
+    "solvi",
+    "integracion",
+    "tabla"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/integrations/SolviTicketsPage.tsx:SolviTicketsPage",
+   "type": "function",
+   "name": "SolviTicketsPage",
+   "filePath": "src/pages/integrations/SolviTicketsPage.tsx",
+   "lineRange": [
+    63,
+    283
+   ],
+   "summary": "Componente que lista los tickets SOLVI con filtros y abre el modal de detalle.",
+   "tags": [
+    "page",
+    "component",
+    "solvi"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/pages/integrations/SolviTicketsPage.tsx:SolviTicketsSkeleton",
+   "type": "function",
+   "name": "SolviTicketsSkeleton",
+   "filePath": "src/pages/integrations/SolviTicketsPage.tsx",
+   "lineRange": [
+    291,
+    390
+   ],
+   "summary": "Skeleton de carga de la tabla SOLVI.",
+   "tags": [
+    "component",
+    "skeleton",
+    "solvi"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/pages/OnBoardingPage.tsx",
+   "target": "function:src/pages/OnBoardingPage.tsx:OnboardingPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/OnBoardingPage.tsx",
+   "target": "function:src/pages/OnBoardingPage.tsx:OnboardingPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/OnBoardingPage.tsx",
+   "target": "file:src/auth/AuthProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/OnBoardingPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/OnBoardingPage.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PrismaAdminPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PrismaAdminPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:TabBtn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:RefreshBtn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:BugReportsTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:BugCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:SatisfactionTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:RatingCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:ScoreStars",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:ResolutionTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:ResolverRankRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:ResolutionRatingCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PSelect",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PSkeletonList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PEmptyCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "function:src/pages/PrismaAdminPage.tsx:PErrorCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "file:src/features/requests/components/AssignBugModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/PrismaAdminPage.tsx",
+   "target": "file:src/styles/stats.css",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "function:src/pages/RequestsPage.tsx:RequestsPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "function:src/pages/RequestsPage.tsx:RequestsPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "function:src/pages/RequestsPage.tsx:RequestRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "function:src/pages/RequestsPage.tsx:RequestDetail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/features/requests/mock/Mockboard.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/graph/GraphServicesProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/RequestsPage.tsx",
+   "target": "file:src/store/boardStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "function:src/pages/StatsPage.tsx:useVisibleBoardTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "function:src/pages/StatsPage.tsx:StatsPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "function:src/pages/StatsPage.tsx:StatsPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/auth/roles.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/StatsSkeleton.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/store/statsStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/StatsPage.tsx",
+   "target": "file:src/styles/stats.css",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TasksPage.tsx",
+   "target": "function:src/pages/TasksPage.tsx:TasksPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TasksPage.tsx",
+   "target": "function:src/pages/TasksPage.tsx:TasksPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/TasksPage.tsx",
+   "target": "file:src/features/requests/components/TasksTable.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:TeamRequestsPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:TeamRequestsPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:SprintDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:MultiFilterDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:VistaBtn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "function:src/pages/TeamRequestsPage.tsx:RequestRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/components/layout/siderbarConstants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/components/RequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/mock/Mockboard.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TeamRequestsPage.tsx",
+   "target": "file:src/graph/GraphServicesProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "function:src/pages/TicketPage.tsx:Loader",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "function:src/pages/TicketPage.tsx:NotFound",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "function:src/pages/TicketPage.tsx:TicketPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "function:src/pages/TicketPage.tsx:TicketPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/components/RequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/hooks/useColumnMap.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/TicketPage.tsx",
+   "target": "file:src/store/boardStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "function:src/pages/integrations/SolviRequestPage.tsx:SolviRequestPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "function:src/pages/integrations/SolviRequestPage.tsx:SolviRequestPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviActions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviAns.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "target": "file:src/lib/compressImage.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "function:src/pages/integrations/SolviTicketsPage.tsx:SolviTicketsPage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "function:src/pages/integrations/SolviTicketsPage.tsx:SolviTicketsPage",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "function:src/pages/integrations/SolviTicketsPage.tsx:SolviTicketsSkeleton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "target": "file:src/styles/solvi.css",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  }
+ ]
+}

@@ -1,0 +1,383 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/styles/LoginPage.css",
+   "type": "file",
+   "name": "LoginPage.css",
+   "filePath": "src/styles/LoginPage.css",
+   "summary": "Estilos de la página de login con prefijo BEM lp-*: fondo animado con orbes y grid, tarjeta dividida con panel de marca y bloque de autenticación con botón de Microsoft. Carga las fuentes Syne y DM Sans desde Google Fonts.",
+   "tags": [
+    "stylesheet",
+    "login",
+    "autenticacion",
+    "animacion",
+    "responsive"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa @keyframes (lp-appear, lp-drift) para animar orbes y la entrada de la tarjeta, y @import url() para fuentes externas."
+  },
+  {
+   "id": "file:src/styles/automations.css",
+   "type": "file",
+   "name": "automations.css",
+   "filePath": "src/styles/automations.css",
+   "summary": "Hoja de estilos de la página de automatizaciones (auto-*): header, tarjetas de estadísticas, filtros y tarjetas de reglas con badges de estado activa/inactiva/error y visualización del flujo disparador-acción.",
+   "tags": [
+    "stylesheet",
+    "automatizaciones",
+    "component",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/clientRequests.css",
+   "type": "file",
+   "name": "clientRequests.css",
+   "filePath": "src/styles/clientRequests.css",
+   "summary": "Estilos de la vista de solicitudes de cliente: header, banner de atención, tabs, toolbar, resumen y tarjetas client-request-card con variantes por prioridad (crítica/alta/media/baja) y estado.",
+   "tags": [
+    "stylesheet",
+    "solicitudes-cliente",
+    "component",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/configPanel.css",
+   "type": "file",
+   "name": "configPanel.css",
+   "filePath": "src/styles/configPanel.css",
+   "summary": "Hoja de estilos más extensa del proyecto para el panel lateral de configuración (cpanel-*/cp-*): backdrop, navegación lateral, secciones de administración como subequipos, dropdowns, tooltips y exportaciones.",
+   "tags": [
+    "stylesheet",
+    "configuracion",
+    "panel-lateral",
+    "admin",
+    "animacion"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Panel overlay animado con @keyframes cpanel-slide-in y cpanel-backdrop-in en lugar de un popover."
+  },
+  {
+   "id": "file:src/styles/customization.css",
+   "type": "file",
+   "name": "customization.css",
+   "filePath": "src/styles/customization.css",
+   "summary": "Estilos del panel BoardCustomization (cp-panel): tabs, secciones, filas por columna del Kanban, selector de color con swatch y valor hex, y footer de acciones para personalizar el tablero.",
+   "tags": [
+    "stylesheet",
+    "personalizacion",
+    "kanban",
+    "color-picker",
+    "component"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/feedback.css",
+   "type": "file",
+   "name": "feedback.css",
+   "filePath": "src/styles/feedback.css",
+   "summary": "Estilos del modal de feedback y satisfacción (feedback-modal): overlay, header, cuerpo con grilla de severidad, mensajes de error/pista y botones primario/ghost.",
+   "tags": [
+    "stylesheet",
+    "feedback",
+    "modal",
+    "component",
+    "responsive"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/styles/filters.css",
+   "type": "file",
+   "name": "filters.css",
+   "filePath": "src/styles/filters.css",
+   "summary": "Estilos del sistema de filtros del tablero (board-filters/filter-*): botón disparador, chips de filtros activos, panel desplegable animado y selector de asignados agrupado con avatares.",
+   "tags": [
+    "stylesheet",
+    "filtros",
+    "kanban",
+    "dropdown",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/globals.css",
+   "type": "file",
+   "name": "globals.css",
+   "filePath": "src/styles/globals.css",
+   "summary": "Punto de entrada de estilos globales importado por main.tsx; agrega mediante @import las hojas variables, layout, kanban, requestCard, filters y configPanel.",
+   "tags": [
+    "stylesheet",
+    "entry-point",
+    "barrel",
+    "global-styles"
+   ],
+   "complexity": "simple",
+   "languageNotes": "Actúa como barrel CSS: el orden de los @import define la cascada (variables primero)."
+  },
+  {
+   "id": "file:src/styles/kanban.css",
+   "type": "file",
+   "name": "kanban.css",
+   "filePath": "src/styles/kanban.css",
+   "summary": "Estilos del tablero Kanban: contenedor con scroll horizontal y scrollbar personalizado, columnas con colores por estado (backlog, cliente-review, etc.) y selector de columnas con pills para móvil.",
+   "tags": [
+    "stylesheet",
+    "kanban",
+    "layout",
+    "responsive",
+    "component"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/kanbanSkeleton.css",
+   "type": "file",
+   "name": "kanbanSkeleton.css",
+   "filePath": "src/styles/kanbanSkeleton.css",
+   "summary": "Estilos del skeleton de carga del Kanban (sk-*), replicando 1:1 las dimensiones y colores de .kanban y .kanban__col con un efecto shimmer animado.",
+   "tags": [
+    "stylesheet",
+    "skeleton",
+    "loading",
+    "kanban",
+    "animacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/layout.css",
+   "type": "file",
+   "name": "layout.css",
+   "filePath": "src/styles/layout.css",
+   "summary": "Estilos del layout principal de la aplicación: app-layout, sidebar colapsable con logo, navegación, grupos y subitems, avatar de usuario, backdrop móvil y toast de nueva versión.",
+   "tags": [
+    "stylesheet",
+    "layout",
+    "sidebar",
+    "navegacion",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/mentions.css",
+   "type": "file",
+   "name": "mentions.css",
+   "filePath": "src/styles/mentions.css",
+   "summary": "Estilos mínimos para menciones (@usuario) en el input de comentarios: wrapper, input y resaltado .prisma-mention.",
+   "tags": [
+    "stylesheet",
+    "menciones",
+    "comentarios",
+    "component"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/styles/notifications.css",
+   "type": "file",
+   "name": "notifications.css",
+   "filePath": "src/styles/notifications.css",
+   "summary": "Estilos del centro de notificaciones: campana con badge, panel desplegable animado, lista e items leídos/no leídos con actor, icono y acción de marcar como leído. Define alias de variables CSS hacia variables.css.",
+   "tags": [
+    "stylesheet",
+    "notificaciones",
+    "dropdown",
+    "component",
+    "responsive"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Declara alias en :root (--text-muted, --text-primary) que remapean a los tokens de variables.css para no reescribir reglas."
+  },
+  {
+   "id": "file:src/styles/onboarding.css",
+   "type": "file",
+   "name": "onboarding.css",
+   "filePath": "src/styles/onboarding.css",
+   "summary": "Estilos de la tarjeta de onboarding (ob-card) para usuarios nuevos: logo PRISMA, título, campos, error, botón y nota de contacto, con línea de acento superior al estilo del login.",
+   "tags": [
+    "stylesheet",
+    "onboarding",
+    "formulario",
+    "component",
+    "responsive"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/styles/requestCard.css",
+   "type": "file",
+   "name": "requestCard.css",
+   "filePath": "src/styles/requestCard.css",
+   "summary": "Estilos de la tarjeta de solicitud del Kanban (request-card): variantes por prioridad, estado de arrastre, avatares de solicitante/resolutor y punto de actividad pulsante.",
+   "tags": [
+    "stylesheet",
+    "request-card",
+    "kanban",
+    "drag-and-drop",
+    "component"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/styles/solvi.css",
+   "type": "file",
+   "name": "solvi.css",
+   "filePath": "src/styles/solvi.css",
+   "summary": "Estilos de la página de tickets de la integración SOLVI: toolbar, búsqueda, banner de error, tabla con columnas redimensionables, pills, paginación y skeleton shimmer.",
+   "tags": [
+    "stylesheet",
+    "solvi",
+    "integracion",
+    "tabla",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/stats.css",
+   "type": "file",
+   "name": "stats.css",
+   "filePath": "src/styles/stats.css",
+   "summary": "Estilos del panel de estadísticas/métricas (dashboard unificado Sprint + General + Por equipo): barra de control, tabs de vista y equipo, tarjetas de métricas mensuales, chips de sprints, detalle de resolutor y skeletons.",
+   "tags": [
+    "stylesheet",
+    "estadisticas",
+    "dashboard",
+    "metricas",
+    "animacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/tasks.css",
+   "type": "file",
+   "name": "tasks.css",
+   "filePath": "src/styles/tasks.css",
+   "summary": "Estilos de la vista de tabla de tareas (tasks-*): layout, toolbar, búsqueda, tabla con columnas por tipo (criticidad, creación, cierre, asignados), avatares apilados y skeleton de carga.",
+   "tags": [
+    "stylesheet",
+    "tareas",
+    "tabla",
+    "component",
+    "responsive"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/styles/themeLight.css",
+   "type": "file",
+   "name": "themeLight.css",
+   "filePath": "src/styles/themeLight.css",
+   "summary": "Tema claro activado con data-theme=\"light\" en el elemento html: redefine los tokens de color de variables.css y ajusta overrides para topbar, columnas Kanban, tarjetas, panel de filtros y login.",
+   "tags": [
+    "stylesheet",
+    "theme",
+    "light-mode",
+    "design-tokens"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Usa el selector de atributo [data-theme=\"light\"] para sobrescribir custom properties declaradas en :root."
+  },
+  {
+   "id": "file:src/styles/variables.css",
+   "type": "file",
+   "name": "variables.css",
+   "filePath": "src/styles/variables.css",
+   "summary": "Define los design tokens globales (custom properties de color, fondo, acento, bordes, texto, sidebar) del tema oscuro por defecto, las fuentes Objektiv Mk3 vía @font-face y overrides de scrollbar.",
+   "tags": [
+    "stylesheet",
+    "design-tokens",
+    "theme",
+    "configuration",
+    "fonts"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/variables.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/layout.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/kanban.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/requestCard.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/filters.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/globals.css",
+   "target": "file:src/styles/configPanel.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/themeLight.css",
+   "target": "file:src/styles/variables.css",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "file:src/styles/kanbanSkeleton.css",
+   "target": "file:src/styles/kanban.css",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "file:src/styles/notifications.css",
+   "target": "file:src/styles/variables.css",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/styles/onboarding.css",
+   "target": "file:src/styles/LoginPage.css",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "file:src/styles/customization.css",
+   "target": "file:src/styles/kanban.css",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  }
+ ]
+}

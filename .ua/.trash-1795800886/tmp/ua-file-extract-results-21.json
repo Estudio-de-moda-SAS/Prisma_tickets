@@ -1,0 +1,464 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 14,
+  "filesSkipped": [
+    "tsconfig.app.tsbuildinfo"
+  ],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 14,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 12,
+      "failed": 0,
+      "skipped": 2
+    }
+  },
+  "results": [
+    {
+      "path": "src/store/notifPromptStore.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 18,
+      "nonEmptyLines": 16,
+      "exports": [
+        {
+          "name": "useNotifPromptStore",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/store/searchStore.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 35,
+      "functions": [
+        {
+          "name": "normalizeSearch",
+          "startLine": 7,
+          "endLine": 9,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "matchesSearchQuery",
+          "startLine": 15,
+          "endLine": 24,
+          "params": [
+            "data",
+            "query"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "normalizeSearch",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "matchesSearchQuery",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "useSearchStore",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "normalizeSearch",
+          "callee": "s.toLowerCase().normalize('NFD').replace",
+          "lineNumber": 8
+        },
+        {
+          "caller": "normalizeSearch",
+          "callee": "s.toLowerCase().normalize",
+          "lineNumber": 8
+        },
+        {
+          "caller": "normalizeSearch",
+          "callee": "s.toLowerCase",
+          "lineNumber": 8
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "query.trim",
+          "lineNumber": 19
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "normalizeSearch",
+          "lineNumber": 21
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "normalizeSearch(data.id).includes",
+          "lineNumber": 22
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "normalizeSearch",
+          "lineNumber": 22
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "normalizeSearch(data.titulo).includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "matchesSearchQuery",
+          "callee": "normalizeSearch",
+          "lineNumber": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/store/statsStore.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 73,
+      "nonEmptyLines": 68,
+      "exports": [
+        {
+          "name": "useStatsUIStore",
+          "line": 27,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/store/timerStore.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 144,
+      "nonEmptyLines": 132,
+      "exports": [
+        {
+          "name": "useTimerStore",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/store/useBoardTheme.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 35,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "useBoardTheme",
+          "startLine": 9,
+          "endLine": 35,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useBoardTheme",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useBoardTheme",
+          "callee": "useCustomizationStore",
+          "lineNumber": 10
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "useTheme",
+          "lineNumber": 11
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "useEffect",
+          "lineNumber": 13
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "Object.entries(vars).forEach",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "Object.entries",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 26
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 28
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.setProperty",
+          "lineNumber": 29
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "['--bg-deep','--bg-panel','--bg-card','--bg-surface','--bg-hover','--border-subtle']\r\n        .forEach",
+          "lineNumber": 31
+        },
+        {
+          "caller": "useBoardTheme",
+          "callee": "root.style.removeProperty",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/store/useTheme.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 36,
+      "nonEmptyLines": 32,
+      "exports": [
+        {
+          "name": "useTheme",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/types/commons.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 82,
+      "nonEmptyLines": 73,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/types/supabase.types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 843,
+      "nonEmptyLines": 834,
+      "exports": [
+        {
+          "name": "Constants",
+          "line": 839,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/config.toml",
+      "language": "toml",
+      "fileCategory": "config",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "sections": [
+        {
+          "heading": "functions.api",
+          "level": 2,
+          "line": 1
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "supabase/functions/api/globals.d.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 31,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 12,
+      "nonEmptyLines": 12,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "tailwind.config.js",
+      "language": "javascript",
+      "fileCategory": "code",
+      "totalLines": 9,
+      "nonEmptyLines": 8,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "vite.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 72,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "getVersion",
+          "startLine": 8,
+          "endLine": 14,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getVersion",
+          "callee": "execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim",
+          "lineNumber": 10
+        },
+        {
+          "caller": "getVersion",
+          "callee": "execSync",
+          "lineNumber": 10
+        },
+        {
+          "caller": "getVersion",
+          "callee": "Date.now().toString",
+          "lineNumber": 12
+        },
+        {
+          "caller": "getVersion",
+          "callee": "Date.now",
+          "lineNumber": 12
+        },
+        {
+          "caller": "buildStart",
+          "callee": "writeFileSync",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildStart",
+          "callee": "JSON.stringify",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

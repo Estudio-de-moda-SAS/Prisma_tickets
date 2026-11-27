@@ -1,0 +1,97 @@
+{
+ "projectRoot": "C:/Dev/Prisma_tickets",
+ "batchFiles": [
+  {
+   "path": "src/features/exports/hooks/useCreateExportJob.ts",
+   "language": "typescript",
+   "sizeLines": 14,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/hooks/useExportData.ts",
+   "language": "typescript",
+   "sizeLines": 24,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/hooks/useExportHistory.ts",
+   "language": "typescript",
+   "sizeLines": 28,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/hooks/useExportJob.ts",
+   "language": "typescript",
+   "sizeLines": 22,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/services/buildCsv.ts",
+   "language": "typescript",
+   "sizeLines": 191,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/services/buildXlsx.ts",
+   "language": "typescript",
+   "sizeLines": 423,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/services/columnRegistry.ts",
+   "language": "typescript",
+   "sizeLines": 402,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/services/processExportArtifact.ts",
+   "language": "typescript",
+   "sizeLines": 166,
+   "fileCategory": "code"
+  },
+  {
+   "path": "src/features/exports/types.ts",
+   "language": "typescript",
+   "sizeLines": 255,
+   "fileCategory": "code"
+  }
+ ],
+ "batchImportData": {
+  "src/features/exports/hooks/useCreateExportJob.ts": [
+   "src/features/exports/types.ts",
+   "src/lib/apiClient.ts"
+  ],
+  "src/features/exports/hooks/useExportData.ts": [
+   "src/features/exports/types.ts",
+   "src/lib/apiClient.ts"
+  ],
+  "src/features/exports/hooks/useExportHistory.ts": [
+   "src/features/exports/types.ts",
+   "src/lib/apiClient.ts"
+  ],
+  "src/features/exports/hooks/useExportJob.ts": [
+   "src/features/exports/types.ts",
+   "src/lib/apiClient.ts"
+  ],
+  "src/features/exports/services/buildCsv.ts": [
+   "src/features/exports/types.ts",
+   "src/features/requests/types.ts"
+  ],
+  "src/features/exports/services/buildXlsx.ts": [
+   "src/features/exports/types.ts",
+   "src/features/requests/types.ts"
+  ],
+  "src/features/exports/services/columnRegistry.ts": [
+   "src/features/exports/types.ts",
+   "src/features/requests/types.ts"
+  ],
+  "src/features/exports/services/processExportArtifact.ts": [
+   "src/features/exports/services/buildCsv.ts",
+   "src/features/exports/services/buildXlsx.ts",
+   "src/features/exports/services/columnRegistry.ts",
+   "src/features/exports/types.ts",
+   "src/lib/apiClient.ts"
+  ],
+  "src/features/exports/types.ts": []
+ }
+}

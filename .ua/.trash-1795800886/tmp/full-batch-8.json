@@ -1,0 +1,1334 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/hooks/useVersionCheck.ts",
+   "type": "file",
+   "name": "useVersionCheck.ts",
+   "filePath": "src/components/hooks/useVersionCheck.ts",
+   "summary": "Hook que detecta nuevas versiones desplegadas consultando /version.json al montar, al volver a la pestaña y cada 5 minutos, comparándolo con __APP_VERSION__.",
+   "tags": [
+    "hook",
+    "version-check",
+    "polling",
+    "pwa"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/hooks/useVersionCheck.ts:useVersionCheck",
+   "type": "function",
+   "name": "useVersionCheck",
+   "filePath": "src/components/hooks/useVersionCheck.ts",
+   "lineRange": [
+    7,
+    47
+   ],
+   "summary": "Devuelve true cuando la versión publicada en /version.json difiere de la versión compilada de la app.",
+   "tags": [
+    "hook",
+    "react",
+    "data-fetching"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/AnnouncementBanner.tsx",
+   "type": "file",
+   "name": "AnnouncementBanner.tsx",
+   "filePath": "src/components/layout/AnnouncementBanner.tsx",
+   "summary": "Banner superior de avisos activos y sección de avisos para la página de inicio, adaptados a móvil.",
+   "tags": [
+    "component",
+    "anuncios",
+    "layout",
+    "banner"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/AnnouncementBanner.tsx:AnnouncementBanner",
+   "type": "function",
+   "name": "AnnouncementBanner",
+   "filePath": "src/components/layout/AnnouncementBanner.tsx",
+   "lineRange": [
+    12,
+    69
+   ],
+   "summary": "Banner que muestra los avisos activos tipo banner con opción de descartarlos.",
+   "tags": [
+    "component",
+    "react",
+    "anuncios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementsSection",
+   "type": "function",
+   "name": "HomeAnnouncementsSection",
+   "filePath": "src/components/layout/AnnouncementBanner.tsx",
+   "lineRange": [
+    72,
+    89
+   ],
+   "summary": "Sección exportada que lista avisos en la página de inicio.",
+   "tags": [
+    "component",
+    "react",
+    "anuncios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementCard",
+   "type": "function",
+   "name": "HomeAnnouncementCard",
+   "filePath": "src/components/layout/AnnouncementBanner.tsx",
+   "lineRange": [
+    91,
+    119
+   ],
+   "summary": "Tarjeta individual de aviso para la sección de inicio.",
+   "tags": [
+    "component",
+    "react",
+    "anuncios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/layout/AnnouncementModal.tsx",
+   "type": "file",
+   "name": "AnnouncementModal.tsx",
+   "filePath": "src/components/layout/AnnouncementModal.tsx",
+   "summary": "Modal que presenta avisos marcados como emergentes al usuario y registra su lectura.",
+   "tags": [
+    "component",
+    "anuncios",
+    "modal",
+    "layout"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/AnnouncementModal.tsx:AnnouncementModal",
+   "type": "function",
+   "name": "AnnouncementModal",
+   "filePath": "src/components/layout/AnnouncementModal.tsx",
+   "lineRange": [
+    9,
+    86
+   ],
+   "summary": "Modal exportado que muestra el siguiente aviso no leído y permite confirmarlo.",
+   "tags": [
+    "component",
+    "react",
+    "anuncios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/AppLayout.tsx",
+   "type": "file",
+   "name": "AppLayout.tsx",
+   "filePath": "src/components/layout/AppLayout.tsx",
+   "summary": "Layout raíz de la aplicación autenticada: compone Sidebar, Topbar, banners de avisos y versión, temporizador flotante y prompt de notificaciones alrededor del contenido.",
+   "tags": [
+    "component",
+    "layout",
+    "entry-point",
+    "composicion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "type": "function",
+   "name": "AppLayout",
+   "filePath": "src/components/layout/AppLayout.tsx",
+   "lineRange": [
+    24,
+    58
+   ],
+   "summary": "Estructura principal que aplica el tema del board y monta los componentes globales del layout.",
+   "tags": [
+    "component",
+    "react",
+    "layout"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/layout/BugReportModal.tsx",
+   "type": "file",
+   "name": "BugReportModal.tsx",
+   "filePath": "src/components/layout/BugReportModal.tsx",
+   "summary": "Modal para que el usuario reporte errores de la plataforma, enviados con apiClient.call(\"createBugReport\").",
+   "tags": [
+    "component",
+    "modal",
+    "bug-report",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/BugReportModal.tsx:BugReportModal",
+   "type": "function",
+   "name": "BugReportModal",
+   "filePath": "src/components/layout/BugReportModal.tsx",
+   "lineRange": [
+    10,
+    132
+   ],
+   "summary": "Formulario modal de reporte de bug con descripción y envío al backend.",
+   "tags": [
+    "component",
+    "react",
+    "modal"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/FloatingTimer.tsx",
+   "type": "file",
+   "name": "FloatingTimer.tsx",
+   "filePath": "src/components/layout/FloatingTimer.tsx",
+   "summary": "Temporizador flotante y arrastrable para medir tiempo de trabajo en un ticket, con posición persistida en localStorage y estado en timerStore.",
+   "tags": [
+    "component",
+    "temporizador",
+    "layout",
+    "drag",
+    "state-management"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/layout/FloatingTimer.tsx:FloatingTimer",
+   "type": "function",
+   "name": "FloatingTimer",
+   "filePath": "src/components/layout/FloatingTimer.tsx",
+   "lineRange": [
+    30,
+    145
+   ],
+   "summary": "Contenedor exportado del temporizador que gestiona arrastre, posición y la entrada activa de timerStore.",
+   "tags": [
+    "component",
+    "react",
+    "temporizador"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/FloatingTimer.tsx:TimerWidgetInner",
+   "type": "function",
+   "name": "TimerWidgetInner",
+   "filePath": "src/components/layout/FloatingTimer.tsx",
+   "lineRange": [
+    147,
+    249
+   ],
+   "summary": "Controles internos del temporizador (iniciar, pausar, reiniciar, descartar) y registro del tiempo en el ticket.",
+   "tags": [
+    "component",
+    "react",
+    "temporizador"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/NotificationBell.tsx",
+   "type": "file",
+   "name": "NotificationBell.tsx",
+   "filePath": "src/components/layout/NotificationBell.tsx",
+   "summary": "Campana de notificaciones del Topbar con contador, lista desplegable, marcado como leído y habilitación de notificaciones del navegador.",
+   "tags": [
+    "component",
+    "notificaciones",
+    "layout",
+    "dropdown"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/layout/NotificationBell.tsx:NotificationBell",
+   "type": "function",
+   "name": "NotificationBell",
+   "filePath": "src/components/layout/NotificationBell.tsx",
+   "lineRange": [
+    41,
+    130
+   ],
+   "summary": "Componente exportado que combina useNotifications y useBrowserNotifications para mostrar y gestionar notificaciones.",
+   "tags": [
+    "component",
+    "react",
+    "notificaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/NotificationBell.tsx:NotificationItem",
+   "type": "function",
+   "name": "NotificationItem",
+   "filePath": "src/components/layout/NotificationBell.tsx",
+   "lineRange": [
+    234,
+    273
+   ],
+   "summary": "Elemento individual de notificación con icono, texto y tiempo relativo.",
+   "tags": [
+    "component",
+    "react",
+    "notificaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "type": "file",
+   "name": "NotificationPermissionPrompt.tsx",
+   "filePath": "src/components/layout/NotificationPermissionPrompt.tsx",
+   "summary": "Aviso emergente que invita al usuario a habilitar las notificaciones del navegador, recordando su decisión en notifPromptStore.",
+   "tags": [
+    "component",
+    "notificaciones",
+    "permisos",
+    "layout"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/NotificationPermissionPrompt.tsx:NotificationPermissionPrompt",
+   "type": "function",
+   "name": "NotificationPermissionPrompt",
+   "filePath": "src/components/layout/NotificationPermissionPrompt.tsx",
+   "lineRange": [
+    10,
+    59
+   ],
+   "summary": "Solicita el permiso de notificaciones del navegador y oculta el prompt tras la respuesta.",
+   "tags": [
+    "component",
+    "react",
+    "notificaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/SatisfactionModal.tsx",
+   "type": "file",
+   "name": "SatisfactionModal.tsx",
+   "filePath": "src/components/layout/SatisfactionModal.tsx",
+   "summary": "Modal de encuesta de satisfacción que envía una calificación y comentario mediante apiClient.call(\"createSatisfactionRating\").",
+   "tags": [
+    "component",
+    "modal",
+    "satisfaccion",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/SatisfactionModal.tsx:SatisfactionModal",
+   "type": "function",
+   "name": "SatisfactionModal",
+   "filePath": "src/components/layout/SatisfactionModal.tsx",
+   "lineRange": [
+    16,
+    142
+   ],
+   "summary": "Formulario modal de calificación de satisfacción con envío al backend.",
+   "tags": [
+    "component",
+    "react",
+    "modal"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/Sidebar.tsx",
+   "type": "file",
+   "name": "Sidebar.tsx",
+   "filePath": "src/components/layout/Sidebar.tsx",
+   "summary": "Barra lateral de navegación con los equipos/boards accesibles, rutas principales según rol, acceso al panel de configuración y versión móvil tipo drawer.",
+   "tags": [
+    "component",
+    "navegacion",
+    "layout",
+    "sidebar",
+    "roles"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "type": "function",
+   "name": "Sidebar",
+   "filePath": "src/components/layout/Sidebar.tsx",
+   "lineRange": [
+    26,
+    454
+   ],
+   "summary": "Componente exportado que construye la navegación por equipos y rutas, controla el drawer móvil y muestra ConfigPanelTrigger a administradores.",
+   "tags": [
+    "component",
+    "react",
+    "navegacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/layout/Topbar.tsx",
+   "type": "file",
+   "name": "Topbar.tsx",
+   "filePath": "src/components/layout/Topbar.tsx",
+   "summary": "Barra superior con el equipo activo, campana de notificaciones, reporte de bugs, instalación PWA y menú de usuario.",
+   "tags": [
+    "component",
+    "layout",
+    "topbar",
+    "navegacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/layout/Topbar.tsx:Topbar",
+   "type": "function",
+   "name": "Topbar",
+   "filePath": "src/components/layout/Topbar.tsx",
+   "lineRange": [
+    25,
+    134
+   ],
+   "summary": "Componente exportado de la barra superior que integra NotificationBell, BugReportModal y el prompt de instalación.",
+   "tags": [
+    "component",
+    "react",
+    "layout"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "type": "file",
+   "name": "VersionUpdateBanner.tsx",
+   "filePath": "src/components/layout/VersionUpdateBanner.tsx",
+   "summary": "Banner que avisa de una nueva versión disponible y fuerza la actualización del service worker PWA registrado a nivel de módulo.",
+   "tags": [
+    "component",
+    "pwa",
+    "service-worker",
+    "version-check",
+    "banner"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Registra el service worker con virtual:pwa-register a nivel de módulo para que se ejecute una sola vez por carga y no por render."
+  },
+  {
+   "id": "function:src/components/layout/VersionUpdateBanner.tsx:VersionUpdateBanner",
+   "type": "function",
+   "name": "VersionUpdateBanner",
+   "filePath": "src/components/layout/VersionUpdateBanner.tsx",
+   "lineRange": [
+    25,
+    83
+   ],
+   "summary": "Muestra el aviso de actualización cuando useVersionCheck detecta un deploy nuevo y recarga la app.",
+   "tags": [
+    "component",
+    "react",
+    "pwa"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/layout/siderbarConstants.ts",
+   "type": "file",
+   "name": "siderbarConstants.ts",
+   "filePath": "src/components/layout/siderbarConstants.ts",
+   "summary": "Constantes y utilidades visuales de equipos: mapa de iconos Lucide por nombre y derivación de colores (punto, brillo, borde) a partir del color hex del equipo.",
+   "tags": [
+    "utility",
+    "constantes",
+    "iconos",
+    "colores"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/layout/siderbarConstants.ts:getTeamIcon",
+   "type": "function",
+   "name": "getTeamIcon",
+   "filePath": "src/components/layout/siderbarConstants.ts",
+   "lineRange": [
+    22,
+    24
+   ],
+   "summary": "Resuelve el icono Lucide de un equipo por nombre, con LayoutGrid como respaldo.",
+   "tags": [
+    "utility",
+    "helper",
+    "constantes"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/layout/siderbarConstants.ts:teamColors",
+   "type": "function",
+   "name": "teamColors",
+   "filePath": "src/components/layout/siderbarConstants.ts",
+   "lineRange": [
+    26,
+    28
+   ],
+   "summary": "Deriva colores de punto, brillo y borde a partir del hex del equipo.",
+   "tags": [
+    "utility",
+    "helper",
+    "constantes"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/layout/siderbarConstants.ts:teamSidebarColors",
+   "type": "function",
+   "name": "teamSidebarColors",
+   "filePath": "src/components/layout/siderbarConstants.ts",
+   "lineRange": [
+    30,
+    32
+   ],
+   "summary": "Variante de colores del equipo para el Sidebar con punto blanco.",
+   "tags": [
+    "utility",
+    "helper",
+    "constantes"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/hooks/useVersionCheck.ts",
+   "target": "function:src/components/hooks/useVersionCheck.ts:useVersionCheck",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/hooks/useVersionCheck.ts",
+   "target": "function:src/components/hooks/useVersionCheck.ts:useVersionCheck",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:AnnouncementBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:AnnouncementBanner",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementsSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementsSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementBanner.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementModal.tsx",
+   "target": "function:src/components/layout/AnnouncementModal.tsx:AnnouncementModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementModal.tsx",
+   "target": "function:src/components/layout/AnnouncementModal.tsx:AnnouncementModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementModal.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AnnouncementModal.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/AnnouncementBanner.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/AnnouncementModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/FloatingTimer.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/Sidebar.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/Topbar.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/AppLayout.tsx",
+   "target": "file:src/store/useBoardTheme.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/BugReportModal.tsx",
+   "target": "function:src/components/layout/BugReportModal.tsx:BugReportModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/BugReportModal.tsx",
+   "target": "function:src/components/layout/BugReportModal.tsx:BugReportModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/BugReportModal.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/BugReportModal.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/BugReportModal.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "function:src/components/layout/FloatingTimer.tsx:FloatingTimer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "function:src/components/layout/FloatingTimer.tsx:FloatingTimer",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "function:src/components/layout/FloatingTimer.tsx:TimerWidgetInner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/FloatingTimer.tsx",
+   "target": "file:src/store/timerStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "function:src/components/layout/NotificationBell.tsx:NotificationBell",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "function:src/components/layout/NotificationBell.tsx:NotificationBell",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "function:src/components/layout/NotificationBell.tsx:NotificationItem",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "file:src/features/requests/hooks/useNotifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "file:src/features/requests/hooks/useNotifications.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/NotificationBell.tsx",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "target": "function:src/components/layout/NotificationPermissionPrompt.tsx:NotificationPermissionPrompt",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "target": "function:src/components/layout/NotificationPermissionPrompt.tsx:NotificationPermissionPrompt",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "target": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "target": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "target": "file:src/store/notifPromptStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/SatisfactionModal.tsx",
+   "target": "function:src/components/layout/SatisfactionModal.tsx:SatisfactionModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/SatisfactionModal.tsx",
+   "target": "function:src/components/layout/SatisfactionModal.tsx:SatisfactionModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/SatisfactionModal.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/SatisfactionModal.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/SatisfactionModal.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/auth/AuthProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/auth/roles.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/components/layout/SatisfactionModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/components/layout/siderbarConstants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/store/boardStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Sidebar.tsx",
+   "target": "file:src/store/mobileNavStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "function:src/components/layout/Topbar.tsx:Topbar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "function:src/components/layout/Topbar.tsx:Topbar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/auth/AuthProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/components/layout/BugReportModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/components/layout/NotificationBell.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/components/layout/siderbarConstants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/hooks/useInstallPrompt.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/hooks/useInstallPrompt.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/store/boardStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/Topbar.tsx",
+   "target": "file:src/store/mobileNavStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "target": "function:src/components/layout/VersionUpdateBanner.tsx:VersionUpdateBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "target": "function:src/components/layout/VersionUpdateBanner.tsx:VersionUpdateBanner",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "target": "file:src/components/hooks/useVersionCheck.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/layout/VersionUpdateBanner.tsx",
+   "target": "file:src/components/hooks/useVersionCheck.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:getTeamIcon",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:getTeamIcon",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamColors",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamColors",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamSidebarColors",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/layout/siderbarConstants.ts",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamSidebarColors",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:AnnouncementBanner",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/AnnouncementModal.tsx:AnnouncementModal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/FloatingTimer.tsx:FloatingTimer",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/NotificationPermissionPrompt.tsx:NotificationPermissionPrompt",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/Topbar.tsx:Topbar",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AppLayout.tsx:AppLayout",
+   "target": "function:src/components/layout/VersionUpdateBanner.tsx:VersionUpdateBanner",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Topbar.tsx:Topbar",
+   "target": "function:src/components/layout/BugReportModal.tsx:BugReportModal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Topbar.tsx:Topbar",
+   "target": "function:src/components/layout/NotificationBell.tsx:NotificationBell",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Topbar.tsx:Topbar",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamColors",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "target": "function:src/components/layout/SatisfactionModal.tsx:SatisfactionModal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "target": "function:src/components/layout/siderbarConstants.ts:getTeamIcon",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "target": "function:src/components/layout/siderbarConstants.ts:teamSidebarColors",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/Sidebar.tsx:Sidebar",
+   "target": "function:src/components/ConfigPanel.tsx:ConfigPanelTrigger",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/VersionUpdateBanner.tsx:VersionUpdateBanner",
+   "target": "function:src/components/hooks/useVersionCheck.ts:useVersionCheck",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/FloatingTimer.tsx:FloatingTimer",
+   "target": "function:src/components/layout/FloatingTimer.tsx:TimerWidgetInner",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/NotificationBell.tsx:NotificationBell",
+   "target": "function:src/components/layout/NotificationBell.tsx:NotificationItem",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementsSection",
+   "target": "function:src/components/layout/AnnouncementBanner.tsx:HomeAnnouncementCard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

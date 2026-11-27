@@ -1,0 +1,737 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/requests/hooks/stats/types.ts",
+   "summary": "Tipos públicos de las métricas de estadísticas: SprintStats, GeneralStatsReal, BoardStatsReal, Resolutor, FlowMetrics, StatsConfig y el paquete agregado StatsData.",
+   "tags": [
+    "type-definition",
+    "metricas",
+    "tipos",
+    "data-model"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Módulo solo de tipos (type aliases); useStatsData lo re-exporta con `export type *`."
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "type": "file",
+   "name": "useBoardStats.ts",
+   "filePath": "src/features/requests/hooks/stats/useBoardStats.ts",
+   "summary": "Hook que memoiza las estadísticas por board: actual por equipo, del sprint anterior del mismo linaje y la vista combinada de varios equipos.",
+   "tags": [
+    "hook",
+    "react",
+    "metricas",
+    "board",
+    "memoizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "type": "function",
+   "name": "useBoardStats",
+   "filePath": "src/features/requests/hooks/stats/useBoardStats.ts",
+   "lineRange": [
+    43,
+    70
+   ],
+   "summary": "Hook que memoiza las estadísticas por equipo, del sprint anterior y combinadas.",
+   "tags": [
+    "hook",
+    "board",
+    "memoizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "type": "file",
+   "name": "useFlowStats.ts",
+   "filePath": "src/features/requests/hooks/stats/useFlowStats.ts",
+   "summary": "Hook delgado que memoiza el cálculo de métricas de flujo sobre las solicitudes filtradas.",
+   "tags": [
+    "hook",
+    "react",
+    "metricas",
+    "flujo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useFlowStats.ts:useFlowStats",
+   "type": "function",
+   "name": "useFlowStats",
+   "filePath": "src/features/requests/hooks/stats/useFlowStats.ts",
+   "lineRange": [
+    18,
+    20
+   ],
+   "summary": "Hook que memoiza calcFlowMetrics.",
+   "tags": [
+    "hook",
+    "flujo",
+    "memoizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "type": "file",
+   "name": "useGeneralStats.ts",
+   "filePath": "src/features/requests/hooks/stats/useGeneralStats.ts",
+   "summary": "Hook delgado que memoiza las métricas generales por equipo vía calcGeneral.",
+   "tags": [
+    "hook",
+    "react",
+    "metricas",
+    "general"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useGeneralStats.ts:useGeneralStats",
+   "type": "function",
+   "name": "useGeneralStats",
+   "filePath": "src/features/requests/hooks/stats/useGeneralStats.ts",
+   "lineRange": [
+    21,
+    23
+   ],
+   "summary": "Hook que memoiza calcGeneral.",
+   "tags": [
+    "hook",
+    "general",
+    "memoizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "type": "file",
+   "name": "usePrimaryTeamMap.ts",
+   "filePath": "src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "summary": "Hook que memoiza el mapa de equipo principal por usuario a partir de las solicitudes.",
+   "tags": [
+    "hook",
+    "react",
+    "equipos",
+    "memoizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/usePrimaryTeamMap.ts:usePrimaryTeamMap",
+   "type": "function",
+   "name": "usePrimaryTeamMap",
+   "filePath": "src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "lineRange": [
+    17,
+    19
+   ],
+   "summary": "Hook que memoiza buildPrimaryTeamMap.",
+   "tags": [
+    "hook",
+    "equipos",
+    "memoizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "type": "file",
+   "name": "useSelectedSprints.ts",
+   "filePath": "src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "summary": "Hook que filtra y memoiza los sprints seleccionados a partir de sus IDs.",
+   "tags": [
+    "hook",
+    "react",
+    "sprint",
+    "filtro"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useSelectedSprints.ts:useSelectedSprints",
+   "type": "function",
+   "name": "useSelectedSprints",
+   "filePath": "src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "lineRange": [
+    17,
+    22
+   ],
+   "summary": "Hook que filtra los sprints por los IDs seleccionados.",
+   "tags": [
+    "hook",
+    "sprint",
+    "filtro"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "type": "file",
+   "name": "useSprintStats.ts",
+   "filePath": "src/features/requests/hooks/stats/useSprintStats.ts",
+   "summary": "Hook que memoiza las métricas de sprint delegando en calcSprint con los sprints seleccionados y la configuración de stats.",
+   "tags": [
+    "hook",
+    "react",
+    "sprint",
+    "metricas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useSprintStats.ts:useSprintStats",
+   "type": "function",
+   "name": "useSprintStats",
+   "filePath": "src/features/requests/hooks/stats/useSprintStats.ts",
+   "lineRange": [
+    24,
+    36
+   ],
+   "summary": "Hook que memoiza calcSprint.",
+   "tags": [
+    "hook",
+    "sprint",
+    "memoizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "type": "file",
+   "name": "useStatsScope.ts",
+   "filePath": "src/features/requests/hooks/stats/useStatsScope.ts",
+   "summary": "Hook que aplica en cascada los filtros por usuario, equipo y combinación de equipos sobre las solicitudes antes de calcular métricas.",
+   "tags": [
+    "hook",
+    "react",
+    "filtro",
+    "metricas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useStatsScope.ts:useStatsScope",
+   "type": "function",
+   "name": "useStatsScope",
+   "filePath": "src/features/requests/hooks/stats/useStatsScope.ts",
+   "lineRange": [
+    22,
+    54
+   ],
+   "summary": "Hook que filtra solicitudes por usuario, equipo y equipos combinados.",
+   "tags": [
+    "hook",
+    "filtro",
+    "scope"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "type": "file",
+   "name": "useStatsSource.ts",
+   "filePath": "src/features/requests/hooks/stats/useStatsSource.ts",
+   "summary": "Hook fuente de datos de estadísticas: carga el board completo (variante stats) y los sprints vía React Query y aplana los requests.",
+   "tags": [
+    "hook",
+    "react",
+    "data-fetching",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/useStatsSource.ts:useStatsSource",
+   "type": "function",
+   "name": "useStatsSource",
+   "filePath": "src/features/requests/hooks/stats/useStatsSource.ts",
+   "lineRange": [
+    18,
+    35
+   ],
+   "summary": "Hook que carga board completo y sprints y aplana los requests con estado combinado de carga/error.",
+   "tags": [
+    "hook",
+    "data-fetching",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "file",
+   "name": "useStatsData.ts",
+   "filePath": "src/features/requests/hooks/useStatsData.ts",
+   "summary": "Punto de entrada de las métricas de estadísticas: compone los subhooks de stats (fuente, sprints, scope, general, board, sprint, flujo, equipo principal) y re-exporta tipos y helpers públicos.",
+   "tags": [
+    "entry-point",
+    "hook",
+    "barrel",
+    "metricas",
+    "composicion"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Combina composición de hooks con re-exports (`export type *` y `export { } from`), actuando como fachada pública del módulo de estadísticas."
+  },
+  {
+   "id": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "type": "function",
+   "name": "useStatsData",
+   "filePath": "src/features/requests/hooks/useStatsData.ts",
+   "lineRange": [
+    61,
+    94
+   ],
+   "summary": "Hook principal que compone todos los subhooks de estadísticas y devuelve el paquete StatsData.",
+   "tags": [
+    "hook",
+    "entry-point",
+    "composicion"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useFlowStats.ts:useFlowStats",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useFlowStats.ts:useFlowStats",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useGeneralStats.ts:useGeneralStats",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useGeneralStats.ts:useGeneralStats",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "target": "function:src/features/requests/hooks/stats/usePrimaryTeamMap.ts:usePrimaryTeamMap",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "target": "function:src/features/requests/hooks/stats/usePrimaryTeamMap.ts:usePrimaryTeamMap",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "target": "function:src/features/requests/hooks/stats/useSelectedSprints.ts:useSelectedSprints",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "target": "function:src/features/requests/hooks/stats/useSelectedSprints.ts:useSelectedSprints",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useSprintStats.ts:useSprintStats",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "target": "function:src/features/requests/hooks/stats/useSprintStats.ts:useSprintStats",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "target": "function:src/features/requests/hooks/stats/useStatsScope.ts:useStatsScope",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "target": "function:src/features/requests/hooks/stats/useStatsScope.ts:useStatsScope",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "target": "function:src/features/requests/hooks/stats/useStatsSource.ts:useStatsSource",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "target": "function:src/features/requests/hooks/stats/useStatsSource.ts:useStatsSource",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:findPrevSprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useFlowStats.ts:useFlowStats",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useGeneralStats.ts:useGeneralStats",
+   "target": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/usePrimaryTeamMap.ts:usePrimaryTeamMap",
+   "target": "function:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts:buildPrimaryTeamMap",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useSprintStats.ts:useSprintStats",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/useStatsScope.ts:useStatsScope",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:combinedMinPosOf",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useStatsSource.ts:useStatsSource",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useSelectedSprints.ts:useSelectedSprints",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/usePrimaryTeamMap.ts:usePrimaryTeamMap",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useStatsScope.ts:useStatsScope",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useGeneralStats.ts:useGeneralStats",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useBoardStats.ts:useBoardStats",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useSprintStats.ts:useSprintStats",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useStatsData.ts:useStatsData",
+   "target": "function:src/features/requests/hooks/stats/useFlowStats.ts:useFlowStats",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useStatsData.ts",
+   "target": "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

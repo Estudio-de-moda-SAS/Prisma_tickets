@@ -1,0 +1,540 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-27T12:00:00.000Z",
+  "files": {
+    "src/features/requests/services/SupabaseRequestsService.ts": {
+      "overview": "Servicio de dominio que traduce entre las filas de base de datos (nombres de columna en PascalCase con prefijos de tabla) y el modelo `Request` del frontend. Casi todas las operaciones delegan en `apiClient.call` hacia la Edge Function `api`, pero algunas lecturas pueden ir directamente a PostgREST cuando `config.USE_DIRECT_READS` está activo. Es el servicio que `GraphServicesProvider` inyecta como `Requests` (paso 5 del tour) y del que dependen los hooks de TanStack Query del paso 6.",
+      "sections": [
+        {
+          "title": "Imports y select directo",
+          "lineRange": [1, 58],
+          "explanation": "Importa el `apiClient` (camino Edge), el cliente `supabase` (camino directo) y los tipos de dominio de `../types`. `BASE_SELECT_DIRECT` es una copia del select del backend escrita con la sintaxis de embedding de PostgREST (`alias:Tabla!fk ( columnas )`), que trae en una sola consulta solicitante, equipo, columna, asignaciones, etiquetas, sprints, cierres y criterios. El comentario TODO advierte el riesgo: si cambia `shared/selects.ts` en la Edge Function, esta copia debe actualizarse a mano.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Tipos de filas crudas",
+          "lineRange": [60, 150],
+          "explanation": "`RawRequestRow`, `RawClosureAttachment`, `RawClientFeedback` y `RawHistoryRow` describen exactamente la forma que devuelve la base, con relaciones anidadas que pueden venir `null`. Separar estos tipos crudos del modelo `Request` permite que el resto de la app nunca vea nombres como `Request_Board_Column_ID`. Destaca la dualidad entre `Request_Template_Schema_Snapshot` (schema congelado al crear el ticket) y `template_schema` (schema vivo como fallback para tickets previos a la migración).",
+          "tourOrder": 5
+        },
+        {
+          "title": "Helpers de mapeo auxiliares",
+          "lineRange": [152, 182],
+          "explanation": "`mapHistoryRow` convierte una fila de historial a `RequestHistoryEntry`. `COLUMN_NAME_TO_KANBAN` traduce el nombre visible de una columna a su slug, y se usa solo como respaldo cuando la fila no trae `Board_Column_Slug`. `fileToBase64` envuelve `FileReader` en una Promise y descarta el prefijo `data:...;base64,`, porque los adjuntos se envían a la Edge Function como base64 dentro del JSON.",
+          "tourOrder": 5
+        },
+        {
+          "title": "mapRowToRequest: fila a dominio",
+          "lineRange": [184, 327],
+          "explanation": "Es el corazón del servicio: resuelve la columna (slug, luego nombre, luego `sin_categorizar`), convierte el score numérico en `Prioridad` con `SCORE_TO_PRIORIDAD` y aplana las relaciones N:M (equipos, sub-equipos, etiquetas) filtrando los joins nulos. `criteriaSummary` soporta dos formas de entrada: precalculado por la Edge o como array `criteria` en lecturas directas. Los cierres se ordenan del más reciente al más antiguo y el primero se expone como `cierreInfo`. Ojo: aunque el comentario dice que el snapshot tiene prioridad, `templateFormSchema` prefiere el schema vivo y solo `templateSchemaSnapshot` prefiere el snapshot.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Clase y lectura completa",
+          "lineRange": [329, 353],
+          "explanation": "`mapRawFeedback` adapta el feedback del cliente. La clase `SupabaseRequestsService` se construye con un `boardId` fijo que se adjunta a la mayoría de llamadas. `fetchAllByBoard` y `fetchAllByBoardStats` invocan acciones distintas de la Edge Function: la segunda devuelve un dataset más liviano pensado para las estadísticas.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Lecturas directas vs Edge",
+          "lineRange": [354, 419],
+          "explanation": "`fetchByTeamCode` y `fetchUncategorized` implementan la Fase 4 de la migración: con `USE_DIRECT_READS` consultan PostgREST directamente (dependiendo de RLS y del token de Supabase Auth), y si no, usan la Edge Function. En la lectura por equipo se lanzan dos consultas en paralelo: columnas activas sin límite e historial (columna 9) limitado a 50. El alias `team_filter` con `!inner` filtra por código de equipo sin colisionar con el alias `teams` del select base, lo que provocaría un error 400.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Detalle, hijos y adjuntos",
+          "lineRange": [421, 483],
+          "explanation": "`fetchById` trae un ticket y, para cada cierre con adjuntos, pide `fetchClosureAttachments` en paralelo para obtener URLs firmadas (el mapeo base deja `signedUrl: null`). El resto son lecturas filtradas (por solicitante, asignado, menciones, hijos) que comparten el mismo `mapRowToRequest`. `submitClientFeedback` envía la decisión del cliente junto con la columna destino a la que debe moverse el ticket.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Escrituras y búsqueda",
+          "lineRange": [485, 560],
+          "explanation": "`createRequest` descarta `acceptanceCriteria` del payload y convierte la prioridad a score con `PRIORIDAD_TO_SCORE`. `fetchTeamHistorialPage` implementa paginación por cursor compuesto (`createdAt` + `id`), más estable que un offset cuando llegan tickets nuevos. `updateRequest` envía el patch principal y, si cambian los sub-equipos, hace una segunda llamada `updateRequestSubTeams`, por lo que la actualización no es atómica.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Cierre con evidencia",
+          "lineRange": [562, 633],
+          "explanation": "`closeRequest` primero crea el registro de cierre en el backend y luego, solo en modo `new`, sube cada archivo en paralelo como base64 con `uploadClosureAttachment`. En modo `reuse` el backend clona los adjuntos de un cierre anterior, así que el frontend devuelve una lista vacía y confía en el refetch posterior. El `CierreInfo` resultante se arma localmente para que la UI pueda reflejar el cierre sin esperar otra lectura.",
+          "tourOrder": 5
+        }
+      ]
+    },
+    "src/graph/GraphRest.ts": {
+      "overview": "Cliente HTTP mínimo para Microsoft Graph v1.0. Recibe una función `getToken` (normalmente respaldada por MSAL) y centraliza la autenticación Bearer, el manejo de errores y el parseo de respuestas. `GraphServicesProvider` lo construye e inyecta en contexto (paso 5 del tour), y lo usan servicios como los de SOLVI sobre listas de SharePoint y el envío de correo.",
+      "sections": [
+        {
+          "title": "Tipos de envío de correo",
+          "lineRange": [1, 18],
+          "explanation": "`GraphRecipient` y `GraphSendMailPayload` modelan el body del endpoint `sendMail` de Graph, con destinatarios en `toRecipients`/`ccRecipients` y contenido `Text` o `HTML`. Tenerlos tipados evita errores de forma al construir correos desde los servicios.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Constructor con inyección de token",
+          "lineRange": [20, 27],
+          "explanation": "La clase no sabe cómo se obtiene el token: lo recibe como callback asíncrono. Esto desacopla el cliente de MSAL y permite renovar el token en cada llamada. `baseUrl` es opcional para apuntar a otra versión o a un entorno de pruebas.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Método call genérico",
+          "lineRange": [29, 77],
+          "explanation": "`call<T>` añade el header Bearer, `Content-Type` solo si hay body y el header `Prefer: HonorNonIndexedQueriesWarningMayFailRandomly`, necesario para filtrar listas de SharePoint por columnas no indexadas. Ante un error extrae el mensaje de `error.message` del JSON de Graph y lanza un `Error` legible con método, ruta y status. Las respuestas 204 o vacías devuelven `undefined`, y solo parsea JSON si el `content-type` lo indica. Detalle sutil: `...init` va después de `headers`, así que un `init.headers` reemplazaría por completo los headers calculados.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Atajos HTTP",
+          "lineRange": [79, 93],
+          "explanation": "`get`, `post`, `patch` y `delete` son envoltorios finos sobre `call` con el genérico por defecto `unknown`, lo que obliga al consumidor a declarar el tipo esperado para obtener tipado útil.",
+          "tourOrder": 5
+        },
+        {
+          "title": "GET con URL absoluta",
+          "lineRange": [95, 131],
+          "explanation": "`getAbsolute` existe para seguir enlaces de paginación como `@odata.nextLink`, que Graph devuelve como URL completa. Duplica la lógica de errores y parseo de `call` en lugar de reutilizarla, porque `call` siempre antepone `this.base`.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Binarios: descarga y subida",
+          "lineRange": [133, 183],
+          "explanation": "`getBlob` descarga contenido binario (por ejemplo adjuntos) y usa una URL base fija en vez de `this.base`, una pequeña inconsistencia. `putBinary` sube un `Blob`, `ArrayBuffer` o `Uint8Array` con `PUT` y un `Content-Type` opcional, útil para subir archivos a drives de SharePoint, y aplica el mismo tratamiento de errores y respuestas que el resto.",
+          "tourOrder": 5
+        }
+      ]
+    },
+    "src/features/requests/hooks/useRequests.ts": {
+      "overview": "Módulo central de hooks de lectura de solicitudes con TanStack Query. Define `requestKeys`, la fábrica de query keys que casi todos los demás hooks usan para invalidar caché, y los hooks del tablero por equipo, tablero completo, estadísticas, bandeja sin categorizar, borrado, paginación del historial y búsqueda con debounce. Corresponde al paso 6 del tour y es consumido directamente por `BoardPage` y `KanbanBoard`.",
+      "sections": [
+        {
+          "title": "Query keys compartidas",
+          "lineRange": [1, 35],
+          "explanation": "Todas las keys parten del prefijo `['requests']`, de modo que `invalidateQueries({ queryKey: requestKeys.all })` refresca de golpe cualquier lista de solicitudes. Las keys usan `as const` para que TypeScript las trate como tuplas literales. Centralizarlas evita strings duplicados y errores tipográficos entre hooks de lectura y mutaciones.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Agrupación y helpers de mock",
+          "lineRange": [37, 118],
+          "explanation": "`groupRequestsByColumn` transforma la lista plana del servicio en `BoardData`, un objeto con un array por columna; los requests con columna desconocida se descartan silenciosamente. `getMockBoardForTeam` y `getMockBoardFull` alimentan el modo `USE_MOCK`; el segundo usa `structuredClone` para que las mutaciones locales no alteren el mock original.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Board por equipo y completo",
+          "lineRange": [120, 178],
+          "explanation": "`useBoardEquipo` es la query principal del Kanban: obtiene los requests por código de equipo a través del servicio inyectado con `useGraphServices` y los agrupa por columna. `staleTime` de 60s, sin refetch al enfocar la ventana y con un reintento. Los `refetchInterval` comentados muestran que el polling se desactivó deliberadamente. `useBoardCompleto` hace lo mismo sin filtro de equipo para administradores.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Estadísticas y bandeja",
+          "lineRange": [180, 238],
+          "explanation": "`useBoardCompletoStats` usa una key propia y el endpoint liviano `fetchAllByBoardStats`, con `refetchOnMount: 'always'` para que cada visita a Stats traiga datos frescos sin polling. `useSinCategorizar` lee la bandeja de entrada, que el servicio puede resolver por lectura directa a PostgREST.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Mis solicitudes y borrado",
+          "lineRange": [240, 295],
+          "explanation": "`useMisSolicitudes` filtra el board mock por el primer nombre del solicitante: es un remanente del prototipo que no consulta el backend. `useDeleteRequest` llama a la acción `deleteRequest` y, al tener éxito, elimina la caché de detalle `['request', id]` e invalida todas las listas bajo `requestKeys.all`.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Historial paginado",
+          "lineRange": [297, 372],
+          "explanation": "`useHistorialCount` consulta el total de tickets históricos con polling cada 30s. `useHistorialLoadMore` combina la primera página que viene en el board con páginas extra en estado local, deduplicando por `id` con un `Set`. Usa el último elemento como cursor y marca `exhausted` cuando una página trae menos de `HISTORIAL_PAGE_SIZE`; ese valor debe coincidir con `HISTORIAL_INITIAL_LIMIT` del backend. Al cambiar de equipo, un `useEffect` resetea las páginas extra.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Búsqueda con debounce",
+          "lineRange": [374, 402],
+          "explanation": "`useSearchRequests` aplica un debounce de 250 ms con `setTimeout` y limpieza en el efecto, y solo habilita la query con 2 o más caracteres. `placeholderData: (prev) => prev` conserva el resultado anterior mientras llega el nuevo, evitando que la lista parpadee entre tecleos. `BoardPage` usa estos resultados para inyectar en el tablero tickets que no estaban cargados.",
+          "tourOrder": 6
+        }
+      ]
+    },
+    "src/features/requests/hooks/useBoardMetadata.ts": {
+      "overview": "Hooks y helpers para la metadata del tablero: equipos (boards), etiquetas y plantillas de solicitud. Reemplaza al antiguo `registry.ts` mapeando las plantillas de base de datos a definiciones de UI, y ofrece mutaciones CRUD con actualización optimista y rollback por snapshot. Es parte del paso 6 del tour y lo consumen el sidebar, `BoardPage`, `KanbanBoard` y los paneles de administración.",
+      "sections": [
+        {
+          "title": "Tipos de base de datos",
+          "lineRange": [1, 84],
+          "explanation": "`BoardTeam`, `MyBoardTeam`, `BoardLabel` y `BoardTemplate` reflejan las tablas tal como llegan del backend, con nombres de columna originales. `TemplatePayload` usa claves camelCase porque es lo que la UI envía al crear o editar una plantilla. `MyBoardTeam` documenta que el departamento puede ser `null`, lo que representa un kanban sin departamento en el sidebar.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Fallback y mapeo de plantillas",
+          "lineRange": [86, 176],
+          "explanation": "`FALLBACK_TEMPLATE` garantiza que la UI siempre tenga una plantilla General que renderizar cuando un `templateId` no existe. `mapBoardTemplateToDefinition` aplica valores por defecto de color, ícono y badge, y usa `satisfies TemplateVisual` para validar la forma sin perder el tipo inferido. `getTemplateAccent` y `getTemplateBadge` son atajos que usan las tarjetas del Kanban.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Query keys y equipos",
+          "lineRange": [178, 236],
+          "explanation": "Las fábricas `templateKeys` y `labelKeys` parametrizan las keys por board y por equipo. `useBoardTeams` lista todos los equipos con `staleTime: Infinity`, ya que la metadata es estable y se invalida manualmente al mutar. `useMyBoardTeams` delega en el backend el filtrado por nivel de acceso del usuario y se deshabilita mientras no haya `userId`; `BoardPage` lo usa como guard de acceso.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Lectura de etiquetas",
+          "lineRange": [238, 275],
+          "explanation": "`useBoardLabels` trae todas las etiquetas del board y `useLabelsByTeamId` las de un equipo concreto, deshabilitándose si `teamId` es `null`. Ambas usan caché indefinida, coherente con el patrón de invalidación explícita del resto del módulo.",
+          "tourOrder": 6
+        },
+        {
+          "title": "CRUD optimista de etiquetas",
+          "lineRange": [277, 407],
+          "explanation": "Las tres mutaciones siguen el patrón optimista de TanStack Query: en `onMutate` cancelan queries en vuelo, guardan un snapshot y modifican la caché; en `onError` restauran el snapshot; en `onSettled` invalidan para sincronizar con el servidor. Al crear, la etiqueta temporal recibe un ID negativo (`-Date.now()`) que nunca colisiona con IDs reales y que se reemplaza tras el refetch.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Lectura de plantillas",
+          "lineRange": [409, 426],
+          "explanation": "`useBoardTemplates` lista las plantillas del board con la key `['boardTemplates', boardId]`. `BoardPage` las usa para construir las opciones de filtro por campos de plantilla.",
+          "tourOrder": 6
+        },
+        {
+          "title": "CRUD optimista de plantillas",
+          "lineRange": [428, 568],
+          "explanation": "Replica exactamente el patrón de etiquetas para plantillas: inserción temporal con ID negativo, actualización campo a campo en caché y eliminación por filtro, siempre con rollback e invalidación. La repetición es explícita en vez de abstraída en un helper genérico, lo que facilita leer cada mutación a costa de duplicar código.",
+          "tourOrder": 6
+        }
+      ]
+    },
+    "src/features/requests/hooks/useCurrentUser.ts": {
+      "overview": "Hook pequeño que expone el perfil del usuario autenticado como una query de TanStack Query. Toma el `dbUser` ya resuelto por `AuthProvider` (paso 3) o un usuario simulado en modo mock, de modo que todos los componentes consumen el usuario con la misma API que cualquier otro dato remoto. Forma parte de la capa de hooks del paso 6.",
+      "sections": [
+        {
+          "title": "Imports y documentación",
+          "lineRange": [1, 16],
+          "explanation": "Depende de `useAuth` del `AuthProvider`, de `config` para el modo mock y del tipo `UserProfile`. El comentario del módulo deja clara la intención: fallar de forma explícita cuando la autenticación terminó pero no se pudo resolver el usuario.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Usuario simulado",
+          "lineRange": [18, 30],
+          "explanation": "`MOCK_USER` es un administrador del equipo `desarrollo` en el departamento TI, para que en modo mock todas las rutas protegidas por rol sean accesibles durante el desarrollo local.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Hook useCurrentUser",
+          "lineRange": [32, 64],
+          "explanation": "La query key incluye el `homeAccountId` de la cuenta y el `User_ID`: si el usuario se resuelve tarde, la key cambia y la query se vuelve a ejecutar en vez de quedar cacheada en error. La `queryFn` no hace red: devuelve el `dbUser` del contexto o rechaza con el `dbError`, evitando un estado pending eterno. Se habilita apenas `ready && dbReady`, con `staleTime: Infinity` y sin reintentos, ya que reintentar no cambiaría el resultado.",
+          "tourOrder": 6
+        }
+      ]
+    },
+    "src/features/requests/hooks/useSprints.ts": {
+      "overview": "Hooks de TanStack Query para listar, crear, actualizar y eliminar sprints, incluyendo las capacidades externas por equipo. Todas las mutaciones son optimistas con rollback por snapshot, siguiendo el mismo patrón que `useBoardMetadata`. Pertenece al paso 6 del tour y alimenta tanto el filtro de sprint del tablero como el selector del `RequestModal`.",
+      "sections": [
+        {
+          "title": "Tipos de sprint",
+          "lineRange": [1, 38],
+          "explanation": "`Sprint` refleja la tabla con fechas en string ISO y un array opcional de `SprintTeamCapacity`. `SprintCapacityInput` es la forma simplificada (`teamId`, `capacity`) que la UI envía, distinta de la fila almacenada que además lleva `Capacity_ID`.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Mock y query de listado",
+          "lineRange": [40, 84],
+          "explanation": "`MOCK_SPRINTS` provee dos sprints de ejemplo para el modo mock. La key única `['sprints']` indica que los sprints son globales, no por board. `useSprints` tiene `staleTime` de 60 s y un reintento.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Crear sprint optimista",
+          "lineRange": [86, 135],
+          "explanation": "Antes de la respuesta del servidor inserta un sprint temporal con ID negativo y transforma las capacidades de entrada en filas con `Capacity_ID: null`. Si falla, restaura el snapshot; al terminar, invalida la lista para traer los IDs reales.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Actualizar y eliminar",
+          "lineRange": [137, 228],
+          "explanation": "`useUpdateSprint` conserva el `Capacity_ID` existente de cada equipo al recomponer las capacidades, para no perder la referencia a la fila; si no se envían `teamCapacities`, mantiene las actuales. `useDeleteSprint` filtra el sprint de la caché. Ambas siguen el ciclo `onMutate`, `onError`, `onSettled`.",
+          "tourOrder": 6
+        },
+        {
+          "title": "Helper sprintYear",
+          "lineRange": [230, 247],
+          "explanation": "Deriva el año de un sprint a partir de `Sprint_Start_Date` y, si falta, busca un patrón `(YYYY)` en el nombre. Esto da soporte a sprints migrados sin fechas; `BoardPage` lo usa para agrupar las opciones del filtro de sprint por año.",
+          "tourOrder": 6
+        }
+      ]
+    },
+    "src/pages/BoardPage.tsx": {
+      "overview": "Pantalla central del Kanban de un equipo. Lee el equipo desde la URL, valida que el usuario tenga acceso a ese board, carga solicitudes, configuración de columnas, sprints, etiquetas, miembros y plantillas con los hooks del paso 6, y combina filtros, búsqueda global e historial paginado antes de pasar el resultado a `KanbanBoard`. Es el primer archivo del paso 7 del tour.",
+      "sections": [
+        {
+          "title": "Imports y fallback de columnas",
+          "lineRange": [1, 48],
+          "explanation": "La lista de imports muestra cuántas capas confluyen aquí: stores de Zustand, hooks de datos, componentes de filtros y búsqueda. `COLUMN_ID_FALLBACK` replica los IDs de columna de la base por si `useColumnMap` todavía no cargó, para que mover una tarjeta nunca envíe un `columnId` indefinido. `EMPTY_REQUESTS` es una constante para que las dependencias de `useMemo` no cambien en cada render.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Aplanado de campos de plantilla",
+          "lineRange": [50, 83],
+          "explanation": "`flattenTemplateFields` recorre recursivamente el schema de una plantilla, incluidas las ramas de los campos condicionales (`trueBranch`/`falseBranch`), y produce una lista plana de campos filtrables. Deduplica por `key` con un `Set`, ignora campos sin etiqueta o el campo interno `__labels`, y clasifica cada uno como `select_radio`, `boolean` o `text` para que el panel de filtros sepa qué control mostrar.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Control de zoom",
+          "lineRange": [84, 161],
+          "explanation": "`KanbanZoomControl` lee y modifica `kanbanZoom` en `useBoardStore` (paso 8). Las comparaciones con un margen de `0.001` evitan problemas de precisión de punto flotante al decidir si se alcanzó el mínimo o el máximo. Hacer clic en el porcentaje restablece el zoom al 100 %.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Equipo desde URL y guard",
+          "lineRange": [163, 200],
+          "explanation": "La URL es la fuente de verdad del equipo activo; un efecto solo sincroniza `useBoardStore` para que el sidebar lo resalte. Resuelve el `boardTeamId` a partir del código y carga la configuración de columnas del equipo. El guard `hasBoardAccess` es tri-estado: `null` mientras `useMyBoardTeams` carga (no redirige) y `false` solo cuando la consulta terminó y el board no está en la lista visible del usuario.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Metadata y opciones de filtro",
+          "lineRange": [201, 274],
+          "explanation": "Deriva las columnas visibles y ordenadas, carga usuarios, sub-equipos, sprints, etiquetas y plantillas, y arma `dynamicOptions` para `BoardFilters`. La query `externalRequest` solo se activa cuando se abre un ticket que no está en el board cargado (por ejemplo, desde un enlace directo). Las plantillas se filtran por las asignadas al equipo y se descartan las que no tienen campos filtrables.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Historial, filtros y búsqueda",
+          "lineRange": [276, 334],
+          "explanation": "Fusiona el historial paginado con los datos del board, aplica `useFilteredBoard` (que lee los filtros persistidos en `filterStore`) y calcula una segunda versión sin el filtro de resolutor para la barra de horas. `boardWithSearch` inyecta al tope de su columna los resultados de búsqueda que no estaban cargados, solo mientras hay un query activo. `structureLoading` mantiene el skeleton hasta que la configuración de columnas esté lista, evitando que el tablero salte de columnas por defecto a las administradas.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Handlers y redirección",
+          "lineRange": [335, 350],
+          "explanation": "`handleMove` traduce el slug de columna a su ID con el mapa real o el fallback y dispara la mutación `useMoveRequest`. `handleModalId` decide si hace falta pedir el ticket abierto por separado. Si el guard determina que no hay acceso, se redirige a `/home` con `Navigate replace`: escribir la URL a mano no basta para ver un board ajeno.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Render de la página",
+          "lineRange": [352, 410],
+          "explanation": "La barra superior agrupa búsqueda, badge de intake, filtros, personalización, zoom (oculto en móvil) y la barra de horas por miembro. Luego se muestra el skeleton, un mensaje de error o el `KanbanBoard` con el board final, la configuración de columnas, la señal para abrir tickets desde la búsqueda y los callbacks de paginación del historial.",
+          "tourOrder": 7
+        }
+      ]
+    },
+    "src/features/requests/components/KanbanBoard.tsx": {
+      "overview": "Componente que orquesta el tablero Kanban: renderiza columnas según la configuración del equipo, gestiona el drag & drop con dnd-kit, intercepta los movimientos que requieren evidencia de cierre y controla qué `RequestModal` está abierto, incluida la navegación padre/hijo entre sub-solicitudes. Recibe el board ya filtrado desde `BoardPage` y es la pieza central del paso 7 del tour.",
+      "sections": [
+        {
+          "title": "Imports, fallback y props",
+          "lineRange": [1, 64],
+          "explanation": "Importa los primitivos de `@dnd-kit/core` (contexto, overlay, sensores) y los modales que el tablero puede abrir. `PendingClosure` guarda el movimiento en espera de evidencia, incluyendo si la columna origen también exigía evidencia para permitir reutilizarla. Las props muestran que el componente no consulta el board por sí mismo: lo recibe y notifica los movimientos con `onMove`.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Estado y dependencias",
+          "lineRange": [67, 90],
+          "explanation": "Mantiene estado local para la tarjeta arrastrada, la columna bajo el cursor, el modal abierto y su padre, el cierre pendiente y la columna visible en móvil. Del store de Zustand toma `kanbanZoom` y `focusColumnSignal`; de los hooks, el usuario actual, los equipos, las notificaciones y el conteo del historial.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Estructuras derivadas de columnas",
+          "lineRange": [91, 154],
+          "explanation": "A partir de `columnConfig` se memorizan las columnas visibles ordenadas, un `Set` de slugs para búsquedas O(1) durante el arrastre, y mapas de slug a nombre, ID, color y color de título. `evidenceSlugs` define, por equipo y desde la base, qué columnas exigen evidencia. `unreadByRequestId` agrupa las notificaciones no leídas por ticket para mostrar indicadores en las tarjetas.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Modal y URL",
+          "lineRange": [156, 219],
+          "explanation": "`setModal` abre o cierra el modal, actualiza la URL con `history.replaceState` (sin recargar ni añadir entradas al historial) y marca como leídas las notificaciones del ticket. Los sensores exigen 6 px de movimiento con mouse o 200 ms de pulsación en táctil, para no confundir clics o scroll con arrastres. El ticket del modal se toma del board y se refresca con una query `['request', id]` que comparte caché con el propio `RequestModal`.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Drag and drop",
+          "lineRange": [221, 274],
+          "explanation": "`handleDragOver` resuelve si el destino es una columna o una tarjeta y, en el segundo caso, busca su columna. `handleDragEnd` ignora soltar en la misma columna y, si el destino exige evidencia y el ticket aún no tiene cierre, en lugar de mover guarda un `PendingClosure` que abre el `ClosureModal`. Solo los movimientos sin requisito de evidencia llaman directamente a `onMove`.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Cierre con evidencia",
+          "lineRange": [276, 319],
+          "explanation": "`handleClosureConfirm` y `handleModalMoveWithClosure` invocan la mutación `useCloseRequest` con la nota, los adjuntos y el modo de evidencia (`new`, `reuse` o `skip`). El primero viene del arrastre y el segundo del dropdown Mover a del modal. En ambos casos el cierre pendiente se limpia tanto en éxito como en error.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Preparación del render",
+          "lineRange": [321, 366],
+          "explanation": "Mientras la configuración de columnas carga, `renderSlugs` usa las claves del board para no mostrar una pantalla vacía. Un efecto reacciona a `focusColumnSignal` (emitido por el badge de intake): en móvil cambia la columna seleccionada y en escritorio hace scroll suave hasta ella. `renderColumn` es una fábrica única reutilizada por ambas vistas, y solo la columna historial recibe props de paginación.",
+          "tourOrder": 7
+        },
+        {
+          "title": "JSX del tablero y modales",
+          "lineRange": [368, 475],
+          "explanation": "En escritorio aplica el zoom con la propiedad CSS `zoom` y compensa la altura dividiendo por el factor; en móvil muestra una sola columna con selector. `DragOverlay` dibuja una copia rotada de la tarjeta mientras se arrastra. Hay dos instancias condicionales de `RequestModal`: una normal y otra cuando se navega a un ticket relacionado, con botón Volver que restaura el modal anterior.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Selector de columna móvil",
+          "lineRange": [477, 544],
+          "explanation": "`MobileColumnSelector` muestra pills con el nombre y el conteo de cada columna, más flechas anterior/siguiente acotadas al rango válido. Un efecto centra con scroll suave la pill activa cada vez que cambia el índice.",
+          "tourOrder": 7
+        }
+      ]
+    },
+    "src/features/requests/components/RequestModal.tsx": {
+      "overview": "Modal de detalle y edición de una solicitud, el componente con más dependencias del proyecto. Permite al equipo de soporte editar título, descripción, campos de plantilla, resolutores, etiquetas, sprint, prioridad y horas, mover el ticket entre columnas con evidencia de cierre, gestionar comentarios, adjuntos, participantes y sub-solicitudes, además de duplicar, transferir o eliminar el ticket. Lo abre `KanbanBoard` y cierra el paso 7 del tour.",
+      "sections": [
+        {
+          "title": "Imports, colores y props",
+          "lineRange": [1, 80],
+          "explanation": "Los imports reflejan su papel de integrador: una docena de hooks de mutación y lectura, varios modales secundarios y un paquete de subcomponentes de `RequestModalComponents`. `COL_COLOR` y `PRI_COLOR` son colores de respaldo cuando el equipo no define los suyos. Las props incluyen `onMoveWithClosure` para delegar el cierre en el tablero, y `readOnly`, `backLabel` y `onBack` para reutilizar el modal en vistas de solo lectura o de navegación padre/hijo.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Panel de sub-solicitudes",
+          "lineRange": [82, 160],
+          "explanation": "`SubRequestsPanel` lista los hijos de un ticket con `useChildRequests`, calcula el porcentaje completado (hijos en `hecho`) y permite crear una sub-solicitud que hereda la confidencialidad del padre. Al hacer clic en un hijo invoca `onOpenChild`, que termina navegando al hijo dentro del mismo flujo de modales.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Mutaciones y config de columnas",
+          "lineRange": [165, 236],
+          "explanation": "Inicializa todas las mutaciones (mover, actualizar, asignar, comentar, adjuntar, borrar, duplicar, transferir). La configuración de columnas del equipo es la fuente de verdad del dropdown Mover a; si aún no cargó, cae a `KANBAN_COLUMNAS` y `COLUMNAS_CIERRE` como respaldo seguro. Una query con `staleTime: 0` obtiene una versión fresca del ticket al montar, porque la tarjeta del board puede traer datos parciales.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Datos derivados y estado local",
+          "lineRange": [238, 317],
+          "explanation": "`effectiveRequest` prioriza la versión fresca sobre la prop. El feedback del cliente solo se considera vigente si hay al menos tantos feedbacks como cierres, es decir, si ya se respondió el ciclo actual. `canViewHistory` se restringe a administradores y supervisores de sub-equipo. El estado editable se inicializa desde la prop y un efecto lo reinicia solo cuando cambia `request.id`, para que el refetch no pise lo que el usuario está editando.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Duplicar, borrar y cerrar",
+          "lineRange": [318, 374],
+          "explanation": "`handleDuplicate` crea una copia con sufijo (copia), conservando equipos, etiquetas, sprint, formulario, criterios de aceptación y resolutores, y después abre el nuevo ticket. `handleDelete` cierra el modal y notifica con `onDeleted` tras el éxito. Un listener global de teclado cierra el modal con Escape y se limpia al desmontar.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Lógica de movimiento",
+          "lineRange": [376, 426],
+          "explanation": "`handleMover` replica la regla del tablero: si la columna destino requiere evidencia y el ticket no tiene cierre, abre el `ClosureModal` en lugar de mover. `handleClosureFromModal` delega el cierre real en `onMoveWithClosure` del `KanbanBoard`. Cuando el solicitante aprueba en Client Review (destino `ready_to_deploy`), se abre el modal de calificación de los resolutores; el `console.log('[RATING]')` es un rastro de depuración que quedó en el código.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Handlers de edición",
+          "lineRange": [428, 528],
+          "explanation": "`debouncedSave` agrupa cambios de texto con un temporizador de 800 ms y expone un `saveStatus` (`pending`, `saving`, `saved`) para el indicador de autoguardado. Etiquetas, sprint, campos de plantilla y resolutores se guardan de inmediato con actualización local previa. Al quitar un sub-equipo, `handleToggleSubTeam` también desasigna a sus miembros, manteniendo coherentes asignaciones y sub-equipos. La subida de archivos admite selección múltiple y arrastrar y soltar.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Contenedor y cabecera",
+          "lineRange": [529, 775],
+          "explanation": "Calcula los últimos derivados (IDs de columnas de Client Review, permiso para revocar participantes) y declara estados de modales secundarios. El overlay cierra al hacer clic fuera y el borde cambia de color según sea sub-solicitud, ticket cerrado o en revisión del cliente. La cabecera incluye título editable, botón para dividir en sub-solicitudes, indicador de autoguardado y acciones de duplicar, eliminar (solo administradores) y cerrar.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Cuerpo: campos del ticket",
+          "lineRange": [776, 1455],
+          "explanation": "Muestra el `ClientReviewBanner` cuando el ticket está en revisión del cliente y el panel flotante de sub-solicitudes. El panel izquierdo contiene el banner del padre, descripción, campos de plantilla con `TemplateFormDataPanel`, criterios de aceptación, y una cuadrícula con solicitante, resolutores agrupados por sub-equipo, etiquetas con búsqueda, sprint, prioridad y horas estimadas. Termina con las líneas de tiempo de evidencia y feedback, el temporizador de horas registradas y el dropdown Mover a, que marca con un badge las columnas que exigen evidencia.",
+          "tourOrder": 7
+        },
+        {
+          "title": "Panel derecho y modales",
+          "lineRange": [1456, 1679],
+          "explanation": "El panel derecho muestra participantes y pestañas de comentarios (con `CommentComposer` y menciones) y adjuntos (con zona de arrastrar y soltar). Al final se montan condicionalmente la confirmación de borrado, el `ClosureModal`, el historial de cambios, la transferencia de ticket y la calificación de resolución. Mantenerlos como hermanos del modal principal dentro de un fragmento permite apilarlos con su propio `zIndex`.",
+          "tourOrder": 7
+        }
+      ]
+    },
+    "src/store/boardStore.ts": {
+      "overview": "Store de Zustand con el estado de UI compartido del tablero: equipo activo, sidebar abierto, zoom del Kanban y una señal efímera para enfocar una columna. No persiste nada y no guarda datos del servidor, ilustrando la separación del paso 8 del tour: TanStack Query para datos remotos y Zustand para estado local.",
+      "sections": [
+        {
+          "title": "Límites de zoom y tipo",
+          "lineRange": [1, 22],
+          "explanation": "Define el rango de zoom (0.5 a 1.3, en pasos de 0.1) y el tipo `BoardUIState`, que combina estado y acciones en un solo objeto, como es habitual en Zustand. `focusColumnSignal` lleva un `nonce` para que dos peticiones de foco a la misma columna se distingan como eventos diferentes.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Creación del store",
+          "lineRange": [24, 46],
+          "explanation": "`create` devuelve directamente el hook `useBoardStore`, sin providers. `setKanbanZoom` y `stepKanbanZoom` acotan el valor al rango permitido; el segundo redondea a un decimal para evitar acumulación de errores de punto flotante al sumar 0.1 repetidamente. `focusColumn` usa `Date.now()` como nonce, y `KanbanBoard` reacciona al cambio de referencia en un efecto. Se exportan `ZOOM_MIN` y `ZOOM_MAX` para que el control de zoom deshabilite sus botones.",
+          "tourOrder": 8
+        }
+      ]
+    },
+    "src/store/filterStore.ts": {
+      "overview": "Store de Zustand con persistencia en localStorage que guarda los filtros avanzados de cada board: una lista de condiciones campo/operador/valor y una conjunción AND/OR. Además exporta la metadata de UI (etiquetas, íconos, categorías y operadores válidos por campo) que usa el panel `BoardFilters`. Es el segundo archivo del paso 8 del tour.",
+      "sections": [
+        {
+          "title": "Tipos y valores por defecto",
+          "lineRange": [1, 63],
+          "explanation": "`FilterField` y `FilterOperator` son uniones de literales que enumeran los campos filtrables y los operadores. `FilterCondition` admite `value2` para el operador `entre` y `templateId`/`templateFieldKey` para filtrar por campos de plantilla. `newCondition` genera IDs con `crypto.randomUUID()` prefijados por el board, y empieza con título contiene vacío.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Contrato y patchBoard",
+          "lineRange": [65, 94],
+          "explanation": "El estado se organiza como `byBoard: Record<boardId, BoardFilterState>`, de modo que cada tablero tiene filtros independientes. Los selectores reciben el `boardId` como parámetro. `patchBoard` es un helper inmutable que parte del estado previo (o del por defecto) y aplica un updater parcial, evitando repetir esa lógica en cada acción.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Store y selectores",
+          "lineRange": [96, 111],
+          "explanation": "El store se envuelve en el middleware `persist`. Los selectores leen con `get()` y devuelven valores por defecto si el board no tiene estado. `activeCount` cuenta solo condiciones efectivas: los operadores de vacío siempre cuentan, las de plantilla requieren plantilla y campo, y el resto requiere un valor no vacío.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Acciones sobre condiciones",
+          "lineRange": [113, 141],
+          "explanation": "Agregar, quitar, actualizar, limpiar, cambiar conjunción y abrir o cerrar el panel se implementan todas como llamadas a `set` combinadas con `patchBoard`. Este estilo mantiene cada acción en una o dos líneas y garantiza que nunca se mute el estado anterior.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Toggle rápido de resolutor",
+          "lineRange": [142, 197],
+          "explanation": "`toggleAssignee` lo usa la barra de horas por miembro: busca una condición resolutor es y alterna el nombre dentro de un valor multi-valor separado por `|`, comparando sin distinguir mayúsculas. Si queda vacía, elimina la condición para no dejar un chip huérfano. El comentario final explica cómo cambiarlo a selección única. `getActiveAssignees` devuelve los nombres activos en minúsculas para resaltarlos.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Persistencia parcial",
+          "lineRange": [198, 211],
+          "explanation": "Se guarda bajo la clave `prisma-filters-v3`; el sufijo de versión permite descartar formatos antiguos cambiando el nombre. `partialize` persiste condiciones y conjunción pero fuerza `isOpen: false`, para que el panel de filtros no aparezca abierto al recargar la página.",
+          "tourOrder": 8
+        },
+        {
+          "title": "Metadatos de UI",
+          "lineRange": [213, 336],
+          "explanation": "`FIELD_LABELS`, `FIELD_ICONS`, `FIELD_CATEGORY`, `OPERATOR_LABELS`, `FIELD_OPERATORS` y `FIELD_SELECT_OPTIONS` describen cómo presentar cada campo. Tiparlos como `Record<FilterField, ...>` obliga al compilador a exigir una entrada por campo cuando se añade uno nuevo. Las opciones de columna no incluyen Client Review, por lo que esa columna no se puede elegir en el filtro de columna.",
+          "tourOrder": 8
+        }
+      ]
+    },
+    "supabase/functions/api/index.ts": {
+      "overview": "Punto de entrada HTTP de la única Edge Function `api`, que corre en Deno. Recibe todas las peticiones `{ action, payload }` que envía `apiClient`, gestiona CORS, distingue entre acciones públicas, jobs internos, acciones de migración protegidas por secreto y acciones autenticadas, y delega el trabajo en el router de handlers. Es el primer archivo del paso 9 del tour.",
+      "sections": [
+        {
+          "title": "Imports del runtime Deno",
+          "lineRange": [1, 17],
+          "explanation": "Cada import lleva `// @ts-ignore` porque usa rutas con extensión `.ts`, válidas en Deno pero no para el compilador TypeScript del frontend. Trae la verificación de tokens, el cliente con service role, helpers CORS, el secreto interno, `createDispatch` del router y los procesadores de jobs en segundo plano.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Contrato y validación inicial",
+          "lineRange": [18, 51],
+          "explanation": "El comentario documenta el orden de resolución completo. `Deno.serve` responde al preflight `OPTIONS`, rechaza cualquier método que no sea `POST` y exige un body JSON con `action`. Todas las respuestas salen por `corsResponse` o `errorResponse` para incluir siempre las cabeceras CORS.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Endpoint público y jobs",
+          "lineRange": [53, 87],
+          "explanation": "`get_public_announcements` se atiende sin autenticación. Los jobs de renombrado de plantillas y exportación son auto-invocaciones protegidas por la cabecera `X-Internal-Job-Secret`; responden `accepted` de inmediato y procesan el chunk en segundo plano con `EdgeRuntime.waitUntil`, lo que mantiene viva la función tras enviar la respuesta. Si ese API no existe, lanzan la promesa sin esperarla.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Acciones de migración",
+          "lineRange": [89, 105],
+          "explanation": "Las acciones que usa el ETL `prisma-migrations` (paso 13) se autentican con el mismo secreto interno en lugar de un JWT de usuario, porque las ejecuta un script de servidor. Aun así pasan por el mismo `dispatch` del router, reutilizando los handlers de dominio.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Autenticación dual por token",
+          "lineRange": [107, 137],
+          "explanation": "Extrae el token Bearer e intenta validarlo primero como JWT de Azure AD (camino legado marcado `[MSAL-LEGACY]`) y, si falla, como token de Supabase Auth. Solo si ambos fallan responde 401, concatenando los dos mensajes de error para diagnóstico. Esto permite que convivan usuarios de ambos flujos durante la migración, y explica por qué `config.toml` desactiva `verify_jwt`.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Despacho de la acción",
+          "lineRange": [139, 148],
+          "explanation": "Crea el cliente de Supabase con service role y un `dispatch` por petición, y responde `{ data }` con el resultado del handler. Cualquier excepción se registra con el nombre de la acción y se devuelve como 500 con el mensaje del error, que es lo que `apiClient` muestra en el frontend.",
+          "tourOrder": 9
+        }
+      ]
+    }
+  }
+}

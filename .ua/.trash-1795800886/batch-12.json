@@ -1,0 +1,1027 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/auth/AuthProvider.tsx",
+      "type": "file",
+      "name": "AuthProvider.tsx",
+      "filePath": "src/auth/AuthProvider.tsx",
+      "summary": "Proveedor de contexto React de autenticación que unifica el flujo MSAL clásico y el nuevo flujo Supabase Auth (Azure), resuelve el usuario de base de datos vía upsertUserByEntraId y bloquea el acceso a usuarios inactivos. Expone el hook useAuth con token, login, logout y refresco del usuario.",
+      "tags": [
+        "auth",
+        "context-provider",
+        "component",
+        "hook",
+        "entry-point"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Usa React.createContext + useMemo para exponer un valor de contexto estable; soporta un modo BYPASS_AUTH con cuenta y usuario ficticios para desarrollo."
+    },
+    {
+      "id": "file:src/auth/msal.ts",
+      "type": "file",
+      "name": "msal.ts",
+      "filePath": "src/auth/msal.ts",
+      "summary": "Inicializa la instancia singleton de PublicClientApplication de MSAL (Entra ID) y expone helpers para login por popup/redirect, obtención silenciosa de access tokens con fallback interactivo, logout y suscripción a eventos.",
+      "tags": [
+        "auth",
+        "msal",
+        "singleton",
+        "service",
+        "entra-id"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Lee VITE_AZURE_CLIENT_ID/TENANT_ID desde import.meta.env y lanza error al cargar el módulo si faltan; limpia manualmente el flag interaction_in_progress de sessionStorage."
+    },
+    {
+      "id": "file:src/auth/supabaseAuth.ts",
+      "type": "file",
+      "name": "supabaseAuth.ts",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "summary": "Implementa el login con Microsoft a través de Supabase Auth (provider Azure), conviviendo con MSAL: gestiona el provider_token de Graph con caché, refresco silencioso vía refresh_token contra Azure AD, reautenticación silenciosa y extracción del Entra ID (oid.tid) de la sesión.",
+      "tags": [
+        "auth",
+        "supabase",
+        "service",
+        "token-management",
+        "entra-id"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Persiste el provider_refresh_token en localStorage porque Supabase solo expone provider_token en el login inicial; Azure AD rota el refresh token en cada canje."
+    },
+    {
+      "id": "function:src/auth/AuthProvider.tsx:BlockedScreen",
+      "type": "function",
+      "name": "BlockedScreen",
+      "filePath": "src/auth/AuthProvider.tsx",
+      "lineRange": [
+        69,
+        201
+      ],
+      "summary": "Componente de pantalla que se muestra cuando el usuario está inactivo (acceso suspendido), con mensaje y correo de contacto de TI.",
+      "tags": [
+        "component",
+        "ui",
+        "access-control"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/auth/AuthProvider.tsx:loadDbUserFromSupabase",
+      "type": "function",
+      "name": "loadDbUserFromSupabase",
+      "filePath": "src/auth/AuthProvider.tsx",
+      "lineRange": [
+        220,
+        229
+      ],
+      "summary": "Obtiene el Entra ID desde la sesión de Supabase y llama a upsertUserByEntraId para resolver el perfil de usuario en la base de datos.",
+      "tags": [
+        "auth",
+        "data-loading",
+        "supabase"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "type": "function",
+      "name": "AuthProvider",
+      "filePath": "src/auth/AuthProvider.tsx",
+      "lineRange": [
+        232,
+        503
+      ],
+      "summary": "Componente proveedor que orquesta el estado de autenticación (ready, dbReady, account, dbUser), escucha cambios de sesión de Supabase o inicializa MSAL según config, y expone signIn, signOut, getToken y refreshDbUser.",
+      "tags": [
+        "context-provider",
+        "auth",
+        "component",
+        "state-management"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/auth/AuthProvider.tsx:useAuth",
+      "type": "function",
+      "name": "useAuth",
+      "filePath": "src/auth/AuthProvider.tsx",
+      "lineRange": [
+        507,
+        511
+      ],
+      "summary": "Hook que consume el contexto de autenticación y lanza error si se usa fuera de AuthProvider.",
+      "tags": [
+        "hook",
+        "auth",
+        "context"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:clearInteractionInProgress",
+      "type": "function",
+      "name": "clearInteractionInProgress",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        64,
+        74
+      ],
+      "summary": "Elimina de sessionStorage el flag interaction_in_progress que MSAL deja tras un popup fallido, para permitir reintentos de login.",
+      "tags": [
+        "utility",
+        "msal",
+        "error-recovery"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:initMSAL",
+      "type": "function",
+      "name": "initMSAL",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        77,
+        86
+      ],
+      "summary": "Inicializa MSAL una única vez, procesa la respuesta de redirect, registra eventos y fija la cuenta activa.",
+      "tags": [
+        "auth",
+        "msal",
+        "initialization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:ensureActiveAccount",
+      "type": "function",
+      "name": "ensureActiveAccount",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        92,
+        96
+      ],
+      "summary": "Garantiza que haya una cuenta activa en MSAL, tomando la primera disponible si no existe.",
+      "tags": [
+        "auth",
+        "msal",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:isLoggedIn",
+      "type": "function",
+      "name": "isLoggedIn",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        98,
+        100
+      ],
+      "summary": "Indica si existe alguna cuenta de MSAL activa o en caché.",
+      "tags": [
+        "auth",
+        "msal",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:getAccount",
+      "type": "function",
+      "name": "getAccount",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        102,
+        104
+      ],
+      "summary": "Devuelve la cuenta MSAL activa o la primera en caché.",
+      "tags": [
+        "auth",
+        "msal",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:ensureLoginPopup",
+      "type": "function",
+      "name": "ensureLoginPopup",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        110,
+        130
+      ],
+      "summary": "Realiza login por popup con selección de cuenta y cae a redirect si el popup es bloqueado o falla.",
+      "tags": [
+        "auth",
+        "msal",
+        "login"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:ensureLoginRedirect",
+      "type": "function",
+      "name": "ensureLoginRedirect",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        132,
+        140
+      ],
+      "summary": "Inicia el login de MSAL por redirect si no hay cuenta activa.",
+      "tags": [
+        "auth",
+        "msal",
+        "login"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:ensureLogin",
+      "type": "function",
+      "name": "ensureLogin",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        142,
+        144
+      ],
+      "summary": "Punto de entrada de login que delega en el modo popup o redirect.",
+      "tags": [
+        "auth",
+        "msal",
+        "login"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:getAccessToken",
+      "type": "function",
+      "name": "getAccessToken",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        150,
+        205
+      ],
+      "summary": "Obtiene un access token para los SCOPES de la API mediante acquireTokenSilent, con fallback a popup y redirect cuando se requiere interacción.",
+      "tags": [
+        "auth",
+        "msal",
+        "token-management"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/auth/msal.ts:logout",
+      "type": "function",
+      "name": "logout",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        211,
+        218
+      ],
+      "summary": "Cierra sesión en MSAL por redirect para la cuenta activa.",
+      "tags": [
+        "auth",
+        "msal",
+        "logout"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:wireEventsOnce",
+      "type": "function",
+      "name": "wireEventsOnce",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        225,
+        244
+      ],
+      "summary": "Registra una sola vez el callback de eventos MSAL para fijar la cuenta activa tras eventos de login o adquisición de token exitosos.",
+      "tags": [
+        "event-handler",
+        "msal",
+        "auth"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/msal.ts:onMsalEvent",
+      "type": "function",
+      "name": "onMsalEvent",
+      "filePath": "src/auth/msal.ts",
+      "lineRange": [
+        246,
+        248
+      ],
+      "summary": "Permite suscribirse a eventos de MSAL desde otros módulos.",
+      "tags": [
+        "event-handler",
+        "msal",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:refreshProviderTokenSilently",
+      "type": "function",
+      "name": "refreshProviderTokenSilently",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        69,
+        108
+      ],
+      "summary": "Canjea el provider_refresh_token guardado por un nuevo access token de Graph llamando directamente al endpoint de token de Azure AD, guardando el refresh token rotado y cacheando el resultado.",
+      "tags": [
+        "auth",
+        "token-management",
+        "azure-ad"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:signInWithSupabaseAzure",
+      "type": "function",
+      "name": "signInWithSupabaseAzure",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        118,
+        132
+      ],
+      "summary": "Inicia el flujo OAuth de Supabase con provider Azure, forzando select_account o usando prompt=none con login_hint en modo silencioso.",
+      "tags": [
+        "auth",
+        "supabase",
+        "login"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:savePostLoginRedirect",
+      "type": "function",
+      "name": "savePostLoginRedirect",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        138,
+        140
+      ],
+      "summary": "Guarda en sessionStorage la ruta a la que volver tras completar el login.",
+      "tags": [
+        "auth",
+        "navigation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:consumePostLoginRedirect",
+      "type": "function",
+      "name": "consumePostLoginRedirect",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        143,
+        151
+      ],
+      "summary": "Lee y elimina la ruta de retorno post-login guardada en sessionStorage.",
+      "tags": [
+        "auth",
+        "navigation",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "type": "function",
+      "name": "trySilentGraphReauth",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        181,
+        187
+      ],
+      "summary": "Intenta una reautenticación silenciosa con Azure (prompt=none) evitando bucles mediante una marca temporal en sessionStorage.",
+      "tags": [
+        "auth",
+        "token-management",
+        "supabase"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:getSupabaseSession",
+      "type": "function",
+      "name": "getSupabaseSession",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        190,
+        194
+      ],
+      "summary": "Devuelve la sesión actual de Supabase Auth.",
+      "tags": [
+        "auth",
+        "supabase",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "type": "function",
+      "name": "getSupabaseProviderToken",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        200,
+        230
+      ],
+      "summary": "Obtiene el token de Microsoft Graph priorizando provider_token de la sesión, luego la caché, el refresco silencioso y finalmente la reautenticación por redirect.",
+      "tags": [
+        "auth",
+        "token-management",
+        "supabase",
+        "graph"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:signOutSupabase",
+      "type": "function",
+      "name": "signOutSupabase",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        233,
+        243
+      ],
+      "summary": "Cierra la sesión de Supabase y limpia el refresh token y la caché del token de Graph.",
+      "tags": [
+        "auth",
+        "supabase",
+        "logout"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/auth/supabaseAuth.ts:getSupabaseEntraId",
+      "type": "function",
+      "name": "getSupabaseEntraId",
+      "filePath": "src/auth/supabaseAuth.ts",
+      "lineRange": [
+        250,
+        271
+      ],
+      "summary": "Extrae de la sesión de Supabase los claims oid/tid para reconstruir el Entra ID (oid.tid), junto con nombre y correo del usuario.",
+      "tags": [
+        "auth",
+        "supabase",
+        "identity"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:BlockedScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:loadDbUserFromSupabase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:useAuth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "function:src/auth/AuthProvider.tsx:useAuth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:clearInteractionInProgress",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureActiveAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureActiveAccount",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:isLoggedIn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:isLoggedIn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:getAccount",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:getAccount",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLoginPopup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLoginPopup",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLoginRedirect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLoginRedirect",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLogin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:ensureLogin",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:getAccessToken",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:getAccessToken",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:logout",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:logout",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:wireEventsOnce",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:onMsalEvent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/msal.ts",
+      "target": "function:src/auth/msal.ts:onMsalEvent",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:refreshProviderTokenSilently",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:signInWithSupabaseAzure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:signInWithSupabaseAzure",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:savePostLoginRedirect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:savePostLoginRedirect",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:consumePostLoginRedirect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:consumePostLoginRedirect",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseSession",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:signOutSupabase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:signOutSupabase",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseEntraId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseEntraId",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/auth/msal.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/auth/supabaseAuth.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/lib/apiClient.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/lib/supabaseClient.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/AuthProvider.tsx",
+      "target": "file:src/types/commons.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/auth/supabaseAuth.ts",
+      "target": "file:src/lib/supabaseClient.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:ensureActiveAccount",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:isLoggedIn",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:getAccessToken",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:ensureLogin",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/msal.ts:logout",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/supabaseAuth.ts:signInWithSupabaseAzure",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/supabaseAuth.ts:signOutSupabase",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:AuthProvider",
+      "target": "function:src/auth/AuthProvider.tsx:loadDbUserFromSupabase",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/AuthProvider.tsx:loadDbUserFromSupabase",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseEntraId",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:initMSAL",
+      "target": "function:src/auth/msal.ts:ensureActiveAccount",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:initMSAL",
+      "target": "function:src/auth/msal.ts:wireEventsOnce",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:ensureLoginPopup",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:ensureLoginPopup",
+      "target": "function:src/auth/msal.ts:clearInteractionInProgress",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:ensureLoginRedirect",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:ensureLogin",
+      "target": "function:src/auth/msal.ts:ensureLoginPopup",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:ensureLogin",
+      "target": "function:src/auth/msal.ts:ensureLoginRedirect",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:getAccessToken",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:getAccessToken",
+      "target": "function:src/auth/msal.ts:clearInteractionInProgress",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/msal.ts:logout",
+      "target": "function:src/auth/msal.ts:initMSAL",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseSession",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "target": "function:src/auth/supabaseAuth.ts:signInWithSupabaseAzure",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "target": "function:src/auth/supabaseAuth.ts:getSupabaseSession",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "target": "function:src/auth/supabaseAuth.ts:refreshProviderTokenSilently",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/auth/supabaseAuth.ts:getSupabaseProviderToken",
+      "target": "function:src/auth/supabaseAuth.ts:trySilentGraphReauth",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    }
+  ]
+}

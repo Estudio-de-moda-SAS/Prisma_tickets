@@ -1,0 +1,15 @@
+{
+  "fixedSectionOk": true,
+  "nodesRecovered": 0,
+  "edgesRestored": 1,
+  "crossBatchEdgesAdded": 0,
+  "typesRemapped": 0,
+  "complexityRemapped": 0,
+  "notes": [
+    "La sección 'Fixed' no reportó correcciones de IDs ni de complejidad; las 1127 entradas llegaron con IDs y tipos válidos.",
+    "Arista descartada SolviTicketModal -> useSolviActions.ts:notifySolviCommentActivity restaurada y redirigida a function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity, porque useSolviActions.ts solo reexporta esa función desde el service.",
+    "Los 953 vínculos del importMap (alias @/ incluidos) ya tienen su arista 'imports' en el grafo ensamblado, tras recuperar 200 en el merge; no hizo falta añadir aristas entre batches.",
+    "No quedan aristas colgantes. Todos los tipos de nodo son válidos (file 307, function 793, class 9, config 15, document 2, pipeline 1) y todas las complejidades son simple, moderate o complex.",
+    "Las aristas 'calls' entre batches son escasas porque algunos batches recibieron neighborMaps vacíos; no se añadieron aristas especulativas que el importMap no respalde."
+  ]
+}

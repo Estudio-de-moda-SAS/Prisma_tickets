@@ -1,0 +1,5 @@
+Loaded 325 files (285 code).
+Warning: compute-batches: community size 48 > max 35 — splitting via alphabetical chunking — modularity may decrease
+Warning: compute-batches: community size 49 > max 35 — splitting via alphabetical chunking — modularity may decrease
+Info: compute-batches: merged 86 small batches (90 files) into 4 misc batches — singletons and orphans consolidated
+Wrote 21 batches (sizes: max=25, min=1) to C:\Dev\Prisma_tickets\.ua\intermediate\batches.json

@@ -1,0 +1,1233 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/useSolviActions.ts",
+   "type": "file",
+   "name": "useSolviActions.ts",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts",
+   "summary": "Hook orquestador del alta de tickets SOLVI: mantiene el estado del formulario, asigna resolutor (turnos nocturnos vía Teams Shifts o técnico con menos casos), calcula la fecha máxima de solución por ANS, inserta en TBL_Ticket_Solvi, sube adjuntos y notifica. También reexporta helpers de notificación y fechas como punto único de importación.",
+   "tags": [
+    "hook",
+    "solvi",
+    "orquestacion",
+    "creacion-tickets",
+    "barrel"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Combina un hook React con reexportaciones (`export { ... } from`) para exponer una fachada única de servicios SOLVI."
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviActions.ts:emptyTicket",
+   "type": "function",
+   "name": "emptyTicket",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts",
+   "lineRange": [
+    51,
+    69
+   ],
+   "summary": "Construye un SolviTicket vacío con valores por defecto, precargando solicitante desde el usuario actual.",
+   "tags": [
+    "factory",
+    "formulario",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviActions.ts:assignResolutor",
+   "type": "function",
+   "name": "assignResolutor",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts",
+   "lineRange": [
+    120,
+    136
+   ],
+   "summary": "Determina el resolutor: en turno nocturno usa la persona disponible en Teams Shifts y, si no, asigna el técnico con menos casos incrementando su carga.",
+   "tags": [
+    "asignacion",
+    "turnos",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviActions.ts:notifyTicketCreated",
+   "type": "function",
+   "name": "notifyTicketCreated",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts",
+   "lineRange": [
+    148,
+    162
+   ],
+   "summary": "Envía las notificaciones de creación al solicitante y al resolutor, registrando errores sin interrumpir el flujo.",
+   "tags": [
+    "notificaciones",
+    "email",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "type": "function",
+   "name": "useSolviActionsTickets",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts",
+   "lineRange": [
+    199,
+    289
+   ],
+   "summary": "Hook principal que expone estado del formulario, servicios Graph/SharePoint y las acciones saveTicket y uploadSolviAttachment para crear tickets SOLVI.",
+   "tags": [
+    "hook",
+    "orquestacion",
+    "creacion-tickets"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviAns.ts",
+   "type": "file",
+   "name": "useSolviAns.ts",
+   "filePath": "src/features/requests/hooks/useSolviAns.ts",
+   "summary": "Hook TanStack Query que consulta la lista ANS de SharePoint y resuelve las horas de SLA para una combinación categoría/subcategoría/artículo, con tabla `horasPorANS` normalizada.",
+   "tags": [
+    "hook",
+    "solvi",
+    "ans",
+    "sla",
+    "sharepoint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviAns.ts:useSolviAns",
+   "type": "function",
+   "name": "useSolviAns",
+   "filePath": "src/features/requests/hooks/useSolviAns.ts",
+   "lineRange": [
+    42,
+    62
+   ],
+   "summary": "Hook que consulta el ANS de SharePoint para la combinación seleccionada y devuelve sus horas de SLA.",
+   "tags": [
+    "hook",
+    "ans",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "type": "file",
+   "name": "useSolviArticulos.ts",
+   "filePath": "src/features/requests/hooks/useSolviArticulos.ts",
+   "summary": "Hook que carga los artículos SOLVI de SharePoint filtrados por subcategoría mediante ArticulosSPService.",
+   "tags": [
+    "hook",
+    "solvi",
+    "catalogo",
+    "sharepoint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviArticulos.ts:useSolviArticulos",
+   "type": "function",
+   "name": "useSolviArticulos",
+   "filePath": "src/features/requests/hooks/useSolviArticulos.ts",
+   "lineRange": [
+    13,
+    32
+   ],
+   "summary": "Hook que lista artículos SOLVI de una subcategoría.",
+   "tags": [
+    "hook",
+    "catalogo",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "type": "file",
+   "name": "useSolviCategorias.ts",
+   "filePath": "src/features/requests/hooks/useSolviCategorias.ts",
+   "summary": "Hook que obtiene el catálogo de categorías SOLVI desde SharePoint a través de CategoriasSPService.",
+   "tags": [
+    "hook",
+    "solvi",
+    "catalogo",
+    "sharepoint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviCategorias.ts:useSolviCategorias",
+   "type": "function",
+   "name": "useSolviCategorias",
+   "filePath": "src/features/requests/hooks/useSolviCategorias.ts",
+   "lineRange": [
+    12,
+    27
+   ],
+   "summary": "Hook que lista las categorías SOLVI.",
+   "tags": [
+    "hook",
+    "catalogo",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "type": "file",
+   "name": "useSolviSubcategorias.ts",
+   "filePath": "src/features/requests/hooks/useSolviSubcategorias.ts",
+   "summary": "Hook que carga las subcategorías SOLVI de una categoría seleccionada usando SubcategoriasSPService.",
+   "tags": [
+    "hook",
+    "solvi",
+    "catalogo",
+    "sharepoint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviSubcategorias.ts:useSolviSubcategorias",
+   "type": "function",
+   "name": "useSolviSubcategorias",
+   "filePath": "src/features/requests/hooks/useSolviSubcategorias.ts",
+   "lineRange": [
+    14,
+    33
+   ],
+   "summary": "Hook que lista subcategorías SOLVI de una categoría.",
+   "tags": [
+    "hook",
+    "catalogo",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "file",
+   "name": "useSubTeamMembers.ts",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "summary": "Conjunto de hooks TanStack Query para leer y mutar miembros y supervisores de subequipos vía apiClient, incluyendo lecturas agrupadas y en bloque con invalidación de caché.",
+   "tags": [
+    "hook",
+    "react-query",
+    "subequipos",
+    "mutaciones",
+    "api-client"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembers",
+   "type": "function",
+   "name": "useSubTeamMembers",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    29,
+    37
+   ],
+   "summary": "Consulta los miembros de un subequipo (deshabilitado si el ID es null).",
+   "tags": [
+    "hook",
+    "react-query",
+    "subequipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersGrouped",
+   "type": "function",
+   "name": "useSubTeamMembersGrouped",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    50,
+    65
+   ],
+   "summary": "Consulta en paralelo los miembros de varios subequipos y los agrupa por ID con useQueries.",
+   "tags": [
+    "hook",
+    "react-query",
+    "subequipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersBulk",
+   "type": "function",
+   "name": "useSubTeamMembersBulk",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    76,
+    84
+   ],
+   "summary": "Obtiene en una sola llamada los miembros de múltiples subequipos.",
+   "tags": [
+    "hook",
+    "react-query",
+    "subequipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamMember",
+   "type": "function",
+   "name": "useAddSubTeamMember",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    95,
+    102
+   ],
+   "summary": "Mutación para agregar un usuario a un subequipo e invalidar la caché.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "subequipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamMember",
+   "type": "function",
+   "name": "useRemoveSubTeamMember",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    113,
+    120
+   ],
+   "summary": "Mutación para quitar un usuario de un subequipo e invalidar la caché.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "subequipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamSupervisors",
+   "type": "function",
+   "name": "useSubTeamSupervisors",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    131,
+    138
+   ],
+   "summary": "Consulta los supervisores de un subequipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "supervisores"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamSupervisor",
+   "type": "function",
+   "name": "useAddSubTeamSupervisor",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    150,
+    159
+   ],
+   "summary": "Mutación para asignar un supervisor a un subequipo.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "supervisores"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamSupervisor",
+   "type": "function",
+   "name": "useRemoveSubTeamSupervisor",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts",
+   "lineRange": [
+    171,
+    180
+   ],
+   "summary": "Mutación para retirar un supervisor de un subequipo.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "supervisores"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "file",
+   "name": "useUsers.ts",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "summary": "Define el tipo AppUser y hooks TanStack Query para listar usuarios, asignar/desasignar solicitudes y desactivar/reactivar usuarios mediante apiClient.",
+   "tags": [
+    "hook",
+    "react-query",
+    "usuarios",
+    "data-model",
+    "api-client"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useUsers.ts:useUsers",
+   "type": "function",
+   "name": "useUsers",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "lineRange": [
+    15,
+    22
+   ],
+   "summary": "Consulta todos los usuarios de la aplicación con caché de 5 minutos.",
+   "tags": [
+    "hook",
+    "react-query",
+    "usuarios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useUsers.ts:useAssignRequest",
+   "type": "function",
+   "name": "useAssignRequest",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "lineRange": [
+    24,
+    29
+   ],
+   "summary": "Mutación para asignar una solicitud a un usuario.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "asignacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useUsers.ts:useUnassignRequest",
+   "type": "function",
+   "name": "useUnassignRequest",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "lineRange": [
+    31,
+    36
+   ],
+   "summary": "Mutación para desasignar una solicitud.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "asignacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useUsers.ts:useDeactivateUser",
+   "type": "function",
+   "name": "useDeactivateUser",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "lineRange": [
+    38,
+    45
+   ],
+   "summary": "Mutación para desactivar un usuario e invalidar la lista.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "usuarios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useUsers.ts:useReactivateUser",
+   "type": "function",
+   "name": "useReactivateUser",
+   "filePath": "src/features/requests/hooks/useUsers.ts",
+   "lineRange": [
+    47,
+    54
+   ],
+   "summary": "Mutación para reactivar un usuario e invalidar la lista.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "usuarios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/lib/mentions.ts",
+   "type": "file",
+   "name": "mentions.ts",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "summary": "Reglas de negocio para menciones (@) en comentarios: quién puede mencionar en tickets confidenciales, pool de usuarios mencionables, agrupación por departamento, filtrado, extracción de IDs y nombres cortos.",
+   "tags": [
+    "utility",
+    "menciones",
+    "reglas-negocio",
+    "comentarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:canMention",
+   "type": "function",
+   "name": "canMention",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    9,
+    11
+   ],
+   "summary": "Regla: en tickets confidenciales solo un admin puede mencionar.",
+   "tags": [
+    "validation",
+    "menciones",
+    "permisos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:mentionablePool",
+   "type": "function",
+   "name": "mentionablePool",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    22,
+    27
+   ],
+   "summary": "Calcula el conjunto de usuarios mencionables según confidencialidad y participantes.",
+   "tags": [
+    "menciones",
+    "filtrado"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:groupByDepartment",
+   "type": "function",
+   "name": "groupByDepartment",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    33,
+    48
+   ],
+   "summary": "Agrupa usuarios mencionables por departamento para el selector.",
+   "tags": [
+    "menciones",
+    "agrupacion",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:filterMentionables",
+   "type": "function",
+   "name": "filterMentionables",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    49,
+    64
+   ],
+   "summary": "Filtra usuarios mencionables por texto de búsqueda.",
+   "tags": [
+    "menciones",
+    "busqueda",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:extractMentionIds",
+   "type": "function",
+   "name": "extractMentionIds",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    67,
+    73
+   ],
+   "summary": "Extrae los IDs de usuario mencionados en el texto de un comentario.",
+   "tags": [
+    "menciones",
+    "parsing",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/lib/mentions.ts:shortName",
+   "type": "function",
+   "name": "shortName",
+   "filePath": "src/features/requests/lib/mentions.ts",
+   "lineRange": [
+    83,
+    107
+   ],
+   "summary": "Genera un nombre corto legible a partir del nombre completo de un usuario.",
+   "tags": [
+    "formatting",
+    "utility",
+    "nombres"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "type": "file",
+   "name": "AnsSharepointSolvi.service.ts",
+   "filePath": "src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "summary": "Servicio que lee la lista SharePoint \"ANS\" vía Microsoft Graph, con resolución de siteId/listId cacheada, para obtener el ANS de una combinación categoría/subcategoría/artículo.",
+   "tags": [
+    "service",
+    "sharepoint",
+    "microsoft-graph",
+    "ans",
+    "cache"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/features/requests/services/AnsSharepointSolvi.service.ts:AnsSPService",
+   "type": "class",
+   "name": "AnsSPService",
+   "filePath": "src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "lineRange": [
+    12,
+    112
+   ],
+   "summary": "Clase de acceso a la lista SharePoint ANS con caché de siteId/listId, mapeo a modelo y búsqueda por combinación.",
+   "tags": [
+    "class",
+    "service",
+    "sharepoint",
+    "ans"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "type": "file",
+   "name": "ArticulosSharepointSolvi.service.ts",
+   "filePath": "src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "summary": "Servicio de acceso a la lista SharePoint de artículos SOLVI vía Graph, con caché de IDs y consulta por subcategoría.",
+   "tags": [
+    "service",
+    "sharepoint",
+    "microsoft-graph",
+    "catalogo"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/features/requests/services/ArticulosSharepointSolvi.service.ts:ArticulosSPService",
+   "type": "class",
+   "name": "ArticulosSPService",
+   "filePath": "src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "lineRange": [
+    10,
+    99
+   ],
+   "summary": "Clase de acceso a la lista SharePoint de artículos con caché de IDs y filtro por subcategoría.",
+   "tags": [
+    "class",
+    "service",
+    "sharepoint"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:emptyTicket",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:assignResolutor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:notifyTicketCreated",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/SolviShifts.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviActions.ts",
+   "target": "file:src/features/requests/types/SolviTicket.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviAns.ts",
+   "target": "function:src/features/requests/hooks/useSolviAns.ts:useSolviAns",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviAns.ts",
+   "target": "function:src/features/requests/hooks/useSolviAns.ts:useSolviAns",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviAns.ts",
+   "target": "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "target": "function:src/features/requests/hooks/useSolviArticulos.ts:useSolviArticulos",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "target": "function:src/features/requests/hooks/useSolviArticulos.ts:useSolviArticulos",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "target": "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "target": "function:src/features/requests/hooks/useSolviCategorias.ts:useSolviCategorias",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "target": "function:src/features/requests/hooks/useSolviCategorias.ts:useSolviCategorias",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "target": "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "target": "function:src/features/requests/hooks/useSolviSubcategorias.ts:useSolviSubcategorias",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "target": "function:src/features/requests/hooks/useSolviSubcategorias.ts:useSolviSubcategorias",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "target": "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersGrouped",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersGrouped",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersBulk",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamMembersBulk",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamMember",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamMember",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamMember",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamMember",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamSupervisors",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useSubTeamSupervisors",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamSupervisor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useAddSubTeamSupervisor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamSupervisor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "function:src/features/requests/hooks/useSubTeamMembers.ts:useRemoveSubTeamSupervisor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useUsers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useUsers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useAssignRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useAssignRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useUnassignRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useUnassignRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useDeactivateUser",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useDeactivateUser",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useReactivateUser",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useUsers.ts",
+   "target": "function:src/features/requests/hooks/useUsers.ts:useReactivateUser",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:canMention",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:canMention",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:mentionablePool",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:mentionablePool",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:groupByDepartment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:groupByDepartment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:filterMentionables",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:filterMentionables",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:extractMentionIds",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:extractMentionIds",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:shortName",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "function:src/features/requests/lib/mentions.ts:shortName",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/lib/mentions.ts",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/AnsSharepointSolvi.service.ts:AnsSPService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/AnsSharepointSolvi.service.ts:AnsSPService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/ArticulosSharepointSolvi.service.ts:ArticulosSPService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/ArticulosSharepointSolvi.service.ts:ArticulosSPService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:emptyTicket",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:assignResolutor",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:notifyTicketCreated",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:calcularFechaSolucion",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:isTurnoNocturnoAhora",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:uploadSolviAttachment",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:assignResolutor",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchPersonaDisponibleAhora",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:notifyTicketCreated",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedSolicitante",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:notifyTicketCreated",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedResolutor",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviAns.ts:useSolviAns",
+   "target": "class:src/features/requests/services/AnsSharepointSolvi.service.ts:AnsSPService",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviArticulos.ts:useSolviArticulos",
+   "target": "class:src/features/requests/services/ArticulosSharepointSolvi.service.ts:ArticulosSPService",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviCategorias.ts:useSolviCategorias",
+   "target": "class:src/features/requests/services/CategoriasSharepointSolvi.service.ts:CategoriasSPService",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviSubcategorias.ts:useSolviSubcategorias",
+   "target": "class:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts:SubcategoriasSPService",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "target": "class:src/features/requests/services/TecnicosSharepointSolvi.service.ts:UsuariosSPService",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

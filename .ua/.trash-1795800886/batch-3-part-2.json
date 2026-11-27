@@ -1,0 +1,1331 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "type": "file",
+   "name": "useMoveRequests.ts",
+   "filePath": "src/features/requests/hooks/useMoveRequests.ts",
+   "summary": "Hook de mutación que respalda el drag & drop del kanban moviendo un request a otra columna de forma optimista y sincronizando con el servidor.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "drag-and-drop",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useMoveRequests.ts:useMoveRequest",
+   "type": "function",
+   "name": "useMoveRequest",
+   "filePath": "src/features/requests/hooks/useMoveRequests.ts",
+   "lineRange": [
+    47,
+    121
+   ],
+   "summary": "Mutación optimista de drag & drop que mueve un request a otra columna.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useNotifications.ts",
+   "type": "file",
+   "name": "useNotifications.ts",
+   "filePath": "src/features/requests/hooks/useNotifications.ts",
+   "summary": "Hook de notificaciones in-app con polling adaptativo según visibilidad de la pestaña, mapeo de filas de DB y mutaciones optimistas para marcar una o todas como leídas.",
+   "tags": [
+    "hook",
+    "notificaciones",
+    "polling",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useNotifications.ts:mapNotification",
+   "type": "function",
+   "name": "mapNotification",
+   "filePath": "src/features/requests/hooks/useNotifications.ts",
+   "lineRange": [
+    45,
+    62
+   ],
+   "summary": "Mapea una fila cruda de DB al tipo Notification.",
+   "tags": [
+    "serialization",
+    "mapeo",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useNotifications.ts:useNotifications",
+   "type": "function",
+   "name": "useNotifications",
+   "filePath": "src/features/requests/hooks/useNotifications.ts",
+   "lineRange": [
+    87,
+    160
+   ],
+   "summary": "Query con polling adaptativo de notificaciones y acciones de marcar como leídas.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "type": "file",
+   "name": "useRequestHistory.tsx",
+   "filePath": "src/features/requests/hooks/useRequestHistory.tsx",
+   "summary": "Hook de solo lectura que expone las query keys y la consulta del historial de auditoría de un request.",
+   "tags": [
+    "hook",
+    "react-query",
+    "historial",
+    "auditoria"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequestHistory.tsx:useRequestHistory",
+   "type": "function",
+   "name": "useRequestHistory",
+   "filePath": "src/features/requests/hooks/useRequestHistory.tsx",
+   "lineRange": [
+    33,
+    42
+   ],
+   "summary": "Query que lee el historial de auditoría de un request.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "file",
+   "name": "useRequests.ts",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "summary": "Hooks centrales de lectura de requests: define requestKeys compartidas, agrupación en BoardData, helpers de mock y queries de board por equipo/completo/estadísticas, sin categorizar, mis solicitudes, borrado, historial paginado y búsqueda con debounce.",
+   "tags": [
+    "hook",
+    "react-query",
+    "board",
+    "query-keys"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:groupRequestsByColumn",
+   "type": "function",
+   "name": "groupRequestsByColumn",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    50,
+    68
+   ],
+   "summary": "Agrupa una lista de requests en el shape BoardData por columna.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:getMockBoardForTeam",
+   "type": "function",
+   "name": "getMockBoardForTeam",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    80,
+    97
+   ],
+   "summary": "Devuelve el board mock filtrado por equipo.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:getMockBoardFull",
+   "type": "function",
+   "name": "getMockBoardFull",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    104,
+    118
+   ],
+   "summary": "Devuelve el board mock completo.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useBoardEquipo",
+   "type": "function",
+   "name": "useBoardEquipo",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    135,
+    150
+   ],
+   "summary": "Query del board de un equipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useBoardCompleto",
+   "type": "function",
+   "name": "useBoardCompleto",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    164,
+    178
+   ],
+   "summary": "Query del board completo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useBoardCompletoStats",
+   "type": "function",
+   "name": "useBoardCompletoStats",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    195,
+    210
+   ],
+   "summary": "Query del board completo orientada a estadísticas.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useSinCategorizar",
+   "type": "function",
+   "name": "useSinCategorizar",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    224,
+    238
+   ],
+   "summary": "Query de la bandeja de requests sin categorizar.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useMisSolicitudes",
+   "type": "function",
+   "name": "useMisSolicitudes",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    254,
+    269
+   ],
+   "summary": "Query de las solicitudes creadas por el usuario.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useDeleteRequest",
+   "type": "function",
+   "name": "useDeleteRequest",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    284,
+    295
+   ],
+   "summary": "Mutación para eliminar un request.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useHistorialCount",
+   "type": "function",
+   "name": "useHistorialCount",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    306,
+    317
+   ],
+   "summary": "Query del conteo de requests en historial.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useHistorialLoadMore",
+   "type": "function",
+   "name": "useHistorialLoadMore",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    337,
+    372
+   ],
+   "summary": "Paginación incremental del historial de un equipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequests.ts:useSearchRequests",
+   "type": "function",
+   "name": "useSearchRequests",
+   "filePath": "src/features/requests/hooks/useRequests.ts",
+   "lineRange": [
+    386,
+    402
+   ],
+   "summary": "Búsqueda de requests con debounce.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSubRequest.ts",
+   "type": "file",
+   "name": "useSubRequest.ts",
+   "filePath": "src/features/requests/hooks/useSubRequest.ts",
+   "summary": "Hook de solo lectura con fábrica de query keys para listar las sub-solicitudes hijas de un request padre.",
+   "tags": [
+    "hook",
+    "react-query",
+    "sub-solicitudes"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubRequest.ts:useChildRequests",
+   "type": "function",
+   "name": "useChildRequests",
+   "filePath": "src/features/requests/hooks/useSubRequest.ts",
+   "lineRange": [
+    35,
+    48
+   ],
+   "summary": "Query que lista las requests hijas de un padre.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useTasksData.ts",
+   "type": "file",
+   "name": "useTasksData.ts",
+   "filePath": "src/features/requests/hooks/useTasksData.ts",
+   "summary": "Hook de solo lectura que define el tipo TaskRow y trae las tareas de un equipo desde el board por defecto vía apiClient.",
+   "tags": [
+    "hook",
+    "react-query",
+    "tareas",
+    "type-definition"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTasksData.ts:useTasksData",
+   "type": "function",
+   "name": "useTasksData",
+   "filePath": "src/features/requests/hooks/useTasksData.ts",
+   "lineRange": [
+    81,
+    93
+   ],
+   "summary": "Query de las tareas de un equipo desde el board por defecto.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "type": "file",
+   "name": "useTicketResolver.ts",
+   "filePath": "src/features/requests/hooks/useTicketResolver.ts",
+   "summary": "Hook que resuelve un ticket por ID y decide si abrirlo en el modal de kanban o el de home según el rol y la visibilidad del board.",
+   "tags": [
+    "hook",
+    "routing",
+    "roles",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTicketResolver.ts:useTicketResolver",
+   "type": "function",
+   "name": "useTicketResolver",
+   "filePath": "src/features/requests/hooks/useTicketResolver.ts",
+   "lineRange": [
+    16,
+    37
+   ],
+   "summary": "Resuelve un ticket y determina el tipo de modal (kanban/home) según el rol.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useTransferTicket.ts",
+   "type": "file",
+   "name": "useTransferTicket.ts",
+   "filePath": "src/features/requests/hooks/useTransferTicket.ts",
+   "summary": "Hook de mutación que transfiere un ticket PRISMA o SOLVI a otro equipo mediante la acción transferTicket de la Edge Function.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "transferencia",
+    "edge-function"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTransferTicket.ts:useTransferTicket",
+   "type": "function",
+   "name": "useTransferTicket",
+   "filePath": "src/features/requests/hooks/useTransferTicket.ts",
+   "lineRange": [
+    39,
+    52
+   ],
+   "summary": "Mutación que transfiere un ticket a otro equipo vía la Edge Function.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/mock/Mockboard.ts",
+   "type": "file",
+   "name": "Mockboard.ts",
+   "filePath": "src/features/requests/mock/Mockboard.ts",
+   "summary": "Datos mock de un BoardData completo con requests de ejemplo por columna, usados en modo offline/USE_MOCK.",
+   "tags": [
+    "mock",
+    "datos-prueba",
+    "board",
+    "fixture"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "file",
+   "name": "SupabaseRequestsService.ts",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts",
+   "summary": "Servicio de acceso a datos de requests sobre Supabase y la Edge Function (apiClient): lecturas de board, búsqueda, historial, creación, movimiento, actualización, cierre y feedback del cliente, mapeando filas de DB al modelo Request.",
+   "tags": [
+    "service",
+    "data-access",
+    "supabase",
+    "serialization"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Duplica el BASE_SELECT de la Edge Function para lecturas directas con PostgREST; hay un TODO para centralizarlo."
+  },
+  {
+   "id": "function:src/features/requests/services/SupabaseRequestsService.ts:mapHistoryRow",
+   "type": "function",
+   "name": "mapHistoryRow",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts",
+   "lineRange": [
+    152,
+    161
+   ],
+   "summary": "Mapea una fila de historial de DB a RequestHistoryEntry.",
+   "tags": [
+    "serialization",
+    "mapeo",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRowToRequest",
+   "type": "function",
+   "name": "mapRowToRequest",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts",
+   "lineRange": [
+    184,
+    327
+   ],
+   "summary": "Mapea una fila de Supabase con relaciones al modelo Request del frontend (prioridad, asignados, etiquetas, cierre, criterios).",
+   "tags": [
+    "serialization",
+    "mapeo",
+    "utility"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRawFeedback",
+   "type": "function",
+   "name": "mapRawFeedback",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts",
+   "lineRange": [
+    329,
+    339
+   ],
+   "summary": "Mapea una fila cruda de feedback a ClientFeedback.",
+   "tags": [
+    "serialization",
+    "mapeo",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "class:src/features/requests/services/SupabaseRequestsService.ts:SupabaseRequestsService",
+   "type": "class",
+   "name": "SupabaseRequestsService",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts",
+   "lineRange": [
+    341,
+    633
+   ],
+   "summary": "Clase de servicio por board que encapsula todas las lecturas y escrituras de requests contra Supabase y la Edge Function.",
+   "tags": [
+    "service",
+    "data-access",
+    "supabase",
+    "class"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/templates/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/requests/templates/types.ts",
+   "summary": "Tipos y helpers de plantillas de request: campos simples, condicionales y multicondicionales, type guards, profundidad de anidamiento, fábricas de campos vacíos y paleta de colores de opciones.",
+   "tags": [
+    "type-definition",
+    "plantillas",
+    "factory",
+    "type-guard"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:isConditionalField",
+   "type": "function",
+   "name": "isConditionalField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    78,
+    80
+   ],
+   "summary": "Type guard de campo condicional.",
+   "tags": [
+    "type-guard",
+    "validation",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:isMultiConditionalField",
+   "type": "function",
+   "name": "isMultiConditionalField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    82,
+    84
+   ],
+   "summary": "Type guard de campo multicondicional.",
+   "tags": [
+    "type-guard",
+    "validation",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:isSimpleField",
+   "type": "function",
+   "name": "isSimpleField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    86,
+    88
+   ],
+   "summary": "Type guard de campo simple.",
+   "tags": [
+    "type-guard",
+    "validation",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:getConditionalDepth",
+   "type": "function",
+   "name": "getConditionalDepth",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    94,
+    104
+   ],
+   "summary": "Calcula la profundidad de anidamiento de un campo condicional.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:makeEmptySimpleField",
+   "type": "function",
+   "name": "makeEmptySimpleField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    107,
+    119
+   ],
+   "summary": "Fábrica de un campo simple vacío.",
+   "tags": [
+    "factory",
+    "plantillas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:makeEmptyConditionalField",
+   "type": "function",
+   "name": "makeEmptyConditionalField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    122,
+    135
+   ],
+   "summary": "Fábrica de un campo condicional vacío.",
+   "tags": [
+    "factory",
+    "plantillas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:getOptionColor",
+   "type": "function",
+   "name": "getOptionColor",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    141,
+    143
+   ],
+   "summary": "Devuelve el color de paleta para el índice de una opción.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:makeOptionKey",
+   "type": "function",
+   "name": "makeOptionKey",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    146,
+    148
+   ],
+   "summary": "Genera una clave única para una opción.",
+   "tags": [
+    "factory",
+    "plantillas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/types.ts:makeEmptyMultiConditionalField",
+   "type": "function",
+   "name": "makeEmptyMultiConditionalField",
+   "filePath": "src/features/requests/templates/types.ts",
+   "lineRange": [
+    151,
+    166
+   ],
+   "summary": "Fábrica de un campo multicondicional vacío.",
+   "tags": [
+    "factory",
+    "plantillas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/requests/types.ts",
+   "summary": "Modelo de dominio de requests: tipos Request, payloads de creación/movimiento/actualización/cierre, feedback, historial y constantes de equipos, columnas kanban, columnas de cierre/finales y mapeo prioridad-score.",
+   "tags": [
+    "type-definition",
+    "data-model",
+    "dominio",
+    "constantes"
+   ],
+   "complexity": "complex"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "target": "function:src/features/requests/hooks/useMoveRequests.ts:useMoveRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "target": "function:src/features/requests/hooks/useMoveRequests.ts:useMoveRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useNotifications.ts",
+   "target": "function:src/features/requests/hooks/useNotifications.ts:mapNotification",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useNotifications.ts",
+   "target": "function:src/features/requests/hooks/useNotifications.ts:useNotifications",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useNotifications.ts",
+   "target": "function:src/features/requests/hooks/useNotifications.ts:useNotifications",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "target": "function:src/features/requests/hooks/useRequestHistory.tsx:useRequestHistory",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "target": "function:src/features/requests/hooks/useRequestHistory.tsx:useRequestHistory",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:groupRequestsByColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:getMockBoardForTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:getMockBoardFull",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardEquipo",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardEquipo",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardCompleto",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardCompleto",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardCompletoStats",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useBoardCompletoStats",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useSinCategorizar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useSinCategorizar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useMisSolicitudes",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useMisSolicitudes",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useDeleteRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useDeleteRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useHistorialCount",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useHistorialCount",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useHistorialLoadMore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useHistorialLoadMore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useSearchRequests",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useSearchRequests",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useRequests.ts:useBoardEquipo",
+   "target": "function:src/features/requests/hooks/useRequests.ts:getMockBoardForTeam",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useRequests.ts:useBoardCompleto",
+   "target": "function:src/features/requests/hooks/useRequests.ts:getMockBoardFull",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useRequests.ts:useBoardCompletoStats",
+   "target": "function:src/features/requests/hooks/useRequests.ts:getMockBoardFull",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "file:src/features/requests/mock/Mockboard.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubRequest.ts",
+   "target": "function:src/features/requests/hooks/useSubRequest.ts:useChildRequests",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubRequest.ts",
+   "target": "function:src/features/requests/hooks/useSubRequest.ts:useChildRequests",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubRequest.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTasksData.ts",
+   "target": "function:src/features/requests/hooks/useTasksData.ts:useTasksData",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTasksData.ts",
+   "target": "function:src/features/requests/hooks/useTasksData.ts:useTasksData",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "target": "function:src/features/requests/hooks/useTicketResolver.ts:useTicketResolver",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "target": "function:src/features/requests/hooks/useTicketResolver.ts:useTicketResolver",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTransferTicket.ts",
+   "target": "function:src/features/requests/hooks/useTransferTicket.ts:useTransferTicket",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTransferTicket.ts",
+   "target": "function:src/features/requests/hooks/useTransferTicket.ts:useTransferTicket",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTransferTicket.ts",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/mock/Mockboard.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "function:src/features/requests/services/SupabaseRequestsService.ts:mapHistoryRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRowToRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRawFeedback",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "class:src/features/requests/services/SupabaseRequestsService.ts:SupabaseRequestsService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "class:src/features/requests/services/SupabaseRequestsService.ts:SupabaseRequestsService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "class:src/features/requests/services/SupabaseRequestsService.ts:SupabaseRequestsService",
+   "target": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRowToRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "class:src/features/requests/services/SupabaseRequestsService.ts:SupabaseRequestsService",
+   "target": "function:src/features/requests/services/SupabaseRequestsService.ts:mapRawFeedback",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isConditionalField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isConditionalField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isMultiConditionalField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isMultiConditionalField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isSimpleField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:isSimpleField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:getConditionalDepth",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:getConditionalDepth",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptySimpleField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptySimpleField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptyConditionalField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptyConditionalField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:getOptionColor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:getOptionColor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeOptionKey",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeOptionKey",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptyMultiConditionalField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptyMultiConditionalField",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/types.ts:getConditionalDepth",
+   "target": "function:src/features/requests/templates/types.ts:isConditionalField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/types.ts:getConditionalDepth",
+   "target": "function:src/features/requests/templates/types.ts:isMultiConditionalField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/types.ts:makeEmptyConditionalField",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptySimpleField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/types.ts:makeEmptyMultiConditionalField",
+   "target": "function:src/features/requests/templates/types.ts:makeOptionKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/types.ts:makeEmptyMultiConditionalField",
+   "target": "function:src/features/requests/templates/types.ts:makeEmptySimpleField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/types.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequests.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubRequest.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTicketResolver.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

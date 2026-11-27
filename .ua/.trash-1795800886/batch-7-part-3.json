@@ -1,0 +1,571 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "type": "file",
+   "name": "SprintsConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "summary": "Gestión de sprints del equipo: listado con estado (activo, futuro, cerrado), creación/edición con fechas y cierre de sprint moviendo tickets pendientes vía apiClient.",
+   "tags": [
+    "component",
+    "sprints",
+    "configuracion",
+    "planificacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintRow",
+   "type": "function",
+   "name": "SprintRow",
+   "filePath": "src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "lineRange": [
+    47,
+    129
+   ],
+   "summary": "Fila de sprint con fechas, estado calculado y acciones.",
+   "tags": [
+    "component",
+    "react",
+    "sprints"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintForm",
+   "type": "function",
+   "name": "SprintForm",
+   "filePath": "src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "lineRange": [
+    133,
+    298
+   ],
+   "summary": "Formulario de creación/edición de sprint con nombre, objetivo y fechas.",
+   "tags": [
+    "component",
+    "react",
+    "sprints"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintList",
+   "type": "function",
+   "name": "SprintList",
+   "filePath": "src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "lineRange": [
+    302,
+    577
+   ],
+   "summary": "Componente exportado que lista sprints y ejecuta el cierre/traslado de tickets mediante apiClient.call.",
+   "tags": [
+    "component",
+    "react",
+    "sprints"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "type": "file",
+   "name": "SubTeamConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "summary": "Gestión de sub-equipos del equipo seleccionado y de sus integrantes, con asignación de usuarios.",
+   "tags": [
+    "component",
+    "sub-equipos",
+    "configuracion",
+    "miembros"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "type": "function",
+   "name": "SubTeamList",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "lineRange": [
+    7,
+    47
+   ],
+   "summary": "Lista exportada de sub-equipos con formularios SimpleColorForm para crear y editar.",
+   "tags": [
+    "component",
+    "react",
+    "sub-equipos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamRow",
+   "type": "function",
+   "name": "SubTeamRow",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "lineRange": [
+    49,
+    69
+   ],
+   "summary": "Fila de sub-equipo con color y acciones.",
+   "tags": [
+    "component",
+    "react",
+    "sub-equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamMembersSectionWrapper",
+   "type": "function",
+   "name": "SubTeamMembersSectionWrapper",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "lineRange": [
+    71,
+    83
+   ],
+   "summary": "Envoltorio que carga los datos necesarios antes de renderizar la sección de miembros.",
+   "tags": [
+    "component",
+    "react",
+    "sub-equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamMembersSection",
+   "type": "function",
+   "name": "SubTeamMembersSection",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "lineRange": [
+    85,
+    178
+   ],
+   "summary": "Sección para agregar o quitar usuarios de un sub-equipo con useSubTeamMembers.",
+   "tags": [
+    "component",
+    "react",
+    "sub-equipos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "type": "file",
+   "name": "UsersConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "summary": "Administración de usuarios del sistema: listado con búsqueda, edición de rol/departamento/equipo, pre-registro, vinculación de identidades Entra ID, acceso a boards y activación/desactivación.",
+   "tags": [
+    "component",
+    "usuarios",
+    "roles",
+    "admin-panel",
+    "seguridad"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserList",
+   "type": "function",
+   "name": "UserList",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    32,
+    320
+   ],
+   "summary": "Componente exportado que carga todos los usuarios vía apiClient y gestiona filtros, activación y formularios.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserRow",
+   "type": "function",
+   "name": "UserRow",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    325,
+    430
+   ],
+   "summary": "Fila de usuario con rol, departamento, estado y acciones.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserEditForm",
+   "type": "function",
+   "name": "UserEditForm",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    435,
+    555
+   ],
+   "summary": "Formulario para editar rol, departamento, equipo y acceso a boards de un usuario.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:PreRegisterForm",
+   "type": "function",
+   "name": "PreRegisterForm",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    560,
+    664
+   ],
+   "summary": "Formulario para pre-registrar un usuario por correo antes de su primer inicio de sesión.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:LinkIdentityForm",
+   "type": "function",
+   "name": "LinkIdentityForm",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    669,
+    765
+   ],
+   "summary": "Formulario para vincular una identidad externa (proveedor de autenticación) a un usuario existente.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:BoardAccessPicker",
+   "type": "function",
+   "name": "BoardAccessPicker",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "lineRange": [
+    771,
+    825
+   ],
+   "summary": "Selector de los boards a los que el usuario tiene acceso.",
+   "tags": [
+    "component",
+    "react",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamMembersSectionWrapper",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamMembersSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserEditForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:PreRegisterForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:LinkIdentityForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:BoardAccessPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/auth/AuthProvider.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintForm",
+   "target": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintList",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "target": "function:src/components/ConfigPanel.tsx:SimpleColorForm",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserEditForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserEditForm",
+   "target": "function:src/components/ConfigPanel.tsx:SmBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

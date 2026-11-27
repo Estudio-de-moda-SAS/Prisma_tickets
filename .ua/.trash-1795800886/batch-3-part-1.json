@@ -1,0 +1,1807 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "type": "file",
+   "name": "UseUpdateRequest.tsx",
+   "filePath": "src/features/requests/hooks/UseUpdateRequest.tsx",
+   "summary": "Hook de mutación TanStack Query que actualiza campos editables de un request (título, prioridad, asignados, horas, formData, etc.) con actualización optimista sobre el board del equipo y rollback por snapshot.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "optimistic-update",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/UseUpdateRequest.tsx:useUpdateRequest",
+   "type": "function",
+   "name": "useUpdateRequest",
+   "filePath": "src/features/requests/hooks/UseUpdateRequest.tsx",
+   "lineRange": [
+    21,
+    75
+   ],
+   "summary": "Mutación que aplica un patch parcial a un request con snapshot optimista del board del equipo y rollback en error.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "type": "file",
+   "name": "useAcceptanceCriteria.ts",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "summary": "Hooks TanStack Query para leer, crear, cambiar estado, eliminar y renombrar criterios de aceptación de un request, con actualización optimista y sincronización del criteriaSummary en board y detalle.",
+   "tags": [
+    "hook",
+    "react-query",
+    "criterios-aceptacion",
+    "optimistic-update"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:syncCriteriaSummary",
+   "type": "function",
+   "name": "syncCriteriaSummary",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    67,
+    96
+   ],
+   "summary": "Propaga el conteo de criterios (total/aceptados/rechazados) al badge del board y al detalle del ticket en caché.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "function",
+   "name": "writeCriteria",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    111,
+    120
+   ],
+   "summary": "Escribe la lista de criterios en la caché y sincroniza el resumen.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "function",
+   "name": "useAcceptanceCriteria",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    131,
+    138
+   ],
+   "summary": "Query que lista los criterios de aceptación de un request.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useCreateCriteria",
+   "type": "function",
+   "name": "useCreateCriteria",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    158,
+    200
+   ],
+   "summary": "Mutación optimista que crea un criterio de aceptación.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaStatus",
+   "type": "function",
+   "name": "useUpdateCriteriaStatus",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    227,
+    266
+   ],
+   "summary": "Mutación optimista que cambia el estado (aceptado/rechazado) de un criterio.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useDeleteCriteria",
+   "type": "function",
+   "name": "useDeleteCriteria",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    282,
+    305
+   ],
+   "summary": "Mutación optimista que elimina un criterio de aceptación.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaTitle",
+   "type": "function",
+   "name": "useUpdateCriteriaTitle",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "lineRange": [
+    320,
+    349
+   ],
+   "summary": "Mutación optimista que edita el título de un criterio.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "file",
+   "name": "useAnnouncements.ts",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "summary": "Hooks y utilidades de anuncios del sistema: estilos por tipo, queries in-app/admin/públicas (login), mutaciones CRUD y helpers de localStorage para anuncios descartados o confirmados.",
+   "tags": [
+    "hook",
+    "react-query",
+    "anuncios",
+    "localstorage"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:useAnnouncements",
+   "type": "function",
+   "name": "useAnnouncements",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    75,
+    93
+   ],
+   "summary": "Query de anuncios activos in-app filtrados por rol y usuario actual.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:useAllAnnouncements",
+   "type": "function",
+   "name": "useAllAnnouncements",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    103,
+    111
+   ],
+   "summary": "Query administrativa que lista todos los anuncios.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:usePublicAnnouncements",
+   "type": "function",
+   "name": "usePublicAnnouncements",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    124,
+    144
+   ],
+   "summary": "Query de anuncios públicos visibles en la pantalla de login sin autenticación.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:useCreateAnnouncement",
+   "type": "function",
+   "name": "useCreateAnnouncement",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    162,
+    171
+   ],
+   "summary": "Mutación para crear un anuncio.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:useUpdateAnnouncement",
+   "type": "function",
+   "name": "useUpdateAnnouncement",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    181,
+    191
+   ],
+   "summary": "Mutación para actualizar un anuncio.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:useDeleteAnnouncement",
+   "type": "function",
+   "name": "useDeleteAnnouncement",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    201,
+    210
+   ],
+   "summary": "Mutación para eliminar un anuncio.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:getDismissed",
+   "type": "function",
+   "name": "getDismissed",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    241,
+    241
+   ],
+   "summary": "Lee de localStorage los IDs de anuncios descartados.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:getConfirmed",
+   "type": "function",
+   "name": "getConfirmed",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    243,
+    243
+   ],
+   "summary": "Lee de localStorage los IDs de anuncios confirmados.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:dismissAnnouncement",
+   "type": "function",
+   "name": "dismissAnnouncement",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    250,
+    253
+   ],
+   "summary": "Registra en localStorage un anuncio como descartado.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAnnouncements.ts:confirmAnnouncement",
+   "type": "function",
+   "name": "confirmAnnouncement",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts",
+   "lineRange": [
+    260,
+    263
+   ],
+   "summary": "Registra en localStorage un anuncio como confirmado.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "type": "file",
+   "name": "useClientFeedback.ts",
+   "filePath": "src/features/requests/hooks/useClientFeedback.ts",
+   "summary": "Hooks para consultar el historial de feedback del cliente y enviar una decisión de aprobación/rechazo que mueve la card entre columnas del board de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "feedback-cliente",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useClientFeedback.ts:useClientFeedback",
+   "type": "function",
+   "name": "useClientFeedback",
+   "filePath": "src/features/requests/hooks/useClientFeedback.ts",
+   "lineRange": [
+    43,
+    52
+   ],
+   "summary": "Query del historial de feedback del cliente para un request.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useClientFeedback.ts:useSubmitClientFeedback",
+   "type": "function",
+   "name": "useSubmitClientFeedback",
+   "filePath": "src/features/requests/hooks/useClientFeedback.ts",
+   "lineRange": [
+    75,
+    153
+   ],
+   "summary": "Mutación que envía el feedback del cliente y mueve la card optimistamente según la decisión.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "type": "file",
+   "name": "useCloseRequest.ts",
+   "filePath": "src/features/requests/hooks/useCloseRequest.ts",
+   "summary": "Hook de mutación para cerrar un request: mueve la card a la columna destino adjuntando cierreInfo, sellando fecha de cierre y progreso 100% en columnas finales.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "cierre",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCloseRequest.ts:useCloseRequest",
+   "type": "function",
+   "name": "useCloseRequest",
+   "filePath": "src/features/requests/hooks/useCloseRequest.ts",
+   "lineRange": [
+    38,
+    158
+   ],
+   "summary": "Mutación optimista que mueve la card a la columna de cierre y adjunta cierreInfo.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCloseRequest.ts:columnIdToKanban",
+   "type": "function",
+   "name": "columnIdToKanban",
+   "filePath": "src/features/requests/hooks/useCloseRequest.ts",
+   "lineRange": [
+    167,
+    181
+   ],
+   "summary": "Traduce un ID de columna a su clave lógica de kanban.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useColumnMap.ts",
+   "type": "file",
+   "name": "useColumnMap.ts",
+   "filePath": "src/features/requests/hooks/useColumnMap.ts",
+   "summary": "Hook que resuelve el mapa de claves lógicas del kanban a Board_Column_ID reales de la base para un board.",
+   "tags": [
+    "hook",
+    "react-query",
+    "kanban",
+    "mapeo-columnas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useColumnMap.ts:useColumnMap",
+   "type": "function",
+   "name": "useColumnMap",
+   "filePath": "src/features/requests/hooks/useColumnMap.ts",
+   "lineRange": [
+    77,
+    97
+   ],
+   "summary": "Query que devuelve el mapa clave kanban a Board_Column_ID del board.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "type": "file",
+   "name": "useCreateRequest.ts",
+   "filePath": "src/features/requests/hooks/useCreateRequest.ts",
+   "summary": "Hook de mutación que crea un request y luego da de alta en paralelo sus criterios de aceptación y asignaciones, invalidando las cachés afectadas.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "creacion-request",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCreateRequest.ts:useCreateRequest",
+   "type": "function",
+   "name": "useCreateRequest",
+   "filePath": "src/features/requests/hooks/useCreateRequest.ts",
+   "lineRange": [
+    36,
+    80
+   ],
+   "summary": "Mutación que crea un request, sus criterios y asignaciones, e invalida cachés relacionadas.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "file",
+   "name": "useCurrentUser.ts",
+   "filePath": "src/features/requests/hooks/useCurrentUser.ts",
+   "summary": "Hook que expone el perfil del usuario autenticado (resuelto por AuthProvider o mock en modo bypass) como query de TanStack Query.",
+   "tags": [
+    "hook",
+    "auth",
+    "usuario-actual",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "function",
+   "name": "useCurrentUser",
+   "filePath": "src/features/requests/hooks/useCurrentUser.ts",
+   "lineRange": [
+    46,
+    64
+   ],
+   "summary": "Expone el usuario autenticado (o mock) como query, fallando si la auth no lo resolvió.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "type": "file",
+   "name": "useCustomizationStyles.ts",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "summary": "Hooks de personalización visual del board que derivan estilos de columna, clases, visibilidad y fondo de cards, color de prioridad y estilo general a partir de la customización del equipo en boardStore.",
+   "tags": [
+    "hook",
+    "estilos",
+    "personalizacion",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:useColumnStyle",
+   "type": "function",
+   "name": "useColumnStyle",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    47,
+    59
+   ],
+   "summary": "Deriva el estilo inline de una columna desde la customización.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardClasses",
+   "type": "function",
+   "name": "useCardClasses",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    71,
+    81
+   ],
+   "summary": "Deriva las clases CSS de una card según la customización.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardVisibility",
+   "type": "function",
+   "name": "useCardVisibility",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    94,
+    109
+   ],
+   "summary": "Devuelve flags de visibilidad de los elementos de la card.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardStyle",
+   "type": "function",
+   "name": "useCardStyle",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    124,
+    141
+   ],
+   "summary": "Deriva el estilo de fondo de una card.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:usePriorityColor",
+   "type": "function",
+   "name": "usePriorityColor",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    153,
+    155
+   ],
+   "summary": "Devuelve el color configurado para una prioridad.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useCustomizationStyles.ts:useBoardStyle",
+   "type": "function",
+   "name": "useBoardStyle",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts",
+   "lineRange": [
+    164,
+    172
+   ],
+   "summary": "Deriva el estilo general del board (tema, gaps).",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useDragScroll.ts",
+   "type": "file",
+   "name": "useDragScroll.ts",
+   "filePath": "src/features/requests/hooks/useDragScroll.ts",
+   "summary": "Hook de scroll horizontal por arrastre (drag-to-scroll) para contenedores con overflow-x, usado en el board kanban.",
+   "tags": [
+    "hook",
+    "ui",
+    "drag-scroll",
+    "event-handler"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDragScroll.ts:useDragScroll",
+   "type": "function",
+   "name": "useDragScroll",
+   "filePath": "src/features/requests/hooks/useDragScroll.ts",
+   "lineRange": [
+    27,
+    73
+   ],
+   "summary": "Registra listeners de mouse para desplazar horizontalmente un contenedor arrastrando.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "type": "file",
+   "name": "useFilteredBoard.ts",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "summary": "Motor de filtrado de requests que evalúa las condiciones de filterStore (campos escalares, relacionales, banderas derivadas y campos de plantilla) sobre el board kanban o listas planas, con resultados memoizados.",
+   "tags": [
+    "hook",
+    "filtrado",
+    "validation",
+    "kanban"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa funciones puras de evaluación (extractValues/evaluate) combinadas con useMemo para separar la lógica de filtrado del ciclo de render."
+  },
+  {
+   "id": "function:src/features/requests/hooks/useFilteredBoard.ts:collectSchemaKeys",
+   "type": "function",
+   "name": "collectSchemaKeys",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "lineRange": [
+    41,
+    51
+   ],
+   "summary": "Recolecta recursivamente las claves de campos de plantilla, incluidas ramas condicionales.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useFilteredBoard.ts:extractValues",
+   "type": "function",
+   "name": "extractValues",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "lineRange": [
+    73,
+    143
+   ],
+   "summary": "Extrae los valores de un request relevantes para el campo de una condición de filtro.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useFilteredBoard.ts:evaluate",
+   "type": "function",
+   "name": "evaluate",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "lineRange": [
+    186,
+    254
+   ],
+   "summary": "Evalúa una condición de filtro (campo, operador, valor) contra un request.",
+   "tags": [
+    "utility",
+    "helper",
+    "logica"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredBoard",
+   "type": "function",
+   "name": "useFilteredBoard",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "lineRange": [
+    298,
+    331
+   ],
+   "summary": "Filtra un BoardData columna por columna según las condiciones activas, memoizado.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredRequests",
+   "type": "function",
+   "name": "useFilteredRequests",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts",
+   "lineRange": [
+    349,
+    371
+   ],
+   "summary": "Filtra una lista plana de requests según las condiciones activas, memoizado.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "type": "file",
+   "name": "useKanbanAdmin.ts",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "summary": "Hooks de administración del kanban: CRUD y reordenamiento de equipos/boards y columnas globales, configuración de columnas por equipo y columna de inicio de estadísticas, con actualizaciones optimistas.",
+   "tags": [
+    "hook",
+    "admin",
+    "kanban",
+    "react-query"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateKanbanTeam",
+   "type": "function",
+   "name": "useCreateKanbanTeam",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    80,
+    89
+   ],
+   "summary": "Mutación para crear un equipo/board del kanban.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateKanbanTeam",
+   "type": "function",
+   "name": "useUpdateKanbanTeam",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    103,
+    113
+   ],
+   "summary": "Mutación para actualizar un equipo/board.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useTeamColumnConfig",
+   "type": "function",
+   "name": "useTeamColumnConfig",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    129,
+    136
+   ],
+   "summary": "Query de la configuración de columnas de un equipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpsertTeamColumnConfig",
+   "type": "function",
+   "name": "useUpsertTeamColumnConfig",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    154,
+    199
+   ],
+   "summary": "Mutación optimista que crea o actualiza la configuración de columna por equipo.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useSetStatsStartColumn",
+   "type": "function",
+   "name": "useSetStatsStartColumn",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    218,
+    247
+   ],
+   "summary": "Mutación optimista que define la columna de inicio de estadísticas.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateBoardColumn",
+   "type": "function",
+   "name": "useUpdateBoardColumn",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    262,
+    272
+   ],
+   "summary": "Mutación para actualizar una columna global.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateBoardColumn",
+   "type": "function",
+   "name": "useCreateBoardColumn",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    287,
+    297
+   ],
+   "summary": "Mutación para crear una columna global.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardColumn",
+   "type": "function",
+   "name": "useReorderBoardColumn",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    315,
+    350
+   ],
+   "summary": "Mutación optimista que reordena columnas globales.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardTeam",
+   "type": "function",
+   "name": "useReorderBoardTeam",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    368,
+    384
+   ],
+   "summary": "Mutación que reordena equipos/boards.",
+   "tags": [
+    "hook",
+    "mutacion",
+    "react-query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useKanbanAdmin.ts:useStatsStartConfig",
+   "type": "function",
+   "name": "useStatsStartConfig",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts",
+   "lineRange": [
+    411,
+    417
+   ],
+   "summary": "Query de la configuración de columna de inicio de estadísticas.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "function:src/features/requests/hooks/UseUpdateRequest.tsx:useUpdateRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "function:src/features/requests/hooks/UseUpdateRequest.tsx:useUpdateRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:syncCriteriaSummary",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useCreateCriteria",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useCreateCriteria",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaStatus",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaStatus",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useDeleteCriteria",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useDeleteCriteria",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaTitle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaTitle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:syncCriteriaSummary",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useCreateCriteria",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaStatus",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useDeleteCriteria",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useUpdateCriteriaTitle",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:writeCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useAnnouncements",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useAnnouncements",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useAllAnnouncements",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useAllAnnouncements",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:usePublicAnnouncements",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:usePublicAnnouncements",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useCreateAnnouncement",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useCreateAnnouncement",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useUpdateAnnouncement",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useUpdateAnnouncement",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useDeleteAnnouncement",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:useDeleteAnnouncement",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:getDismissed",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:getDismissed",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:getConfirmed",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:getConfirmed",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:dismissAnnouncement",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:dismissAnnouncement",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:confirmAnnouncement",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "function:src/features/requests/hooks/useAnnouncements.ts:confirmAnnouncement",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "function:src/features/requests/hooks/useClientFeedback.ts:useClientFeedback",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "function:src/features/requests/hooks/useClientFeedback.ts:useClientFeedback",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "function:src/features/requests/hooks/useClientFeedback.ts:useSubmitClientFeedback",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "function:src/features/requests/hooks/useClientFeedback.ts:useSubmitClientFeedback",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "function:src/features/requests/hooks/useCloseRequest.ts:useCloseRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "function:src/features/requests/hooks/useCloseRequest.ts:useCloseRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "function:src/features/requests/hooks/useCloseRequest.ts:columnIdToKanban",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/hooks/useCloseRequest.ts:useCloseRequest",
+   "target": "function:src/features/requests/hooks/useCloseRequest.ts:columnIdToKanban",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useColumnMap.ts",
+   "target": "function:src/features/requests/hooks/useColumnMap.ts:useColumnMap",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useColumnMap.ts",
+   "target": "function:src/features/requests/hooks/useColumnMap.ts:useColumnMap",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useColumnMap.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "function:src/features/requests/hooks/useCreateRequest.ts:useCreateRequest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "function:src/features/requests/hooks/useCreateRequest.ts:useCreateRequest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "file:src/features/requests/hooks/useSubRequest.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "target": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "target": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useColumnStyle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useColumnStyle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardClasses",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardClasses",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardVisibility",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardVisibility",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardStyle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardStyle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:usePriorityColor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:usePriorityColor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useBoardStyle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useBoardStyle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDragScroll.ts",
+   "target": "function:src/features/requests/hooks/useDragScroll.ts:useDragScroll",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDragScroll.ts",
+   "target": "function:src/features/requests/hooks/useDragScroll.ts:useDragScroll",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:collectSchemaKeys",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:extractValues",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:evaluate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredBoard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredBoard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredRequests",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:useFilteredRequests",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useFilteredBoard.ts:extractValues",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:collectSchemaKeys",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useFilteredBoard.ts:evaluate",
+   "target": "function:src/features/requests/hooks/useFilteredBoard.ts:extractValues",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "file:src/features/requests/templates/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateKanbanTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateKanbanTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateKanbanTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateKanbanTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useTeamColumnConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useTeamColumnConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpsertTeamColumnConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpsertTeamColumnConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useSetStatsStartColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useSetStatsStartColumn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateBoardColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useUpdateBoardColumn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateBoardColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useCreateBoardColumn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardColumn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useReorderBoardTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useStatsStartConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "target": "function:src/features/requests/hooks/useKanbanAdmin.ts:useStatsStartConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useAnnouncements.ts:useAnnouncements",
+   "target": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/UseUpdateRequest.tsx:useUpdateRequest",
+   "target": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useFilteredBoard.ts:collectSchemaKeys",
+   "target": "function:src/features/requests/templates/types.ts:isConditionalField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "target": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

@@ -1,0 +1,597 @@
+[
+  {
+    "layerId": "layer:entrada-paginas",
+    "labels": [
+      {
+        "name": "Arranque y enrutamiento",
+        "nodeIds": [
+          "file:index.html",
+          "file:src/App.tsx",
+          "file:src/main.tsx",
+          "file:src/pages/LoginPage.tsx",
+          "file:src/pages/OnBoardingPage.tsx"
+        ]
+      },
+      {
+        "name": "Tablero y tareas",
+        "nodeIds": [
+          "file:src/pages/BoardPage.tsx",
+          "file:src/pages/TasksPage.tsx",
+          "file:src/pages/TicketPage.tsx",
+          "file:src/pages/HomePage.tsx"
+        ]
+      },
+      {
+        "name": "Páginas de solicitudes",
+        "nodeIds": [
+          "file:src/pages/ClientRequestsPage.tsx",
+          "file:src/pages/MyMentionsPage.tsx",
+          "file:src/pages/MyRequestsPage.tsx",
+          "file:src/pages/NewRequestPage.tsx",
+          "file:src/pages/RequestsPage.tsx",
+          "file:src/pages/TeamRequestsPage.tsx"
+        ]
+      },
+      {
+        "name": "Administración y métricas",
+        "nodeIds": [
+          "file:src/pages/AutomationsPage.tsx",
+          "file:src/pages/PrismaAdminPage.tsx",
+          "file:src/pages/StatsPage.tsx"
+        ]
+      },
+      {
+        "name": "Integración SOLVI",
+        "nodeIds": [
+          "file:src/pages/integrations/SolviRequestPage.tsx",
+          "file:src/pages/integrations/SolviTicketsPage.tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:ui",
+    "labels": [
+      {
+        "name": "Tablero Kanban",
+        "nodeIds": [
+          "file:src/features/requests/components/BoardFilters.tsx",
+          "file:src/features/requests/components/BoardSearch.tsx",
+          "file:src/features/requests/components/IntakeBadge.tsx",
+          "file:src/features/requests/components/KanbanBoard.tsx",
+          "file:src/features/requests/components/KanbanColumn.tsx",
+          "file:src/features/requests/components/MemberHoursBar.tsx",
+          "file:src/features/requests/components/RequestCard.tsx",
+          "file:src/features/requests/components/TasksTable.tsx",
+          "file:src/features/requests/components/BoardCustomization.tsx",
+          "file:src/features/requests/components/KanbanSkeleton.tsx"
+        ]
+      },
+      {
+        "name": "Modales de solicitud",
+        "nodeIds": [
+          "file:src/features/requests/components/ClientReviewBanner.tsx",
+          "file:src/features/requests/components/ClosureModal.tsx",
+          "file:src/features/requests/components/CreateRequestModal.tsx",
+          "file:src/features/requests/components/HomeRequestModal.tsx",
+          "file:src/features/requests/components/RequestHistoryModal.tsx",
+          "file:src/features/requests/components/RequestModal.tsx",
+          "file:src/features/requests/components/RequestModalComponents.tsx",
+          "file:src/features/requests/components/RequestTimelines.tsx",
+          "file:src/features/requests/components/ResolutionRatingModal.tsx",
+          "file:src/features/requests/components/TransferTicketModal.tsx",
+          "file:src/features/requests/components/AssignBugModal.tsx",
+          "file:src/features/requests/components/RichTextEditor.tsx"
+        ]
+      },
+      {
+        "name": "Comentarios y menciones",
+        "nodeIds": [
+          "file:src/features/requests/components/mentions/CommentComposer.tsx",
+          "file:src/features/requests/components/mentions/CommentText.tsx",
+          "file:src/features/requests/components/mentions/MentionList.tsx",
+          "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+          "file:src/features/requests/components/mentions/mentionSuggestion.ts"
+        ]
+      },
+      {
+        "name": "Formularios SOLVI",
+        "nodeIds": [
+          "file:src/features/requests/components/SolviTicketModal.tsx",
+          "file:src/features/requests/components/SolviRequestFormControls.tsx",
+          "file:src/features/requests/components/SolviRequestPageComponents.tsx"
+        ]
+      },
+      {
+        "name": "Panel de configuración",
+        "nodeIds": [
+          "file:src/components/ConfigPanel.tsx",
+          "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+          "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+          "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+          "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+          "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+          "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+          "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+          "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+          "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+          "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+          "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+          "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+          "file:src/features/requests/templates/TemplateRenameModal.tsx",
+          "file:src/features/automations/components/CreateAutomationModal.tsx"
+        ]
+      },
+      {
+        "name": "Layout y navegación",
+        "nodeIds": [
+          "file:src/components/layout/AnnouncementBanner.tsx",
+          "file:src/components/layout/AnnouncementModal.tsx",
+          "file:src/components/layout/AppLayout.tsx",
+          "file:src/components/layout/BugReportModal.tsx",
+          "file:src/components/layout/FloatingTimer.tsx",
+          "file:src/components/layout/NotificationBell.tsx",
+          "file:src/components/layout/NotificationPermissionPrompt.tsx",
+          "file:src/components/layout/SatisfactionModal.tsx",
+          "file:src/components/layout/Sidebar.tsx",
+          "file:src/components/layout/Topbar.tsx",
+          "file:src/components/layout/VersionUpdateBanner.tsx",
+          "file:src/components/layout/siderbarConstants.ts",
+          "file:src/components/layout/ThemeToggle.tsx"
+        ]
+      },
+      {
+        "name": "Dashboard de estadísticas",
+        "nodeIds": [
+          "file:src/features/requests/components/stats/BarChart.tsx",
+          "file:src/features/requests/components/stats/FlowSection.tsx",
+          "file:src/features/requests/components/stats/GlobalSection.tsx",
+          "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+          "file:src/features/requests/components/stats/SprintSection.tsx",
+          "file:src/features/requests/components/stats/SprintSelector.tsx",
+          "file:src/features/requests/components/stats/StatsAtoms.tsx",
+          "file:src/features/requests/components/stats/StatsControlBar.tsx",
+          "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+          "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+          "file:src/features/requests/components/stats/statsFormat.ts",
+          "file:src/features/requests/components/stats/useClickOutside.ts",
+          "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+          "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+          "file:src/features/requests/components/StatsSkeleton.tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:hooks-dominio",
+    "labels": [
+      {
+        "name": "Ciclo de vida de solicitudes",
+        "nodeIds": [
+          "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+          "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+          "file:src/features/requests/hooks/useClientFeedback.ts",
+          "file:src/features/requests/hooks/useCloseRequest.ts",
+          "file:src/features/requests/hooks/useCreateRequest.ts",
+          "file:src/features/requests/hooks/useMoveRequests.ts",
+          "file:src/features/requests/hooks/useRequestHistory.tsx",
+          "file:src/features/requests/hooks/useRequests.ts",
+          "file:src/features/requests/hooks/useSubRequest.ts",
+          "file:src/features/requests/hooks/useTasksData.ts",
+          "file:src/features/requests/hooks/useTicketResolver.ts",
+          "file:src/features/requests/hooks/useTransferTicket.ts",
+          "file:src/features/requests/hooks/useAttachments.ts"
+        ]
+      },
+      {
+        "name": "Comentarios y notificaciones",
+        "nodeIds": [
+          "file:src/features/requests/hooks/useComments.ts",
+          "file:src/features/requests/hooks/useRequestParticipants.ts",
+          "file:src/features/requests/hooks/useNotifications.ts",
+          "file:src/features/requests/hooks/useBrowserNotifications.ts",
+          "file:src/features/requests/hooks/useAnnouncements.ts",
+          "file:src/features/requests/lib/mentions.ts"
+        ]
+      },
+      {
+        "name": "Metadatos y organización",
+        "nodeIds": [
+          "file:src/features/requests/hooks/useColumnMap.ts",
+          "file:src/features/requests/hooks/useCurrentUser.ts",
+          "file:src/features/requests/hooks/useKanbanAdmin.ts",
+          "file:src/features/requests/hooks/useSubTeamMembers.ts",
+          "file:src/features/requests/hooks/useUsers.ts",
+          "file:src/features/requests/hooks/useBoardMetadata.ts",
+          "file:src/features/requests/hooks/useDepartments.ts",
+          "file:src/features/requests/hooks/useEmailTemplates.ts",
+          "file:src/features/requests/hooks/useLabels.ts",
+          "file:src/features/requests/hooks/useSprints.ts",
+          "file:src/features/requests/hooks/useSubTeams.ts",
+          "file:src/features/requests/hooks/useTeams.ts",
+          "file:src/features/requests/templates/renameUtils.ts",
+          "file:src/features/automations/hooks/useAutomationRules.ts"
+        ]
+      },
+      {
+        "name": "Vista del tablero",
+        "nodeIds": [
+          "file:src/features/requests/hooks/useCustomizationStyles.ts",
+          "file:src/features/requests/hooks/useDragScroll.ts",
+          "file:src/features/requests/hooks/useFilteredBoard.ts",
+          "file:src/components/hooks/useVersionCheck.ts",
+          "file:src/components/hooks/useMediaQuery.ts",
+          "file:src/hooks/useInstallPrompt.ts"
+        ]
+      },
+      {
+        "name": "Cálculo de estadísticas",
+        "nodeIds": [
+          "file:src/features/requests/hooks/stats/constants.ts",
+          "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+          "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+          "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+          "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+          "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+          "file:src/features/requests/hooks/stats/lib/math.ts",
+          "file:src/features/requests/hooks/stats/lib/predicates.ts",
+          "file:src/features/requests/hooks/stats/lib/scoring.ts",
+          "file:src/features/requests/hooks/stats/lib/sprints.ts",
+          "file:src/features/requests/hooks/stats/useBoardStats.ts",
+          "file:src/features/requests/hooks/stats/useFlowStats.ts",
+          "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+          "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+          "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+          "file:src/features/requests/hooks/stats/useSprintStats.ts",
+          "file:src/features/requests/hooks/stats/useStatsScope.ts",
+          "file:src/features/requests/hooks/stats/useStatsSource.ts",
+          "file:src/features/requests/hooks/useStatsData.ts"
+        ]
+      },
+      {
+        "name": "Hooks SOLVI",
+        "nodeIds": [
+          "file:src/features/requests/hooks/useSolviActions.ts",
+          "file:src/features/requests/hooks/useSolviAns.ts",
+          "file:src/features/requests/hooks/useSolviArticulos.ts",
+          "file:src/features/requests/hooks/useSolviCategorias.ts",
+          "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+          "file:src/features/requests/hooks/useMySolviTickets.ts",
+          "file:src/features/requests/hooks/useSolviComments.ts",
+          "file:src/features/requests/hooks/useSolviParticipants.ts",
+          "file:src/features/requests/hooks/useSolviTickets.ts"
+        ]
+      },
+      {
+        "name": "Exportación de tickets",
+        "nodeIds": [
+          "file:src/features/exports/hooks/useCreateExportJob.ts",
+          "file:src/features/exports/hooks/useExportData.ts",
+          "file:src/features/exports/hooks/useExportHistory.ts",
+          "file:src/features/exports/hooks/useExportJob.ts",
+          "file:src/features/exports/services/buildCsv.ts",
+          "file:src/features/exports/services/buildXlsx.ts",
+          "file:src/features/exports/services/columnRegistry.ts",
+          "file:src/features/exports/services/processExportArtifact.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:estado",
+    "labels": [
+      {
+        "name": "Estado del tablero",
+        "nodeIds": [
+          "file:src/store/boardStore.ts",
+          "file:src/store/filterStore.ts",
+          "file:src/store/intakeStore.ts",
+          "file:src/store/searchStore.ts",
+          "file:src/store/customizationStore.ts",
+          "file:src/store/useBoardTheme.ts"
+        ]
+      },
+      {
+        "name": "Preferencias de usuario",
+        "nodeIds": [
+          "file:src/store/configStore.ts",
+          "file:src/store/useTheme.ts",
+          "file:src/store/notifPromptStore.ts",
+          "file:src/store/mobileNavStore.ts"
+        ]
+      },
+      {
+        "name": "Herramientas y métricas",
+        "nodeIds": [
+          "file:src/store/automationStore.ts",
+          "file:src/store/statsStore.ts",
+          "file:src/store/timerStore.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:integraciones",
+    "labels": [
+      {
+        "name": "Servicios SharePoint SOLVI",
+        "nodeIds": [
+          "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+          "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+          "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+          "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+          "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+          "file:src/api/BaseSharePointListService.ts",
+          "file:src/auth/BaseSharePointListService.ts"
+        ]
+      },
+      {
+        "name": "Asignación de tickets SOLVI",
+        "nodeIds": [
+          "file:src/features/requests/services/HolidayService.service.ts",
+          "file:src/features/requests/services/SolviAttachments.service.ts",
+          "file:src/features/requests/services/SolviBusinessDate.service.ts",
+          "file:src/features/requests/services/SolviShifts.service.ts",
+          "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+          "file:src/features/requests/services/SolviTicketNotifications.service.ts"
+        ]
+      },
+      {
+        "name": "Autenticación",
+        "nodeIds": [
+          "file:src/auth/AuthProvider.tsx",
+          "file:src/auth/msal.ts",
+          "file:src/auth/supabaseAuth.ts",
+          "file:src/auth/roles.ts",
+          "file:src/auth/useAuth.ts"
+        ]
+      },
+      {
+        "name": "Clientes Graph y Supabase",
+        "nodeIds": [
+          "file:src/features/requests/services/SupabaseRequestsService.ts",
+          "file:src/config.ts",
+          "file:src/graph/GraphRest.ts",
+          "file:src/graph/GraphServicesProvider.tsx",
+          "file:src/graph/useGraphServices.ts",
+          "file:src/lib/apiClient.ts",
+          "file:src/lib/compressImage.ts",
+          "file:src/lib/supabaseClient.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:tipos",
+    "labels": [
+      {
+        "name": "Modelo de solicitudes",
+        "nodeIds": [
+          "file:src/features/requests/mock/Mockboard.ts",
+          "file:src/features/requests/templates/types.ts",
+          "file:src/features/requests/types.ts",
+          "file:src/features/requests/types/SolviTicket.ts"
+        ]
+      },
+      {
+        "name": "Tipos de módulos",
+        "nodeIds": [
+          "file:src/features/requests/hooks/stats/types.ts",
+          "file:src/features/exports/types.ts",
+          "file:src/features/automations/types.ts",
+          "file:src/features/stats/types.ts"
+        ]
+      },
+      {
+        "name": "Tipos compartidos",
+        "nodeIds": [
+          "file:src/types/commons.ts",
+          "file:src/types/supabase.types.ts",
+          "file:src/vite-env.d.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:estilos",
+    "labels": [
+      {
+        "name": "Tema y estilos globales",
+        "nodeIds": [
+          "file:src/styles/globals.css",
+          "file:src/styles/themeLight.css",
+          "file:src/styles/variables.css",
+          "file:src/index.css",
+          "file:src/styles/layout.css",
+          "file:src/styles/notifications.css"
+        ]
+      },
+      {
+        "name": "Estilos del tablero",
+        "nodeIds": [
+          "file:src/styles/customization.css",
+          "file:src/styles/filters.css",
+          "file:src/styles/kanban.css",
+          "file:src/styles/kanbanSkeleton.css",
+          "file:src/styles/requestCard.css",
+          "file:src/styles/mentions.css",
+          "file:src/styles/tasks.css"
+        ]
+      },
+      {
+        "name": "Estilos de páginas",
+        "nodeIds": [
+          "file:src/styles/LoginPage.css",
+          "file:src/styles/onboarding.css",
+          "file:src/styles/automations.css",
+          "file:src/styles/clientRequests.css",
+          "file:src/styles/configPanel.css",
+          "file:src/styles/feedback.css",
+          "file:src/styles/solvi.css",
+          "file:src/styles/stats.css"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:backend",
+    "labels": [
+      {
+        "name": "Núcleo y enrutamiento",
+        "nodeIds": [
+          "file:supabase/functions/api/config.ts",
+          "file:supabase/functions/api/deps.ts",
+          "file:supabase/functions/api/index.ts",
+          "file:supabase/functions/api/router.ts",
+          "file:supabase/functions/api/lib/auth.ts",
+          "file:supabase/functions/api/lib/https.ts",
+          "file:supabase/functions/api/lib/supabase.ts",
+          "file:supabase/functions/api/shared/mappers.ts",
+          "file:supabase/functions/api/shared/types.ts",
+          "file:supabase/functions/api/shared/selects.ts",
+          "file:supabase/functions/api/shared/boardAccess.ts",
+          "file:supabase/functions/api/globals.d.ts",
+          "config:supabase/config.toml",
+          "config:supabase/functions/tsconfig.json"
+        ]
+      },
+      {
+        "name": "Ciclo de vida del ticket",
+        "nodeIds": [
+          "file:supabase/functions/api/handlers/requests.ts",
+          "file:supabase/functions/api/handlers/assignments.ts",
+          "file:supabase/functions/api/handlers/attachments.ts",
+          "file:supabase/functions/api/handlers/closure.ts",
+          "file:supabase/functions/api/handlers/criteria.ts",
+          "file:supabase/functions/api/handlers/feedback.ts",
+          "file:supabase/functions/api/handlers/history.ts",
+          "file:supabase/functions/api/handlers/resolutionRatings.ts",
+          "file:supabase/functions/api/handlers/transfers.ts",
+          "file:supabase/functions/api/handlers/migration.ts",
+          "file:supabase/functions/api/handlers/comments.ts",
+          "file:supabase/functions/api/handlers/solvi.ts",
+          "file:supabase/functions/api/lib/history.ts",
+          "file:supabase/functions/api/lib/storage.ts",
+          "file:supabase/functions/api/shared/criteria.ts",
+          "file:supabase/functions/api/shared/requests.ts"
+        ]
+      },
+      {
+        "name": "Notificaciones y correo",
+        "nodeIds": [
+          "file:supabase/functions/api/email/send.ts",
+          "file:supabase/functions/api/handlers/notifications.ts",
+          "file:supabase/functions/api/handlers/notifyEvent.ts",
+          "file:supabase/functions/api/handlers/emailTemplates.ts",
+          "file:supabase/functions/api/handlers/announcements.ts",
+          "file:supabase/functions/api/shared/email.ts",
+          "file:supabase/functions/api/shared/notifications.ts"
+        ]
+      },
+      {
+        "name": "Configuración de boards",
+        "nodeIds": [
+          "file:supabase/functions/api/handlers/boardTeams.ts",
+          "file:supabase/functions/api/handlers/columns.ts",
+          "file:supabase/functions/api/handlers/labels.ts",
+          "file:supabase/functions/api/handlers/orgUnits.ts",
+          "file:supabase/functions/api/handlers/sprints.ts",
+          "file:supabase/functions/api/handlers/subteams.ts",
+          "file:supabase/functions/api/handlers/teamColumnConfig.ts",
+          "file:supabase/functions/api/handlers/users.ts",
+          "file:supabase/functions/api/handlers/automationRules.ts",
+          "file:supabase/functions/api/handlers/system.ts"
+        ]
+      },
+      {
+        "name": "Jobs en segundo plano",
+        "nodeIds": [
+          "file:supabase/functions/api/handlers/exportJobs.ts",
+          "file:supabase/functions/api/handlers/templates.ts",
+          "file:supabase/functions/api/jobs/exportJob.ts",
+          "file:supabase/functions/api/jobs/renameJob.ts",
+          "file:supabase/functions/api/shared/templateKeys.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:etl-migraciones",
+    "labels": [
+      {
+        "name": "Configuración de migración",
+        "nodeIds": [
+          "file:prisma-migrations/src/config/mapping.ts",
+          "file:prisma-migrations/src/config/runConfig.ts",
+          "document:prisma-migrations/README.md",
+          "config:prisma-migrations/package.json",
+          "config:prisma-migrations/tsconfig.json"
+        ]
+      },
+      {
+        "name": "Transformación de datos",
+        "nodeIds": [
+          "file:prisma-migrations/src/lib/apiClient.ts",
+          "file:prisma-migrations/src/lib/buildPayload.ts",
+          "file:prisma-migrations/src/lib/excel.ts",
+          "file:prisma-migrations/src/lib/transforms.ts",
+          "file:prisma-migrations/src/lib/users.ts"
+        ]
+      },
+      {
+        "name": "Fases de ejecución",
+        "nodeIds": [
+          "file:prisma-migrations/src/phases/01-resolve.ts",
+          "file:prisma-migrations/src/phases/02-validate.ts",
+          "file:prisma-migrations/src/phases/03-load.ts",
+          "file:prisma-migrations/src/run.ts"
+        ]
+      }
+    ]
+  },
+  {
+    "layerId": "layer:config-despliegue",
+    "labels": [
+      {
+        "name": "Compilación TypeScript",
+        "nodeIds": [
+          "config:tsconfig.app.json",
+          "config:tsconfig.json",
+          "config:tsconfig.node.json",
+          "file:tsconfig.app.tsbuildinfo",
+          "config:package.json"
+        ]
+      },
+      {
+        "name": "Documentación TypeDoc",
+        "nodeIds": [
+          "config:typedoc.backend.json",
+          "config:typedoc.frontend.json",
+          "config:typedoc.json",
+          "document:README.md",
+          "config:.ua/config.json"
+        ]
+      },
+      {
+        "name": "Herramientas de build",
+        "nodeIds": [
+          "file:eslint.config.js",
+          "file:postcss.config.js",
+          "file:tailwind.config.js",
+          "file:vite.config.ts"
+        ]
+      },
+      {
+        "name": "Despliegue y PWA",
+        "nodeIds": [
+          "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+          "config:public/manifest.json",
+          "config:public/staticwebapp.config.json",
+          "config:public/version.json",
+          "file:public/_redirects",
+          "file:public/sw-notifications.js"
+        ]
+      }
+    ]
+  }
+]

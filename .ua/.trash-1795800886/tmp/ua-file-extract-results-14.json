@@ -1,0 +1,424 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [
+    "index.html"
+  ],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 8,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 8
+    }
+  },
+  "results": [
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 247,
+      "nonEmptyLines": 179,
+      "sections": [
+        {
+          "heading": "PRISMA",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Tabla de contenido",
+          "level": 2,
+          "line": 11
+        },
+        {
+          "heading": "Características",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "Stack tecnológico",
+          "level": 2,
+          "line": 44
+        },
+        {
+          "heading": "Arquitectura",
+          "level": 2,
+          "line": 73
+        },
+        {
+          "heading": "Estructura del proyecto",
+          "level": 2,
+          "line": 95
+        },
+        {
+          "heading": "Requisitos previos",
+          "level": 2,
+          "line": 126
+        },
+        {
+          "heading": "Configuración e instalación",
+          "level": 2,
+          "line": 135
+        },
+        {
+          "heading": "Desarrollo",
+          "level": 2,
+          "line": 162
+        },
+        {
+          "heading": "Documentación técnica",
+          "level": 2,
+          "line": 174
+        },
+        {
+          "heading": "Despliegue",
+          "level": 2,
+          "line": 201
+        },
+        {
+          "heading": "Convenciones y principios de diseño",
+          "level": 2,
+          "line": 221
+        },
+        {
+          "heading": "Roles del sistema",
+          "level": 2,
+          "line": 235
+        },
+        {
+          "heading": "Licencia",
+          "level": 2,
+          "line": 245
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 14
+      }
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 67,
+      "nonEmptyLines": 67,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "private",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "type",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 15
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 40
+        },
+        {
+          "heading": "overrides",
+          "level": 1,
+          "line": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": "tsconfig.app.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 33,
+      "nonEmptyLines": 29,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 7,
+      "nonEmptyLines": 7,
+      "sections": [
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "references",
+          "level": 1,
+          "line": 3
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "tsconfig.node.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 24,
+      "nonEmptyLines": 22,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "typedoc.backend.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 13,
+      "nonEmptyLines": 13,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "entryPoints",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "entryPointStrategy",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "tsconfig",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "json",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "readme",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "skipErrorChecking",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 10
+        },
+        {
+          "heading": "excludePrivate",
+          "level": 1,
+          "line": 11
+        },
+        {
+          "heading": "excludeInternal",
+          "level": 1,
+          "line": 12
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    },
+    {
+      "path": "typedoc.frontend.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 12,
+      "nonEmptyLines": 12,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "entryPoints",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "entryPointStrategy",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "tsconfig",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "json",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "readme",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "excludePrivate",
+          "level": 1,
+          "line": 10
+        },
+        {
+          "heading": "excludeInternal",
+          "level": 1,
+          "line": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "typedoc.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 8,
+      "nonEmptyLines": 8,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "entryPointStrategy",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "entryPoints",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "out",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "readme",
+          "level": 1,
+          "line": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
+    }
+  ]
+}

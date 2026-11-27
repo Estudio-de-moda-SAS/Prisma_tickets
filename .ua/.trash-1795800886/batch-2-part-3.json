@@ -1,0 +1,849 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "type": "file",
+   "name": "SolviTicketModal.tsx",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "summary": "Modal de detalle de tickets provenientes de la integración SOLVI: muestra campos del ticket con HTML saneado, comentarios con menciones, participantes, adjuntos y transferencia.",
+   "tags": [
+    "component",
+    "modal",
+    "solvi",
+    "integracion",
+    "comentarios"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:sanitizeHtml",
+   "type": "function",
+   "name": "sanitizeHtml",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    30,
+    39
+   ],
+   "summary": "Sanea HTML proveniente de SOLVI eliminando scripts y atributos peligrosos antes de renderizarlo.",
+   "tags": [
+    "utility",
+    "security",
+    "html"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:RichText",
+   "type": "function",
+   "name": "RichText",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    46,
+    60
+   ],
+   "summary": "Renderiza texto plano o HTML saneado según el contenido.",
+   "tags": [
+    "component",
+    "html",
+    "presentacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:Section",
+   "type": "function",
+   "name": "Section",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    90,
+    100
+   ],
+   "summary": "Sección con título para agrupar campos del ticket.",
+   "tags": [
+    "component",
+    "layout"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "type": "function",
+   "name": "SolviTicketModal",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    111,
+    459
+   ],
+   "summary": "Modal exportado de detalle de ticket SOLVI con pestañas, comentarios con notificación a participantes y transferencia.",
+   "tags": [
+    "component",
+    "modal",
+    "solvi"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:AttachmentRow",
+   "type": "function",
+   "name": "AttachmentRow",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    461,
+    473
+   ],
+   "summary": "Fila de adjunto SOLVI con enlace de descarga.",
+   "tags": [
+    "component",
+    "adjuntos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviTicketModal.tsx:SolviAttachmentsTab",
+   "type": "function",
+   "name": "SolviAttachmentsTab",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx",
+   "lineRange": [
+    475,
+    599
+   ],
+   "summary": "Pestaña de adjuntos del ticket SOLVI con carga de nuevos archivos vía useSolviActionsTickets.",
+   "tags": [
+    "component",
+    "adjuntos",
+    "solvi"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/TasksTable.tsx",
+   "type": "file",
+   "name": "TasksTable.tsx",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "summary": "Vista de tabla de tareas alternativa al Kanban, con filtros aplicados en cliente, ordenamiento por columnas, campos de plantilla aplanados y skeleton de carga.",
+   "tags": [
+    "component",
+    "tabla",
+    "filtros",
+    "tareas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:statusCls",
+   "type": "function",
+   "name": "statusCls",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    39,
+    53
+   ],
+   "summary": "Devuelve las clases CSS según el estado de la tarea.",
+   "tags": [
+    "utility",
+    "estilos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:flattenTaskListFields",
+   "type": "function",
+   "name": "flattenTaskListFields",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    91,
+    103
+   ],
+   "summary": "Aplana los campos de lista de tareas en pares clave-valor.",
+   "tags": [
+    "utility",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:flattenTemplateFields",
+   "type": "function",
+   "name": "flattenTemplateFields",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    104,
+    137
+   ],
+   "summary": "Aplana los campos de plantilla de una tarea para mostrarlos y filtrarlos.",
+   "tags": [
+    "utility",
+    "plantillas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:matchCondition",
+   "type": "function",
+   "name": "matchCondition",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    148,
+    254
+   ],
+   "summary": "Evalúa si una tarea cumple una condición de filtro según campo y operador.",
+   "tags": [
+    "utility",
+    "filtros",
+    "validation"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:applyTaskFilters",
+   "type": "function",
+   "name": "applyTaskFilters",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    256,
+    275
+   ],
+   "summary": "Aplica el conjunto de condiciones con conjunción AND/OR a la lista de tareas.",
+   "tags": [
+    "utility",
+    "filtros"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:AssigneeCell",
+   "type": "function",
+   "name": "AssigneeCell",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    279,
+    301
+   ],
+   "summary": "Celda con avatares de los responsables de la tarea.",
+   "tags": [
+    "component",
+    "tabla",
+    "responsables"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:TaskTableRow",
+   "type": "function",
+   "name": "TaskTableRow",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    319,
+    505
+   ],
+   "summary": "Fila de la tabla de tareas que navega al detalle al hacer clic.",
+   "tags": [
+    "component",
+    "tabla"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:TasksTableSkeleton",
+   "type": "function",
+   "name": "TasksTableSkeleton",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    511,
+    677
+   ],
+   "summary": "Skeleton de carga de la tabla de tareas.",
+   "tags": [
+    "component",
+    "skeleton",
+    "loading"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "type": "function",
+   "name": "TasksTable",
+   "filePath": "src/features/requests/components/TasksTable.tsx",
+   "lineRange": [
+    680,
+    1031
+   ],
+   "summary": "Tabla exportada que carga tareas con useTasksData, aplica filtros y ordenamiento.",
+   "tags": [
+    "component",
+    "tabla",
+    "tareas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/TransferTicketModal.tsx",
+   "type": "file",
+   "name": "TransferTicketModal.tsx",
+   "filePath": "src/features/requests/components/TransferTicketModal.tsx",
+   "summary": "Modal para transferir un ticket a otro equipo o departamento con un motivo.",
+   "tags": [
+    "component",
+    "modal",
+    "transferencia"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/TransferTicketModal.tsx:TransferTicketModal",
+   "type": "function",
+   "name": "TransferTicketModal",
+   "filePath": "src/features/requests/components/TransferTicketModal.tsx",
+   "lineRange": [
+    22,
+    215
+   ],
+   "summary": "Modal exportado de selección de equipo/departamento destino para transferir un ticket.",
+   "tags": [
+    "component",
+    "modal",
+    "transferencia"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "type": "file",
+   "name": "CommentComposer.tsx",
+   "filePath": "src/features/requests/components/mentions/CommentComposer.tsx",
+   "summary": "Editor de comentarios basado en TipTap con soporte de menciones @usuario mediante la extensión Mention.",
+   "tags": [
+    "component",
+    "editor",
+    "menciones",
+    "tiptap"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "function",
+   "name": "CommentComposer",
+   "filePath": "src/features/requests/components/mentions/CommentComposer.tsx",
+   "lineRange": [
+    21,
+    91
+   ],
+   "summary": "Editor TipTap exportado con menciones que envía el comentario y los usuarios mencionados.",
+   "tags": [
+    "component",
+    "editor",
+    "menciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "type": "file",
+   "name": "CommentText.tsx",
+   "filePath": "src/features/requests/components/mentions/CommentText.tsx",
+   "summary": "Renderiza el texto de un comentario resolviendo las menciones a nombres de usuario.",
+   "tags": [
+    "component",
+    "menciones",
+    "presentacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "function",
+   "name": "CommentText",
+   "filePath": "src/features/requests/components/mentions/CommentText.tsx",
+   "lineRange": [
+    8,
+    21
+   ],
+   "summary": "Componente exportado que muestra el comentario reemplazando menciones por nombres.",
+   "tags": [
+    "component",
+    "menciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/mentions/MentionList.tsx",
+   "type": "file",
+   "name": "MentionList.tsx",
+   "filePath": "src/features/requests/components/mentions/MentionList.tsx",
+   "summary": "Lista desplegable de sugerencias de menciones con navegación por teclado expuesta mediante forwardRef/useImperativeHandle.",
+   "tags": [
+    "component",
+    "menciones",
+    "teclado"
+   ],
+   "complexity": "simple",
+   "languageNotes": "Expone onKeyDown al plugin de sugerencias de TipTap a través de useImperativeHandle."
+  },
+  {
+   "id": "function:src/features/requests/components/mentions/MentionList.tsx:MentionList",
+   "type": "function",
+   "name": "MentionList",
+   "filePath": "src/features/requests/components/mentions/MentionList.tsx",
+   "lineRange": [
+    11,
+    62
+   ],
+   "summary": "Lista exportada de sugerencias de menciones con navegación por flechas y Enter.",
+   "tags": [
+    "component",
+    "menciones",
+    "teclado"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "type": "file",
+   "name": "ParticipantsPanel.tsx",
+   "filePath": "src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "summary": "Panel que lista los participantes de una solicitud o ticket y permite eliminarlos.",
+   "tags": [
+    "component",
+    "participantes",
+    "menciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "function",
+   "name": "ParticipantsPanel",
+   "filePath": "src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "lineRange": [
+    40,
+    133
+   ],
+   "summary": "Panel exportado de participantes con búsqueda y eliminación.",
+   "tags": [
+    "component",
+    "participantes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "type": "file",
+   "name": "mentionSuggestion.ts",
+   "filePath": "src/features/requests/components/mentions/mentionSuggestion.ts",
+   "summary": "Fábrica de la configuración de sugerencias de TipTap para menciones: filtra usuarios y monta MentionList en un popup.",
+   "tags": [
+    "utility",
+    "factory",
+    "menciones",
+    "tiptap"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/mentions/mentionSuggestion.ts:buildMentionSuggestion",
+   "type": "function",
+   "name": "buildMentionSuggestion",
+   "filePath": "src/features/requests/components/mentions/mentionSuggestion.ts",
+   "lineRange": [
+    12,
+    61
+   ],
+   "summary": "Construye la configuración suggestion de TipTap (items y render) para menciones de usuarios.",
+   "tags": [
+    "factory",
+    "menciones",
+    "tiptap"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:sanitizeHtml",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:RichText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:Section",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:AttachmentRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:SolviAttachmentsTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "file:src/features/requests/components/TransferTicketModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "target": "file:src/features/requests/hooks/useSolviActions.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:statusCls",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:flattenTaskListFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:flattenTemplateFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:matchCondition",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:applyTaskFilters",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:AssigneeCell",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:TaskTableRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:TasksTableSkeleton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "file:src/features/requests/components/BoardFilters.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/TasksTable.tsx",
+   "target": "file:src/features/requests/hooks/useTasksData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/TransferTicketModal.tsx",
+   "target": "function:src/features/requests/components/TransferTicketModal.tsx:TransferTicketModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/TransferTicketModal.tsx",
+   "target": "function:src/features/requests/components/TransferTicketModal.tsx:TransferTicketModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "target": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "target": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "target": "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "target": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "target": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/MentionList.tsx",
+   "target": "function:src/features/requests/components/mentions/MentionList.tsx:MentionList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/MentionList.tsx",
+   "target": "function:src/features/requests/components/mentions/MentionList.tsx:MentionList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "target": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "target": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "target": "function:src/features/requests/components/mentions/mentionSuggestion.ts:buildMentionSuggestion",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "target": "function:src/features/requests/components/mentions/mentionSuggestion.ts:buildMentionSuggestion",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "target": "file:src/features/requests/components/mentions/MentionList.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:notifySolviCommentActivity",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviAttachmentsTab",
+   "target": "function:src/features/requests/hooks/useSolviActions.ts:useSolviActionsTickets",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "target": "function:src/features/requests/hooks/useTasksData.ts:useTasksData",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TaskTableRow",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "target": "function:src/features/requests/components/mentions/mentionSuggestion.ts:buildMentionSuggestion",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "target": "function:src/features/requests/components/TransferTicketModal.tsx:TransferTicketModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "target": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "target": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal",
+   "target": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:BoardFilters",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/SolviTicketModal.tsx:RichText",
+   "target": "function:src/features/requests/components/SolviTicketModal.tsx:sanitizeHtml",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:applyTaskFilters",
+   "target": "function:src/features/requests/components/TasksTable.tsx:matchCondition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TaskTableRow",
+   "target": "function:src/features/requests/components/TasksTable.tsx:statusCls",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "target": "function:src/features/requests/components/TasksTable.tsx:flattenTaskListFields",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "target": "function:src/features/requests/components/TasksTable.tsx:flattenTemplateFields",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/TasksTable.tsx:TasksTable",
+   "target": "function:src/features/requests/components/TasksTable.tsx:applyTaskFilters",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

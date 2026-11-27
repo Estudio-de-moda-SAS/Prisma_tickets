@@ -1,0 +1,1045 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "type": "file",
+   "name": "StatsControlBar.tsx",
+   "filePath": "src/features/requests/components/stats/StatsControlBar.tsx",
+   "summary": "Barra de control superior del dashboard que combina el selector de sprints, el filtro de usuario y un badge con las fechas del sprint.",
+   "tags": [
+    "component",
+    "toolbar",
+    "estadisticas",
+    "filtros"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsControlBar.tsx:useAvailableYears",
+   "type": "function",
+   "name": "useAvailableYears",
+   "filePath": "src/features/requests/components/stats/StatsControlBar.tsx",
+   "lineRange": [
+    8,
+    18
+   ],
+   "summary": "Hook que deriva los años disponibles a partir de los sprints.",
+   "tags": [
+    "hook",
+    "sprint",
+    "memo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsControlBar.tsx:useSprintDatesBadge",
+   "type": "function",
+   "name": "useSprintDatesBadge",
+   "filePath": "src/features/requests/components/stats/StatsControlBar.tsx",
+   "lineRange": [
+    21,
+    30
+   ],
+   "summary": "Hook que calcula el texto del badge de fechas para los sprints seleccionados.",
+   "tags": [
+    "hook",
+    "sprint",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "type": "function",
+   "name": "StatsControlBar",
+   "filePath": "src/features/requests/components/stats/StatsControlBar.tsx",
+   "lineRange": [
+    33,
+    73
+   ],
+   "summary": "Barra de control exportada que integra SprintSelector y UserFilterDropdown.",
+   "tags": [
+    "component",
+    "toolbar",
+    "filtros"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "type": "file",
+   "name": "TeamDetailSection.tsx",
+   "filePath": "src/features/requests/components/stats/TeamDetailSection.tsx",
+   "summary": "Sección de detalle por equipo con KPIs comparativos (delta), paneles de distribución y el panel de resolutores.",
+   "tags": [
+    "component",
+    "equipos",
+    "estadisticas",
+    "kpi"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamKPIs",
+   "type": "function",
+   "name": "TeamKPIs",
+   "filePath": "src/features/requests/components/stats/TeamDetailSection.tsx",
+   "lineRange": [
+    9,
+    39
+   ],
+   "summary": "KPIs del equipo con deltas respecto al periodo anterior.",
+   "tags": [
+    "component",
+    "kpi",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/TeamDetailSection.tsx:DistributionPanels",
+   "type": "function",
+   "name": "DistributionPanels",
+   "filePath": "src/features/requests/components/stats/TeamDetailSection.tsx",
+   "lineRange": [
+    42,
+    66
+   ],
+   "summary": "Paneles de distribución con BarChart y BarRow.",
+   "tags": [
+    "component",
+    "distribucion",
+    "chart"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamDetailSection",
+   "type": "function",
+   "name": "TeamDetailSection",
+   "filePath": "src/features/requests/components/stats/TeamDetailSection.tsx",
+   "lineRange": [
+    69,
+    90
+   ],
+   "summary": "Sección exportada de detalle de equipo con KPIs, distribuciones y resolutores.",
+   "tags": [
+    "component",
+    "equipos",
+    "estadisticas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "type": "file",
+   "name": "UserFilterDropdown.tsx",
+   "filePath": "src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "summary": "Dropdown con búsqueda para filtrar estadísticas por usuario, agrupando miembros por subequipo y mostrando avatares.",
+   "tags": [
+    "component",
+    "filtros",
+    "usuarios",
+    "dropdown"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserOption",
+   "type": "function",
+   "name": "UserOption",
+   "filePath": "src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "lineRange": [
+    12,
+    27
+   ],
+   "summary": "Opción de usuario con avatar e iniciales.",
+   "tags": [
+    "component",
+    "opcion",
+    "usuarios"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "type": "function",
+   "name": "UserFilterDropdown",
+   "filePath": "src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "lineRange": [
+    30,
+    174
+   ],
+   "summary": "Dropdown exportado con búsqueda y agrupación de usuarios por subequipo.",
+   "tags": [
+    "component",
+    "dropdown",
+    "filtros"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "file",
+   "name": "statsFormat.ts",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "summary": "Helpers de formato y presentación del dashboard de estadísticas: avatares, iniciales, fechas es-CO, horas/días, colores de prioridad, deltas y año/número de sprint.",
+   "tags": [
+    "utility",
+    "formatting",
+    "estadisticas",
+    "sprint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:avatarBg",
+   "type": "function",
+   "name": "avatarBg",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    15,
+    15
+   ],
+   "summary": "Devuelve un gradiente CSS determinístico para el avatar según el id.",
+   "tags": [
+    "utility",
+    "avatar",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:fmtInits",
+   "type": "function",
+   "name": "fmtInits",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    16,
+    16
+   ],
+   "summary": "Obtiene las iniciales (máx. 2) de un nombre.",
+   "tags": [
+    "utility",
+    "formatting",
+    "texto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "function",
+   "name": "fmtDate",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    17,
+    17
+   ],
+   "summary": "Formatea una fecha como día y mes corto en locale es-CO.",
+   "tags": [
+    "utility",
+    "fecha",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:fmtHoras",
+   "type": "function",
+   "name": "fmtHoras",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    27,
+    35
+   ],
+   "summary": "Convierte horas decimales a texto \"Xh Ym\" (o \"—\" si es null).",
+   "tags": [
+    "utility",
+    "formatting",
+    "tiempo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:fmtDays",
+   "type": "function",
+   "name": "fmtDays",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    36,
+    36
+   ],
+   "summary": "Formatea una cantidad de días para mostrar.",
+   "tags": [
+    "utility",
+    "formatting",
+    "tiempo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:calcDelta",
+   "type": "function",
+   "name": "calcDelta",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    42,
+    59
+   ],
+   "summary": "Calcula la variación y dirección de tendencia entre dos valores.",
+   "tags": [
+    "utility",
+    "kpi",
+    "tendencia"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "function",
+   "name": "getSprintYear",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    62,
+    71
+   ],
+   "summary": "Extrae el año de un sprint a partir de sus datos.",
+   "tags": [
+    "utility",
+    "sprint",
+    "fecha"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:getSprintNumber",
+   "type": "function",
+   "name": "getSprintNumber",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    74,
+    77
+   ],
+   "summary": "Extrae el número de sprint del nombre.",
+   "tags": [
+    "utility",
+    "sprint",
+    "parsing"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/statsFormat.ts:scopeLabel",
+   "type": "function",
+   "name": "scopeLabel",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts",
+   "lineRange": [
+    80,
+    84
+   ],
+   "summary": "Genera la etiqueta de alcance (equipo, combinación o todos).",
+   "tags": [
+    "utility",
+    "label",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "type": "file",
+   "name": "useClickOutside.ts",
+   "filePath": "src/features/requests/components/stats/useClickOutside.ts",
+   "summary": "Hook que ejecuta un callback cuando se hace clic fuera del elemento referenciado, usado por los dropdowns de estadísticas.",
+   "tags": [
+    "hook",
+    "utility",
+    "event-handler",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/useClickOutside.ts:useClickOutside",
+   "type": "function",
+   "name": "useClickOutside",
+   "filePath": "src/features/requests/components/stats/useClickOutside.ts",
+   "lineRange": [
+    4,
+    13
+   ],
+   "summary": "Registra un listener en document y llama al handler si el clic ocurre fuera del ref.",
+   "tags": [
+    "hook",
+    "event-handler",
+    "dom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "type": "file",
+   "name": "useStatsAutoSelection.ts",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "summary": "Hook compuesto que sincroniza la selección automática de sprint, la validez del tab de equipo y el reseteo del filtro de usuario en el store de estadísticas.",
+   "tags": [
+    "hook",
+    "estadisticas",
+    "zustand",
+    "auto-seleccion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useAutoSelectSprint",
+   "type": "function",
+   "name": "useAutoSelectSprint",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "lineRange": [
+    10,
+    33
+   ],
+   "summary": "Auto-selecciona la primera vez el sprint activo (o el más reciente con fechas) y su año.",
+   "tags": [
+    "hook",
+    "sprint",
+    "auto-seleccion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useValidTeamTab",
+   "type": "function",
+   "name": "useValidTeamTab",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "lineRange": [
+    37,
+    54
+   ],
+   "summary": "Garantiza que el tab de equipo guardado siga siendo válido; \"global\" solo con 2+ equipos.",
+   "tags": [
+    "hook",
+    "equipos",
+    "validation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useResetUserOnTeamChange",
+   "type": "function",
+   "name": "useResetUserOnTeamChange",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "lineRange": [
+    57,
+    68
+   ],
+   "summary": "Resetea el filtro de usuario cuando cambia el tab de equipo.",
+   "tags": [
+    "hook",
+    "filtros",
+    "zustand"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "type": "function",
+   "name": "useStatsAutoSelection",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "lineRange": [
+    71,
+    75
+   ],
+   "summary": "Hook exportado que agrupa las tres sincronizaciones automáticas de la página de estadísticas.",
+   "tags": [
+    "hook",
+    "estadisticas",
+    "composicion"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:useAvailableYears",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:useSprintDatesBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "file:src/features/requests/components/stats/BarChart.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamKPIs",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "function:src/features/requests/components/stats/TeamDetailSection.tsx:DistributionPanels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamDetailSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "target": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamDetailSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserOption",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:avatarBg",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:avatarBg",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtInits",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtInits",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtHoras",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtHoras",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDays",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDays",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:calcDelta",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:calcDelta",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintNumber",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintNumber",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:scopeLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/statsFormat.ts",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:scopeLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "target": "function:src/features/requests/components/stats/useClickOutside.ts:useClickOutside",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "target": "function:src/features/requests/components/stats/useClickOutside.ts:useClickOutside",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "file:src/store/statsStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useAutoSelectSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useValidTeamTab",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useResetUserOnTeamChange",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:useAvailableYears",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:useSprintDatesBadge",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "target": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:useAvailableYears",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/StatsControlBar.tsx:StatsControlBar",
+   "target": "function:src/features/requests/components/stats/StatsControlBar.tsx:useSprintDatesBadge",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamKPIs",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamKPIs",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:calcDelta",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:DistributionPanels",
+   "target": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:DistributionPanels",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:BarRow",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamDetailSection",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutoresPanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/TeamDetailSection.tsx:TeamDetailSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserOption",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:avatarBg",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserOption",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtInits",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "target": "function:src/features/requests/components/stats/useClickOutside.ts:useClickOutside",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserFilterDropdown",
+   "target": "function:src/features/requests/components/stats/UserFilterDropdown.tsx:UserOption",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useAutoSelectSprint",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useAutoSelectSprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useValidTeamTab",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useStatsAutoSelection",
+   "target": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useResetUserOnTeamChange",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useAutoSelectSprint",
+   "target": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useValidTeamTab",
+   "target": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/useStatsAutoSelection.ts:useResetUserOnTeamChange",
+   "target": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "target": "file:src/store/statsStore.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

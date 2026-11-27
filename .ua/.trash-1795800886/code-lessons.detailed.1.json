@@ -1,0 +1,409 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-27T12:00:00.000Z",
+  "files": {
+    "README.md": {
+      "overview": "Documento de entrada del proyecto PRISMA, el sistema interno ITSM de Estudio de Moda S.A.S. Describe qué hace la aplicación, el stack (React + TypeScript + Vite en el frontend, Supabase con Edge Functions en Deno en el backend, Microsoft Entra ID para autenticación) y cómo instalar, desarrollar, documentar y desplegar. Es el mapa del recorrido guiado: el paso 1 lo usa para presentar la arquitectura que los pasos siguientes detallan archivo por archivo.",
+      "sections": [
+        {
+          "title": "Presentación y tabla de contenido",
+          "lineRange": [1, 25],
+          "explanation": "Define PRISMA como un sistema de gestión de solicitudes con tablero Kanban que centraliza lo que los departamentos (clientes internos) piden a los equipos de tecnología, y aclara que está **en producción**. La cita resume el stack full-stack en una línea. La tabla de contenido enlaza cada sección mediante anclas de Markdown.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Características y stack",
+          "lineRange": [26, 71],
+          "explanation": "Lista las funcionalidades clave: Kanban con dnd-kit y actualizaciones optimistas, tickets con identificadores `TCK-AÑO-LETRA-NÚMERO`, revisión con el cliente, sprints, notificaciones, automatizaciones, ETL desde Excel, integración SOLVI y PWA. Luego desglosa el stack: TanStack Query para datos de servidor, Zustand para estado local, React Router v6, Supabase (PostgreSQL, Edge Functions, Storage) y Azure Static Web Apps. Sirve como índice de las piezas que aparecen en los pasos posteriores del tour.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Arquitectura de punto único",
+          "lineRange": [72, 93],
+          "explanation": "Explica el principio central: el frontend **nunca** accede directamente a la base de datos y toda operación pasa por `apiClient.call(action, payload)` hacia una única Edge Function. Esa función verifica el JWT y aplica reglas de negocio y permisos antes de tocar PostgreSQL, Storage o el correo. El diagrama ASCII anticipa lo que se verá en `src/lib/apiClient.ts` (paso 5) y en el router del backend (paso 9).",
+          "tourOrder": 1
+        },
+        {
+          "title": "Estructura del proyecto",
+          "lineRange": [94, 123],
+          "explanation": "Árbol de carpetas comentado de `src/` (auth, components, features/requests, graph, lib, pages, store, styles, types) y de `supabase/functions/api/`. Es útil para ubicar rápidamente cada capa: hooks y servicios viven bajo `features/requests`, el estado local bajo `store` y la Edge Function bajo `supabase/functions/api`.",
+          "tourOrder": 1
+        },
+        {
+          "title": "Instalación y desarrollo",
+          "lineRange": [124, 172],
+          "explanation": "Requisitos (Node, Supabase CLI, proyecto Supabase y App Registration en Entra ID), pasos de clonado e instalación y un ejemplo **orientativo** de `.env.local` con variables `VITE_*`. La advertencia sobre la clave `service_role` es importante: las variables `VITE_*` se embeben en el bundle, por lo que solo pueden contener valores públicos. Para desarrollo basta `npm run dev` y `npx tsc --noEmit` para verificar tipos."
+        },
+        {
+          "title": "Documentación técnica y despliegue",
+          "lineRange": [173, 220],
+          "explanation": "La documentación se genera con TypeDoc en dos etapas porque frontend y Edge Function usan configuraciones de TypeScript distintas; luego se fusionan en un sitio HTML. El despliegue tiene un orden obligatorio: migración SQL, `supabase functions deploy api` y build del frontend. Se insiste en ejecutar `NOTIFY pgrst, 'reload schema';` tras añadir columnas para que PostgREST refresque su caché de esquema."
+        },
+        {
+          "title": "Convenciones, roles y licencia",
+          "lineRange": [221, 247],
+          "explanation": "Recoge reglas prácticas del equipo: columnas SQL en PascalCase entre comillas, actualizaciones optimistas obligatorias, imports `.ts` explícitos en Deno, normalizar timestamps sin `Z`, comprimir adjuntos y guardar solo rutas con URLs firmadas, y snapshots inmutables de plantillas. La tabla de roles (`admin`, `ti_member`, `client`) coincide con el tipo `AppRole` de `src/auth/roles.ts` (paso 3).",
+          "tourOrder": 1
+        }
+      ]
+    },
+    "src/main.tsx": {
+      "overview": "Punto de entrada real de la SPA. Aplica el tema guardado antes del primer render, configura el `QueryClient` de TanStack Query y monta `App` envuelto en `BrowserRouter`, `AuthProvider`, `GraphServicesProvider` y `QueryClientProvider`. Es el primer archivo del paso 2 del tour y define el orden en que los servicios compartidos quedan disponibles para el resto de la aplicación.",
+      "sections": [
+        {
+          "title": "Imports y depuración temporal",
+          "lineRange": [1, 11],
+          "explanation": "Importa React, React Router, TanStack Query, los dos providers propios y la hoja de estilos global. Las líneas 9-11 exponen el cliente de Supabase en `window.__sb`, marcado explícitamente como **TEMPORAL** para pruebas de la \"Fase 1\": es un atajo de depuración que el propio comentario pide quitar, ya que deja el cliente accesible desde la consola del navegador.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Tema antes del render",
+          "lineRange": [12, 21],
+          "explanation": "Una IIFE lee `prisma-theme` de `localStorage` (el formato `{ state: { theme } }` corresponde a un store de Zustand con `persist`) y valida que sea `'dark'` o `'light'`, cayendo en `'light'` ante cualquier error. Se fija `data-theme` en `<html>` **antes** de montar React para evitar el parpadeo de tema incorrecto (FOUC) en la primera pintura.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Configuración del QueryClient",
+          "lineRange": [22, 34],
+          "explanation": "`staleTime: 0` hace que los datos se consideren obsoletos de inmediato, así que React Query revalida al remontar o al recuperar el foco. Las queries reintentan una vez con backoff exponencial limitado a 10 s, y las mutaciones no reintentan (`retry: 0`) para no repetir escrituras con efectos secundarios en el backend.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Montaje y orden de providers",
+          "lineRange": [35, 51],
+          "explanation": "Verifica que exista `#root` y lanza un error explícito si falta. El árbol de providers importa: `BrowserRouter` va por fuera porque `App` usa hooks de ruta; `AuthProvider` precede a `GraphServicesProvider` porque este último consume `useAuth().getToken`; y `QueryClientProvider` queda justo alrededor de `App`, donde viven los hooks de datos. `StrictMode` duplica efectos en desarrollo para detectar efectos no idempotentes.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "src/App.tsx": {
+      "overview": "Declara todo el enrutado de la SPA con React Router: rutas públicas, onboarding, las rutas protegidas dentro de `AppLayout` y un sistema de overlays modales para tickets. Define los guards (`RequireAuth`, `RequireOnboarding`, `RequireTI`, `RequireStats`, `RequireAdmin`) que combinan la sesión de `AuthProvider` con los roles de `roles.ts`. Forma parte del paso 2 del tour y conecta directamente con el paso 3 (autenticación y roles).",
+      "sections": [
+        {
+          "title": "Imports de páginas y auth",
+          "lineRange": [1, 26],
+          "explanation": "Importa los hooks de React Router, `useAuth`, las utilidades de redirección post-login de `supabaseAuth`, los helpers de rol y todas las páginas. `useMyBoardTeams` se trae aquí porque el guard de estadísticas necesita saber si el usuario tiene algún Kanban asignado.",
+          "tourOrder": 2
+        },
+        {
+          "title": "ScrollToSection",
+          "lineRange": [27, 54],
+          "explanation": "Componente sin UI que lee el parámetro `?section=` de la URL, espera 120 ms a que la página pinte y hace scroll suave hasta el elemento con ese `id`. Además lo resalta con un `box-shadow` temporal de 1,2 s y restaura la transición original. Devuelve una función de limpieza que cancela el timer si la búsqueda cambia antes de tiempo."
+        },
+        {
+          "title": "Guards de acceso",
+          "lineRange": [56, 101],
+          "explanation": "Cada guard devuelve `null` mientras el estado de auth no está listo, para evitar redirecciones prematuras. `RequireAuth` guarda la ruta pedida con `savePostLoginRedirect` antes de mandar a `/login`; `RequireOnboarding` envía a `/onboarding` a usuarios con `Is_New`; `RequireTI` y `RequireAdmin` se basan en `useRole()`. `RequireStats` implementa la \"Opción B\": admin y miembros de TI siempre, y cualquier otro usuario si tiene al menos un Kanban asignado.",
+          "tourOrder": 3
+        },
+        {
+          "title": "IndexRedirect post-login",
+          "lineRange": [103, 111],
+          "explanation": "Supabase redirige al `origin` tras el login, no al enlace original. Este componente, montado en la ruta índice, recupera con `consumePostLoginRedirect()` la ruta que guardó `RequireAuth` y navega a ella (o a `/home`) con `replace`, para que el botón atrás no vuelva a la raíz.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Overlays de ticket",
+          "lineRange": [113, 140],
+          "explanation": "Implementa el patrón de **rutas modales** de React Router: cuando la navegación trae `state.backgroundLocation`, el ticket se renderiza encima de la página de fondo. `SolviTicketOverlay` valida que el id sea numérico y al cerrar vuelve atrás si hay fondo o navega al listado si se entró por enlace directo. `TicketOverlayRoutes` agrupa las rutas que se pintan como overlay, sin `AppLayout` porque el modal usa `position: fixed`."
+        },
+        {
+          "title": "Árbol de rutas principal",
+          "lineRange": [142, 233],
+          "explanation": "`<Routes location={state?.backgroundLocation || location}>` es la clave del patrón modal: con fondo, el router sigue pintando la página anterior (BoardPage o TasksPage quedan montadas) mientras el overlay muestra el ticket. Las rutas de la app se anidan en un layout protegido por `RequireAuth` y `RequireOnboarding` que renderiza `AppLayout`; dentro, cada ruta aplica su guard de rol. Las rutas de ticket también existen dentro del layout para soportar enlaces directos, y cualquier ruta desconocida redirige a `/`.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "src/components/layout/AppLayout.tsx": {
+      "overview": "Layout común de todas las rutas autenticadas: compone `Sidebar`, `Topbar`, banners de anuncios y notificaciones alrededor del `<Outlet />` de React Router, más elementos flotantes como el temporizador y el aviso de nueva versión. También calcula el título de la página y redirige al onboarding si el usuario actual es nuevo. Es la tercera pieza del esqueleto descrito en el paso 2 del tour.",
+      "sections": [
+        {
+          "title": "Imports y títulos por ruta",
+          "lineRange": [1, 22],
+          "explanation": "Importa los componentes hermanos del layout y dos hooks: `useBoardTheme` (estilo del board) y `useCurrentUser` (usuario vía React Query). `TITULOS` es un mapa simple de pathname exacto a título del `Topbar`; las rutas con parámetros como `/board/:equipo` no aparecen y caen en el título por defecto.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Lógica del layout",
+          "lineRange": [24, 38],
+          "explanation": "Aplica el tema del board, resuelve el título con `'Prisma Tickets'` como fallback y detecta rutas *full-bleed* (`/tasks/...` y `/integracion/<x>/tickets`) mediante expresiones regulares para que ocupen todo el ancho. El efecto redirige a `/onboarding` si `currentUser.Is_New`, duplicando a propósito la protección de `RequireOnboarding` en `App.tsx` pero basada en los datos de React Query.",
+          "tourOrder": 2
+        },
+        {
+          "title": "Estructura visual",
+          "lineRange": [40, 58],
+          "explanation": "Renderiza el sidebar y una columna principal con `Topbar`, el prompt de permisos de notificación, el banner de anuncios y el `<main>` con el `<Outlet />` donde React Router inserta la página activa. Fuera del layout quedan `#portal-root` (destino de portales para modales), `AnnouncementModal`, `VersionUpdateBanner` (relacionado con el `version.json` del build) y `FloatingTimer`, que así persisten al navegar entre páginas.",
+          "tourOrder": 2
+        }
+      ]
+    },
+    "src/auth/AuthProvider.tsx": {
+      "overview": "Provider de autenticación central de la SPA. Unifica tres modos según `config.ts`: bypass de desarrollo, el flujo clásico con MSAL y el flujo nuevo con Supabase Auth usando Azure como proveedor. Además resuelve el usuario de base de datos (`dbUser`) mediante el handler `upsertUserByEntraId`, bloquea a usuarios inactivos con una pantalla dedicada y expone todo vía el hook `useAuth`. Es el archivo principal del paso 3 del tour.",
+      "sections": [
+        {
+          "title": "Imports y tipo AuthCtx",
+          "lineRange": [1, 38],
+          "explanation": "Importa las funciones de `msal.ts` y `supabaseAuth.ts`, el `apiClient` y el cliente de Supabase. `AuthCtx` es el contrato del contexto: flags `ready` (sesión resuelta) y `dbReady` (usuario de BD resuelto), `dbError`, la cuenta, el usuario de BD y las acciones `getToken`, `signIn`, `signOut` y `refreshDbUser`. `CONTACT_EMAIL` es un placeholder pendiente de definir, según el propio comentario.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Datos ficticios de bypass",
+          "lineRange": [40, 65],
+          "explanation": "`MOCK_ACCOUNT` y `MOCK_DB_USER` se usan cuando `config.BYPASS_AUTH` está activo, para desarrollar la UI sin Azure. El usuario ficticio es `admin` con `Department_ID: 7`, el mismo id de TI que usa `roles.ts`, de modo que en bypass se ve la aplicación con acceso completo."
+        },
+        {
+          "title": "Pantalla de acceso suspendido",
+          "lineRange": [67, 201],
+          "explanation": "`BlockedScreen` es una pantalla a pantalla completa con estilos inline (fondo hexagonal, tarjeta, enlace `mailto:` y botón de cerrar sesión). Usa estilos inline con variables CSS y valores de respaldo para no depender de que las hojas de estilo del resto de la app estén cargadas. Se muestra en lugar de toda la app cuando el usuario está inactivo."
+        },
+        {
+          "title": "Contexto y carga del usuario BD",
+          "lineRange": [203, 229],
+          "explanation": "Crea el contexto con valor inicial `null` para detectar uso fuera del provider. `loadDbUser` (MSAL) y `loadDbUserFromSupabase` invocan el mismo handler `upsertUserByEntraId`, que crea o actualiza el usuario en BD. En el camino Supabase se reconstruye el `entraId` con formato `<oid>.<tid>` para que coincida con lo que guardaba MSAL, reutilizando así los registros existentes.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Estado e inicialización bifurcada",
+          "lineRange": [232, 307],
+          "explanation": "El estado arranca listo cuando hay bypass. El efecto inicial se bifurca: con `USE_SUPABASE_AUTH` se suscribe a `onAuthStateChange` y además lee la sesión inicial con `getSession()`; si el evento es `TOKEN_REFRESHED` sin `provider_token`, intenta recuperarlo en segundo plano porque Supabase no lo reemite al refrescar. El camino `[MSAL-LEGACY]` inicializa MSAL, carga el usuario y marca bloqueado si `Is_Active === false`. La variable `cancel` evita actualizar estado tras desmontar.",
+          "tourOrder": 3
+        },
+        {
+          "title": "syncSupabaseSession con deduplicación",
+          "lineRange": [309, 384],
+          "explanation": "Sincroniza el provider con una sesión de Supabase. `loadedUserIdRef` evita recargar el usuario en cada refresh de token o cambio de foco, y `inFlightRef` deduplica las dos llamadas concurrentes (evento `INITIAL_SESSION` y `getSession()` manual) que de otro modo harían el upsert dos veces. Se fabrica un `AccountInfo` mínimo para mantener el shape del contexto, y si faltan los claims `oid/tid` se lanza un error explícito en vez de dejar la app cargando indefinidamente.",
+          "tourOrder": 3
+        },
+        {
+          "title": "signIn, signOut y getToken",
+          "lineRange": [386, 462],
+          "explanation": "Las tres acciones siguen el mismo patrón de tres ramas: bypass, Supabase y `[MSAL-LEGACY]`. En Supabase, `signIn` solo lanza el redirect OAuth y deja que `onAuthStateChange` complete el trabajo al volver. Ojo: `getToken` devuelve el **provider_token de Microsoft** (para Microsoft Graph), no el JWT de Supabase; ese otro token lo obtiene `apiClient` directamente para llamar a la Edge Function.",
+          "tourOrder": 3
+        },
+        {
+          "title": "refreshDbUser y valor del contexto",
+          "lineRange": [464, 503],
+          "explanation": "`refreshDbUser` permite volver a pedir el usuario (por ejemplo tras completar el onboarding) usando la misma bifurcación por flag. El valor del contexto se memoiza con `useMemo` para no re-renderizar a todos los consumidores en cada render del provider. Si `blocked` es verdadero, se devuelve `BlockedScreen` en lugar de los hijos, sin tocar el router.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Hook useAuth",
+          "lineRange": [505, 511],
+          "explanation": "Hook de acceso al contexto que lanza un error claro si se usa fuera de `<AuthProvider>`. Este patrón evita tener que comprobar `null` en cada consumidor y lo usan, entre otros, los guards de `App.tsx`, `roles.ts` y `GraphServicesProvider`.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "src/auth/msal.ts": {
+      "overview": "Encapsula la librería `@azure/msal-browser` para el flujo de autenticación clásico (marcado como `[MSAL-LEGACY]` en el resto del código). Crea la instancia `PublicClientApplication`, gestiona la cuenta activa, el login por popup o redirect, la obtención de tokens con escalado silent → popup → redirect y el logout. En el paso 3 del tour es uno de los dos flujos de autenticación que `AuthProvider` unifica.",
+      "sections": [
+        {
+          "title": "Variables de entorno y cliente",
+          "lineRange": [1, 48],
+          "explanation": "Lee `VITE_AZURE_CLIENT_ID` y `VITE_AZURE_TENANT_ID` y lanza un error al cargar el módulo si faltan, con lo que el fallo es inmediato y evidente. La instancia `msal` usa la autoridad del tenant, redirige al `origin`, guarda la caché en `localStorage` (la sesión sobrevive entre pestañas) y solo registra mensajes de log que contienen `msal`, sin PII.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Scopes e inicialización",
+          "lineRange": [50, 86],
+          "explanation": "`SCOPES` centraliza los permisos, incluido un scope propio `api://.../access_as_users` para la API expuesta en Entra ID. `clearInteractionInProgress` borra la clave `interaction.status` que MSAL deja en `sessionStorage` cuando un popup falla; sin ello el siguiente intento lanza `interaction_in_progress`. `initMSAL` es idempotente gracias al flag `initialized` y procesa el retorno de redirect antes de registrar eventos.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Cuenta activa",
+          "lineRange": [88, 104],
+          "explanation": "Tres helpers pequeños que toman la cuenta activa o, si no la hay, la primera cuenta en caché. `ensureActiveAccount` además la fija como activa, lo que es necesario para que `acquireTokenSilent` sepa con qué cuenta trabajar."
+        },
+        {
+          "title": "Login popup y redirect",
+          "lineRange": [106, 144],
+          "explanation": "`ensureLoginPopup` intenta el popup y, si falla (bloqueado por el navegador, problemas de COOP, etc.), limpia el flag de interacción y cae a `loginRedirect`. Tras iniciar un redirect devuelve `new Promise(() => {})`, una promesa que nunca se resuelve, porque la página está a punto de navegar y no tiene sentido continuar. `ensureLogin` selecciona el modo con `'redirect'` por defecto.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Obtención de tokens",
+          "lineRange": [146, 205],
+          "explanation": "`getAccessToken` sigue una escalera: si no hay cuenta, hace login; luego intenta `acquireTokenSilent`. Solo si el error es `InteractionRequiredAuthError` pasa a popup y, si este falla, a redirect. Con `forceSilent` se relanza el error sin interacción, útil para llamadas en segundo plano. Es la función que usa `apiClient` en el modo legacy.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Logout y eventos",
+          "lineRange": [207, 248],
+          "explanation": "`logout` hace un `logoutRedirect` que vuelve a `/login`. `wireEventsOnce` registra un único callback que fija la cuenta activa en `LOGIN_SUCCESS` y registra advertencias en fallos de login, token o logout. `onMsalEvent` permite a otros módulos suscribirse a eventos adicionales."
+        }
+      ]
+    },
+    "src/auth/supabaseAuth.ts": {
+      "overview": "Implementa el flujo de autenticación nuevo: login con Supabase Auth usando Azure como proveedor OAuth, activo cuando `config.USE_SUPABASE_AUTH` es `true`. Su complejidad principal es mantener vivo el `provider_token` de Microsoft (necesario para Graph), que Supabase solo entrega en el login inicial, mediante caché, canje silencioso del refresh token y reautenticación con `prompt=none`. También reconstruye el `entraId` del usuario y gestiona la redirección post-login; pertenece al paso 3 del tour.",
+      "sections": [
+        {
+          "title": "Scopes y caché del token Graph",
+          "lineRange": [1, 40],
+          "explanation": "Define los scopes pedidos a Azure, incluidos `offline_access` (para obtener refresh token) y `Sites.ReadWrite.All` (SharePoint, usado por la integración SOLVI). `graphTokenCache` guarda en memoria el access token de Graph obtenido por refresh silencioso, con un margen de 60 s antes del vencimiento para no devolver tokens a punto de expirar.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Refresh token de Microsoft",
+          "lineRange": [42, 108],
+          "explanation": "Como Azure solo entrega `provider_refresh_token` en el intercambio inicial, se persiste en `localStorage`. `refreshProviderTokenSilently` lo canjea con un POST directo al endpoint `/oauth2/v2.0/token` de Azure AD (`grant_type=refresh_token`), sin redirect ni iframe. Si responde 400/401 se borra el token para no reintentar en vano, y como Azure rota el refresh token en cada canje, se guarda el nuevo.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Login OAuth con Azure",
+          "lineRange": [110, 132],
+          "explanation": "`signInWithSupabaseAzure` llama a `supabase.auth.signInWithOAuth` con el proveedor `azure`. En modo normal fuerza `prompt=select_account` para que el usuario elija cuenta explícitamente si tiene varias activas; en modo `silent` usa `prompt=none` con `login_hint` y vuelve a la URL actual, renovando la sesión SSO sin pedir credenciales.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Redirección post-login",
+          "lineRange": [134, 151],
+          "explanation": "Guarda en `sessionStorage` la ruta a la que quería ir el usuario antes del login y la consume una sola vez después. Lo usan `RequireAuth` e `IndexRedirect` en `App.tsx`, ya que Supabase siempre regresa al `origin` tras autenticar."
+        },
+        {
+          "title": "Reautenticación silenciosa",
+          "lineRange": [153, 194],
+          "explanation": "`trySilentGraphReauth` lanza un login `prompt=none` para recuperar el `provider_token`, pero solo si no se intentó en los últimos 30 s: el flag con timestamp en `sessionStorage` evita bucles de redirect cuando no hay sesión SSO o falta consentimiento. `getSupabaseSession` es un envoltorio que lanza si Supabase devuelve error.",
+          "tourOrder": 3
+        },
+        {
+          "title": "getSupabaseProviderToken",
+          "lineRange": [196, 230],
+          "explanation": "Función clave que devuelve el token OAuth de Microsoft para Graph (no el JWT de Supabase). Aplica una cadena de respaldo: `provider_token` de la sesión → caché en memoria → canje silencioso del refresh token → redirect `prompt=none` → error pidiendo volver a iniciar sesión. Aprovecha cada llamada para persistir el `provider_refresh_token` si viene en la sesión.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Logout y entraId",
+          "lineRange": [232, 271],
+          "explanation": "`signOutSupabase` limpia en un `finally` el refresh token y la caché de Graph, para que el siguiente usuario del mismo navegador no herede credenciales. `getSupabaseEntraId` lee los claims `oid` y `tid` de `user_metadata.custom_claims` y construye `<oid>.<tid>`, el mismo formato que `TBL_Users.User_EntraID` tenía con MSAL; devuelve `null` si faltan.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "src/auth/roles.ts": {
+      "overview": "Traduce el usuario de base de datos en un rol de aplicación (`admin`, `ti_member` o `client`) a partir de `User_Role` y `Department_ID`, y expone guards de conveniencia que deciden qué secciones ve cada usuario. Es la fuente de verdad del control de acceso en el frontend y la consumen los guards de rutas de `App.tsx`. Cierra el paso 3 del tour.",
+      "sections": [
+        {
+          "title": "Reglas y tipos de rol",
+          "lineRange": [1, 21],
+          "explanation": "El comentario de cabecera documenta las reglas: admin de TI con acceso completo, miembro de TI con acceso al board sin configuración y el resto solo con inicio y nueva solicitud. `ResolvedRole` es una unión discriminada por `role` que además incluye `teamCode`, garantizado `null` para clientes. `TI_DEPARTMENT_ID = 7` está codificado en duro.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Hook useRole",
+          "lineRange": [23, 38],
+          "explanation": "Lee `dbUser` desde `useAuth` y, si aún no existe, devuelve `client` como valor más restrictivo. Un detalle importante: ser `admin` **solo** cuenta si además el usuario pertenece al departamento de TI; un `User_Role = 'admin'` de otro departamento se resuelve como `client`.",
+          "tourOrder": 3
+        },
+        {
+          "title": "Guards de conveniencia",
+          "lineRange": [40, 57],
+          "explanation": "Funciones puras que reciben el rol resuelto: `canSeeBoard` (admin o miembro TI), `canSeeConfig` y `canSeeAutomations` (solo admin) y `canSeeStats`, que permite además el acceso a cualquier usuario con al menos un Kanban asignado mediante el parámetro `hasKanbanTeams`. Al ser puras, son fáciles de reutilizar en rutas, menús o tests.",
+          "tourOrder": 3
+        }
+      ]
+    },
+    "src/features/requests/types.ts": {
+      "overview": "Define el modelo de dominio de las solicitudes: el tipo `Request`, sus piezas (asignados, etiquetas, cierre, feedback del cliente), los payloads de cada operación (crear, mover, actualizar, cerrar, enviar feedback) y constantes como equipos, columnas Kanban y el mapeo prioridad-score. Es el archivo más referenciado del proyecto y el vocabulario común de hooks, servicios y componentes; protagoniza el paso 4 del tour.",
+      "sections": [
+        {
+          "title": "Equipos y columnas Kanban",
+          "lineRange": [1, 44],
+          "explanation": "`Equipo` y `KanbanColumna` son simplemente `string`, lo que permite columnas y equipos configurables desde la BD, mientras que `EQUIPOS` y `KANBAN_COLUMNAS` aportan etiquetas legibles para los valores conocidos. `COLUMNAS_BOARD` fija el orden visual del tablero y excluye `sin_categorizar`.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Columnas de cierre y finales",
+          "lineRange": [46, 67],
+          "explanation": "`COLUMNAS_CIERRE` agrupa las columnas a partir de `en_revision_qas`; el comentario aclara que solo esa pide evidencia de cierre y que las posteriores ya tienen un cierre existente. `COLUMNAS_FINALES` (`hecho`, `historial`) determina si un ticket está cerrado: el frontend deriva el estado de la columna, no de `fechaCierre`. Se usan `Set` para comprobaciones `has()` en tiempo constante.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Prioridades y score",
+          "lineRange": [69, 93],
+          "explanation": "`Prioridad` es una unión literal cerrada con etiquetas en `PRIORIDADES`. Los mapas `SCORE_TO_PRIORIDAD` y `PRIORIDAD_TO_SCORE` traducen entre la prioridad y un puntaje no lineal (1, 2, 4, 6), que pondera más las prioridades altas en cálculos como el cumplimiento de sprint.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Cierre y feedback del cliente",
+          "lineRange": [95, 135],
+          "explanation": "`ClosureAttachment` describe cada adjunto con su ruta en Storage y una `signedUrl` opcional generada en el servidor, siguiendo la convención de guardar solo la ruta. `CierreInfo` incluye `closureType` (`new`, `reuse`, `skip`) además de campos `attachment*` que parecen conservarse por compatibilidad. `ClientFeedback` modela la aprobación o rechazo en la columna Cliente Review.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Tipos auxiliares",
+          "lineRange": [137, 172],
+          "explanation": "Tipos pequeños para asignados, etiquetas y plantillas. `RequestExtraFields` es una unión discriminada por `templateType`: la variante `crm` exige `storeName` y la `default` no lleva campos, de modo que TypeScript obliga a comprobar el tipo antes de acceder a datos específicos."
+        },
+        {
+          "title": "Modelo principal Request",
+          "lineRange": [174, 258],
+          "explanation": "El tipo central, organizado en bloques comentados: identidad, jerarquía (`parentId` para sub-solicitudes), estado del board, prioridad, personas, relaciones de equipo, labels, sprint, fechas, horas, confidencialidad y datos legacy de migraciones. Mantiene pares nombre/id (`equipo`/`equipoIds`, `categoria`/`labelIds`) para mostrar y editar sin consultas extra. `templateSchemaSnapshot` refleja la copia inmutable de la plantilla al crear el ticket, y los campos opcionales (`childCount`, `criteriaSummary`, `cierreInfo`) solo vienen en algunas respuestas.",
+          "tourOrder": 4
+        },
+        {
+          "title": "Payloads de operaciones",
+          "lineRange": [260, 326],
+          "explanation": "Un tipo por operación, como subraya la lección del paso 4: `CrearRequestPayload` exige todos los datos de creación, incluido `acceptanceCriteria` con al menos un criterio (el comentario está duplicado); `MoverRequestPayload` solo identifica columna; `ActualizarRequestPayload` hace todo opcional salvo el `id`; `CerrarRequestPayload` transporta objetos `File` y el modo de evidencia. Esto deja explícito qué necesita cada acción enviada a la Edge Function.",
+          "tourOrder": 4
+        },
+        {
+          "title": "BoardData e historial",
+          "lineRange": [328, 345],
+          "explanation": "`BoardData` agrupa solicitudes por columna, el formato natural para pintar el Kanban. `HistoryAction` enumera los tipos de evento auditados (creación, cambios de campo, movimientos, cierres, criterios) y `RequestHistoryEntry` registra valor anterior y nuevo, metadatos y el actor del cambio."
+        }
+      ]
+    },
+    "src/config.ts": {
+      "overview": "Objeto de configuración global con los flags que cambian el comportamiento de la app: datos mock, bypass de autenticación, board por defecto, migración de MSAL a Supabase Auth y lecturas directas. Es el segundo archivo más importado y, junto con `types.ts`, aparece en el paso 4 del tour; sus flags bifurcan la lógica de `AuthProvider`, `apiClient` y `GraphServicesProvider`.",
+      "sections": [
+        {
+          "title": "Flags de configuración",
+          "lineRange": [1, 21],
+          "explanation": "`USE_MOCK` y `BYPASS_AUTH` están en `false` y existen para desarrollo sin backend o sin login de Azure. `DEFAULT_BOARD_ID` es el board que usa `GraphServicesProvider` si no recibe otro. `USE_SUPABASE_AUTH: true` activa el flujo nuevo de autenticación (el comentario lo describe como aditivo, pero hoy ya está encendido), y `USE_DIRECT_READS` no tiene comentario en este archivo. `as const` convierte los valores en literales de solo lectura; al ser constantes de código, cambiarlos requiere recompilar.",
+          "tourOrder": 4
+        }
+      ]
+    },
+    "src/lib/apiClient.ts": {
+      "overview": "Cliente HTTP único del frontend: todas las operaciones de negocio se envían a la Edge Function `api` de Supabase como `{ action, payload }` con un token Bearer. Elige el token según `config.USE_SUPABASE_AUTH` (JWT de sesión de Supabase o token de MSAL). Materializa el principio de punto único de entrada del README y abre el paso 5 del tour.",
+      "sections": [
+        {
+          "title": "Imports y URL de la función",
+          "lineRange": [1, 9],
+          "explanation": "El comentario de cabecera resume la regla arquitectónica: el frontend nunca habla directamente con Supabase para operaciones de negocio. La URL se construye con `VITE_SUPABASE_URL` más `/functions/v1/api`, la ruta estándar de invocación de Edge Functions.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Selección del token",
+          "lineRange": [11, 24],
+          "explanation": "Con el flag de Supabase activo, `getAuthToken` envía el `access_token` de la sesión de Supabase (un JWT de Supabase), no el `provider_token` de Microsoft que `AuthProvider.getToken` reserva para Graph. En modo `[MSAL-LEGACY]` pide un token a MSAL permitiendo interacción por popup. Si no hay sesión de Supabase lanza un error en vez de llamar sin credenciales.",
+          "tourOrder": 5
+        },
+        {
+          "title": "callApi y exportación",
+          "lineRange": [26, 58],
+          "explanation": "`callApi<T>` hace un POST JSON con `{ action, payload }`, lee la respuesta como texto y, si el estado no es OK, lanza un error que incluye la acción, el código y el cuerpo, lo que facilita depurar. En caso de éxito desempaqueta el sobre `{ data: T }`. El genérico `T` lo indica quien llama (p. ej. `apiClient.call<UserProfile>(...)`), por lo que el tipado es una aserción, no una validación en tiempo de ejecución. Se exporta como objeto `apiClient` con un único método `call`.",
+          "tourOrder": 5
+        }
+      ]
+    },
+    "src/graph/GraphServicesProvider.tsx": {
+      "overview": "Provider que construye e inyecta en contexto los servicios de la aplicación: `GraphRest` para Microsoft Graph (usuarios, organización, correo) y `SupabaseRequestsService` para las solicitudes. Depende de `useAuth().getToken`, por eso se monta dentro de `AuthProvider` en `main.tsx`. Forma parte del paso 5 del tour junto con `apiClient.ts`.",
+      "sections": [
+        {
+          "title": "Tipo GraphServices y re-export",
+          "lineRange": [1, 22],
+          "explanation": "`GraphServices` declara los dos servicios disponibles; el nombre del provider es histórico, ya que `Requests` apunta a Supabase y no a Graph. El contexto y el hook `useGraphServices` viven en `./useGraphServices` y aquí se re-exportan para no romper los imports existentes que apuntan a este archivo, una técnica habitual para mover código sin tocar a sus consumidores.",
+          "tourOrder": 5
+        },
+        {
+          "title": "Provider memoizado",
+          "lineRange": [24, 56],
+          "explanation": "Acepta un `boardId` opcional con `config.DEFAULT_BOARD_ID` por defecto. `GraphRest` recibe la función `getToken` (no un token fijo), así obtiene un token vigente en cada petición. Ambos `useMemo` mantienen instancias estables mientras no cambien `getToken` o `boardId`, evitando recrear servicios y re-renderizar a los consumidores en cada render.",
+          "tourOrder": 5
+        }
+      ]
+    }
+  }
+}

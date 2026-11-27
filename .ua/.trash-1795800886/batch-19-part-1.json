@@ -1,0 +1,1537 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "file",
+   "name": "useBoardMetadata.ts",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "summary": "Hooks de React Query para los metadatos del tablero: equipos, etiquetas y plantillas de solicitud, con mutaciones optimistas vía la Edge Function. Incluye helpers que mapean plantillas de BD a definiciones de UI y reemplazan el antiguo registry.ts.",
+   "tags": [
+    "hook",
+    "react-query",
+    "plantillas",
+    "etiquetas",
+    "optimistic-update"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa onMutate/setQueryData de TanStack Query para actualizaciones optimistas con rollback en onError."
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:mapBoardTemplateToDefinition",
+   "type": "function",
+   "name": "mapBoardTemplateToDefinition",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    125,
+    139
+   ],
+   "summary": "Mapea una plantilla de BD a su definición de UI aplicando valores por defecto de color, ícono y badge.",
+   "tags": [
+    "utility",
+    "mapper",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "type": "function",
+   "name": "getTemplateDefinition",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    148,
+    154
+   ],
+   "summary": "Busca una plantilla por ID y devuelve su definición, o la plantilla fallback si no existe.",
+   "tags": [
+    "utility",
+    "plantillas",
+    "lookup"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateAccent",
+   "type": "function",
+   "name": "getTemplateAccent",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    163,
+    165
+   ],
+   "summary": "Devuelve el color de acento de una plantilla por ID.",
+   "tags": [
+    "utility",
+    "plantillas",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateBadge",
+   "type": "function",
+   "name": "getTemplateBadge",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    174,
+    176
+   ],
+   "summary": "Devuelve la etiqueta de badge de una plantilla por ID.",
+   "tags": [
+    "utility",
+    "plantillas",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTeams",
+   "type": "function",
+   "name": "useBoardTeams",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    206,
+    213
+   ],
+   "summary": "Consulta todos los equipos del tablero (fetchAllTeams).",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useMyBoardTeams",
+   "type": "function",
+   "name": "useMyBoardTeams",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    228,
+    236
+   ],
+   "summary": "Consulta los equipos del tablero a los que pertenece el usuario actual.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardLabels",
+   "type": "function",
+   "name": "useBoardLabels",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    248,
+    255
+   ],
+   "summary": "Consulta las etiquetas del tablero por Board_ID.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useLabelsByTeamId",
+   "type": "function",
+   "name": "useLabelsByTeamId",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    267,
+    275
+   ],
+   "summary": "Consulta las etiquetas de un equipo específico.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateLabel",
+   "type": "function",
+   "name": "useCreateLabel",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    293,
+    325
+   ],
+   "summary": "Crea una etiqueta con inserción optimista en la caché.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateLabel",
+   "type": "function",
+   "name": "useUpdateLabel",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    338,
+    368
+   ],
+   "summary": "Actualiza una etiqueta con actualización optimista y rollback.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteLabel",
+   "type": "function",
+   "name": "useDeleteLabel",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    381,
+    407
+   ],
+   "summary": "Elimina una etiqueta de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTemplates",
+   "type": "function",
+   "name": "useBoardTemplates",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    419,
+    426
+   ],
+   "summary": "Consulta las plantillas de solicitud del tablero.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateTemplate",
+   "type": "function",
+   "name": "useCreateTemplate",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    442,
+    478
+   ],
+   "summary": "Crea una plantilla de solicitud con actualización optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateTemplate",
+   "type": "function",
+   "name": "useUpdateTemplate",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    490,
+    530
+   ],
+   "summary": "Actualiza una plantilla de solicitud con actualización optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteTemplate",
+   "type": "function",
+   "name": "useDeleteTemplate",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts",
+   "lineRange": [
+    542,
+    568
+   ],
+   "summary": "Elimina una plantilla de solicitud de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "type": "file",
+   "name": "useBrowserNotifications.ts",
+   "filePath": "src/features/requests/hooks/useBrowserNotifications.ts",
+   "summary": "Hook que dispara notificaciones nativas del navegador a partir de las notificaciones de la app, con un store externo compartido para el permiso y soporte de Service Worker para Chrome Android.",
+   "tags": [
+    "hook",
+    "notificaciones",
+    "service-worker",
+    "pwa",
+    "browser-api"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Combina useSyncExternalStore con un store a nivel de módulo para compartir el estado del permiso entre instancias del hook."
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBrowserNotifications.ts:showNative",
+   "type": "function",
+   "name": "showNative",
+   "filePath": "src/features/requests/hooks/useBrowserNotifications.ts",
+   "lineRange": [
+    117,
+    153
+   ],
+   "summary": "Muestra una notificación nativa vía ServiceWorkerRegistration.showNotification, con el constructor Notification como fallback.",
+   "tags": [
+    "notificaciones",
+    "service-worker",
+    "browser-api"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useBrowserNotifications.ts:useBrowserNotifications",
+   "type": "function",
+   "name": "useBrowserNotifications",
+   "filePath": "src/features/requests/hooks/useBrowserNotifications.ts",
+   "lineRange": [
+    173,
+    264
+   ],
+   "summary": "Observa la lista de notificaciones y dispara solo las nuevas no leídas como notificaciones nativas; expone el permiso y requestPermission.",
+   "tags": [
+    "hook",
+    "notificaciones",
+    "permisos"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useComments.ts",
+   "type": "file",
+   "name": "useComments.ts",
+   "filePath": "src/features/requests/hooks/useComments.ts",
+   "summary": "Hooks de React Query para listar, crear y eliminar comentarios de una solicitud mediante apiClient.",
+   "tags": [
+    "hook",
+    "react-query",
+    "comentarios",
+    "api-client"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useComments.ts:useComments",
+   "type": "function",
+   "name": "useComments",
+   "filePath": "src/features/requests/hooks/useComments.ts",
+   "lineRange": [
+    42,
+    49
+   ],
+   "summary": "Consulta los comentarios de una solicitud.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useComments.ts:useCreateComment",
+   "type": "function",
+   "name": "useCreateComment",
+   "filePath": "src/features/requests/hooks/useComments.ts",
+   "lineRange": [
+    61,
+    79
+   ],
+   "summary": "Crea un comentario e invalida la caché de comentarios.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useComments.ts:useDeleteComment",
+   "type": "function",
+   "name": "useDeleteComment",
+   "filePath": "src/features/requests/hooks/useComments.ts",
+   "lineRange": [
+    91,
+    104
+   ],
+   "summary": "Elimina un comentario e invalida la caché.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "file",
+   "name": "useDepartments.ts",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "summary": "Hooks para consultar departamentos (con y sin equipos) y crear, actualizar o eliminar departamentos con actualizaciones optimistas; soporta datos mock con config.USE_MOCK.",
+   "tags": [
+    "hook",
+    "react-query",
+    "departamentos",
+    "optimistic-update",
+    "admin"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDepartments.ts:useDepartments",
+   "type": "function",
+   "name": "useDepartments",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "lineRange": [
+    56,
+    64
+   ],
+   "summary": "Consulta los departamentos (o datos mock).",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDepartments.ts:useDepartmentsWithTeams",
+   "type": "function",
+   "name": "useDepartmentsWithTeams",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "lineRange": [
+    75,
+    83
+   ],
+   "summary": "Consulta los departamentos con sus equipos anidados.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDepartments.ts:useCreateDepartment",
+   "type": "function",
+   "name": "useCreateDepartment",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "lineRange": [
+    97,
+    124
+   ],
+   "summary": "Crea un departamento con inserción optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDepartments.ts:useUpdateDepartment",
+   "type": "function",
+   "name": "useUpdateDepartment",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "lineRange": [
+    135,
+    161
+   ],
+   "summary": "Actualiza un departamento de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useDepartments.ts:useDeleteDepartment",
+   "type": "function",
+   "name": "useDeleteDepartment",
+   "filePath": "src/features/requests/hooks/useDepartments.ts",
+   "lineRange": [
+    173,
+    195
+   ],
+   "summary": "Elimina un departamento de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "type": "file",
+   "name": "useEmailTemplates.ts",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "summary": "Hooks para administrar plantillas de correo (listar, crear, editar, activar/desactivar, eliminar y actualizar metadatos), más un fallback de variables por evento.",
+   "tags": [
+    "hook",
+    "react-query",
+    "email",
+    "plantillas",
+    "admin"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useEmailTemplates",
+   "type": "function",
+   "name": "useEmailTemplates",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    40,
+    46
+   ],
+   "summary": "Consulta las plantillas de correo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplate",
+   "type": "function",
+   "name": "useUpdateEmailTemplate",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    57,
+    64
+   ],
+   "summary": "Actualiza asunto/cuerpo de una plantilla de correo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useToggleEmailTemplate",
+   "type": "function",
+   "name": "useToggleEmailTemplate",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    76,
+    95
+   ],
+   "summary": "Activa o desactiva una plantilla de correo de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useCreateEmailTemplate",
+   "type": "function",
+   "name": "useCreateEmailTemplate",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    107,
+    115
+   ],
+   "summary": "Crea una plantilla de correo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useDeleteEmailTemplate",
+   "type": "function",
+   "name": "useDeleteEmailTemplate",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    127,
+    144
+   ],
+   "summary": "Elimina una plantilla de correo de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:getTemplateVariables",
+   "type": "function",
+   "name": "getTemplateVariables",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    172,
+    177
+   ],
+   "summary": "Devuelve las variables de una plantilla desde la BD o el fallback por evento.",
+   "tags": [
+    "utility",
+    "email",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplateMetadata",
+   "type": "function",
+   "name": "useUpdateEmailTemplateMetadata",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts",
+   "lineRange": [
+    188,
+    195
+   ],
+   "summary": "Actualiza los metadatos de una plantilla de correo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "file",
+   "name": "useLabels.ts",
+   "filePath": "src/features/requests/hooks/useLabels.ts",
+   "summary": "Hooks de solo lectura para obtener etiquetas por equipo o por tablero, con etiquetas simuladas para desarrollo offline.",
+   "tags": [
+    "hook",
+    "react-query",
+    "etiquetas",
+    "mock-data"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useLabels.ts:useLabelsByTeamId",
+   "type": "function",
+   "name": "useLabelsByTeamId",
+   "filePath": "src/features/requests/hooks/useLabels.ts",
+   "lineRange": [
+    39,
+    48
+   ],
+   "summary": "Consulta las etiquetas de un equipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useLabels.ts:useLabelsByBoardId",
+   "type": "function",
+   "name": "useLabelsByBoardId",
+   "filePath": "src/features/requests/hooks/useLabels.ts",
+   "lineRange": [
+    61,
+    70
+   ],
+   "summary": "Consulta las etiquetas de un tablero, con mock en modo offline.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "type": "file",
+   "name": "useMySolviTickets.ts",
+   "filePath": "src/features/requests/hooks/useMySolviTickets.ts",
+   "summary": "Hooks que consultan los tickets SOLVI del usuario actual y aquellos en los que fue mencionado.",
+   "tags": [
+    "hook",
+    "react-query",
+    "solvi",
+    "tickets"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviTickets",
+   "type": "function",
+   "name": "useMySolviTickets",
+   "filePath": "src/features/requests/hooks/useMySolviTickets.ts",
+   "lineRange": [
+    33,
+    40
+   ],
+   "summary": "Consulta los tickets SOLVI del usuario.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviMentions",
+   "type": "function",
+   "name": "useMySolviMentions",
+   "filePath": "src/features/requests/hooks/useMySolviTickets.ts",
+   "lineRange": [
+    52,
+    59
+   ],
+   "summary": "Consulta los tickets SOLVI donde el usuario fue mencionado.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "type": "file",
+   "name": "useRequestParticipants.ts",
+   "filePath": "src/features/requests/hooks/useRequestParticipants.ts",
+   "summary": "Hooks para listar participantes de una solicitud y quitar un participante, invalidando la caché correspondiente.",
+   "tags": [
+    "hook",
+    "react-query",
+    "participantes",
+    "solicitudes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequestParticipants.ts:useRequestParticipants",
+   "type": "function",
+   "name": "useRequestParticipants",
+   "filePath": "src/features/requests/hooks/useRequestParticipants.ts",
+   "lineRange": [
+    30,
+    36
+   ],
+   "summary": "Consulta los participantes de una solicitud.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useRequestParticipants.ts:useRemoveParticipant",
+   "type": "function",
+   "name": "useRemoveParticipant",
+   "filePath": "src/features/requests/hooks/useRequestParticipants.ts",
+   "lineRange": [
+    46,
+    55
+   ],
+   "summary": "Quita un participante de una solicitud.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviComments.ts",
+   "type": "file",
+   "name": "useSolviComments.ts",
+   "filePath": "src/features/requests/hooks/useSolviComments.ts",
+   "summary": "Hooks de React Query para leer, crear y eliminar comentarios de tickets SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "solvi",
+    "comentarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviComments.ts:useSolviComments",
+   "type": "function",
+   "name": "useSolviComments",
+   "filePath": "src/features/requests/hooks/useSolviComments.ts",
+   "lineRange": [
+    34,
+    41
+   ],
+   "summary": "Consulta los comentarios de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviComments.ts:useCreateSolviComment",
+   "type": "function",
+   "name": "useCreateSolviComment",
+   "filePath": "src/features/requests/hooks/useSolviComments.ts",
+   "lineRange": [
+    53,
+    60
+   ],
+   "summary": "Crea un comentario en un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviComments.ts:useDeleteSolviComment",
+   "type": "function",
+   "name": "useDeleteSolviComment",
+   "filePath": "src/features/requests/hooks/useSolviComments.ts",
+   "lineRange": [
+    72,
+    79
+   ],
+   "summary": "Elimina un comentario de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "solvi"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:mapBoardTemplateToDefinition",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:mapBoardTemplateToDefinition",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateAccent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateAccent",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateBadge",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTeams",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useMyBoardTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useMyBoardTeams",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardLabels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardLabels",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useLabelsByTeamId",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useLabelsByTeamId",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTemplates",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useBoardTemplates",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useCreateTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useUpdateTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:useDeleteTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "file:src/features/requests/templates/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "target": "function:src/features/requests/hooks/useBrowserNotifications.ts:showNative",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "target": "function:src/features/requests/hooks/useBrowserNotifications.ts:useBrowserNotifications",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "target": "function:src/features/requests/hooks/useBrowserNotifications.ts:useBrowserNotifications",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useComments",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useComments",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useCreateComment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useCreateComment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useDeleteComment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "function:src/features/requests/hooks/useComments.ts:useDeleteComment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useComments.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDepartments",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDepartments",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDepartmentsWithTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDepartmentsWithTeams",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useCreateDepartment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useCreateDepartment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useUpdateDepartment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useUpdateDepartment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDeleteDepartment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "function:src/features/requests/hooks/useDepartments.ts:useDeleteDepartment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useDepartments.ts",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useEmailTemplates",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useEmailTemplates",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useToggleEmailTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useToggleEmailTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useCreateEmailTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useCreateEmailTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useDeleteEmailTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useDeleteEmailTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:getTemplateVariables",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:getTemplateVariables",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplateMetadata",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "function:src/features/requests/hooks/useEmailTemplates.ts:useUpdateEmailTemplateMetadata",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "function:src/features/requests/hooks/useLabels.ts:useLabelsByTeamId",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "function:src/features/requests/hooks/useLabels.ts:useLabelsByTeamId",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "function:src/features/requests/hooks/useLabels.ts:useLabelsByBoardId",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "function:src/features/requests/hooks/useLabels.ts:useLabelsByBoardId",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useLabels.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviTickets",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviTickets",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviMentions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useMySolviTickets.ts:useMySolviMentions",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "target": "function:src/features/requests/hooks/useRequestParticipants.ts:useRequestParticipants",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "target": "function:src/features/requests/hooks/useRequestParticipants.ts:useRequestParticipants",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "target": "function:src/features/requests/hooks/useRequestParticipants.ts:useRemoveParticipant",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "target": "function:src/features/requests/hooks/useRequestParticipants.ts:useRemoveParticipant",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useSolviComments",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useSolviComments",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useCreateSolviComment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useCreateSolviComment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useDeleteSolviComment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "function:src/features/requests/hooks/useSolviComments.ts:useDeleteSolviComment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviComments.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:mapBoardTemplateToDefinition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateAccent",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateBadge",
+   "target": "function:src/features/requests/hooks/useBoardMetadata.ts:getTemplateDefinition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useBrowserNotifications.ts:useBrowserNotifications",
+   "target": "function:src/features/requests/hooks/useBrowserNotifications.ts:showNative",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

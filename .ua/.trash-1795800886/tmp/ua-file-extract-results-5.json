@@ -1,0 +1,2765 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 20,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 20,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 20,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/features/requests/hooks/stats/constants.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 93,
+      "nonEmptyLines": 80,
+      "exports": [
+        {
+          "name": "DONE_COLUMNS",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "ACTIVE_COLUMNS",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "WIP_COLUMNS",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "BACKLOG_COLUMNS",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "BOARD_COLUMN_ORDER",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "COL_META",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "PRI_META",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "AVATAR_GRADIENTS",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "META_RATIO",
+          "line": 66,
+          "isDefault": false
+        },
+        {
+          "name": "PENALIZACION_ACTIVA",
+          "line": 76,
+          "isDefault": false
+        },
+        {
+          "name": "PENALIZATION_EXEMPT_COLUMNS",
+          "line": 79,
+          "isDefault": false
+        },
+        {
+          "name": "SPRINT_LAG",
+          "line": 82,
+          "isDefault": false
+        },
+        {
+          "name": "AGING_BUCKETS",
+          "line": 87,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 13,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 37,
+      "nonEmptyLines": 35,
+      "functions": [
+        {
+          "name": "buildPrimaryTeamMap",
+          "startLine": 19,
+          "endLine": 37,
+          "params": [
+            "requests"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildPrimaryTeamMap",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "teamCount.has",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "teamCount.set",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "teamCount.get",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "c.set",
+          "lineNumber": 26
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "c.get",
+          "lineNumber": 26
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "result.set",
+          "lineNumber": 33
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "[...counts.entries()].sort",
+          "lineNumber": 33
+        },
+        {
+          "caller": "buildPrimaryTeamMap",
+          "callee": "counts.entries",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 188,
+      "nonEmptyLines": 174,
+      "functions": [
+        {
+          "name": "inits",
+          "startLine": 21,
+          "endLine": 23,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "calcResolutores",
+          "startLine": 31,
+          "endLine": 54,
+          "params": [
+            "done"
+          ]
+        },
+        {
+          "name": "calcBoardFromUniverse",
+          "startLine": 75,
+          "endLine": 137,
+          "params": [
+            "universe",
+            "equipo",
+            "minPos",
+            "statsConfig",
+            "allSprints",
+            "selectedSprints"
+          ]
+        },
+        {
+          "name": "calcBoard",
+          "startLine": 149,
+          "endLine": 152,
+          "params": [
+            "requests",
+            "equipo",
+            "statsConfig",
+            "allSprints",
+            "selectedSprints"
+          ]
+        },
+        {
+          "name": "combinedMinPosOf",
+          "startLine": 162,
+          "endLine": 167,
+          "params": [
+            "equipos",
+            "statsConfig"
+          ]
+        },
+        {
+          "name": "calcBoardCombined",
+          "startLine": 184,
+          "endLine": 188,
+          "params": [
+            "requests",
+            "equipos",
+            "statsConfig",
+            "allSprints",
+            "selectedSprints"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "calcBoard",
+          "line": 149,
+          "isDefault": false
+        },
+        {
+          "name": "combinedMinPosOf",
+          "line": 162,
+          "isDefault": false
+        },
+        {
+          "name": "calcBoardCombined",
+          "line": 184,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "inits",
+          "callee": "name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join",
+          "lineNumber": 22
+        },
+        {
+          "caller": "inits",
+          "callee": "name.split(' ').slice(0, 2).map",
+          "lineNumber": 22
+        },
+        {
+          "caller": "inits",
+          "callee": "name.split(' ').slice",
+          "lineNumber": 22
+        },
+        {
+          "caller": "inits",
+          "callee": "name.split",
+          "lineNumber": 22
+        },
+        {
+          "caller": "inits",
+          "callee": "n[0]?.toUpperCase",
+          "lineNumber": 22
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "resolMap.has",
+          "lineNumber": 37
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "resolMap.set",
+          "lineNumber": 37
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "resolMap.get",
+          "lineNumber": 38
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "acc.solicitudes.push",
+          "lineNumber": 40
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "[...resolMap.entries()]\r\n    .sort((a, b) => b[1].count - a[1].count).slice(0, 5)\r\n    .map",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "[...resolMap.entries()]\r\n    .sort((a, b) => b[1].count - a[1].count).slice",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "[...resolMap.entries()]\r\n    .sort",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "resolMap.entries",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calcResolutores",
+          "callee": "inits",
+          "lineNumber": 50
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "makeCountable",
+          "lineNumber": 79
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "universe.filter",
+          "lineNumber": 81
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "selectedSprints.map",
+          "lineNumber": 84
+        },
+        {
+          "caller": "inSelSprint",
+          "callee": "sprintSet.has",
+          "lineNumber": 85
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "allMine.filter",
+          "lineNumber": 87
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "mine.filter",
+          "lineNumber": 88
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "makeCreditedIn",
+          "lineNumber": 93
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "mineScoped.filter",
+          "lineNumber": 95
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 95
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "creditedInSel",
+          "lineNumber": 95
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "mineScoped.filter",
+          "lineNumber": 96
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 96
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "allMine.filter",
+          "lineNumber": 101
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "sprintSet.has",
+          "lineNumber": 102
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "creditedInSel",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "arrastre.filter",
+          "lineNumber": 108
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "sumScore",
+          "lineNumber": 109
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "calcMeta",
+          "lineNumber": 111
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "sumScore",
+          "lineNumber": 111
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "calcPenalizacion",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "refSprintIdOf",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "Math.max",
+          "lineNumber": 113
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "sumScore",
+          "lineNumber": 113
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "Math.round",
+          "lineNumber": 115
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "BOARD_COLUMN_ORDER.map",
+          "lineNumber": 117
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "allMineInSprint.filter",
+          "lineNumber": 119
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "PRI_META.map",
+          "lineNumber": 122
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "mineScoped.filter",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "groupBySprint",
+          "lineNumber": 133
+        },
+        {
+          "caller": "calcBoardFromUniverse",
+          "callee": "calcResolutores",
+          "lineNumber": 135
+        },
+        {
+          "caller": "calcBoard",
+          "callee": "requests.filter",
+          "lineNumber": 150
+        },
+        {
+          "caller": "calcBoard",
+          "callee": "r.equipo.includes",
+          "lineNumber": 150
+        },
+        {
+          "caller": "calcBoard",
+          "callee": "calcBoardFromUniverse",
+          "lineNumber": 151
+        },
+        {
+          "caller": "combinedMinPosOf",
+          "callee": "equipos\r\n    .map(eq => statsConfig?.statsStartByTeam[eq])\r\n    .filter",
+          "lineNumber": 163
+        },
+        {
+          "caller": "combinedMinPosOf",
+          "callee": "equipos\r\n    .map",
+          "lineNumber": 163
+        },
+        {
+          "caller": "combinedMinPosOf",
+          "callee": "Math.min",
+          "lineNumber": 166
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "requests.filter",
+          "lineNumber": 186
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "r.equipo.some",
+          "lineNumber": 186
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "teamSet.has",
+          "lineNumber": 186
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "calcBoardFromUniverse",
+          "lineNumber": 187
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "equipos.join",
+          "lineNumber": 187
+        },
+        {
+          "caller": "calcBoardCombined",
+          "callee": "combinedMinPosOf",
+          "lineNumber": 187
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 3,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 132,
+      "nonEmptyLines": 126,
+      "functions": [
+        {
+          "name": "calcLeadTime",
+          "startLine": 19,
+          "endLine": 25,
+          "params": [
+            "requests"
+          ]
+        },
+        {
+          "name": "calcAging",
+          "startLine": 34,
+          "endLine": 44,
+          "params": [
+            "requests",
+            "cols"
+          ]
+        },
+        {
+          "name": "calcThroughput",
+          "startLine": 53,
+          "endLine": 74,
+          "params": [
+            "requests",
+            "weeks"
+          ]
+        },
+        {
+          "name": "calcEstimation",
+          "startLine": 87,
+          "endLine": 103,
+          "params": [
+            "requests"
+          ]
+        },
+        {
+          "name": "calcFlowMetrics",
+          "startLine": 116,
+          "endLine": 132,
+          "params": [
+            "requests"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "calcFlowMetrics",
+          "line": 116,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "calcLeadTime",
+          "callee": "requests\r\n    .filter(r => DONE_COLUMNS.has(r.columna) && r.fechaCierre && r.fechaApertura)\r\n    .map(r => daysBetween(r.fechaApertura, r.fechaCierre!))\r\n    .sort",
+          "lineNumber": 20
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "requests\r\n    .filter(r => DONE_COLUMNS.has(r.columna) && r.fechaCierre && r.fechaApertura)\r\n    .map",
+          "lineNumber": 20
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "requests\r\n    .filter",
+          "lineNumber": 20
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 21
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "daysBetween",
+          "lineNumber": 22
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "percentile",
+          "lineNumber": 24
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "percentile",
+          "lineNumber": 24
+        },
+        {
+          "caller": "calcLeadTime",
+          "callee": "percentile",
+          "lineNumber": 24
+        },
+        {
+          "caller": "calcAging",
+          "callee": "AGING_BUCKETS.map",
+          "lineNumber": 35
+        },
+        {
+          "caller": "calcAging",
+          "callee": "cols.has",
+          "lineNumber": 37
+        },
+        {
+          "caller": "calcAging",
+          "callee": "ageInDays",
+          "lineNumber": 38
+        },
+        {
+          "caller": "calcAging",
+          "callee": "AGING_BUCKETS.findIndex",
+          "lineNumber": 39
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "Date.now",
+          "lineNumber": 54
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "toUtcMs",
+          "lineNumber": 62
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 64
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "toUtcMs",
+          "lineNumber": 65
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "points.push",
+          "lineNumber": 71
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "d.getDate",
+          "lineNumber": 71
+        },
+        {
+          "caller": "calcThroughput",
+          "callee": "d.getMonth",
+          "lineNumber": 71
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "requests\r\n    .filter(r => DONE_COLUMNS.has(r.columna) && r.estimatedHours != null && r.estimatedHours > 0 && r.loggedHours != null)\r\n    .map",
+          "lineNumber": 88
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "requests\r\n    .filter",
+          "lineNumber": 88
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 89
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "ratios.filter",
+          "lineNumber": 94
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "ratios.reduce",
+          "lineNumber": 97
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "Math.round",
+          "lineNumber": 99
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "ratios.filter",
+          "lineNumber": 100
+        },
+        {
+          "caller": "calcEstimation",
+          "callee": "ratios.filter",
+          "lineNumber": 101
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "calcThroughput",
+          "lineNumber": 117
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "calcLeadTime",
+          "lineNumber": 119
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "requests.filter",
+          "lineNumber": 120
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "WIP_COLUMNS.has",
+          "lineNumber": 120
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "calcAging",
+          "lineNumber": 121
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "calcAging",
+          "lineNumber": 122
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "calcEstimation",
+          "lineNumber": 125
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "requests\r\n      .filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna))\r\n      .map(r => ({ id: r.id, titulo: r.titulo, dias: Math.round(ageInDays(r.fechaApertura)) }))\r\n      .sort((a, b) => b.dias - a.dias)\r\n      .slice",
+          "lineNumber": 126
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "requests\r\n      .filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna))\r\n      .map(r => ({ id: r.id, titulo: r.titulo, dias: Math.round(ageInDays(r.fechaApertura)) }))\r\n      .sort",
+          "lineNumber": 126
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "requests\r\n      .filter(r => r.prioridad === 'critica' && !DONE_COLUMNS.has(r.columna))\r\n      .map",
+          "lineNumber": 126
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "requests\r\n      .filter",
+          "lineNumber": 126
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 127
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "Math.round",
+          "lineNumber": 128
+        },
+        {
+          "caller": "calcFlowMetrics",
+          "callee": "ageInDays",
+          "lineNumber": 128
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/calcGeneral.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 50,
+      "functions": [
+        {
+          "name": "calcGeneral",
+          "startLine": 28,
+          "endLine": 56,
+          "params": [
+            "requests",
+            "teams",
+            "statsConfig"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "calcGeneral",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "calcGeneral",
+          "callee": "requests.filter",
+          "lineNumber": 30
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 30
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "isBlocked",
+          "lineNumber": 30
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "r.equipo.some",
+          "lineNumber": 30
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "requests.filter",
+          "lineNumber": 35
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 35
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "isBlocked",
+          "lineNumber": 35
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "activeRequests.filter",
+          "lineNumber": 38
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 38
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "Math.round",
+          "lineNumber": 39
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "activeRequests.filter",
+          "lineNumber": 41
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 41
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "parseFloat",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "(conCierre.reduce((a, r) => a + daysBetween(r.fechaApertura, r.fechaCierre!), 0) / conCierre.length).toFixed",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "conCierre.reduce",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "daysBetween",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "teams.map",
+          "lineNumber": 46
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "makeCountable",
+          "lineNumber": 48
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "requests.filter",
+          "lineNumber": 49
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "r.equipo.includes",
+          "lineNumber": 49
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "countable",
+          "lineNumber": 49
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "mine.filter",
+          "lineNumber": 50
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 50
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "mine.filter",
+          "lineNumber": 51
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 51
+        },
+        {
+          "caller": "calcGeneral",
+          "callee": "sumScore",
+          "lineNumber": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 203,
+      "nonEmptyLines": 190,
+      "functions": [
+        {
+          "name": "resolveMinPos",
+          "startLine": 24,
+          "endLine": 31,
+          "params": [
+            "statsConfig",
+            "teamCode",
+            "combinedMinPos"
+          ]
+        },
+        {
+          "name": "calcSprintUnselected",
+          "startLine": 41,
+          "endLine": 67,
+          "params": [
+            "requests",
+            "isCountable",
+            "allSprints"
+          ]
+        },
+        {
+          "name": "makeIsSprintMonth",
+          "startLine": 75,
+          "endLine": 87,
+          "params": [
+            "sprints"
+          ]
+        },
+        {
+          "name": "calcSprintSelected",
+          "startLine": 98,
+          "endLine": 176,
+          "params": [
+            "requests",
+            "sprints",
+            "isCountable",
+            "allSprints"
+          ]
+        },
+        {
+          "name": "calcSprint",
+          "startLine": 198,
+          "endLine": 203,
+          "params": [
+            "requests",
+            "sprints",
+            "statsConfig",
+            "teamCode",
+            "allSprints",
+            "combinedMinPos"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "calcSprint",
+          "line": 198,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "resolveMinPos",
+          "callee": "Object.keys",
+          "lineNumber": 25
+        },
+        {
+          "caller": "resolveMinPos",
+          "callee": "Object.values",
+          "lineNumber": 29
+        },
+        {
+          "caller": "resolveMinPos",
+          "callee": "Math.min",
+          "lineNumber": 30
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "requests.filter",
+          "lineNumber": 42
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "active.filter",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 43
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "sumScore",
+          "lineNumber": 44
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "sumScore",
+          "lineNumber": 45
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "calcMeta",
+          "lineNumber": 46
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "calcPenalizacion",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "Math.max",
+          "lineNumber": 48
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "Math.round",
+          "lineNumber": 49
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "active.filter",
+          "lineNumber": 53
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "ACTIVE_COLUMNS.has",
+          "lineNumber": 53
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "requests.filter",
+          "lineNumber": 55
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "active.filter",
+          "lineNumber": 58
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "isThisMonth",
+          "lineNumber": 58
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "doneActive.filter",
+          "lineNumber": 59
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "isThisMonth",
+          "lineNumber": 59
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "avgHoras",
+          "lineNumber": 60
+        },
+        {
+          "caller": "calcSprintUnselected",
+          "callee": "avgHoras",
+          "lineNumber": 61
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "sprints.filter",
+          "lineNumber": 76
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "datedSprints.reduce",
+          "lineNumber": 78
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "new Date(earliest.Sprint_Start_Date!).getFullYear",
+          "lineNumber": 80
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "new Date(earliest.Sprint_Start_Date!).getMonth",
+          "lineNumber": 81
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "d.getFullYear",
+          "lineNumber": 85
+        },
+        {
+          "caller": "makeIsSprintMonth",
+          "callee": "d.getMonth",
+          "lineNumber": 85
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprints.map",
+          "lineNumber": 99
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprints.map",
+          "lineNumber": 100
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "requests.filter",
+          "lineNumber": 102
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprintIdSet.has",
+          "lineNumber": 102
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "inSprint.filter",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "inSprint.filter",
+          "lineNumber": 106
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "activeInSprint.filter",
+          "lineNumber": 109
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprintMap.get",
+          "lineNumber": 110
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "r.fechaApertura.slice",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sp.Sprint_Start_Date.slice",
+          "lineNumber": 112
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "activeInSprint.filter",
+          "lineNumber": 114
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprintMap.get",
+          "lineNumber": 115
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "r.fechaApertura.slice",
+          "lineNumber": 117
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sp.Sprint_Start_Date.slice",
+          "lineNumber": 117
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "activeInSprint.filter",
+          "lineNumber": 119
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "ACTIVE_COLUMNS.has",
+          "lineNumber": 119
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "makeCreditedIn",
+          "lineNumber": 123
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "activeInSprint.filter",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "creditedInSel",
+          "lineNumber": 124
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "makeIsSprintMonth",
+          "lineNumber": 126
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sumScore",
+          "lineNumber": 128
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sumScore",
+          "lineNumber": 129
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "calcMeta",
+          "lineNumber": 130
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "calcPenalizacion",
+          "lineNumber": 134
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "refSprintIdOf",
+          "lineNumber": 134
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "Math.max",
+          "lineNumber": 135
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprints.filter",
+          "lineNumber": 143
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "requests.filter",
+          "lineNumber": 145
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sprintIdSet.has",
+          "lineNumber": 147
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 148
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "creditedInSel",
+          "lineNumber": 149
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "sumScore",
+          "lineNumber": 154
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "(otrosCerradas ?? []).filter",
+          "lineNumber": 154
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "Math.round",
+          "lineNumber": 155
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "requests.filter",
+          "lineNumber": 165
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "isCountable",
+          "lineNumber": 165
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "isSM",
+          "lineNumber": 165
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "requests.filter",
+          "lineNumber": 166
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 167
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "isCountable",
+          "lineNumber": 167
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "isSM",
+          "lineNumber": 167
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "avgHoras",
+          "lineNumber": 169
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "avgHoras",
+          "lineNumber": 170
+        },
+        {
+          "caller": "calcSprintSelected",
+          "callee": "groupBySprint",
+          "lineNumber": 172
+        },
+        {
+          "caller": "calcSprint",
+          "callee": "makeCountable",
+          "lineNumber": 199
+        },
+        {
+          "caller": "calcSprint",
+          "callee": "resolveMinPos",
+          "lineNumber": 199
+        },
+        {
+          "caller": "calcSprint",
+          "callee": "calcSprintUnselected",
+          "lineNumber": 201
+        },
+        {
+          "caller": "calcSprint",
+          "callee": "calcSprintSelected",
+          "lineNumber": 202
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/math.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 82,
+      "functions": [
+        {
+          "name": "daysBetween",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "name": "isThisMonth",
+          "startLine": 28,
+          "endLine": 32,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "toUtcMs",
+          "startLine": 44,
+          "endLine": 47,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "ageInDays",
+          "startLine": 55,
+          "endLine": 57,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "avgHoras",
+          "startLine": 70,
+          "endLine": 74,
+          "params": [
+            "requests",
+            "pick"
+          ]
+        },
+        {
+          "name": "percentile",
+          "startLine": 83,
+          "endLine": 90,
+          "params": [
+            "sorted",
+            "p"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "daysBetween",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "isThisMonth",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "toUtcMs",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "ageInDays",
+          "line": 55,
+          "isDefault": false
+        },
+        {
+          "name": "avgHoras",
+          "line": 70,
+          "isDefault": false
+        },
+        {
+          "name": "percentile",
+          "line": 83,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "daysBetween",
+          "callee": "Math.abs",
+          "lineNumber": 19
+        },
+        {
+          "caller": "daysBetween",
+          "callee": "new Date(b).getTime",
+          "lineNumber": 19
+        },
+        {
+          "caller": "daysBetween",
+          "callee": "new Date(a).getTime",
+          "lineNumber": 19
+        },
+        {
+          "caller": "isThisMonth",
+          "callee": "d.getFullYear",
+          "lineNumber": 31
+        },
+        {
+          "caller": "isThisMonth",
+          "callee": "now.getFullYear",
+          "lineNumber": 31
+        },
+        {
+          "caller": "isThisMonth",
+          "callee": "d.getMonth",
+          "lineNumber": 31
+        },
+        {
+          "caller": "isThisMonth",
+          "callee": "now.getMonth",
+          "lineNumber": 31
+        },
+        {
+          "caller": "toUtcMs",
+          "callee": "iso.endsWith",
+          "lineNumber": 45
+        },
+        {
+          "caller": "toUtcMs",
+          "callee": "iso.replace",
+          "lineNumber": 45
+        },
+        {
+          "caller": "toUtcMs",
+          "callee": "new Date(clean).getTime",
+          "lineNumber": 46
+        },
+        {
+          "caller": "ageInDays",
+          "callee": "Math.max",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ageInDays",
+          "callee": "Date.now",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ageInDays",
+          "callee": "toUtcMs",
+          "lineNumber": 56
+        },
+        {
+          "caller": "avgHoras",
+          "callee": "requests.map(pick).filter",
+          "lineNumber": 71
+        },
+        {
+          "caller": "avgHoras",
+          "callee": "requests.map",
+          "lineNumber": 71
+        },
+        {
+          "caller": "avgHoras",
+          "callee": "vals.reduce",
+          "lineNumber": 73
+        },
+        {
+          "caller": "percentile",
+          "callee": "Math.floor",
+          "lineNumber": 87
+        },
+        {
+          "caller": "percentile",
+          "callee": "Math.ceil",
+          "lineNumber": 87
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/predicates.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 48,
+      "functions": [
+        {
+          "name": "isBlockedLabelName",
+          "startLine": 22,
+          "endLine": 25,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "isBlocked",
+          "startLine": 33,
+          "endLine": 35,
+          "params": [
+            "r"
+          ]
+        },
+        {
+          "name": "makeCountable",
+          "startLine": 49,
+          "endLine": 52,
+          "params": [
+            "minPos",
+            "statsConfig"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "isBlockedLabelName",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "isBlocked",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "makeCountable",
+          "line": 49,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isBlockedLabelName",
+          "callee": "name.trim().toLowerCase",
+          "lineNumber": 23
+        },
+        {
+          "caller": "isBlockedLabelName",
+          "callee": "name.trim",
+          "lineNumber": 23
+        },
+        {
+          "caller": "isBlockedLabelName",
+          "callee": "n.includes",
+          "lineNumber": 24
+        },
+        {
+          "caller": "isBlockedLabelName",
+          "callee": "n.includes",
+          "lineNumber": 24
+        },
+        {
+          "caller": "isBlocked",
+          "callee": "r.categoria.some",
+          "lineNumber": 34
+        },
+        {
+          "caller": "makeCountable",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 51
+        },
+        {
+          "caller": "makeCountable",
+          "callee": "isBlocked",
+          "lineNumber": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/scoring.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 79,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "sumScore",
+          "startLine": 22,
+          "endLine": 24,
+          "params": [
+            "requests"
+          ]
+        },
+        {
+          "name": "calcMeta",
+          "startLine": 32,
+          "endLine": 34,
+          "params": [
+            "puntajePlaneado"
+          ]
+        },
+        {
+          "name": "calcPenalizacion",
+          "startLine": 50,
+          "endLine": 79,
+          "params": [
+            "requests",
+            "allSprints",
+            "refSprintId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "sumScore",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "calcMeta",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "calcPenalizacion",
+          "line": 50,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "sumScore",
+          "callee": "requests.reduce",
+          "lineNumber": 23
+        },
+        {
+          "caller": "calcMeta",
+          "callee": "Math.round",
+          "lineNumber": 33
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "[...allSprints].sort",
+          "lineNumber": 52
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sprintOrder",
+          "lineNumber": 52
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sprintOrder",
+          "lineNumber": 52
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sorted.findIndex",
+          "lineNumber": 58
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "new Date().toISOString().slice",
+          "lineNumber": 60
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "new Date().toISOString",
+          "lineNumber": 60
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sorted.find",
+          "lineNumber": 61
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "s.Sprint_Start_Date.slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "s.Sprint_End_Date.slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "[...sorted].reverse().find",
+          "lineNumber": 64
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "[...sorted].reverse",
+          "lineNumber": 64
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "s.Sprint_Start_Date.slice",
+          "lineNumber": 64
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sorted.findIndex",
+          "lineNumber": 65
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "requests\r\n    .filter(r => !DONE_COLUMNS.has(r.columna) && !PENALIZATION_EXEMPT_COLUMNS.has(r.columna) && !isBlocked(r) && r.sprintId != null)\r\n    .reduce",
+          "lineNumber": 69
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "requests\r\n    .filter",
+          "lineNumber": 69
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "DONE_COLUMNS.has",
+          "lineNumber": 70
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "PENALIZATION_EXEMPT_COLUMNS.has",
+          "lineNumber": 70
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "isBlocked",
+          "lineNumber": 70
+        },
+        {
+          "caller": "calcPenalizacion",
+          "callee": "sorted.findIndex",
+          "lineNumber": 72
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/lib/sprints.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 167,
+      "nonEmptyLines": 156,
+      "functions": [
+        {
+          "name": "sprintNum",
+          "startLine": 18,
+          "endLine": 21,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "sprintYearLocal",
+          "startLine": 29,
+          "endLine": 36,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "sprintOrder",
+          "startLine": 49,
+          "endLine": 54,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "refSprintIdOf",
+          "startLine": 62,
+          "endLine": 66,
+          "params": [
+            "sprints"
+          ]
+        },
+        {
+          "name": "findPrevSprint",
+          "startLine": 81,
+          "endLine": 103,
+          "params": [
+            "current",
+            "all"
+          ]
+        },
+        {
+          "name": "buildCreditSprint",
+          "startLine": 121,
+          "endLine": 136,
+          "params": [
+            "allSprints"
+          ]
+        },
+        {
+          "name": "makeCreditedIn",
+          "startLine": 145,
+          "endLine": 151,
+          "params": [
+            "allSprints",
+            "sprintIds"
+          ]
+        },
+        {
+          "name": "groupBySprint",
+          "startLine": 159,
+          "endLine": 167,
+          "params": [
+            "requests"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "sprintOrder",
+          "line": 49,
+          "isDefault": false
+        },
+        {
+          "name": "refSprintIdOf",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "findPrevSprint",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "buildCreditSprint",
+          "line": 121,
+          "isDefault": false
+        },
+        {
+          "name": "makeCreditedIn",
+          "line": 145,
+          "isDefault": false
+        },
+        {
+          "name": "groupBySprint",
+          "line": 159,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "sprintNum",
+          "callee": "s.Sprint_Text.match",
+          "lineNumber": 19
+        },
+        {
+          "caller": "sprintNum",
+          "callee": "Number",
+          "lineNumber": 20
+        },
+        {
+          "caller": "sprintYearLocal",
+          "callee": "Number",
+          "lineNumber": 31
+        },
+        {
+          "caller": "sprintYearLocal",
+          "callee": "s.Sprint_Start_Date.slice",
+          "lineNumber": 31
+        },
+        {
+          "caller": "sprintYearLocal",
+          "callee": "Number.isNaN",
+          "lineNumber": 32
+        },
+        {
+          "caller": "sprintYearLocal",
+          "callee": "s.Sprint_Text.match",
+          "lineNumber": 34
+        },
+        {
+          "caller": "sprintYearLocal",
+          "callee": "Number",
+          "lineNumber": 35
+        },
+        {
+          "caller": "sprintOrder",
+          "callee": "sprintNum",
+          "lineNumber": 50
+        },
+        {
+          "caller": "sprintOrder",
+          "callee": "new Date(s.Sprint_Start_Date).getTime",
+          "lineNumber": 52
+        },
+        {
+          "caller": "refSprintIdOf",
+          "callee": "[...sprints].sort",
+          "lineNumber": 64
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "all.filter",
+          "lineNumber": 83
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "[...sameLineage].sort",
+          "lineNumber": 87
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "a.Sprint_Start_Date!.localeCompare",
+          "lineNumber": 88
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sorted.findIndex",
+          "lineNumber": 90
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "[...sameLineage].sort",
+          "lineNumber": 95
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sprintYearLocal",
+          "lineNumber": 96
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sprintYearLocal",
+          "lineNumber": 96
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sprintNum",
+          "lineNumber": 98
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sprintNum",
+          "lineNumber": 98
+        },
+        {
+          "caller": "findPrevSprint",
+          "callee": "sorted.findIndex",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "allSprints.map",
+          "lineNumber": 122
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "allSprints.filter",
+          "lineNumber": 123
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "byId.get",
+          "lineNumber": 126
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "r.fechaCierre.slice",
+          "lineNumber": 128
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "own.Sprint_End_Date.slice",
+          "lineNumber": 129
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "dated.find",
+          "lineNumber": 130
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "s.Sprint_ID !== r.sprintId &&\r\n      s.Sprint_Start_Date!.slice(0, 10) <= day && day <= s.Sprint_End_Date!.slice",
+          "lineNumber": 131
+        },
+        {
+          "caller": "buildCreditSprint",
+          "callee": "s.Sprint_ID !== r.sprintId &&\r\n      s.Sprint_Start_Date!.slice",
+          "lineNumber": 131
+        },
+        {
+          "caller": "makeCreditedIn",
+          "callee": "buildCreditSprint",
+          "lineNumber": 146
+        },
+        {
+          "caller": "makeCreditedIn",
+          "callee": "creditSprint",
+          "lineNumber": 148
+        },
+        {
+          "caller": "makeCreditedIn",
+          "callee": "sprintIds.has",
+          "lineNumber": 149
+        },
+        {
+          "caller": "groupBySprint",
+          "callee": "m.has",
+          "lineNumber": 163
+        },
+        {
+          "caller": "groupBySprint",
+          "callee": "m.set",
+          "lineNumber": 163
+        },
+        {
+          "caller": "groupBySprint",
+          "callee": "m.get",
+          "lineNumber": 164
+        },
+        {
+          "caller": "groupBySprint",
+          "callee": "[...m.values()].sort",
+          "lineNumber": 166
+        },
+        {
+          "caller": "groupBySprint",
+          "callee": "m.values",
+          "lineNumber": 166
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 156,
+      "nonEmptyLines": 141,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useBoardStats.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 70,
+      "nonEmptyLines": 63,
+      "functions": [
+        {
+          "name": "calcBoardsByTeam",
+          "startLine": 25,
+          "endLine": 29,
+          "params": [
+            "requests",
+            "teams",
+            "statsConfig",
+            "sprints",
+            "selected"
+          ]
+        },
+        {
+          "name": "useBoardStats",
+          "startLine": 43,
+          "endLine": 70,
+          "params": [
+            "requests",
+            "teams",
+            "statsConfig",
+            "sprints",
+            "selectedSprints",
+            "combinedTeams"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useBoardStats",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "calcBoardsByTeam",
+          "callee": "Object.fromEntries",
+          "lineNumber": 26
+        },
+        {
+          "caller": "calcBoardsByTeam",
+          "callee": "teams.map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "calcBoardsByTeam",
+          "callee": "calcBoard",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "useMemo",
+          "lineNumber": 52
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "calcBoardsByTeam",
+          "lineNumber": 53
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "useMemo",
+          "lineNumber": 57
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "findPrevSprint",
+          "lineNumber": 59
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "calcBoardsByTeam",
+          "lineNumber": 61
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "useMemo",
+          "lineNumber": 64
+        },
+        {
+          "caller": "useBoardStats",
+          "callee": "calcBoardCombined",
+          "lineNumber": 66
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useFlowStats.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 18,
+      "functions": [
+        {
+          "name": "useFlowStats",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "requests"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useFlowStats",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useFlowStats",
+          "callee": "useMemo",
+          "lineNumber": 19
+        },
+        {
+          "caller": "useFlowStats",
+          "callee": "calcFlowMetrics",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useGeneralStats.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 21,
+      "functions": [
+        {
+          "name": "useGeneralStats",
+          "startLine": 21,
+          "endLine": 23,
+          "params": [
+            "requests",
+            "teams",
+            "statsConfig"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useGeneralStats",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useGeneralStats",
+          "callee": "useMemo",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useGeneralStats",
+          "callee": "calcGeneral",
+          "lineNumber": 22
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 17,
+      "functions": [
+        {
+          "name": "usePrimaryTeamMap",
+          "startLine": 17,
+          "endLine": 19,
+          "params": [
+            "requests"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "usePrimaryTeamMap",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "usePrimaryTeamMap",
+          "callee": "useMemo",
+          "lineNumber": 18
+        },
+        {
+          "caller": "usePrimaryTeamMap",
+          "callee": "buildPrimaryTeamMap",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useSelectedSprints.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "useSelectedSprints",
+          "startLine": 17,
+          "endLine": 22,
+          "params": [
+            "sprints",
+            "selectedSprintIds"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSelectedSprints",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSelectedSprints",
+          "callee": "useMemo",
+          "lineNumber": 18
+        },
+        {
+          "caller": "useSelectedSprints",
+          "callee": "sprints.filter",
+          "lineNumber": 19
+        },
+        {
+          "caller": "useSelectedSprints",
+          "callee": "selectedSprintIds.includes",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useSprintStats.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 36,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "useSprintStats",
+          "startLine": 24,
+          "endLine": 36,
+          "params": [
+            "requests",
+            "selectedSprints",
+            "sprints",
+            "teamCode",
+            "statsConfig",
+            "combinedMinPos"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSprintStats",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSprintStats",
+          "callee": "useMemo",
+          "lineNumber": 32
+        },
+        {
+          "caller": "useSprintStats",
+          "callee": "calcSprint",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useStatsScope.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 50,
+      "functions": [
+        {
+          "name": "useStatsScope",
+          "startLine": 22,
+          "endLine": 54,
+          "params": [
+            "allRequests",
+            "userFilter",
+            "teamCodeFilter",
+            "combinedTeams",
+            "statsConfig"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useStatsScope",
+          "line": 22,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useStatsScope",
+          "callee": "useMemo",
+          "lineNumber": 30
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "allRequests.filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "r.assignees.some",
+          "lineNumber": 32
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "useMemo",
+          "lineNumber": 38
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "userScopedRequests.filter",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "r.equipo.some",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "teamSet.has",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "userScopedRequests.filter",
+          "lineNumber": 44
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "r.equipo.includes",
+          "lineNumber": 44
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "useMemo",
+          "lineNumber": 48
+        },
+        {
+          "caller": "useStatsScope",
+          "callee": "combinedMinPosOf",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/stats/useStatsSource.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 35,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "useStatsSource",
+          "startLine": 18,
+          "endLine": 35,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useStatsSource",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useStatsSource",
+          "callee": "useBoardCompletoStats",
+          "lineNumber": 19
+        },
+        {
+          "caller": "useStatsSource",
+          "callee": "useSprints",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useStatsSource",
+          "callee": "useMemo",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useStatsSource",
+          "callee": "Object.values(boardQuery.data).flat",
+          "lineNumber": 24
+        },
+        {
+          "caller": "useStatsSource",
+          "callee": "Object.values",
+          "lineNumber": 24
+        },
+        {
+          "caller": "useStatsSource",
+          "callee": "useMemo",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useStatsData.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 94,
+      "nonEmptyLines": 87,
+      "functions": [
+        {
+          "name": "useStatsData",
+          "startLine": 61,
+          "endLine": 94,
+          "params": [
+            "selectedSprintIds",
+            "teams",
+            "userFilter",
+            "teamCodeFilter",
+            "statsConfig",
+            "combinedTeams"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PENALIZACION_ACTIVA",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "isBlockedLabelName",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "calcFlowMetrics",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "useStatsData",
+          "line": 61,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useStatsData",
+          "callee": "useStatsSource",
+          "lineNumber": 71
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useSelectedSprints",
+          "lineNumber": 72
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "usePrimaryTeamMap",
+          "lineNumber": 73
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useStatsScope",
+          "lineNumber": 76
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useGeneralStats",
+          "lineNumber": 78
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useBoardStats",
+          "lineNumber": 80
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useSprintStats",
+          "lineNumber": 81
+        },
+        {
+          "caller": "useStatsData",
+          "callee": "useFlowStats",
+          "lineNumber": 87
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 4,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

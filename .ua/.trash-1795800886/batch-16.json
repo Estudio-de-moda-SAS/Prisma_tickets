@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "id": "config:public/manifest.json",
+      "type": "config",
+      "name": "manifest.json",
+      "filePath": "public/manifest.json",
+      "summary": "Web App Manifest de la PWA PRISMA - Estudio de Moda: nombre, idioma es-CO, modo standalone, colores de tema e íconos 192/512 (incluido maskable).",
+      "tags": [
+        "configuration",
+        "pwa",
+        "manifest",
+        "branding"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:public/staticwebapp.config.json",
+      "type": "config",
+      "name": "staticwebapp.config.json",
+      "filePath": "public/staticwebapp.config.json",
+      "summary": "Configuración de Azure Static Web Apps: fallback de navegación SPA a /index.html (excluyendo assets, service workers y JSON estáticos), cabeceras no-cache para sw.js y version.json, y tipos MIME para .json y .webmanifest.",
+      "tags": [
+        "configuration",
+        "deployment",
+        "azure-static-web-apps",
+        "routing",
+        "caching"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:public/version.json",
+      "type": "config",
+      "name": "version.json",
+      "filePath": "public/version.json",
+      "summary": "Archivo de versión con el hash corto del commit desplegado, consultado por el frontend para detectar nuevas versiones; se sirve sin caché.",
+      "tags": [
+        "configuration",
+        "versioning",
+        "deployment"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:public/staticwebapp.config.json",
+      "target": "file:index.html",
+      "type": "routes",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:public/staticwebapp.config.json",
+      "target": "config:public/version.json",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:public/staticwebapp.config.json",
+      "target": "config:public/manifest.json",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:public/staticwebapp.config.json",
+      "target": "file:public/sw-notifications.js",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:public/manifest.json",
+      "target": "file:index.html",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

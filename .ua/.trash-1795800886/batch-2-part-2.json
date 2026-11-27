@@ -1,0 +1,1766 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/components/KanbanColumn.tsx",
+   "type": "file",
+   "name": "KanbanColumn.tsx",
+   "filePath": "src/features/requests/components/KanbanColumn.tsx",
+   "summary": "Columna del tablero Kanban que actúa como zona droppable, renderiza tarjetas ordenables, permite colapsarse y muestra totales de horas estimadas/consumidas según la personalización.",
+   "tags": [
+    "component",
+    "kanban",
+    "columna",
+    "drag-and-drop"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "type": "function",
+   "name": "KanbanColumn",
+   "filePath": "src/features/requests/components/KanbanColumn.tsx",
+   "lineRange": [
+    50,
+    350
+   ],
+   "summary": "Columna exportada droppable con tarjetas ordenables, colapso y totales de horas.",
+   "tags": [
+    "component",
+    "kanban",
+    "columna"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/MemberHoursBar.tsx",
+   "type": "file",
+   "name": "MemberHoursBar.tsx",
+   "filePath": "src/features/requests/components/MemberHoursBar.tsx",
+   "summary": "Barra de miembros del equipo con la carga de horas de cada responsable, agrupada por subequipo, que permite filtrar el tablero por asignado.",
+   "tags": [
+    "component",
+    "horas",
+    "carga-trabajo",
+    "filtros"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/MemberHoursBar.tsx:MemberChip",
+   "type": "function",
+   "name": "MemberChip",
+   "filePath": "src/features/requests/components/MemberHoursBar.tsx",
+   "lineRange": [
+    87,
+    206
+   ],
+   "summary": "Chip de miembro con avatar, horas asignadas y tooltip de detalle.",
+   "tags": [
+    "component",
+    "horas",
+    "chip"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/MemberHoursBar.tsx:MemberHoursBar",
+   "type": "function",
+   "name": "MemberHoursBar",
+   "filePath": "src/features/requests/components/MemberHoursBar.tsx",
+   "lineRange": [
+    220,
+    373
+   ],
+   "summary": "Barra exportada que calcula las horas por responsable en las columnas configuradas y permite filtrar por asignado.",
+   "tags": [
+    "component",
+    "horas",
+    "filtros"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/RequestCard.tsx",
+   "type": "file",
+   "name": "RequestCard.tsx",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "summary": "Tarjeta de solicitud del Kanban: muestra prioridad, responsables, sprint, etiquetas, criterios, subsolicitudes y campos de plantilla configurados como visibles, y es ordenable vía dnd-kit.",
+   "tags": [
+    "component",
+    "kanban",
+    "tarjeta",
+    "drag-and-drop",
+    "personalizacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:ActivityDot",
+   "type": "function",
+   "name": "ActivityDot",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    62,
+    79
+   ],
+   "summary": "Indicador de actividad reciente en la tarjeta.",
+   "tags": [
+    "component",
+    "indicador"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:AvatarChip",
+   "type": "function",
+   "name": "AvatarChip",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    91,
+    109
+   ],
+   "summary": "Avatar con iniciales de un responsable en la tarjeta.",
+   "tags": [
+    "component",
+    "avatar"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:CriteriaBadge",
+   "type": "function",
+   "name": "CriteriaBadge",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    149,
+    167
+   ],
+   "summary": "Insignia con el progreso de criterios de aceptación cumplidos.",
+   "tags": [
+    "component",
+    "badge",
+    "criterios-aceptacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:collectAllKeysFromSchema",
+   "type": "function",
+   "name": "collectAllKeysFromSchema",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    192,
+    214
+   ],
+   "summary": "Recorre recursivamente el esquema de plantilla para recolectar todas las claves de campos.",
+   "tags": [
+    "utility",
+    "plantillas",
+    "recursion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:flattenSchemaForCard",
+   "type": "function",
+   "name": "flattenSchemaForCard",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    217,
+    250
+   ],
+   "summary": "Aplana el esquema de plantilla en una lista de campos mostrables en la tarjeta.",
+   "tags": [
+    "utility",
+    "plantillas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:collectOptionLabels",
+   "type": "function",
+   "name": "collectOptionLabels",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    254,
+    269
+   ],
+   "summary": "Construye un mapa de valores a etiquetas de las opciones de un campo de plantilla.",
+   "tags": [
+    "utility",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:ExtraFieldsInCard",
+   "type": "function",
+   "name": "ExtraFieldsInCard",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    281,
+    354
+   ],
+   "summary": "Muestra en la tarjeta los campos extra de plantilla marcados como visibles.",
+   "tags": [
+    "component",
+    "plantillas",
+    "personalizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "type": "function",
+   "name": "RequestCard",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    359,
+    627
+   ],
+   "summary": "Tarjeta exportada ordenable con metadatos de la solicitud y estilos según la personalización del tablero.",
+   "tags": [
+    "component",
+    "kanban",
+    "tarjeta"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestCard.tsx:TeamChipCard",
+   "type": "function",
+   "name": "TeamChipCard",
+   "filePath": "src/features/requests/components/RequestCard.tsx",
+   "lineRange": [
+    629,
+    645
+   ],
+   "summary": "Chip de equipo dentro de la tarjeta.",
+   "tags": [
+    "component",
+    "chip",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "type": "file",
+   "name": "RequestHistoryModal.tsx",
+   "filePath": "src/features/requests/components/RequestHistoryModal.tsx",
+   "summary": "Modal que muestra el historial de cambios de una solicitud con scroll infinito.",
+   "tags": [
+    "component",
+    "modal",
+    "historial",
+    "auditoria"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestHistoryModal.tsx:RequestHistoryModal",
+   "type": "function",
+   "name": "RequestHistoryModal",
+   "filePath": "src/features/requests/components/RequestHistoryModal.tsx",
+   "lineRange": [
+    47,
+    169
+   ],
+   "summary": "Modal exportado con la lista paginada de cambios de la solicitud obtenida con useRequestHistory.",
+   "tags": [
+    "component",
+    "modal",
+    "historial"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/RequestModal.tsx",
+   "type": "file",
+   "name": "RequestModal.tsx",
+   "filePath": "src/features/requests/components/RequestModal.tsx",
+   "summary": "Modal de detalle y edición completa de una solicitud para el equipo de soporte: movimiento entre columnas, asignaciones, horas, comentarios, adjuntos, subsolicitudes, transferencias, criterios de aceptación y cierre.",
+   "tags": [
+    "component",
+    "modal",
+    "detalle-solicitud",
+    "edicion",
+    "react-query"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModal.tsx:SubRequestsPanel",
+   "type": "function",
+   "name": "SubRequestsPanel",
+   "filePath": "src/features/requests/components/RequestModal.tsx",
+   "lineRange": [
+    83,
+    160
+   ],
+   "summary": "Panel que lista y permite crear subsolicitudes hijas de la solicitud actual.",
+   "tags": [
+    "component",
+    "subsolicitudes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "type": "function",
+   "name": "RequestModal",
+   "filePath": "src/features/requests/components/RequestModal.tsx",
+   "lineRange": [
+    165,
+    1679
+   ],
+   "summary": "Modal exportado de gestión completa de la solicitud, integrando decenas de hooks de consulta y mutación.",
+   "tags": [
+    "component",
+    "modal",
+    "detalle-solicitud",
+    "edicion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "type": "file",
+   "name": "RequestModalComponents.tsx",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "summary": "Librería de subcomponentes y utilidades compartidas por los modales de solicitud: panel de criterios de aceptación, datos de plantilla, input de horas, temporizador, dropdowns, chips y formateadores.",
+   "tags": [
+    "component",
+    "utility",
+    "barrel",
+    "ui-compartida"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:initials",
+   "type": "function",
+   "name": "initials",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    12,
+    14
+   ],
+   "summary": "Obtiene las iniciales de un nombre.",
+   "tags": [
+    "utility",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:fmtRelative",
+   "type": "function",
+   "name": "fmtRelative",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    16,
+    27
+   ],
+   "summary": "Formatea una fecha como tiempo relativo.",
+   "tags": [
+    "utility",
+    "fechas",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:fmtBytes",
+   "type": "function",
+   "name": "fmtBytes",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    29,
+    33
+   ],
+   "summary": "Formatea un tamaño en bytes a KB/MB.",
+   "tags": [
+    "utility",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:fmtHours",
+   "type": "function",
+   "name": "fmtHours",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    35,
+    40
+   ],
+   "summary": "Formatea horas decimales a un texto legible.",
+   "tags": [
+    "utility",
+    "horas",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:fileIcon",
+   "type": "function",
+   "name": "fileIcon",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    42,
+    46
+   ],
+   "summary": "Devuelve el icono adecuado según el tipo de archivo.",
+   "tags": [
+    "utility",
+    "adjuntos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:useDropdown",
+   "type": "function",
+   "name": "useDropdown",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    48,
+    60
+   ],
+   "summary": "Hook compartido para dropdowns con cierre por clic externo.",
+   "tags": [
+    "hook",
+    "dropdown"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:AcceptanceCriteriaPanel",
+   "type": "function",
+   "name": "AcceptanceCriteriaPanel",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    63,
+    294
+   ],
+   "summary": "Panel de criterios de aceptación con alta, edición, cambio de estado y eliminación.",
+   "tags": [
+    "component",
+    "criterios-aceptacion",
+    "edicion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:SubTeamGroup",
+   "type": "function",
+   "name": "SubTeamGroup",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    297,
+    360
+   ],
+   "summary": "Grupo colapsable de miembros de subequipo para asignación.",
+   "tags": [
+    "component",
+    "responsables"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:CopyLinkButton",
+   "type": "function",
+   "name": "CopyLinkButton",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    361,
+    377
+   ],
+   "summary": "Botón que copia el enlace de la solicitud.",
+   "tags": [
+    "component",
+    "boton",
+    "portapapeles"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:TemplateFormDataPanel",
+   "type": "function",
+   "name": "TemplateFormDataPanel",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    379,
+    708
+   ],
+   "summary": "Panel editable de los datos de plantilla de la solicitud con editores por tipo de campo.",
+   "tags": [
+    "component",
+    "plantillas",
+    "formulario"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:DividirTooltip",
+   "type": "function",
+   "name": "DividirTooltip",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    711,
+    725
+   ],
+   "summary": "Tooltip explicativo de la acción de dividir horas o solicitudes.",
+   "tags": [
+    "component",
+    "tooltip"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:HorasInput",
+   "type": "function",
+   "name": "HorasInput",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    727,
+    790
+   ],
+   "summary": "Input de horas con commit diferido (debounce) y normalización numérica.",
+   "tags": [
+    "component",
+    "horas",
+    "formulario"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownPanel",
+   "type": "function",
+   "name": "DropdownPanel",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    792,
+    794
+   ],
+   "summary": "Contenedor visual de un dropdown.",
+   "tags": [
+    "component",
+    "dropdown"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownItem",
+   "type": "function",
+   "name": "DropdownItem",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    796,
+    799
+   ],
+   "summary": "Elemento seleccionable de un dropdown con estado hover.",
+   "tags": [
+    "component",
+    "dropdown"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:Checkmark",
+   "type": "function",
+   "name": "Checkmark",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    801,
+    803
+   ],
+   "summary": "Icono de check para elementos seleccionados.",
+   "tags": [
+    "component",
+    "icono"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:SprintDot",
+   "type": "function",
+   "name": "SprintDot",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    805,
+    809
+   ],
+   "summary": "Punto de color que indica el estado de un sprint.",
+   "tags": [
+    "component",
+    "sprints",
+    "indicador"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:FieldBlock",
+   "type": "function",
+   "name": "FieldBlock",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    815,
+    817
+   ],
+   "summary": "Contenedor de bloque de campo con espaciado estándar.",
+   "tags": [
+    "component",
+    "layout"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:PersonChip",
+   "type": "function",
+   "name": "PersonChip",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    819,
+    830
+   ],
+   "summary": "Chip de persona con avatar y opción de quitar.",
+   "tags": [
+    "component",
+    "chip",
+    "responsables"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:TimerOrInputBlock",
+   "type": "function",
+   "name": "TimerOrInputBlock",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    833,
+    964
+   ],
+   "summary": "Bloque que alterna entre temporizador en vivo (timerStore) e ingreso manual de horas consumidas.",
+   "tags": [
+    "component",
+    "horas",
+    "temporizador"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestModalComponents.tsx:TeamChip",
+   "type": "function",
+   "name": "TeamChip",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx",
+   "lineRange": [
+    965,
+    977
+   ],
+   "summary": "Chip de equipo con color.",
+   "tags": [
+    "component",
+    "chip",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/RequestTimelines.tsx",
+   "type": "file",
+   "name": "RequestTimelines.tsx",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "summary": "Componentes de presentación para la línea de tiempo de cierres y retroalimentación del cliente, en versiones completa y compacta.",
+   "tags": [
+    "component",
+    "timeline",
+    "cierre",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:ClosureTypeBadge",
+   "type": "function",
+   "name": "ClosureTypeBadge",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    14,
+    28
+   ],
+   "summary": "Insignia del tipo de cierre de la solicitud.",
+   "tags": [
+    "component",
+    "badge",
+    "cierre"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:CierreBanner",
+   "type": "function",
+   "name": "CierreBanner",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    31,
+    83
+   ],
+   "summary": "Banner completo con los datos del cierre de la solicitud.",
+   "tags": [
+    "component",
+    "cierre"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:CierreBannerCompact",
+   "type": "function",
+   "name": "CierreBannerCompact",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    86,
+    120
+   ],
+   "summary": "Versión compacta del banner de cierre.",
+   "tags": [
+    "component",
+    "cierre"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:CierreTimeline",
+   "type": "function",
+   "name": "CierreTimeline",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    123,
+    150
+   ],
+   "summary": "Línea de tiempo de los cierres sucesivos de una solicitud.",
+   "tags": [
+    "component",
+    "timeline",
+    "cierre"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryFull",
+   "type": "function",
+   "name": "FeedbackEntryFull",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    153,
+    184
+   ],
+   "summary": "Entrada completa de retroalimentación del cliente.",
+   "tags": [
+    "component",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryCompact",
+   "type": "function",
+   "name": "FeedbackEntryCompact",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    187,
+    207
+   ],
+   "summary": "Entrada compacta de retroalimentación del cliente.",
+   "tags": [
+    "component",
+    "feedback"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackTimeline",
+   "type": "function",
+   "name": "FeedbackTimeline",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx",
+   "lineRange": [
+    210,
+    239
+   ],
+   "summary": "Línea de tiempo de retroalimentaciones del cliente.",
+   "tags": [
+    "component",
+    "timeline",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "type": "file",
+   "name": "ResolutionRatingModal.tsx",
+   "filePath": "src/features/requests/components/ResolutionRatingModal.tsx",
+   "summary": "Modal para que el solicitante califique con estrellas la resolución de su solicitud y deje un comentario.",
+   "tags": [
+    "component",
+    "modal",
+    "calificacion",
+    "feedback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/ResolutionRatingModal.tsx:StarRow",
+   "type": "function",
+   "name": "StarRow",
+   "filePath": "src/features/requests/components/ResolutionRatingModal.tsx",
+   "lineRange": [
+    13,
+    40
+   ],
+   "summary": "Fila interactiva de estrellas para seleccionar la calificación.",
+   "tags": [
+    "component",
+    "calificacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/ResolutionRatingModal.tsx:ResolutionRatingModal",
+   "type": "function",
+   "name": "ResolutionRatingModal",
+   "filePath": "src/features/requests/components/ResolutionRatingModal.tsx",
+   "lineRange": [
+    51,
+    189
+   ],
+   "summary": "Modal exportado que recoge la calificación y comentario de la resolución.",
+   "tags": [
+    "component",
+    "modal",
+    "calificacion"
+   ],
+   "complexity": "complex"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/components/KanbanColumn.tsx",
+   "target": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanColumn.tsx",
+   "target": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanColumn.tsx",
+   "target": "file:src/features/requests/components/RequestCard.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanColumn.tsx",
+   "target": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanColumn.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/MemberHoursBar.tsx",
+   "target": "function:src/features/requests/components/MemberHoursBar.tsx:MemberChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/MemberHoursBar.tsx",
+   "target": "function:src/features/requests/components/MemberHoursBar.tsx:MemberHoursBar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/MemberHoursBar.tsx",
+   "target": "function:src/features/requests/components/MemberHoursBar.tsx:MemberHoursBar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/MemberHoursBar.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:ActivityDot",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:AvatarChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:CriteriaBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:collectAllKeysFromSchema",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:flattenSchemaForCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:collectOptionLabels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:ExtraFieldsInCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "function:src/features/requests/components/RequestCard.tsx:TeamChipCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestCard.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "target": "function:src/features/requests/components/RequestHistoryModal.tsx:RequestHistoryModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "target": "function:src/features/requests/components/RequestHistoryModal.tsx:RequestHistoryModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "target": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "target": "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "function:src/features/requests/components/RequestModal.tsx:SubRequestsPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/ClosureModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/TransferTicketModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/hooks/useCreateRequest.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/hooks/useMoveRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModal.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:initials",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:initials",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtRelative",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtRelative",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtBytes",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtBytes",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtHours",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtHours",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fileIcon",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fileIcon",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:useDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:useDropdown",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:AcceptanceCriteriaPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:AcceptanceCriteriaPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:SubTeamGroup",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:SubTeamGroup",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:CopyLinkButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:CopyLinkButton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TemplateFormDataPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TemplateFormDataPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DividirTooltip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DividirTooltip",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:HorasInput",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:HorasInput",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownItem",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:DropdownItem",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:Checkmark",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:Checkmark",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:SprintDot",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:SprintDot",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:FieldBlock",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:FieldBlock",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:PersonChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:PersonChip",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TimerOrInputBlock",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TimerOrInputBlock",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TeamChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TeamChip",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:ClosureTypeBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreBanner",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreBannerCompact",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreBannerCompact",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreTimeline",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:CierreTimeline",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryFull",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryFull",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryCompact",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackEntryCompact",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackTimeline",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "function:src/features/requests/components/RequestTimelines.tsx:FeedbackTimeline",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RequestTimelines.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "target": "function:src/features/requests/components/ResolutionRatingModal.tsx:StarRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "target": "function:src/features/requests/components/ResolutionRatingModal.tsx:ResolutionRatingModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "target": "function:src/features/requests/components/ResolutionRatingModal.tsx:ResolutionRatingModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useColumnStyle",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardClasses",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardVisibility",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useCardStyle",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:usePriorityColor",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestHistoryModal.tsx:RequestHistoryModal",
+   "target": "function:src/features/requests/hooks/useRequestHistory.tsx:useRequestHistory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/hooks/useMoveRequests.ts:useMoveRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/hooks/UseUpdateRequest.tsx:useUpdateRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useDeleteRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/hooks/useCreateRequest.ts:useCreateRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:useDropdown",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "target": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/RequestHistoryModal.tsx:RequestHistoryModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/ResolutionRatingModal.tsx:ResolutionRatingModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/TransferTicketModal.tsx:TransferTicketModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:AcceptanceCriteriaPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TemplateFormDataPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:TimerOrInputBlock",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:ExtraFieldsInCard",
+   "target": "function:src/features/requests/components/RequestCard.tsx:flattenSchemaForCard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:ExtraFieldsInCard",
+   "target": "function:src/features/requests/components/RequestCard.tsx:collectAllKeysFromSchema",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestCard.tsx:ExtraFieldsInCard",
+   "target": "function:src/features/requests/components/RequestCard.tsx:collectOptionLabels",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModalComponents.tsx:SubTeamGroup",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:initials",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/RequestModalComponents.tsx:TimerOrInputBlock",
+   "target": "function:src/features/requests/components/RequestModalComponents.tsx:fmtHours",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

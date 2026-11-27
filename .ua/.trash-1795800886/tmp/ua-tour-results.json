@@ -1,0 +1,3134 @@
+{
+ "scriptCompleted": true,
+ "entryPointCandidates": [
+  {
+   "id": "document:README.md",
+   "score": 5,
+   "name": "README.md",
+   "summary": "Documentación principal de PRISMA con 14 secciones: características, stack tecnológico, arquitectura (React/Vite + Supabase Edge Functions + Entra ID), estructura del proyecto, instalación, desarrollo, generación de documentación TypeDoc, despliegue en Azure Static Web Apps, convenciones de diseño y roles del sistema."
+  },
+  {
+   "id": "file:src/App.tsx",
+   "score": 5,
+   "name": "App.tsx",
+   "summary": "Componente raíz de PRISMA que define todas las rutas de React Router, los guards de acceso por autenticación, onboarding y rol (TI, estadísticas, admin) y las rutas overlay de tickets SOLVI."
+  },
+  {
+   "id": "file:supabase/functions/api/index.ts",
+   "score": 4,
+   "name": "index.ts",
+   "summary": "Punto de entrada HTTP (Deno.serve) de la Edge Function api: maneja CORS, anuncios públicos, chunks internos de jobs protegidos por secreto, verifica JWT de Azure/Supabase y despacha la acción al router."
+  },
+  {
+   "id": "file:src/main.tsx",
+   "score": 4,
+   "name": "main.tsx",
+   "summary": "Punto de entrada de la SPA: aplica el tema guardado antes del primer render, crea el QueryClient de TanStack Query y monta App envuelto en BrowserRouter, AuthProvider (MSAL) y GraphServicesProvider."
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/requests.ts",
+   "score": 2,
+   "name": "requests.ts",
+   "summary": "Módulo central de PRISMA con los handlers del ciclo de vida del ticket: lectura por múltiples criterios, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas, orquestando sprints, automatizaciones, notificaciones, correos e historial."
+  }
+ ],
+ "fanInRanking": [
+  {
+   "id": "file:src/features/requests/types.ts",
+   "fanIn": 66,
+   "name": "types.ts"
+  },
+  {
+   "id": "file:src/config.ts",
+   "fanIn": 46,
+   "name": "config.ts"
+  },
+  {
+   "id": "file:src/lib/apiClient.ts",
+   "fanIn": 45,
+   "name": "apiClient.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "fanIn": 31,
+   "name": "useBoardMetadata.ts"
+  },
+  {
+   "id": "file:supabase/functions/api/shared/types.ts",
+   "fanIn": 30,
+   "name": "types.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "fanIn": 26,
+   "name": "useCurrentUser.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSprints.ts",
+   "fanIn": 24,
+   "name": "useSprints.ts"
+  },
+  {
+   "id": "file:src/graph/GraphServicesProvider.tsx",
+   "fanIn": 21,
+   "name": "GraphServicesProvider.tsx"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useUsers.ts",
+   "fanIn": 18,
+   "name": "useUsers.ts"
+  },
+  {
+   "id": "file:src/components/hooks/useMediaQuery.ts",
+   "fanIn": 18,
+   "name": "useMediaQuery.ts"
+  },
+  {
+   "id": "file:src/types/commons.ts",
+   "fanIn": 17,
+   "name": "commons.ts"
+  },
+  {
+   "id": "file:src/auth/AuthProvider.tsx",
+   "fanIn": 16,
+   "name": "AuthProvider.tsx"
+  },
+  {
+   "id": "file:supabase/functions/api/lib/supabase.ts",
+   "fanIn": 15,
+   "name": "supabase.ts"
+  },
+  {
+   "id": "file:src/graph/GraphRest.ts",
+   "fanIn": 14,
+   "name": "GraphRest.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useRequests.ts",
+   "fanIn": 13,
+   "name": "useRequests.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/types.ts",
+   "fanIn": 12,
+   "name": "types.ts"
+  },
+  {
+   "id": "file:src/features/exports/types.ts",
+   "fanIn": 11,
+   "name": "types.ts"
+  },
+  {
+   "id": "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "fanIn": 10,
+   "name": "SupabaseRequestsService.ts"
+  },
+  {
+   "id": "file:src/features/requests/templates/types.ts",
+   "fanIn": 10,
+   "name": "types.ts"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "fanIn": 10,
+   "name": "useSubTeamMembers.ts"
+  }
+ ],
+ "fanOutRanking": [
+  {
+   "id": "file:src/features/requests/components/RequestModal.tsx",
+   "fanOut": 34,
+   "name": "RequestModal.tsx"
+  },
+  {
+   "id": "file:supabase/functions/api/router.ts",
+   "fanOut": 29,
+   "name": "router.ts"
+  },
+  {
+   "id": "file:src/pages/BoardPage.tsx",
+   "fanOut": 26,
+   "name": "BoardPage.tsx"
+  },
+  {
+   "id": "file:src/App.tsx",
+   "fanOut": 23,
+   "name": "App.tsx"
+  },
+  {
+   "id": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "fanOut": 21,
+   "name": "HomeRequestModal.tsx"
+  },
+  {
+   "id": "file:src/features/requests/components/KanbanBoard.tsx",
+   "fanOut": 19,
+   "name": "KanbanBoard.tsx"
+  },
+  {
+   "id": "file:src/pages/HomePage.tsx",
+   "fanOut": 19,
+   "name": "HomePage.tsx"
+  },
+  {
+   "id": "file:src/pages/StatsPage.tsx",
+   "fanOut": 17,
+   "name": "StatsPage.tsx"
+  },
+  {
+   "id": "file:src/components/ConfigPanel.tsx",
+   "fanOut": 16,
+   "name": "ConfigPanel.tsx"
+  },
+  {
+   "id": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "fanOut": 14,
+   "name": "CreateRequestModal.tsx"
+  },
+  {
+   "id": "file:src/features/requests/components/TasksTable.tsx",
+   "fanOut": 13,
+   "name": "TasksTable.tsx"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "fanOut": 13,
+   "name": "ExportsConfig.tsx"
+  },
+  {
+   "id": "file:src/pages/NewRequestPage.tsx",
+   "fanOut": 13,
+   "name": "NewRequestPage.tsx"
+  },
+  {
+   "id": "file:src/pages/TeamRequestsPage.tsx",
+   "fanOut": 13,
+   "name": "TeamRequestsPage.tsx"
+  },
+  {
+   "id": "file:src/features/requests/components/SolviTicketModal.tsx",
+   "fanOut": 12,
+   "name": "SolviTicketModal.tsx"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviActions.ts",
+   "fanOut": 11,
+   "name": "useSolviActions.ts"
+  },
+  {
+   "id": "file:src/pages/integrations/SolviRequestPage.tsx",
+   "fanOut": 11,
+   "name": "SolviRequestPage.tsx"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useStatsData.ts",
+   "fanOut": 10,
+   "name": "useStatsData.ts"
+  },
+  {
+   "id": "file:src/components/layout/Topbar.tsx",
+   "fanOut": 10,
+   "name": "Topbar.tsx"
+  },
+  {
+   "id": "file:src/pages/TicketPage.tsx",
+   "fanOut": 10,
+   "name": "TicketPage.tsx"
+  }
+ ],
+ "bfsTraversal": {
+  "startNode": "file:src/main.tsx",
+  "order": [
+   "file:src/main.tsx",
+   "file:src/App.tsx",
+   "file:src/auth/AuthProvider.tsx",
+   "file:src/graph/GraphServicesProvider.tsx",
+   "file:src/lib/supabaseClient.ts",
+   "file:src/styles/globals.css",
+   "file:src/auth/roles.ts",
+   "file:src/auth/supabaseAuth.ts",
+   "file:src/components/layout/AppLayout.tsx",
+   "file:src/features/requests/components/SolviTicketModal.tsx",
+   "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "file:src/pages/AutomationsPage.tsx",
+   "file:src/pages/BoardPage.tsx",
+   "file:src/pages/ClientRequestsPage.tsx",
+   "file:src/pages/HomePage.tsx",
+   "file:src/pages/LoginPage.tsx",
+   "file:src/pages/MyMentionsPage.tsx",
+   "file:src/pages/MyRequestsPage.tsx",
+   "file:src/pages/NewRequestPage.tsx",
+   "file:src/pages/OnBoardingPage.tsx",
+   "file:src/pages/PrismaAdminPage.tsx",
+   "file:src/pages/RequestsPage.tsx",
+   "file:src/pages/StatsPage.tsx",
+   "file:src/pages/TasksPage.tsx",
+   "file:src/pages/TeamRequestsPage.tsx",
+   "file:src/pages/TicketPage.tsx",
+   "file:src/pages/integrations/SolviRequestPage.tsx",
+   "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "file:src/auth/msal.ts",
+   "file:src/config.ts",
+   "file:src/lib/apiClient.ts",
+   "file:src/types/commons.ts",
+   "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "file:src/graph/GraphRest.ts",
+   "file:src/graph/useGraphServices.ts",
+   "file:src/components/layout/AnnouncementBanner.tsx",
+   "file:src/components/layout/AnnouncementModal.tsx",
+   "file:src/components/layout/FloatingTimer.tsx",
+   "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "file:src/components/layout/Sidebar.tsx",
+   "file:src/components/layout/Topbar.tsx",
+   "file:src/components/layout/VersionUpdateBanner.tsx",
+   "file:src/features/requests/hooks/useCurrentUser.ts",
+   "file:src/store/useBoardTheme.ts",
+   "file:src/features/requests/components/TransferTicketModal.tsx",
+   "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "file:src/features/requests/components/mentions/CommentText.tsx",
+   "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "file:src/features/requests/hooks/useSolviActions.ts",
+   "file:src/features/requests/hooks/useSolviComments.ts",
+   "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "file:src/features/requests/hooks/useSolviTickets.ts",
+   "file:src/features/requests/hooks/useTransferTicket.ts",
+   "file:src/features/requests/hooks/useUsers.ts",
+   "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "file:src/features/requests/templates/types.ts",
+   "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "file:src/features/automations/hooks/useAutomationRules.ts",
+   "file:src/features/automations/types.ts",
+   "file:src/store/automationStore.ts",
+   "file:src/styles/automations.css",
+   "file:src/components/hooks/useMediaQuery.ts",
+   "file:src/features/requests/components/BoardCustomization.tsx",
+   "file:src/features/requests/components/BoardFilters.tsx",
+   "file:src/features/requests/components/BoardSearch.tsx",
+   "file:src/features/requests/components/IntakeBadge.tsx",
+   "file:src/features/requests/components/KanbanBoard.tsx",
+   "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "file:src/features/requests/components/MemberHoursBar.tsx",
+   "file:src/features/requests/hooks/useColumnMap.ts",
+   "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "file:src/features/requests/hooks/useLabels.ts",
+   "file:src/features/requests/hooks/useMoveRequests.ts",
+   "file:src/features/requests/hooks/useRequests.ts",
+   "file:src/features/requests/hooks/useSprints.ts",
+   "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "file:src/features/requests/hooks/useSubTeams.ts",
+   "file:src/features/requests/types.ts",
+   "file:src/store/boardStore.ts",
+   "file:src/store/searchStore.ts",
+   "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "file:src/styles/clientRequests.css",
+   "file:src/components/layout/siderbarConstants.ts",
+   "file:src/features/requests/components/HomeRequestModal.tsx",
+   "file:src/features/requests/hooks/useAnnouncements.ts",
+   "file:src/styles/LoginPage.css",
+   "file:src/features/requests/mock/Mockboard.ts",
+   "file:src/lib/compressImage.ts",
+   "file:src/features/requests/components/AssignBugModal.tsx",
+   "file:src/styles/stats.css",
+   "file:src/features/requests/components/StatsSkeleton.tsx",
+   "file:src/features/requests/components/stats/FlowSection.tsx",
+   "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "file:src/features/requests/components/stats/SprintSection.tsx",
+   "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "file:src/features/requests/components/stats/statsFormat.ts",
+   "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "file:src/features/requests/hooks/useStatsData.ts",
+   "file:src/store/statsStore.ts",
+   "file:src/features/requests/components/TasksTable.tsx",
+   "file:src/features/requests/components/RequestModal.tsx",
+   "file:src/features/requests/hooks/useCloseRequest.ts",
+   "file:src/features/requests/hooks/useTicketResolver.ts",
+   "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "file:src/features/requests/hooks/useSolviAns.ts",
+   "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "file:src/styles/solvi.css",
+   "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "file:src/store/timerStore.ts",
+   "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "file:src/store/notifPromptStore.ts",
+   "file:src/components/ConfigPanel.tsx",
+   "file:src/components/layout/SatisfactionModal.tsx",
+   "file:src/store/mobileNavStore.ts",
+   "file:src/components/layout/BugReportModal.tsx",
+   "file:src/components/layout/NotificationBell.tsx",
+   "file:src/hooks/useInstallPrompt.ts",
+   "file:src/components/hooks/useVersionCheck.ts",
+   "file:src/store/customizationStore.ts",
+   "file:src/store/useTheme.ts",
+   "file:src/features/requests/hooks/useDepartments.ts",
+   "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "file:src/features/requests/lib/mentions.ts",
+   "file:src/features/requests/services/SolviAttachments.service.ts",
+   "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "file:src/features/requests/services/SolviShifts.service.ts",
+   "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "file:src/features/requests/types/SolviTicket.ts",
+   "file:src/store/filterStore.ts",
+   "file:src/store/intakeStore.ts",
+   "file:src/features/requests/components/ClosureModal.tsx",
+   "file:src/features/requests/components/CreateRequestModal.tsx",
+   "file:src/features/requests/components/KanbanColumn.tsx",
+   "file:src/features/requests/components/RequestCard.tsx",
+   "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "file:src/features/requests/hooks/useDragScroll.ts",
+   "file:src/features/requests/hooks/useNotifications.ts",
+   "file:src/styles/kanbanSkeleton.css",
+   "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "file:src/features/requests/components/RequestModalComponents.tsx",
+   "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "file:src/features/requests/components/RequestTimelines.tsx",
+   "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "file:src/features/requests/hooks/useAttachments.ts",
+   "file:src/features/requests/hooks/useClientFeedback.ts",
+   "file:src/features/requests/hooks/useComments.ts",
+   "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "file:src/features/requests/components/stats/BarChart.tsx",
+   "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "file:src/features/requests/hooks/stats/types.ts",
+   "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "file:src/features/requests/hooks/useTasksData.ts",
+   "file:src/styles/tasks.css",
+   "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "file:src/features/requests/hooks/useCreateRequest.ts",
+   "file:src/features/requests/hooks/useSubRequest.ts",
+   "file:src/features/requests/components/RichTextEditor.tsx",
+   "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "file:src/features/requests/components/mentions/MentionList.tsx",
+   "file:src/features/requests/services/HolidayService.service.ts",
+   "file:src/features/requests/components/stats/useClickOutside.ts",
+   "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "file:src/features/exports/hooks/useExportData.ts",
+   "file:src/features/exports/services/columnRegistry.ts",
+   "file:src/features/exports/types.ts",
+   "file:src/features/requests/hooks/useTeams.ts",
+   "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "file:src/features/requests/templates/renameUtils.ts",
+   "file:src/features/requests/hooks/stats/constants.ts",
+   "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "file:src/features/requests/hooks/stats/lib/math.ts",
+   "file:src/features/exports/hooks/useExportHistory.ts",
+   "file:src/features/exports/services/processExportArtifact.ts",
+   "file:src/features/exports/hooks/useExportJob.ts",
+   "file:src/features/exports/services/buildCsv.ts",
+   "file:src/features/exports/services/buildXlsx.ts"
+  ],
+  "depthMap": {
+   "file:src/main.tsx": 0,
+   "file:src/App.tsx": 1,
+   "file:src/auth/AuthProvider.tsx": 1,
+   "file:src/graph/GraphServicesProvider.tsx": 1,
+   "file:src/lib/supabaseClient.ts": 1,
+   "file:src/styles/globals.css": 1,
+   "file:src/auth/roles.ts": 2,
+   "file:src/auth/supabaseAuth.ts": 2,
+   "file:src/components/layout/AppLayout.tsx": 2,
+   "file:src/features/requests/components/SolviTicketModal.tsx": 2,
+   "file:src/features/requests/hooks/useBoardMetadata.ts": 2,
+   "file:src/pages/AutomationsPage.tsx": 2,
+   "file:src/pages/BoardPage.tsx": 2,
+   "file:src/pages/ClientRequestsPage.tsx": 2,
+   "file:src/pages/HomePage.tsx": 2,
+   "file:src/pages/LoginPage.tsx": 2,
+   "file:src/pages/MyMentionsPage.tsx": 2,
+   "file:src/pages/MyRequestsPage.tsx": 2,
+   "file:src/pages/NewRequestPage.tsx": 2,
+   "file:src/pages/OnBoardingPage.tsx": 2,
+   "file:src/pages/PrismaAdminPage.tsx": 2,
+   "file:src/pages/RequestsPage.tsx": 2,
+   "file:src/pages/StatsPage.tsx": 2,
+   "file:src/pages/TasksPage.tsx": 2,
+   "file:src/pages/TeamRequestsPage.tsx": 2,
+   "file:src/pages/TicketPage.tsx": 2,
+   "file:src/pages/integrations/SolviRequestPage.tsx": 2,
+   "file:src/pages/integrations/SolviTicketsPage.tsx": 2,
+   "file:src/auth/msal.ts": 2,
+   "file:src/config.ts": 2,
+   "file:src/lib/apiClient.ts": 2,
+   "file:src/types/commons.ts": 2,
+   "file:src/features/requests/services/SupabaseRequestsService.ts": 2,
+   "file:src/graph/GraphRest.ts": 2,
+   "file:src/graph/useGraphServices.ts": 2,
+   "file:src/components/layout/AnnouncementBanner.tsx": 3,
+   "file:src/components/layout/AnnouncementModal.tsx": 3,
+   "file:src/components/layout/FloatingTimer.tsx": 3,
+   "file:src/components/layout/NotificationPermissionPrompt.tsx": 3,
+   "file:src/components/layout/Sidebar.tsx": 3,
+   "file:src/components/layout/Topbar.tsx": 3,
+   "file:src/components/layout/VersionUpdateBanner.tsx": 3,
+   "file:src/features/requests/hooks/useCurrentUser.ts": 3,
+   "file:src/store/useBoardTheme.ts": 3,
+   "file:src/features/requests/components/TransferTicketModal.tsx": 3,
+   "file:src/features/requests/components/mentions/CommentComposer.tsx": 3,
+   "file:src/features/requests/components/mentions/CommentText.tsx": 3,
+   "file:src/features/requests/components/mentions/ParticipantsPanel.tsx": 3,
+   "file:src/features/requests/hooks/useSolviActions.ts": 3,
+   "file:src/features/requests/hooks/useSolviComments.ts": 3,
+   "file:src/features/requests/hooks/useSolviParticipants.ts": 3,
+   "file:src/features/requests/hooks/useSolviTickets.ts": 3,
+   "file:src/features/requests/hooks/useTransferTicket.ts": 3,
+   "file:src/features/requests/hooks/useUsers.ts": 3,
+   "file:src/features/requests/services/SolviTicketNotifications.service.ts": 3,
+   "file:src/features/requests/templates/types.ts": 3,
+   "file:src/features/automations/components/CreateAutomationModal.tsx": 3,
+   "file:src/features/automations/hooks/useAutomationRules.ts": 3,
+   "file:src/features/automations/types.ts": 3,
+   "file:src/store/automationStore.ts": 3,
+   "file:src/styles/automations.css": 3,
+   "file:src/components/hooks/useMediaQuery.ts": 3,
+   "file:src/features/requests/components/BoardCustomization.tsx": 3,
+   "file:src/features/requests/components/BoardFilters.tsx": 3,
+   "file:src/features/requests/components/BoardSearch.tsx": 3,
+   "file:src/features/requests/components/IntakeBadge.tsx": 3,
+   "file:src/features/requests/components/KanbanBoard.tsx": 3,
+   "file:src/features/requests/components/KanbanSkeleton.tsx": 3,
+   "file:src/features/requests/components/MemberHoursBar.tsx": 3,
+   "file:src/features/requests/hooks/useColumnMap.ts": 3,
+   "file:src/features/requests/hooks/useFilteredBoard.ts": 3,
+   "file:src/features/requests/hooks/useKanbanAdmin.ts": 3,
+   "file:src/features/requests/hooks/useLabels.ts": 3,
+   "file:src/features/requests/hooks/useMoveRequests.ts": 3,
+   "file:src/features/requests/hooks/useRequests.ts": 3,
+   "file:src/features/requests/hooks/useSprints.ts": 3,
+   "file:src/features/requests/hooks/useSubTeamMembers.ts": 3,
+   "file:src/features/requests/hooks/useSubTeams.ts": 3,
+   "file:src/features/requests/types.ts": 3,
+   "file:src/store/boardStore.ts": 3,
+   "file:src/store/searchStore.ts": 3,
+   "file:src/features/requests/hooks/useMySolviTickets.ts": 3,
+   "file:src/styles/clientRequests.css": 3,
+   "file:src/components/layout/siderbarConstants.ts": 3,
+   "file:src/features/requests/components/HomeRequestModal.tsx": 3,
+   "file:src/features/requests/hooks/useAnnouncements.ts": 3,
+   "file:src/styles/LoginPage.css": 3,
+   "file:src/features/requests/mock/Mockboard.ts": 3,
+   "file:src/lib/compressImage.ts": 3,
+   "file:src/features/requests/components/AssignBugModal.tsx": 3,
+   "file:src/styles/stats.css": 3,
+   "file:src/features/requests/components/StatsSkeleton.tsx": 3,
+   "file:src/features/requests/components/stats/FlowSection.tsx": 3,
+   "file:src/features/requests/components/stats/GlobalSection.tsx": 3,
+   "file:src/features/requests/components/stats/SprintSection.tsx": 3,
+   "file:src/features/requests/components/stats/StatsControlBar.tsx": 3,
+   "file:src/features/requests/components/stats/StatsTeamTabs.tsx": 3,
+   "file:src/features/requests/components/stats/TeamDetailSection.tsx": 3,
+   "file:src/features/requests/components/stats/statsFormat.ts": 3,
+   "file:src/features/requests/components/stats/useStatsAutoSelection.ts": 3,
+   "file:src/features/requests/hooks/useStatsData.ts": 3,
+   "file:src/store/statsStore.ts": 3,
+   "file:src/features/requests/components/TasksTable.tsx": 3,
+   "file:src/features/requests/components/RequestModal.tsx": 3,
+   "file:src/features/requests/hooks/useCloseRequest.ts": 3,
+   "file:src/features/requests/hooks/useTicketResolver.ts": 3,
+   "file:src/features/requests/components/SolviRequestPageComponents.tsx": 3,
+   "file:src/features/requests/hooks/useSolviAns.ts": 3,
+   "file:src/features/requests/hooks/useSolviArticulos.ts": 3,
+   "file:src/features/requests/hooks/useSolviCategorias.ts": 3,
+   "file:src/features/requests/hooks/useSolviSubcategorias.ts": 3,
+   "file:src/styles/solvi.css": 3,
+   "file:src/features/requests/hooks/UseUpdateRequest.tsx": 4,
+   "file:src/store/timerStore.ts": 4,
+   "file:src/features/requests/hooks/useBrowserNotifications.ts": 4,
+   "file:src/store/notifPromptStore.ts": 4,
+   "file:src/components/ConfigPanel.tsx": 4,
+   "file:src/components/layout/SatisfactionModal.tsx": 4,
+   "file:src/store/mobileNavStore.ts": 4,
+   "file:src/components/layout/BugReportModal.tsx": 4,
+   "file:src/components/layout/NotificationBell.tsx": 4,
+   "file:src/hooks/useInstallPrompt.ts": 4,
+   "file:src/components/hooks/useVersionCheck.ts": 4,
+   "file:src/store/customizationStore.ts": 4,
+   "file:src/store/useTheme.ts": 4,
+   "file:src/features/requests/hooks/useDepartments.ts": 4,
+   "file:src/features/requests/components/mentions/mentionSuggestion.ts": 4,
+   "file:src/features/requests/lib/mentions.ts": 4,
+   "file:src/features/requests/services/SolviAttachments.service.ts": 4,
+   "file:src/features/requests/services/SolviBusinessDate.service.ts": 4,
+   "file:src/features/requests/services/SolviShifts.service.ts": 4,
+   "file:src/features/requests/services/SolviTicketAssignment.service.ts": 4,
+   "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts": 4,
+   "file:src/features/requests/types/SolviTicket.ts": 4,
+   "file:src/store/filterStore.ts": 4,
+   "file:src/store/intakeStore.ts": 4,
+   "file:src/features/requests/components/ClosureModal.tsx": 4,
+   "file:src/features/requests/components/CreateRequestModal.tsx": 4,
+   "file:src/features/requests/components/KanbanColumn.tsx": 4,
+   "file:src/features/requests/components/RequestCard.tsx": 4,
+   "file:src/features/requests/hooks/useCustomizationStyles.ts": 4,
+   "file:src/features/requests/hooks/useDragScroll.ts": 4,
+   "file:src/features/requests/hooks/useNotifications.ts": 4,
+   "file:src/styles/kanbanSkeleton.css": 4,
+   "file:src/features/requests/components/ClientReviewBanner.tsx": 4,
+   "file:src/features/requests/components/RequestModalComponents.tsx": 4,
+   "file:src/features/requests/components/ResolutionRatingModal.tsx": 4,
+   "file:src/features/requests/components/RequestTimelines.tsx": 4,
+   "file:src/features/requests/hooks/useAcceptanceCriteria.ts": 4,
+   "file:src/features/requests/hooks/useAttachments.ts": 4,
+   "file:src/features/requests/hooks/useClientFeedback.ts": 4,
+   "file:src/features/requests/hooks/useComments.ts": 4,
+   "file:src/features/requests/hooks/useRequestParticipants.ts": 4,
+   "file:src/features/requests/components/stats/BarChart.tsx": 4,
+   "file:src/features/requests/components/stats/StatsAtoms.tsx": 4,
+   "file:src/features/requests/components/stats/SprintSelector.tsx": 4,
+   "file:src/features/requests/components/stats/UserFilterDropdown.tsx": 4,
+   "file:src/features/requests/components/stats/ResolutoresPanel.tsx": 4,
+   "file:src/features/requests/hooks/stats/types.ts": 4,
+   "file:src/features/requests/hooks/stats/useBoardStats.ts": 4,
+   "file:src/features/requests/hooks/stats/useFlowStats.ts": 4,
+   "file:src/features/requests/hooks/stats/useGeneralStats.ts": 4,
+   "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts": 4,
+   "file:src/features/requests/hooks/stats/useSelectedSprints.ts": 4,
+   "file:src/features/requests/hooks/stats/useSprintStats.ts": 4,
+   "file:src/features/requests/hooks/stats/useStatsScope.ts": 4,
+   "file:src/features/requests/hooks/stats/useStatsSource.ts": 4,
+   "file:src/features/requests/hooks/useTasksData.ts": 4,
+   "file:src/styles/tasks.css": 4,
+   "file:src/features/requests/components/RequestHistoryModal.tsx": 4,
+   "file:src/features/requests/hooks/useCreateRequest.ts": 4,
+   "file:src/features/requests/hooks/useSubRequest.ts": 4,
+   "file:src/features/requests/components/RichTextEditor.tsx": 4,
+   "file:src/features/requests/components/SolviRequestFormControls.tsx": 4,
+   "file:src/features/requests/services/AnsSharepointSolvi.service.ts": 4,
+   "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts": 4,
+   "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts": 4,
+   "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts": 4,
+   "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/ExportsConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/KanbansConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/LabelsConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/OrgConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx": 5,
+   "file:src/components/ConfigPanelComponents/SprintsConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx": 5,
+   "file:src/components/ConfigPanelComponents/UsersConfig.tsx": 5,
+   "file:src/features/requests/hooks/useEmailTemplates.ts": 5,
+   "file:src/features/requests/components/mentions/MentionList.tsx": 5,
+   "file:src/features/requests/services/HolidayService.service.ts": 5,
+   "file:src/features/requests/components/stats/useClickOutside.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/calcBoard.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/sprints.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/calcGeneral.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts": 5,
+   "file:src/features/requests/hooks/stats/lib/calcSprint.ts": 5,
+   "file:src/features/requests/hooks/useRequestHistory.tsx": 5,
+   "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx": 6,
+   "file:src/components/ConfigPanelComponents/ExportProgressView.tsx": 6,
+   "file:src/features/exports/hooks/useCreateExportJob.ts": 6,
+   "file:src/features/exports/hooks/useExportData.ts": 6,
+   "file:src/features/exports/services/columnRegistry.ts": 6,
+   "file:src/features/exports/types.ts": 6,
+   "file:src/features/requests/hooks/useTeams.ts": 6,
+   "file:src/features/requests/templates/TemplateRenameModal.tsx": 6,
+   "file:src/features/requests/templates/renameUtils.ts": 6,
+   "file:src/features/requests/hooks/stats/constants.ts": 6,
+   "file:src/features/requests/hooks/stats/lib/predicates.ts": 6,
+   "file:src/features/requests/hooks/stats/lib/scoring.ts": 6,
+   "file:src/features/requests/hooks/stats/lib/math.ts": 6,
+   "file:src/features/exports/hooks/useExportHistory.ts": 7,
+   "file:src/features/exports/services/processExportArtifact.ts": 7,
+   "file:src/features/exports/hooks/useExportJob.ts": 7,
+   "file:src/features/exports/services/buildCsv.ts": 8,
+   "file:src/features/exports/services/buildXlsx.ts": 8
+  },
+  "byDepth": {
+   "0": [
+    "file:src/main.tsx"
+   ],
+   "1": [
+    "file:src/App.tsx",
+    "file:src/auth/AuthProvider.tsx",
+    "file:src/graph/GraphServicesProvider.tsx",
+    "file:src/lib/supabaseClient.ts",
+    "file:src/styles/globals.css"
+   ],
+   "2": [
+    "file:src/auth/roles.ts",
+    "file:src/auth/supabaseAuth.ts",
+    "file:src/components/layout/AppLayout.tsx",
+    "file:src/features/requests/components/SolviTicketModal.tsx",
+    "file:src/features/requests/hooks/useBoardMetadata.ts",
+    "file:src/pages/AutomationsPage.tsx",
+    "file:src/pages/BoardPage.tsx",
+    "file:src/pages/ClientRequestsPage.tsx",
+    "file:src/pages/HomePage.tsx",
+    "file:src/pages/LoginPage.tsx",
+    "file:src/pages/MyMentionsPage.tsx",
+    "file:src/pages/MyRequestsPage.tsx",
+    "file:src/pages/NewRequestPage.tsx",
+    "file:src/pages/OnBoardingPage.tsx",
+    "file:src/pages/PrismaAdminPage.tsx",
+    "file:src/pages/RequestsPage.tsx",
+    "file:src/pages/StatsPage.tsx",
+    "file:src/pages/TasksPage.tsx",
+    "file:src/pages/TeamRequestsPage.tsx",
+    "file:src/pages/TicketPage.tsx",
+    "file:src/pages/integrations/SolviRequestPage.tsx",
+    "file:src/pages/integrations/SolviTicketsPage.tsx",
+    "file:src/auth/msal.ts",
+    "file:src/config.ts",
+    "file:src/lib/apiClient.ts",
+    "file:src/types/commons.ts",
+    "file:src/features/requests/services/SupabaseRequestsService.ts",
+    "file:src/graph/GraphRest.ts",
+    "file:src/graph/useGraphServices.ts"
+   ],
+   "3": [
+    "file:src/components/layout/AnnouncementBanner.tsx",
+    "file:src/components/layout/AnnouncementModal.tsx",
+    "file:src/components/layout/FloatingTimer.tsx",
+    "file:src/components/layout/NotificationPermissionPrompt.tsx",
+    "file:src/components/layout/Sidebar.tsx",
+    "file:src/components/layout/Topbar.tsx",
+    "file:src/components/layout/VersionUpdateBanner.tsx",
+    "file:src/features/requests/hooks/useCurrentUser.ts",
+    "file:src/store/useBoardTheme.ts",
+    "file:src/features/requests/components/TransferTicketModal.tsx",
+    "file:src/features/requests/components/mentions/CommentComposer.tsx",
+    "file:src/features/requests/components/mentions/CommentText.tsx",
+    "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+    "file:src/features/requests/hooks/useSolviActions.ts",
+    "file:src/features/requests/hooks/useSolviComments.ts",
+    "file:src/features/requests/hooks/useSolviParticipants.ts",
+    "file:src/features/requests/hooks/useSolviTickets.ts",
+    "file:src/features/requests/hooks/useTransferTicket.ts",
+    "file:src/features/requests/hooks/useUsers.ts",
+    "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+    "file:src/features/requests/templates/types.ts",
+    "file:src/features/automations/components/CreateAutomationModal.tsx",
+    "file:src/features/automations/hooks/useAutomationRules.ts",
+    "file:src/features/automations/types.ts",
+    "file:src/store/automationStore.ts",
+    "file:src/styles/automations.css",
+    "file:src/components/hooks/useMediaQuery.ts",
+    "file:src/features/requests/components/BoardCustomization.tsx",
+    "file:src/features/requests/components/BoardFilters.tsx",
+    "file:src/features/requests/components/BoardSearch.tsx",
+    "file:src/features/requests/components/IntakeBadge.tsx",
+    "file:src/features/requests/components/KanbanBoard.tsx",
+    "file:src/features/requests/components/KanbanSkeleton.tsx",
+    "file:src/features/requests/components/MemberHoursBar.tsx",
+    "file:src/features/requests/hooks/useColumnMap.ts",
+    "file:src/features/requests/hooks/useFilteredBoard.ts",
+    "file:src/features/requests/hooks/useKanbanAdmin.ts",
+    "file:src/features/requests/hooks/useLabels.ts",
+    "file:src/features/requests/hooks/useMoveRequests.ts",
+    "file:src/features/requests/hooks/useRequests.ts",
+    "file:src/features/requests/hooks/useSprints.ts",
+    "file:src/features/requests/hooks/useSubTeamMembers.ts",
+    "file:src/features/requests/hooks/useSubTeams.ts",
+    "file:src/features/requests/types.ts",
+    "file:src/store/boardStore.ts",
+    "file:src/store/searchStore.ts",
+    "file:src/features/requests/hooks/useMySolviTickets.ts",
+    "file:src/styles/clientRequests.css",
+    "file:src/components/layout/siderbarConstants.ts",
+    "file:src/features/requests/components/HomeRequestModal.tsx",
+    "file:src/features/requests/hooks/useAnnouncements.ts",
+    "file:src/styles/LoginPage.css",
+    "file:src/features/requests/mock/Mockboard.ts",
+    "file:src/lib/compressImage.ts",
+    "file:src/features/requests/components/AssignBugModal.tsx",
+    "file:src/styles/stats.css",
+    "file:src/features/requests/components/StatsSkeleton.tsx",
+    "file:src/features/requests/components/stats/FlowSection.tsx",
+    "file:src/features/requests/components/stats/GlobalSection.tsx",
+    "file:src/features/requests/components/stats/SprintSection.tsx",
+    "file:src/features/requests/components/stats/StatsControlBar.tsx",
+    "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+    "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+    "file:src/features/requests/components/stats/statsFormat.ts",
+    "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+    "file:src/features/requests/hooks/useStatsData.ts",
+    "file:src/store/statsStore.ts",
+    "file:src/features/requests/components/TasksTable.tsx",
+    "file:src/features/requests/components/RequestModal.tsx",
+    "file:src/features/requests/hooks/useCloseRequest.ts",
+    "file:src/features/requests/hooks/useTicketResolver.ts",
+    "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+    "file:src/features/requests/hooks/useSolviAns.ts",
+    "file:src/features/requests/hooks/useSolviArticulos.ts",
+    "file:src/features/requests/hooks/useSolviCategorias.ts",
+    "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+    "file:src/styles/solvi.css"
+   ],
+   "4": [
+    "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+    "file:src/store/timerStore.ts",
+    "file:src/features/requests/hooks/useBrowserNotifications.ts",
+    "file:src/store/notifPromptStore.ts",
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/layout/SatisfactionModal.tsx",
+    "file:src/store/mobileNavStore.ts",
+    "file:src/components/layout/BugReportModal.tsx",
+    "file:src/components/layout/NotificationBell.tsx",
+    "file:src/hooks/useInstallPrompt.ts",
+    "file:src/components/hooks/useVersionCheck.ts",
+    "file:src/store/customizationStore.ts",
+    "file:src/store/useTheme.ts",
+    "file:src/features/requests/hooks/useDepartments.ts",
+    "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+    "file:src/features/requests/lib/mentions.ts",
+    "file:src/features/requests/services/SolviAttachments.service.ts",
+    "file:src/features/requests/services/SolviBusinessDate.service.ts",
+    "file:src/features/requests/services/SolviShifts.service.ts",
+    "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+    "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+    "file:src/features/requests/types/SolviTicket.ts",
+    "file:src/store/filterStore.ts",
+    "file:src/store/intakeStore.ts",
+    "file:src/features/requests/components/ClosureModal.tsx",
+    "file:src/features/requests/components/CreateRequestModal.tsx",
+    "file:src/features/requests/components/KanbanColumn.tsx",
+    "file:src/features/requests/components/RequestCard.tsx",
+    "file:src/features/requests/hooks/useCustomizationStyles.ts",
+    "file:src/features/requests/hooks/useDragScroll.ts",
+    "file:src/features/requests/hooks/useNotifications.ts",
+    "file:src/styles/kanbanSkeleton.css",
+    "file:src/features/requests/components/ClientReviewBanner.tsx",
+    "file:src/features/requests/components/RequestModalComponents.tsx",
+    "file:src/features/requests/components/ResolutionRatingModal.tsx",
+    "file:src/features/requests/components/RequestTimelines.tsx",
+    "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+    "file:src/features/requests/hooks/useAttachments.ts",
+    "file:src/features/requests/hooks/useClientFeedback.ts",
+    "file:src/features/requests/hooks/useComments.ts",
+    "file:src/features/requests/hooks/useRequestParticipants.ts",
+    "file:src/features/requests/components/stats/BarChart.tsx",
+    "file:src/features/requests/components/stats/StatsAtoms.tsx",
+    "file:src/features/requests/components/stats/SprintSelector.tsx",
+    "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+    "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+    "file:src/features/requests/hooks/stats/types.ts",
+    "file:src/features/requests/hooks/stats/useBoardStats.ts",
+    "file:src/features/requests/hooks/stats/useFlowStats.ts",
+    "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+    "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+    "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+    "file:src/features/requests/hooks/stats/useSprintStats.ts",
+    "file:src/features/requests/hooks/stats/useStatsScope.ts",
+    "file:src/features/requests/hooks/stats/useStatsSource.ts",
+    "file:src/features/requests/hooks/useTasksData.ts",
+    "file:src/styles/tasks.css",
+    "file:src/features/requests/components/RequestHistoryModal.tsx",
+    "file:src/features/requests/hooks/useCreateRequest.ts",
+    "file:src/features/requests/hooks/useSubRequest.ts",
+    "file:src/features/requests/components/RichTextEditor.tsx",
+    "file:src/features/requests/components/SolviRequestFormControls.tsx",
+    "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+    "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+    "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+    "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts"
+   ],
+   "5": [
+    "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+    "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+    "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+    "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+    "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+    "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+    "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+    "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+    "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+    "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+    "file:src/features/requests/hooks/useEmailTemplates.ts",
+    "file:src/features/requests/components/mentions/MentionList.tsx",
+    "file:src/features/requests/services/HolidayService.service.ts",
+    "file:src/features/requests/components/stats/useClickOutside.ts",
+    "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+    "file:src/features/requests/hooks/stats/lib/sprints.ts",
+    "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+    "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+    "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+    "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+    "file:src/features/requests/hooks/useRequestHistory.tsx"
+   ],
+   "6": [
+    "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+    "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+    "file:src/features/exports/hooks/useCreateExportJob.ts",
+    "file:src/features/exports/hooks/useExportData.ts",
+    "file:src/features/exports/services/columnRegistry.ts",
+    "file:src/features/exports/types.ts",
+    "file:src/features/requests/hooks/useTeams.ts",
+    "file:src/features/requests/templates/TemplateRenameModal.tsx",
+    "file:src/features/requests/templates/renameUtils.ts",
+    "file:src/features/requests/hooks/stats/constants.ts",
+    "file:src/features/requests/hooks/stats/lib/predicates.ts",
+    "file:src/features/requests/hooks/stats/lib/scoring.ts",
+    "file:src/features/requests/hooks/stats/lib/math.ts"
+   ],
+   "7": [
+    "file:src/features/exports/hooks/useExportHistory.ts",
+    "file:src/features/exports/services/processExportArtifact.ts",
+    "file:src/features/exports/hooks/useExportJob.ts"
+   ],
+   "8": [
+    "file:src/features/exports/services/buildCsv.ts",
+    "file:src/features/exports/services/buildXlsx.ts"
+   ]
+  }
+ },
+ "nonCodeFiles": {
+  "documentation": [
+   {
+    "id": "document:README.md",
+    "name": "README.md",
+    "type": "document",
+    "summary": "Documentación principal de PRISMA con 14 secciones: características, stack tecnológico, arquitectura (React/Vite + Supabase Edge Functions + Entra ID), estructura del proyecto, instalación, desarrollo, generación de documentación TypeDoc, despliegue en Azure Static Web Apps, convenciones de diseño y roles del sistema."
+   },
+   {
+    "id": "document:prisma-migrations/README.md",
+    "name": "README.md",
+    "type": "document",
+    "summary": "Guía del proyecto de migración de solicitudes históricas a PRISMA: filosofía, estructura, uso dry-run/commit, cómo editar el manifiesto de mapeo y runConfig, decisiones de mapeo, reglas de resolución, rollback y solución de problemas."
+   }
+  ],
+  "infrastructure": [
+   {
+    "id": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+    "name": "azure-static-web-apps-white-coast-0bebe6a0f.yml",
+    "type": "pipeline",
+    "summary": "Workflow de GitHub Actions que, en cada push a main, instala dependencias con Node 22, compila el frontend con Vite inyectando secretos VITE_* (Supabase, Azure) y publica la carpeta dist en Azure Static Web Apps usando un ID token OIDC; incluye un job para cerrar entornos de pull request."
+   }
+  ],
+  "data": [],
+  "config": [
+   {
+    "id": "config:package.json",
+    "name": "package.json",
+    "type": "config",
+    "summary": "Manifiesto npm de prisma-tickets: define scripts de dev, build (tsc -b && vite build), lint y generación de docs con TypeDoc, y dependencias como React 19, MSAL, Supabase, TanStack Query, Zustand, Tiptap, dnd-kit y Chart.js."
+   },
+   {
+    "id": "config:tsconfig.app.json",
+    "name": "tsconfig.app.json",
+    "type": "config",
+    "summary": "Configuración TypeScript del frontend (src/) en modo bundler, JSX react-jsx, modo strict, alias @/* hacia ./src/* y tipos de vite/client."
+   },
+   {
+    "id": "config:tsconfig.json",
+    "name": "tsconfig.json",
+    "type": "config",
+    "summary": "tsconfig raíz de tipo solution que solo referencia tsconfig.app.json y tsconfig.node.json para el build incremental con tsc -b."
+   },
+   {
+    "id": "config:tsconfig.node.json",
+    "name": "tsconfig.node.json",
+    "type": "config",
+    "summary": "Configuración TypeScript para el entorno Node (ES2023) que compila únicamente vite.config.ts."
+   },
+   {
+    "id": "config:typedoc.backend.json",
+    "name": "typedoc.backend.json",
+    "type": "config",
+    "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del backend (Edge Function supabase/functions/api) usando su propio tsconfig."
+   },
+   {
+    "id": "config:typedoc.frontend.json",
+    "name": "typedoc.frontend.json",
+    "type": "config",
+    "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del frontend (src/) con tsconfig.app.json, excluyendo tests."
+   },
+   {
+    "id": "config:typedoc.json",
+    "name": "typedoc.json",
+    "type": "config",
+    "summary": "Configuración de TypeDoc en modo merge que fusiona los modelos frontend y backend en un único sitio HTML en docs/site usando el README como portada."
+   },
+   {
+    "id": "config:prisma-migrations/package.json",
+    "name": "package.json",
+    "type": "config",
+    "summary": "Manifiesto npm del proyecto prisma-migrations (ESM) con scripts dry y commit que ejecutan src/run.ts vía tsx, y dependencias dotenv y xlsx (SheetJS)."
+   },
+   {
+    "id": "config:prisma-migrations/tsconfig.json",
+    "name": "tsconfig.json",
+    "type": "config",
+    "summary": "Configuración TypeScript del proyecto de migración: ESNext/Bundler, ES2022, modo strict, sin emisión y con imports de extensión .ts permitidos para ejecución con tsx."
+   },
+   {
+    "id": "config:public/manifest.json",
+    "name": "manifest.json",
+    "type": "config",
+    "summary": "Web App Manifest de la PWA PRISMA - Estudio de Moda: nombre, idioma es-CO, modo standalone, colores de tema e íconos 192/512 (incluido maskable)."
+   },
+   {
+    "id": "config:public/staticwebapp.config.json",
+    "name": "staticwebapp.config.json",
+    "type": "config",
+    "summary": "Configuración de Azure Static Web Apps: fallback de navegación SPA a /index.html (excluyendo assets, service workers y JSON estáticos), cabeceras no-cache para sw.js y version.json, y tipos MIME para .json y .webmanifest."
+   },
+   {
+    "id": "config:public/version.json",
+    "name": "version.json",
+    "type": "config",
+    "summary": "Archivo de versión con el hash corto del commit desplegado, consultado por el frontend para detectar nuevas versiones; se sirve sin caché."
+   },
+   {
+    "id": "config:.ua/config.json",
+    "name": "config.json",
+    "type": "config",
+    "summary": "Configuración local del plugin Understand-Anything que fija el idioma de salida del análisis en español."
+   },
+   {
+    "id": "config:supabase/config.toml",
+    "name": "config.toml",
+    "type": "config",
+    "summary": "Configuración de Supabase para la Edge Function api que desactiva verify_jwt porque el cliente envía JWT RS256 de Azure AD en lugar del secreto HS256 de Supabase."
+   },
+   {
+    "id": "config:supabase/functions/tsconfig.json",
+    "name": "tsconfig.json",
+    "type": "config",
+    "summary": "Configuración de TypeScript para las Edge Functions de Supabase: ESNext, resolución bundler, modo estricto y sin emisión."
+   }
+  ]
+ },
+ "clusters": [
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+    "file:src/config.ts",
+    "file:src/features/requests/hooks/useBoardMetadata.ts",
+    "file:src/features/requests/hooks/useSprints.ts"
+   ],
+   "edgeCount": 9
+  },
+  {
+   "nodes": [
+    "file:src/config.ts",
+    "file:src/features/requests/components/AssignBugModal.tsx",
+    "file:src/features/requests/hooks/useSprints.ts",
+    "file:src/lib/apiClient.ts",
+    "file:src/pages/BoardPage.tsx"
+   ],
+   "edgeCount": 9
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+    "file:src/config.ts",
+    "file:src/features/requests/hooks/useBoardMetadata.ts",
+    "file:src/features/requests/hooks/useDepartments.ts"
+   ],
+   "edgeCount": 8
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+    "file:src/features/requests/hooks/useBoardMetadata.ts",
+    "file:src/lib/apiClient.ts",
+    "file:src/pages/NewRequestPage.tsx"
+   ],
+   "edgeCount": 8
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+    "file:src/features/requests/hooks/useBoardMetadata.ts",
+    "file:src/lib/apiClient.ts",
+    "file:src/pages/NewRequestPage.tsx"
+   ],
+   "edgeCount": 8
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+    "file:src/features/requests/hooks/useEmailTemplates.ts"
+   ],
+   "edgeCount": 4
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+    "file:src/features/requests/hooks/useBoardMetadata.ts"
+   ],
+   "edgeCount": 4
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+    "file:src/features/requests/hooks/useSubTeams.ts"
+   ],
+   "edgeCount": 4
+  },
+  {
+   "nodes": [
+    "file:index.html",
+    "config:public/manifest.json",
+    "config:public/staticwebapp.config.json"
+   ],
+   "edgeCount": 4
+  },
+  {
+   "nodes": [
+    "file:src/components/ConfigPanel.tsx",
+    "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx"
+   ],
+   "edgeCount": 2
+  }
+ ],
+ "layers": {
+  "count": 10,
+  "list": [
+   {
+    "id": "layer:entrada-paginas",
+    "name": "Punto de entrada y páginas",
+    "description": "Arranque de la SPA React (index.html, main.tsx, App.tsx con MSAL, TanStack Query y React Router) y las páginas enrutadas de PRISMA: tablero Kanban, solicitudes, estadísticas, tareas, administración e integración SOLVI."
+   },
+   {
+    "id": "layer:ui",
+    "name": "Componentes de UI",
+    "description": "Componentes React reutilizables y de funcionalidad: layout (Sidebar, Topbar, banners), panel de configuración, tablero Kanban, modales de solicitudes, menciones TipTap, automatizaciones y gráficos de estadísticas con Chart.js."
+   },
+   {
+    "id": "layer:hooks-dominio",
+    "name": "Hooks y lógica de dominio",
+    "description": "Hooks personalizados de TanStack Query y lógica de negocio del frontend: CRUD de solicitudes, sprints, equipos, notificaciones, cálculo de métricas de flujo/ANS, generación de exportaciones CSV/XLSX y utilidades de plantillas y menciones."
+   },
+   {
+    "id": "layer:estado",
+    "name": "Estado global (Zustand)",
+    "description": "Stores de Zustand para estado de cliente compartido: tablero, filtros, búsqueda, personalización y tema, temporizador, estadísticas, intake y navegación móvil."
+   },
+   {
+    "id": "layer:integraciones",
+    "name": "Autenticación, clientes e integraciones",
+    "description": "Capa de acceso a servicios externos desde el frontend: autenticación Entra ID (MSAL) y Supabase, roles, cliente HTTP hacia la Edge Function, cliente Supabase, Microsoft Graph/SharePoint y servicios de la integración SOLVI."
+   },
+   {
+    "id": "layer:tipos",
+    "name": "Tipos y modelos de dominio",
+    "description": "Definiciones TypeScript compartidas del dominio (solicitudes, tickets SOLVI, exportaciones, automatizaciones, estadísticas, tipos generados de Supabase) y datos de prueba del tablero."
+   },
+   {
+    "id": "layer:estilos",
+    "name": "Estilos",
+    "description": "Hojas de estilo CSS globales y por módulo (variables, tema claro, Kanban, tarjetas, estadísticas, SOLVI, notificaciones) junto con la entrada de Tailwind."
+   },
+   {
+    "id": "layer:backend",
+    "name": "Backend Supabase (Edge Functions)",
+    "description": "API REST en Deno desplegada como Supabase Edge Function: router, handlers por recurso, utilidades compartidas (acceso a tableros, notificaciones, correo, mapeos), trabajos de exportación/renombrado y configuración de Supabase."
+   },
+   {
+    "id": "layer:etl-migraciones",
+    "name": "ETL PRISMA Migrations",
+    "description": "Sub-paquete Node independiente que migra datos desde Excel hacia PRISMA en fases (resolver, validar, cargar) usando la API del backend."
+   },
+   {
+    "id": "layer:config-despliegue",
+    "name": "Configuración, despliegue y documentación",
+    "description": "Configuración de build y herramientas (Vite, PWA, TypeScript, ESLint, Tailwind, PostCSS, TypeDoc), activos públicos y service worker, despliegue en Azure Static Web Apps vía GitHub Actions y documentación del proyecto."
+   }
+  ]
+ },
+ "nodeSummaryIndex": {
+  "file:supabase/functions/api/config.ts": {
+   "name": "config.ts",
+   "type": "file",
+   "summary": "Configuración central de la Edge Function `api`: lee del entorno las credenciales de Azure/Entra ID y Supabase, el secreto de jobs internos y define constantes de tuning para jobs en background y exportaciones.",
+   "filePath": "supabase/functions/api/config.ts"
+  },
+  "file:supabase/functions/api/deps.ts": {
+   "name": "deps.ts",
+   "type": "file",
+   "summary": "Barrel de dependencias externas de Deno que fija versiones y reexporta `createClient` de supabase-js y `createRemoteJWKSet`/`jwtVerify` de jose para el resto de la API.",
+   "filePath": "supabase/functions/api/deps.ts"
+  },
+  "file:supabase/functions/api/email/send.ts": {
+   "name": "send.ts",
+   "type": "file",
+   "summary": "Servicio de envío de correos por evento: busca la plantilla activa por `event_key`, resuelve destinatarios desde `VW_User_Notification_Emails`, interpola variables, encadena el hilo con cabeceras In-Reply-To/References y registra cada envío en `TBL_Email_Logs`.",
+   "filePath": "supabase/functions/api/email/send.ts"
+  },
+  "file:supabase/functions/api/handlers/announcements.ts": {
+   "name": "announcements.ts",
+   "type": "file",
+   "summary": "Handlers de anuncios: consulta pública para la pantalla de login y CRUD administrativo con filtrado por audiencia (rol, equipo, departamento) aplicado en la capa de aplicación.",
+   "filePath": "supabase/functions/api/handlers/announcements.ts"
+  },
+  "file:supabase/functions/api/handlers/assignments.ts": {
+   "name": "assignments.ts",
+   "type": "file",
+   "summary": "Handlers para asignar y desasignar resolutores a solicitudes, disparando de forma best-effort una notificación in-app y un correo al resolutor.",
+   "filePath": "supabase/functions/api/handlers/assignments.ts"
+  },
+  "file:supabase/functions/api/handlers/attachments.ts": {
+   "name": "attachments.ts",
+   "type": "file",
+   "summary": "Handlers de adjuntos de solicitudes: subida, listado y borrado de archivos en el bucket `attachments` de Supabase Storage, entregando siempre signed URLs temporales.",
+   "filePath": "supabase/functions/api/handlers/attachments.ts"
+  },
+  "file:supabase/functions/api/handlers/automationRules.ts": {
+   "name": "automationRules.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de reglas de automatización (`TBL_Automation_Rules`) con disparador y acción, resolviendo el valor de la acción a una etiqueta legible al listar.",
+   "filePath": "supabase/functions/api/handlers/automationRules.ts"
+  },
+  "file:supabase/functions/api/handlers/boardTeams.ts": {
+   "name": "boardTeams.ts",
+   "type": "file",
+   "summary": "Handlers de equipos/boards del Kanban: CRUD de `TBL_Board_Teams`, reordenamiento por departamento y gestión de grants de visibilidad por usuario (`TBL_Board_Team_Access`).",
+   "filePath": "supabase/functions/api/handlers/boardTeams.ts"
+  },
+  "file:supabase/functions/api/handlers/closure.ts": {
+   "name": "closure.ts",
+   "type": "file",
+   "summary": "Handlers de cierre de solicitudes con evidencia: registra el cierre, mueve el ticket a la columna destino, escribe audit log, notifica a los participantes y envía el correo de revisión del cliente.",
+   "filePath": "supabase/functions/api/handlers/closure.ts"
+  },
+  "file:supabase/functions/api/handlers/columns.ts": {
+   "name": "columns.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de columnas de un board Kanban (`TBL_Board_Columns`): listar, crear, actualizar y reordenar.",
+   "filePath": "supabase/functions/api/handlers/columns.ts"
+  },
+  "file:supabase/functions/api/handlers/comments.ts": {
+   "name": "comments.ts",
+   "type": "file",
+   "summary": "Handlers de comentarios, menciones y participantes de una solicitud; revalida las menciones en servidor, persiste a los mencionados como participantes y notifica por in-app y correo.",
+   "filePath": "supabase/functions/api/handlers/comments.ts"
+  },
+  "file:supabase/functions/api/handlers/criteria.ts": {
+   "name": "criteria.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de criterios de aceptación (`TBL_Acceptance_Criteria`) con audit log en cada cambio y notificación a resolutores cuando un criterio se acepta o rechaza.",
+   "filePath": "supabase/functions/api/handlers/criteria.ts"
+  },
+  "file:supabase/functions/api/handlers/emailTemplates.ts": {
+   "name": "emailTemplates.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de plantillas de correo (`TBL_Email_Templates`) asociadas a un board y a un `event_key`, con cuerpos HTML/texto e interpolación `{{variable}}`.",
+   "filePath": "supabase/functions/api/handlers/emailTemplates.ts"
+  },
+  "file:supabase/functions/api/handlers/exportJobs.ts": {
+   "name": "exportJobs.ts",
+   "type": "file",
+   "summary": "Handlers de exportación de solicitudes: crea jobs en background por chunks con artefactos en Storage, gestiona historial, URLs de descarga y repetición, y ofrece una exportación directa síncrona con filtros.",
+   "filePath": "supabase/functions/api/handlers/exportJobs.ts"
+  },
+  "file:supabase/functions/api/handlers/feedback.ts": {
+   "name": "feedback.ts",
+   "type": "file",
+   "summary": "Handlers de feedback del cliente sobre solicitudes en revisión: registra el veredicto, mueve el ticket de columna, notifica a los resolutores y envía el correo de respuesta.",
+   "filePath": "supabase/functions/api/handlers/feedback.ts"
+  },
+  "file:supabase/functions/api/handlers/history.ts": {
+   "name": "history.ts",
+   "type": "file",
+   "summary": "Handler de lectura del historial de auditoría de una solicitud, restringido a administradores o supervisores de sub-equipos asignados.",
+   "filePath": "supabase/functions/api/handlers/history.ts"
+  },
+  "file:supabase/functions/api/handlers/labels.ts": {
+   "name": "labels.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de etiquetas de tickets (`TBL_Labels`) por board y equipo, relacionadas con solicitudes vía `TBL_Request_Labels`.",
+   "filePath": "supabase/functions/api/handlers/labels.ts"
+  },
+  "file:supabase/functions/api/handlers/migration.ts": {
+   "name": "migration.ts",
+   "type": "file",
+   "summary": "Handlers atómicos de migración de solicitudes históricas desde Excel a PRISMA (una solicitud por llamada), invocados por el orquestador externo PRISMA Migrations, con upsert de etiquetas y sprints por nombre.",
+   "filePath": "supabase/functions/api/handlers/migration.ts"
+  },
+  "file:supabase/functions/api/handlers/notifications.ts": {
+   "name": "notifications.ts",
+   "type": "file",
+   "summary": "Handlers de notificaciones in-app (`TBL_Notifications`): lectura del feed del usuario y marcado individual o masivo como leídas.",
+   "filePath": "supabase/functions/api/handlers/notifications.ts"
+  },
+  "file:supabase/functions/api/handlers/notifyEvent.ts": {
+   "name": "notifyEvent.ts",
+   "type": "file",
+   "summary": "Helper que combina la notificación in-app obligatoria con un correo condicional best-effort en una sola llamada para los handlers de dominio.",
+   "filePath": "supabase/functions/api/handlers/notifyEvent.ts"
+  },
+  "file:supabase/functions/api/handlers/orgUnits.ts": {
+   "name": "orgUnits.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de la estructura organizacional (departamentos y equipos de personas), usada en el onboarding y la clasificación de usuarios; distinta de los board teams del Kanban.",
+   "filePath": "supabase/functions/api/handlers/orgUnits.ts"
+  },
+  "file:supabase/functions/api/handlers/requests.ts": {
+   "name": "requests.ts",
+   "type": "file",
+   "summary": "Módulo central de PRISMA con los handlers del ciclo de vida del ticket: lectura por múltiples criterios, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas, orquestando sprints, automatizaciones, notificaciones, correos e historial.",
+   "filePath": "supabase/functions/api/handlers/requests.ts"
+  },
+  "file:supabase/functions/api/handlers/resolutionRatings.ts": {
+   "name": "resolutionRatings.ts",
+   "type": "file",
+   "summary": "Handlers de calificaciones de resolución (puntajes de solución y atención de 1 a 5) que guardan un snapshot de los resolutores al momento de calificar.",
+   "filePath": "supabase/functions/api/handlers/resolutionRatings.ts"
+  },
+  "file:supabase/functions/api/handlers/solvi.ts": {
+   "name": "solvi.ts",
+   "type": "file",
+   "summary": "Handlers de la integración SOLVI (ticketing externo): listado y detalle de tickets, comentarios, menciones, participantes y adjuntos leyendo las tablas `*_Solvi`.",
+   "filePath": "supabase/functions/api/handlers/solvi.ts"
+  },
+  "file:supabase/functions/api/handlers/sprints.ts": {
+   "name": "sprints.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de sprints con capacidad externa por equipo y la automatización que mueve solicitudes al arrancar un sprint.",
+   "filePath": "supabase/functions/api/handlers/sprints.ts"
+  },
+  "file:src/features/requests/components/BoardFilters.tsx": {
+   "name": "BoardFilters.tsx",
+   "type": "file",
+   "summary": "Barra de filtros avanzados del tablero Kanban: construye condiciones (campo, operador, valor) sobre campos nativos y de plantilla, con selectores de responsables por subequipo y de sprints, renderizados en un panel flotante vía portal.",
+   "filePath": "src/features/requests/components/BoardFilters.tsx"
+  },
+  "file:src/features/requests/components/BoardSearch.tsx": {
+   "name": "BoardSearch.tsx",
+   "type": "file",
+   "summary": "Buscador global del tablero que consulta solicitudes con debounce, resalta coincidencias, guarda búsquedas recientes en localStorage y permite navegar resultados con teclado.",
+   "filePath": "src/features/requests/components/BoardSearch.tsx"
+  },
+  "file:src/features/requests/components/ClientReviewBanner.tsx": {
+   "name": "ClientReviewBanner.tsx",
+   "type": "file",
+   "summary": "Banner de revisión del cliente que muestra la evidencia de cierre de una solicitud y permite al solicitante aprobar o rechazar la resolución, con historial de retroalimentación.",
+   "filePath": "src/features/requests/components/ClientReviewBanner.tsx"
+  },
+  "file:src/features/requests/components/ClosureModal.tsx": {
+   "name": "ClosureModal.tsx",
+   "type": "file",
+   "summary": "Modal de cierre de solicitudes que exige criterios de aceptación cumplidos, recoge notas y evidencias adjuntas (comprimiendo imágenes en el cliente) y elige el modo de cierre.",
+   "filePath": "src/features/requests/components/ClosureModal.tsx"
+  },
+  "file:src/features/requests/components/CreateRequestModal.tsx": {
+   "name": "CreateRequestModal.tsx",
+   "type": "file",
+   "summary": "Asistente multipaso para crear solicitudes: selección de equipo, plantilla, campos dinámicos de la plantilla con validación, responsables por subequipo, sprint, etiquetas, horas estimadas y criterios de aceptación.",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx"
+  },
+  "file:src/features/requests/components/HomeRequestModal.tsx": {
+   "name": "HomeRequestModal.tsx",
+   "type": "file",
+   "summary": "Vista de detalle de una solicitud desde la página de inicio del solicitante: muestra datos de plantilla, criterios, comentarios con menciones, adjuntos, participantes y banner de revisión/calificación del cliente.",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx"
+  },
+  "file:src/features/requests/components/IntakeBadge.tsx": {
+   "name": "IntakeBadge.tsx",
+   "type": "file",
+   "summary": "Insignia animada que indica cuántas solicitudes sin categorizar hay en la columna de entrada y permite filtrar el tablero hacia ellas.",
+   "filePath": "src/features/requests/components/IntakeBadge.tsx"
+  },
+  "file:src/features/requests/components/KanbanBoard.tsx": {
+   "name": "KanbanBoard.tsx",
+   "type": "file",
+   "summary": "Componente principal del tablero Kanban: orquesta columnas, tarjetas y drag & drop con dnd-kit, abre los modales de creación, detalle y cierre, y gestiona notificaciones y selector de columnas en móvil.",
+   "filePath": "src/features/requests/components/KanbanBoard.tsx"
+  },
+  "file:src/features/requests/components/KanbanColumn.tsx": {
+   "name": "KanbanColumn.tsx",
+   "type": "file",
+   "summary": "Columna del tablero Kanban que actúa como zona droppable, renderiza tarjetas ordenables, permite colapsarse y muestra totales de horas estimadas/consumidas según la personalización.",
+   "filePath": "src/features/requests/components/KanbanColumn.tsx"
+  },
+  "file:src/features/requests/components/MemberHoursBar.tsx": {
+   "name": "MemberHoursBar.tsx",
+   "type": "file",
+   "summary": "Barra de miembros del equipo con la carga de horas de cada responsable, agrupada por subequipo, que permite filtrar el tablero por asignado.",
+   "filePath": "src/features/requests/components/MemberHoursBar.tsx"
+  },
+  "file:src/features/requests/components/RequestCard.tsx": {
+   "name": "RequestCard.tsx",
+   "type": "file",
+   "summary": "Tarjeta de solicitud del Kanban: muestra prioridad, responsables, sprint, etiquetas, criterios, subsolicitudes y campos de plantilla configurados como visibles, y es ordenable vía dnd-kit.",
+   "filePath": "src/features/requests/components/RequestCard.tsx"
+  },
+  "file:src/features/requests/components/RequestHistoryModal.tsx": {
+   "name": "RequestHistoryModal.tsx",
+   "type": "file",
+   "summary": "Modal que muestra el historial de cambios de una solicitud con scroll infinito.",
+   "filePath": "src/features/requests/components/RequestHistoryModal.tsx"
+  },
+  "file:src/features/requests/components/RequestModal.tsx": {
+   "name": "RequestModal.tsx",
+   "type": "file",
+   "summary": "Modal de detalle y edición completa de una solicitud para el equipo de soporte: movimiento entre columnas, asignaciones, horas, comentarios, adjuntos, subsolicitudes, transferencias, criterios de aceptación y cierre.",
+   "filePath": "src/features/requests/components/RequestModal.tsx"
+  },
+  "file:src/features/requests/components/RequestModalComponents.tsx": {
+   "name": "RequestModalComponents.tsx",
+   "type": "file",
+   "summary": "Librería de subcomponentes y utilidades compartidas por los modales de solicitud: panel de criterios de aceptación, datos de plantilla, input de horas, temporizador, dropdowns, chips y formateadores.",
+   "filePath": "src/features/requests/components/RequestModalComponents.tsx"
+  },
+  "file:src/features/requests/components/RequestTimelines.tsx": {
+   "name": "RequestTimelines.tsx",
+   "type": "file",
+   "summary": "Componentes de presentación para la línea de tiempo de cierres y retroalimentación del cliente, en versiones completa y compacta.",
+   "filePath": "src/features/requests/components/RequestTimelines.tsx"
+  },
+  "file:src/features/requests/components/ResolutionRatingModal.tsx": {
+   "name": "ResolutionRatingModal.tsx",
+   "type": "file",
+   "summary": "Modal para que el solicitante califique con estrellas la resolución de su solicitud y deje un comentario.",
+   "filePath": "src/features/requests/components/ResolutionRatingModal.tsx"
+  },
+  "file:src/features/requests/components/SolviTicketModal.tsx": {
+   "name": "SolviTicketModal.tsx",
+   "type": "file",
+   "summary": "Modal de detalle de tickets provenientes de la integración SOLVI: muestra campos del ticket con HTML saneado, comentarios con menciones, participantes, adjuntos y transferencia.",
+   "filePath": "src/features/requests/components/SolviTicketModal.tsx"
+  },
+  "file:src/features/requests/components/TasksTable.tsx": {
+   "name": "TasksTable.tsx",
+   "type": "file",
+   "summary": "Vista de tabla de tareas alternativa al Kanban, con filtros aplicados en cliente, ordenamiento por columnas, campos de plantilla aplanados y skeleton de carga.",
+   "filePath": "src/features/requests/components/TasksTable.tsx"
+  },
+  "file:src/features/requests/components/TransferTicketModal.tsx": {
+   "name": "TransferTicketModal.tsx",
+   "type": "file",
+   "summary": "Modal para transferir un ticket a otro equipo o departamento con un motivo.",
+   "filePath": "src/features/requests/components/TransferTicketModal.tsx"
+  },
+  "file:src/features/requests/components/mentions/CommentComposer.tsx": {
+   "name": "CommentComposer.tsx",
+   "type": "file",
+   "summary": "Editor de comentarios basado en TipTap con soporte de menciones @usuario mediante la extensión Mention.",
+   "filePath": "src/features/requests/components/mentions/CommentComposer.tsx"
+  },
+  "file:src/features/requests/components/mentions/CommentText.tsx": {
+   "name": "CommentText.tsx",
+   "type": "file",
+   "summary": "Renderiza el texto de un comentario resolviendo las menciones a nombres de usuario.",
+   "filePath": "src/features/requests/components/mentions/CommentText.tsx"
+  },
+  "file:src/features/requests/components/mentions/MentionList.tsx": {
+   "name": "MentionList.tsx",
+   "type": "file",
+   "summary": "Lista desplegable de sugerencias de menciones con navegación por teclado expuesta mediante forwardRef/useImperativeHandle.",
+   "filePath": "src/features/requests/components/mentions/MentionList.tsx"
+  },
+  "file:src/features/requests/components/mentions/ParticipantsPanel.tsx": {
+   "name": "ParticipantsPanel.tsx",
+   "type": "file",
+   "summary": "Panel que lista los participantes de una solicitud o ticket y permite eliminarlos.",
+   "filePath": "src/features/requests/components/mentions/ParticipantsPanel.tsx"
+  },
+  "file:src/features/requests/components/mentions/mentionSuggestion.ts": {
+   "name": "mentionSuggestion.ts",
+   "type": "file",
+   "summary": "Fábrica de la configuración de sugerencias de TipTap para menciones: filtra usuarios y monta MentionList en un popup.",
+   "filePath": "src/features/requests/components/mentions/mentionSuggestion.ts"
+  },
+  "file:src/features/requests/hooks/UseUpdateRequest.tsx": {
+   "name": "UseUpdateRequest.tsx",
+   "type": "file",
+   "summary": "Hook de mutación TanStack Query que actualiza campos editables de un request (título, prioridad, asignados, horas, formData, etc.) con actualización optimista sobre el board del equipo y rollback por snapshot.",
+   "filePath": "src/features/requests/hooks/UseUpdateRequest.tsx"
+  },
+  "file:src/features/requests/hooks/useAcceptanceCriteria.ts": {
+   "name": "useAcceptanceCriteria.ts",
+   "type": "file",
+   "summary": "Hooks TanStack Query para leer, crear, cambiar estado, eliminar y renombrar criterios de aceptación de un request, con actualización optimista y sincronización del criteriaSummary en board y detalle.",
+   "filePath": "src/features/requests/hooks/useAcceptanceCriteria.ts"
+  },
+  "file:src/features/requests/hooks/useAnnouncements.ts": {
+   "name": "useAnnouncements.ts",
+   "type": "file",
+   "summary": "Hooks y utilidades de anuncios del sistema: estilos por tipo, queries in-app/admin/públicas (login), mutaciones CRUD y helpers de localStorage para anuncios descartados o confirmados.",
+   "filePath": "src/features/requests/hooks/useAnnouncements.ts"
+  },
+  "file:src/features/requests/hooks/useClientFeedback.ts": {
+   "name": "useClientFeedback.ts",
+   "type": "file",
+   "summary": "Hooks para consultar el historial de feedback del cliente y enviar una decisión de aprobación/rechazo que mueve la card entre columnas del board de forma optimista.",
+   "filePath": "src/features/requests/hooks/useClientFeedback.ts"
+  },
+  "file:src/features/requests/hooks/useCloseRequest.ts": {
+   "name": "useCloseRequest.ts",
+   "type": "file",
+   "summary": "Hook de mutación para cerrar un request: mueve la card a la columna destino adjuntando cierreInfo, sellando fecha de cierre y progreso 100% en columnas finales.",
+   "filePath": "src/features/requests/hooks/useCloseRequest.ts"
+  },
+  "file:src/features/requests/hooks/useColumnMap.ts": {
+   "name": "useColumnMap.ts",
+   "type": "file",
+   "summary": "Hook que resuelve el mapa de claves lógicas del kanban a Board_Column_ID reales de la base para un board.",
+   "filePath": "src/features/requests/hooks/useColumnMap.ts"
+  },
+  "file:src/features/requests/hooks/useCreateRequest.ts": {
+   "name": "useCreateRequest.ts",
+   "type": "file",
+   "summary": "Hook de mutación que crea un request y luego da de alta en paralelo sus criterios de aceptación y asignaciones, invalidando las cachés afectadas.",
+   "filePath": "src/features/requests/hooks/useCreateRequest.ts"
+  },
+  "file:src/features/requests/hooks/useCurrentUser.ts": {
+   "name": "useCurrentUser.ts",
+   "type": "file",
+   "summary": "Hook que expone el perfil del usuario autenticado (resuelto por AuthProvider o mock en modo bypass) como query de TanStack Query.",
+   "filePath": "src/features/requests/hooks/useCurrentUser.ts"
+  },
+  "file:src/features/requests/hooks/useCustomizationStyles.ts": {
+   "name": "useCustomizationStyles.ts",
+   "type": "file",
+   "summary": "Hooks de personalización visual del board que derivan estilos de columna, clases, visibilidad y fondo de cards, color de prioridad y estilo general a partir de la customización del equipo en boardStore.",
+   "filePath": "src/features/requests/hooks/useCustomizationStyles.ts"
+  },
+  "file:src/features/requests/hooks/useDragScroll.ts": {
+   "name": "useDragScroll.ts",
+   "type": "file",
+   "summary": "Hook de scroll horizontal por arrastre (drag-to-scroll) para contenedores con overflow-x, usado en el board kanban.",
+   "filePath": "src/features/requests/hooks/useDragScroll.ts"
+  },
+  "file:src/features/requests/hooks/useFilteredBoard.ts": {
+   "name": "useFilteredBoard.ts",
+   "type": "file",
+   "summary": "Motor de filtrado de requests que evalúa las condiciones de filterStore (campos escalares, relacionales, banderas derivadas y campos de plantilla) sobre el board kanban o listas planas, con resultados memoizados.",
+   "filePath": "src/features/requests/hooks/useFilteredBoard.ts"
+  },
+  "file:src/features/requests/hooks/useKanbanAdmin.ts": {
+   "name": "useKanbanAdmin.ts",
+   "type": "file",
+   "summary": "Hooks de administración del kanban: CRUD y reordenamiento de equipos/boards y columnas globales, configuración de columnas por equipo y columna de inicio de estadísticas, con actualizaciones optimistas.",
+   "filePath": "src/features/requests/hooks/useKanbanAdmin.ts"
+  },
+  "file:src/features/requests/hooks/useMoveRequests.ts": {
+   "name": "useMoveRequests.ts",
+   "type": "file",
+   "summary": "Hook de mutación que respalda el drag & drop del kanban moviendo un request a otra columna de forma optimista y sincronizando con el servidor.",
+   "filePath": "src/features/requests/hooks/useMoveRequests.ts"
+  },
+  "file:src/features/requests/hooks/useNotifications.ts": {
+   "name": "useNotifications.ts",
+   "type": "file",
+   "summary": "Hook de notificaciones in-app con polling adaptativo según visibilidad de la pestaña, mapeo de filas de DB y mutaciones optimistas para marcar una o todas como leídas.",
+   "filePath": "src/features/requests/hooks/useNotifications.ts"
+  },
+  "file:src/features/requests/hooks/useRequestHistory.tsx": {
+   "name": "useRequestHistory.tsx",
+   "type": "file",
+   "summary": "Hook de solo lectura que expone las query keys y la consulta del historial de auditoría de un request.",
+   "filePath": "src/features/requests/hooks/useRequestHistory.tsx"
+  },
+  "file:src/features/requests/hooks/useRequests.ts": {
+   "name": "useRequests.ts",
+   "type": "file",
+   "summary": "Hooks centrales de lectura de requests: define requestKeys compartidas, agrupación en BoardData, helpers de mock y queries de board por equipo/completo/estadísticas, sin categorizar, mis solicitudes, borrado, historial paginado y búsqueda con debounce.",
+   "filePath": "src/features/requests/hooks/useRequests.ts"
+  },
+  "file:src/features/requests/hooks/useSubRequest.ts": {
+   "name": "useSubRequest.ts",
+   "type": "file",
+   "summary": "Hook de solo lectura con fábrica de query keys para listar las sub-solicitudes hijas de un request padre.",
+   "filePath": "src/features/requests/hooks/useSubRequest.ts"
+  },
+  "file:src/features/requests/hooks/useTasksData.ts": {
+   "name": "useTasksData.ts",
+   "type": "file",
+   "summary": "Hook de solo lectura que define el tipo TaskRow y trae las tareas de un equipo desde el board por defecto vía apiClient.",
+   "filePath": "src/features/requests/hooks/useTasksData.ts"
+  },
+  "file:src/features/requests/hooks/useTicketResolver.ts": {
+   "name": "useTicketResolver.ts",
+   "type": "file",
+   "summary": "Hook que resuelve un ticket por ID y decide si abrirlo en el modal de kanban o el de home según el rol y la visibilidad del board.",
+   "filePath": "src/features/requests/hooks/useTicketResolver.ts"
+  },
+  "file:src/features/requests/hooks/useTransferTicket.ts": {
+   "name": "useTransferTicket.ts",
+   "type": "file",
+   "summary": "Hook de mutación que transfiere un ticket PRISMA o SOLVI a otro equipo mediante la acción transferTicket de la Edge Function.",
+   "filePath": "src/features/requests/hooks/useTransferTicket.ts"
+  },
+  "file:src/features/requests/mock/Mockboard.ts": {
+   "name": "Mockboard.ts",
+   "type": "file",
+   "summary": "Datos mock de un BoardData completo con requests de ejemplo por columna, usados en modo offline/USE_MOCK.",
+   "filePath": "src/features/requests/mock/Mockboard.ts"
+  },
+  "file:src/features/requests/services/SupabaseRequestsService.ts": {
+   "name": "SupabaseRequestsService.ts",
+   "type": "file",
+   "summary": "Servicio de acceso a datos de requests sobre Supabase y la Edge Function (apiClient): lecturas de board, búsqueda, historial, creación, movimiento, actualización, cierre y feedback del cliente, mapeando filas de DB al modelo Request.",
+   "filePath": "src/features/requests/services/SupabaseRequestsService.ts"
+  },
+  "file:src/features/requests/templates/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos y helpers de plantillas de request: campos simples, condicionales y multicondicionales, type guards, profundidad de anidamiento, fábricas de campos vacíos y paleta de colores de opciones.",
+   "filePath": "src/features/requests/templates/types.ts"
+  },
+  "file:src/features/requests/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Modelo de dominio de requests: tipos Request, payloads de creación/movimiento/actualización/cierre, feedback, historial y constantes de equipos, columnas kanban, columnas de cierre/finales y mapeo prioridad-score.",
+   "filePath": "src/features/requests/types.ts"
+  },
+  "file:supabase/functions/api/handlers/subteams.ts": {
+   "name": "subteams.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de sub-equipos (TBL_Sub_Teams) y de sus integrantes y supervisores, despachados vía el envelope { action, payload }; exige que todo supervisor sea también integrante del sub-equipo.",
+   "filePath": "supabase/functions/api/handlers/subteams.ts"
+  },
+  "file:supabase/functions/api/handlers/system.ts": {
+   "name": "system.ts",
+   "type": "file",
+   "summary": "Handlers transversales de sistema: ciclo de vida de reportes de bugs (incluida su conversión en ticket), calificaciones de satisfacción con rate limit y consulta/reanudación de jobs en background.",
+   "filePath": "supabase/functions/api/handlers/system.ts"
+  },
+  "file:supabase/functions/api/handlers/teamColumnConfig.ts": {
+   "name": "teamColumnConfig.ts",
+   "type": "file",
+   "summary": "Handlers de configuración de columnas por equipo (TBL_Team_Column_Config): overrides de visibilidad, evidencia, cierre y colores sobre las columnas globales del board, y la columna que inicia el conteo de estadísticas.",
+   "filePath": "supabase/functions/api/handlers/teamColumnConfig.ts"
+  },
+  "file:supabase/functions/api/handlers/templates.ts": {
+   "name": "templates.ts",
+   "type": "file",
+   "summary": "Handlers CRUD de plantillas de solicitudes (Form_Schema JSONB) y renombrado de claves de campos, propagado a Form_Data y snapshots de las solicitudes de forma síncrona o mediante job en background con auditoría.",
+   "filePath": "supabase/functions/api/handlers/templates.ts"
+  },
+  "file:supabase/functions/api/handlers/transfers.ts": {
+   "name": "transfers.ts",
+   "type": "file",
+   "summary": "Handler transferTicket que transfiere tickets entre equipos PRISMA y SOLVI según el origen y el tipo de equipo destino, registrando historial de auditoría.",
+   "filePath": "supabase/functions/api/handlers/transfers.ts"
+  },
+  "file:supabase/functions/api/handlers/users.ts": {
+   "name": "users.ts",
+   "type": "file",
+   "summary": "Handlers de usuarios: búsqueda y upsert por Entra ID, listado, pre-registro, onboarding, actualización y activación/desactivación sobre TBL_Users y tablas relacionadas.",
+   "filePath": "supabase/functions/api/handlers/users.ts"
+  },
+  "file:supabase/functions/api/index.ts": {
+   "name": "index.ts",
+   "type": "file",
+   "summary": "Punto de entrada HTTP (Deno.serve) de la Edge Function api: maneja CORS, anuncios públicos, chunks internos de jobs protegidos por secreto, verifica JWT de Azure/Supabase y despacha la acción al router.",
+   "filePath": "supabase/functions/api/index.ts"
+  },
+  "file:supabase/functions/api/jobs/exportJob.ts": {
+   "name": "exportJob.ts",
+   "type": "file",
+   "summary": "Pipeline de exportación de tickets por lotes en background: resuelve IDs candidatos con filtros, genera archivos JSON parciales en Storage por chunks, se auto-invoca para continuar y finaliza notificando al usuario.",
+   "filePath": "supabase/functions/api/jobs/exportJob.ts"
+  },
+  "file:supabase/functions/api/jobs/renameJob.ts": {
+   "name": "renameJob.ts",
+   "type": "file",
+   "summary": "Job en background que propaga el renombrado de claves de campos de una plantilla a Request_Form_Data y al snapshot de esquema de las solicitudes, procesando por chunks con auto-invocación.",
+   "filePath": "supabase/functions/api/jobs/renameJob.ts"
+  },
+  "file:supabase/functions/api/lib/auth.ts": {
+   "name": "auth.ts",
+   "type": "file",
+   "summary": "Verificación de JWT contra JWKS para los dos flujos soportados: Microsoft Entra ID (MSAL, legado) y Supabase Auth, comprobando emisor, audiencia y claims.",
+   "filePath": "supabase/functions/api/lib/auth.ts"
+  },
+  "file:supabase/functions/api/lib/history.ts": {
+   "name": "history.ts",
+   "type": "file",
+   "summary": "Registro de auditoría de cambios en requests: modelo HistoryEntry, inserción best-effort y utilidades de diff por campo y por claves de Form_Data.",
+   "filePath": "supabase/functions/api/lib/history.ts"
+  },
+  "file:supabase/functions/api/lib/https.ts": {
+   "name": "https.ts",
+   "type": "file",
+   "summary": "Helpers HTTP con cabeceras CORS compartidas y fábricas de respuestas JSON normales y de error.",
+   "filePath": "supabase/functions/api/lib/https.ts"
+  },
+  "file:supabase/functions/api/lib/storage.ts": {
+   "name": "storage.ts",
+   "type": "file",
+   "summary": "Utilidades de Storage de adjuntos: duración de URLs firmadas y normalización del valor almacenado a ruta relativa.",
+   "filePath": "supabase/functions/api/lib/storage.ts"
+  },
+  "file:supabase/functions/api/lib/supabase.ts": {
+   "name": "supabase.ts",
+   "type": "file",
+   "summary": "Fábrica del cliente Supabase con service role key y tipo DB usado en toda la capa de acceso a datos.",
+   "filePath": "supabase/functions/api/lib/supabase.ts"
+  },
+  "file:supabase/functions/api/router.ts": {
+   "name": "router.ts",
+   "type": "file",
+   "summary": "Router de acciones que fusiona todos los mapas de handlers del dominio en un registro único y crea la función dispatch usada por el entry point y por handlers que invocan otras acciones.",
+   "filePath": "supabase/functions/api/router.ts"
+  },
+  "file:supabase/functions/api/shared/boardAccess.ts": {
+   "name": "boardAccess.ts",
+   "type": "file",
+   "summary": "Fuente de verdad de la visibilidad de boards por usuario: admins de TI ven todo; los demás ven los boards de su departamento más los otorgados por grant explícito.",
+   "filePath": "supabase/functions/api/shared/boardAccess.ts"
+  },
+  "file:supabase/functions/api/shared/criteria.ts": {
+   "name": "criteria.ts",
+   "type": "file",
+   "summary": "Enriquece filas de requests con un criteria_summary (total, aceptados, rechazados) de sus criterios de aceptación sin mutar las filas originales.",
+   "filePath": "supabase/functions/api/shared/criteria.ts"
+  },
+  "file:supabase/functions/api/shared/email.ts": {
+   "name": "email.ts",
+   "type": "file",
+   "summary": "Interpolación de variables {{clave}} en plantillas y registro de correos por evento resolviendo la plantilla activa y un correo por destinatario.",
+   "filePath": "supabase/functions/api/shared/email.ts"
+  },
+  "file:supabase/functions/api/shared/mappers.ts": {
+   "name": "mappers.ts",
+   "type": "file",
+   "summary": "Tipos del contrato de acciones (Dispatch, ActionContext, ActionHandler, ExportFilters) y mappers de filas crudas a DTO camelCase para criterios y anuncios.",
+   "filePath": "supabase/functions/api/shared/mappers.ts"
+  },
+  "file:supabase/functions/api/shared/notifications.ts": {
+   "name": "notifications.ts",
+   "type": "file",
+   "summary": "Inserta notificaciones in-app en fan-out: una fila por usuario a partir de un contenido común.",
+   "filePath": "supabase/functions/api/shared/notifications.ts"
+  },
+  "file:supabase/functions/api/shared/requests.ts": {
+   "name": "requests.ts",
+   "type": "file",
+   "summary": "Orquestación de correos transaccionales del ticket (inicio de trabajo, revisión del cliente, comentario, feedback) según reglas de negocio, más helpers de participantes, columnas de cierre y planificación de transiciones de columna.",
+   "filePath": "supabase/functions/api/shared/requests.ts"
+  },
+  "file:supabase/functions/api/shared/selects.ts": {
+   "name": "selects.ts",
+   "type": "file",
+   "summary": "Cadenas select de PostgREST reutilizables con distintos niveles de detalle (completo, detalle con criterios, ligero y estadísticas) para leer requests.",
+   "filePath": "supabase/functions/api/shared/selects.ts"
+  },
+  "file:supabase/functions/api/shared/templateKeys.ts": {
+   "name": "templateKeys.ts",
+   "type": "file",
+   "summary": "Utilidades recursivas para recolectar y renombrar claves en esquemas de plantilla con ramas condicionales y multicondicionales, y aplicar los renombres a Form_Data.",
+   "filePath": "supabase/functions/api/shared/templateKeys.ts"
+  },
+  "file:supabase/functions/api/shared/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos compartidos del sistema de acciones (Dispatch, ActionContext, ActionHandler) y de los filtros de exportación.",
+   "filePath": "supabase/functions/api/shared/types.ts"
+  },
+  "file:src/features/requests/hooks/stats/constants.ts": {
+   "name": "constants.ts",
+   "type": "file",
+   "summary": "Constantes de las métricas de estadísticas: conjuntos de columnas done/activas/WIP/backlog, orden de columnas, metadatos visuales por columna y prioridad, gradientes de avatar, ratio de meta, bandera de penalización y buckets de aging.",
+   "filePath": "src/features/requests/hooks/stats/constants.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts": {
+   "name": "buildPrimaryTeamMap.ts",
+   "type": "file",
+   "summary": "Deriva el equipo principal de cada usuario contando sus asignaciones por equipo en el historial de solicitudes.",
+   "filePath": "src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/calcBoard.ts": {
+   "name": "calcBoard.ts",
+   "type": "file",
+   "summary": "Cálculo puro de las estadísticas por board/equipo: distribución por columna y prioridad, puntaje, meta, penalización, arrastre y top de resolutores, en variantes por equipo y combinada.",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts": {
+   "name": "calcFlowMetrics.ts",
+   "type": "file",
+   "summary": "Calcula métricas de flujo y salud del board: percentiles de lead time, aging de WIP y backlog, throughput semanal, precisión de estimación y críticas abiertas más antiguas.",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/calcGeneral.ts": {
+   "name": "calcGeneral.ts",
+   "type": "file",
+   "summary": "Calcula las métricas generales del board (total, resueltas, tasa global, tiempo promedio de cierre) con desglose de creadas, resueltas, críticas y puntaje por equipo.",
+   "filePath": "src/features/requests/hooks/stats/lib/calcGeneral.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/calcSprint.ts": {
+   "name": "calcSprint.ts",
+   "type": "file",
+   "summary": "Calcula las métricas de sprint (planeadas, activas, completadas, post-planning, puntajes, meta, cumplimiento y arrastre de otros sprints) tanto sin sprint seleccionado como para uno o varios sprints.",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/math.ts": {
+   "name": "math.ts",
+   "type": "file",
+   "summary": "Helpers matemáticos y de fechas para las métricas: diferencia en días, mes actual, normalización a UTC, edad en días, promedio de horas y percentiles.",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/predicates.ts": {
+   "name": "predicates.ts",
+   "type": "file",
+   "summary": "Predicados de solicitudes: detección de etiqueta y estado bloqueado, y fábrica del filtro de solicitudes contables según la posición de inicio de stats.",
+   "filePath": "src/features/requests/hooks/stats/lib/predicates.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/scoring.ts": {
+   "name": "scoring.ts",
+   "type": "file",
+   "summary": "Lógica de puntaje: suma de puntos, meta como fracción del planeado y penalización por solicitudes con atraso de sprints (actualmente desactivable).",
+   "filePath": "src/features/requests/hooks/stats/lib/scoring.ts"
+  },
+  "file:src/features/requests/hooks/stats/lib/sprints.ts": {
+   "name": "sprints.ts",
+   "type": "file",
+   "summary": "Utilidades de sprints: orden y numeración, sprint de referencia, sprint anterior del mismo linaje, crédito único de cierre por ventana de sprint y agrupación del arrastre por sprint.",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts"
+  },
+  "file:src/features/requests/hooks/stats/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos públicos de las métricas de estadísticas: SprintStats, GeneralStatsReal, BoardStatsReal, Resolutor, FlowMetrics, StatsConfig y el paquete agregado StatsData.",
+   "filePath": "src/features/requests/hooks/stats/types.ts"
+  },
+  "file:src/features/requests/hooks/stats/useBoardStats.ts": {
+   "name": "useBoardStats.ts",
+   "type": "file",
+   "summary": "Hook que memoiza las estadísticas por board: actual por equipo, del sprint anterior del mismo linaje y la vista combinada de varios equipos.",
+   "filePath": "src/features/requests/hooks/stats/useBoardStats.ts"
+  },
+  "file:src/features/requests/hooks/stats/useFlowStats.ts": {
+   "name": "useFlowStats.ts",
+   "type": "file",
+   "summary": "Hook delgado que memoiza el cálculo de métricas de flujo sobre las solicitudes filtradas.",
+   "filePath": "src/features/requests/hooks/stats/useFlowStats.ts"
+  },
+  "file:src/features/requests/hooks/stats/useGeneralStats.ts": {
+   "name": "useGeneralStats.ts",
+   "type": "file",
+   "summary": "Hook delgado que memoiza las métricas generales por equipo vía calcGeneral.",
+   "filePath": "src/features/requests/hooks/stats/useGeneralStats.ts"
+  },
+  "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts": {
+   "name": "usePrimaryTeamMap.ts",
+   "type": "file",
+   "summary": "Hook que memoiza el mapa de equipo principal por usuario a partir de las solicitudes.",
+   "filePath": "src/features/requests/hooks/stats/usePrimaryTeamMap.ts"
+  },
+  "file:src/features/requests/hooks/stats/useSelectedSprints.ts": {
+   "name": "useSelectedSprints.ts",
+   "type": "file",
+   "summary": "Hook que filtra y memoiza los sprints seleccionados a partir de sus IDs.",
+   "filePath": "src/features/requests/hooks/stats/useSelectedSprints.ts"
+  },
+  "file:src/features/requests/hooks/stats/useSprintStats.ts": {
+   "name": "useSprintStats.ts",
+   "type": "file",
+   "summary": "Hook que memoiza las métricas de sprint delegando en calcSprint con los sprints seleccionados y la configuración de stats.",
+   "filePath": "src/features/requests/hooks/stats/useSprintStats.ts"
+  },
+  "file:src/features/requests/hooks/stats/useStatsScope.ts": {
+   "name": "useStatsScope.ts",
+   "type": "file",
+   "summary": "Hook que aplica en cascada los filtros por usuario, equipo y combinación de equipos sobre las solicitudes antes de calcular métricas.",
+   "filePath": "src/features/requests/hooks/stats/useStatsScope.ts"
+  },
+  "file:src/features/requests/hooks/stats/useStatsSource.ts": {
+   "name": "useStatsSource.ts",
+   "type": "file",
+   "summary": "Hook fuente de datos de estadísticas: carga el board completo (variante stats) y los sprints vía React Query y aplana los requests.",
+   "filePath": "src/features/requests/hooks/stats/useStatsSource.ts"
+  },
+  "file:src/features/requests/hooks/useStatsData.ts": {
+   "name": "useStatsData.ts",
+   "type": "file",
+   "summary": "Punto de entrada de las métricas de estadísticas: compone los subhooks de stats (fuente, sprints, scope, general, board, sprint, flujo, equipo principal) y re-exporta tipos y helpers públicos.",
+   "filePath": "src/features/requests/hooks/useStatsData.ts"
+  },
+  "file:src/features/requests/hooks/useSolviActions.ts": {
+   "name": "useSolviActions.ts",
+   "type": "file",
+   "summary": "Hook orquestador del alta de tickets SOLVI: mantiene el estado del formulario, asigna resolutor (turnos nocturnos vía Teams Shifts o técnico con menos casos), calcula la fecha máxima de solución por ANS, inserta en TBL_Ticket_Solvi, sube adjuntos y notifica. También reexporta helpers de notificación y fechas como punto único de importación.",
+   "filePath": "src/features/requests/hooks/useSolviActions.ts"
+  },
+  "file:src/features/requests/hooks/useSolviAns.ts": {
+   "name": "useSolviAns.ts",
+   "type": "file",
+   "summary": "Hook TanStack Query que consulta la lista ANS de SharePoint y resuelve las horas de SLA para una combinación categoría/subcategoría/artículo, con tabla `horasPorANS` normalizada.",
+   "filePath": "src/features/requests/hooks/useSolviAns.ts"
+  },
+  "file:src/features/requests/hooks/useSolviArticulos.ts": {
+   "name": "useSolviArticulos.ts",
+   "type": "file",
+   "summary": "Hook que carga los artículos SOLVI de SharePoint filtrados por subcategoría mediante ArticulosSPService.",
+   "filePath": "src/features/requests/hooks/useSolviArticulos.ts"
+  },
+  "file:src/features/requests/hooks/useSolviCategorias.ts": {
+   "name": "useSolviCategorias.ts",
+   "type": "file",
+   "summary": "Hook que obtiene el catálogo de categorías SOLVI desde SharePoint a través de CategoriasSPService.",
+   "filePath": "src/features/requests/hooks/useSolviCategorias.ts"
+  },
+  "file:src/features/requests/hooks/useSolviSubcategorias.ts": {
+   "name": "useSolviSubcategorias.ts",
+   "type": "file",
+   "summary": "Hook que carga las subcategorías SOLVI de una categoría seleccionada usando SubcategoriasSPService.",
+   "filePath": "src/features/requests/hooks/useSolviSubcategorias.ts"
+  },
+  "file:src/features/requests/hooks/useSubTeamMembers.ts": {
+   "name": "useSubTeamMembers.ts",
+   "type": "file",
+   "summary": "Conjunto de hooks TanStack Query para leer y mutar miembros y supervisores de subequipos vía apiClient, incluyendo lecturas agrupadas y en bloque con invalidación de caché.",
+   "filePath": "src/features/requests/hooks/useSubTeamMembers.ts"
+  },
+  "file:src/features/requests/hooks/useUsers.ts": {
+   "name": "useUsers.ts",
+   "type": "file",
+   "summary": "Define el tipo AppUser y hooks TanStack Query para listar usuarios, asignar/desasignar solicitudes y desactivar/reactivar usuarios mediante apiClient.",
+   "filePath": "src/features/requests/hooks/useUsers.ts"
+  },
+  "file:src/features/requests/lib/mentions.ts": {
+   "name": "mentions.ts",
+   "type": "file",
+   "summary": "Reglas de negocio para menciones (@) en comentarios: quién puede mencionar en tickets confidenciales, pool de usuarios mencionables, agrupación por departamento, filtrado, extracción de IDs y nombres cortos.",
+   "filePath": "src/features/requests/lib/mentions.ts"
+  },
+  "file:src/features/requests/services/AnsSharepointSolvi.service.ts": {
+   "name": "AnsSharepointSolvi.service.ts",
+   "type": "file",
+   "summary": "Servicio que lee la lista SharePoint \"ANS\" vía Microsoft Graph, con resolución de siteId/listId cacheada, para obtener el ANS de una combinación categoría/subcategoría/artículo.",
+   "filePath": "src/features/requests/services/AnsSharepointSolvi.service.ts"
+  },
+  "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts": {
+   "name": "ArticulosSharepointSolvi.service.ts",
+   "type": "file",
+   "summary": "Servicio de acceso a la lista SharePoint de artículos SOLVI vía Graph, con caché de IDs y consulta por subcategoría.",
+   "filePath": "src/features/requests/services/ArticulosSharepointSolvi.service.ts"
+  },
+  "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts": {
+   "name": "CategoriasSharepointSolvi.service.ts",
+   "type": "file",
+   "summary": "Servicio de acceso a la lista SharePoint de categorías SOLVI vía Graph, con caché local de IDs de sitio y lista.",
+   "filePath": "src/features/requests/services/CategoriasSharepointSolvi.service.ts"
+  },
+  "file:src/features/requests/services/HolidayService.service.ts": {
+   "name": "HolidayService.service.ts",
+   "type": "file",
+   "summary": "Consulta la API externa festivos.com.co para obtener los días festivos colombianos del año actual, usados en el cálculo de días hábiles.",
+   "filePath": "src/features/requests/services/HolidayService.service.ts"
+  },
+  "file:src/features/requests/services/SolviAttachments.service.ts": {
+   "name": "SolviAttachments.service.ts",
+   "type": "file",
+   "summary": "Sube adjuntos de tickets SOLVI al bucket de Supabase Storage \"ticket-attachments\" y registra la metadata en TBL_Ticket_Attachments_Solvi.",
+   "filePath": "src/features/requests/services/SolviAttachments.service.ts"
+  },
+  "file:src/features/requests/services/SolviBusinessDate.service.ts": {
+   "name": "SolviBusinessDate.service.ts",
+   "type": "file",
+   "summary": "Utilidades de fechas hábiles en zona horaria de Bogotá: parseo flexible de fechas, detección de turno nocturno, formato de SLA y cálculo de la fecha máxima de solución saltando fines de semana, festivos y horario no laboral.",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts"
+  },
+  "file:src/features/requests/services/SolviShifts.service.ts": {
+   "name": "SolviShifts.service.ts",
+   "type": "file",
+   "summary": "Cliente de la Edge Function de Supabase \"obtener-disponibilidad-hoy\" que devuelve los turnos de Teams Shifts del grupo SOLVI y la persona disponible ahora.",
+   "filePath": "src/features/requests/services/SolviShifts.service.ts"
+  },
+  "file:src/features/requests/services/SolviTicketAssignment.service.ts": {
+   "name": "SolviTicketAssignment.service.ts",
+   "type": "file",
+   "summary": "Lógica de asignación de tickets SOLVI: elige al técnico disponible con menos casos (desempate aleatorio) o recupera un usuario fijo de SharePoint.",
+   "filePath": "src/features/requests/services/SolviTicketAssignment.service.ts"
+  },
+  "file:src/features/requests/services/SolviTicketNotifications.service.ts": {
+   "name": "SolviTicketNotifications.service.ts",
+   "type": "file",
+   "summary": "Servicio de notificaciones por correo de SOLVI: construye HTML con enlace al ticket, resuelve destinatarios de comentarios y menciones, y envía avisos de creación a solicitante y resolutor mediante una API de envío de correos.",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts"
+  },
+  "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts": {
+   "name": "SubcategoriasSharepointSolvi.service.ts",
+   "type": "file",
+   "summary": "Servicio de acceso a la lista SharePoint de subcategorías SOLVI vía Graph, con caché de IDs y consulta por categoría.",
+   "filePath": "src/features/requests/services/SubcategoriasSharepointSolvi.service.ts"
+  },
+  "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts": {
+   "name": "TecnicosSharepointSolvi.service.ts",
+   "type": "file",
+   "summary": "Servicio CRUD sobre la lista SharePoint \"Usuarios\" (técnicos SOLVI) vía Microsoft Graph: lectura, listado con filtros OData y actualización del número de casos; define los tipos UsuariosSP y GetAllOpts compartidos.",
+   "filePath": "src/features/requests/services/TecnicosSharepointSolvi.service.ts"
+  },
+  "file:src/features/requests/types/SolviTicket.ts": {
+   "name": "SolviTicket.ts",
+   "type": "file",
+   "summary": "Tipo TypeScript que modela un registro de la tabla TBL_Ticket_Solvi (título, estado, solicitante, resolutor, categoría, ANS, fechas).",
+   "filePath": "src/features/requests/types/SolviTicket.ts"
+  },
+  "file:src/components/ConfigPanel.tsx": {
+   "name": "ConfigPanel.tsx",
+   "type": "file",
+   "summary": "Panel modal de configuración de PRISMA renderizado vía portal: navegación lateral por secciones (etiquetas, sub-equipos, sprints, kanbans, plantillas, usuarios, correos, avisos, exportaciones, organización) con selector de equipo, y además exporta los primitivos de UI compartidos (botones, selectores de color/emoji, formularios) que usan todas las subsecciones.",
+   "filePath": "src/components/ConfigPanel.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx": {
+   "name": "AnnouncementsConfig.tsx",
+   "type": "file",
+   "summary": "Sección de administración de avisos (anuncios) de la plataforma: listado, creación y edición con audiencia por rol/departamento, vigencia y prioridad.",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx": {
+   "name": "EmailsTemplatesConfig.tsx",
+   "type": "file",
+   "summary": "Gestión de plantillas de correo HTML enviadas por eventos del sistema: listado, activación, creación, edición de metadatos y edición del cuerpo con vista previa.",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx": {
+   "name": "ExportHistoryList.tsx",
+   "type": "file",
+   "summary": "Historial de exportaciones de tickets del usuario, con estado de cada trabajo, filtros aplicados y descarga del artefacto generado.",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/ExportProgressView.tsx": {
+   "name": "ExportProgressView.tsx",
+   "type": "file",
+   "summary": "Vista de progreso de un trabajo de exportación en curso: sondea el estado con useExportJob, muestra avance y permite descargar el resultado al completarse.",
+   "filePath": "src/components/ConfigPanelComponents/ExportProgressView.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/ExportsConfig.tsx": {
+   "name": "ExportsConfig.tsx",
+   "type": "file",
+   "summary": "Asistente de exportación de tickets a Excel/CSV en varios pasos (alcance y filtros, columnas, formato y vista previa) que crea trabajos de exportación y muestra su progreso e historial.",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/KanbansConfig.tsx": {
+   "name": "KanbansConfig.tsx",
+   "type": "file",
+   "summary": "Administración de los equipos Kanban del board: creación y edición de equipos (color, icono, departamento), y configuración de sus columnas, orden y reglas de evidencia.",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/LabelsConfig.tsx": {
+   "name": "LabelsConfig.tsx",
+   "type": "file",
+   "summary": "Lista sencilla de etiquetas del equipo seleccionado con creación, edición y borrado usando los primitivos del ConfigPanel.",
+   "filePath": "src/components/ConfigPanelComponents/LabelsConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/OrgConfig.tsx": {
+   "name": "OrgConfig.tsx",
+   "type": "file",
+   "summary": "Administración de la estructura organizacional: departamentos corporativos y sus equipos, con formularios de alta y edición.",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx": {
+   "name": "RequestsTemplates.tsx",
+   "type": "file",
+   "summary": "Diseñador de plantillas de solicitud: define los campos del formulario que ven los usuarios al crear tickets (tipos, opciones, ramas condicionales) y gestiona renombres con trabajos de migración en backend.",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/SprintsConfig.tsx": {
+   "name": "SprintsConfig.tsx",
+   "type": "file",
+   "summary": "Gestión de sprints del equipo: listado con estado (activo, futuro, cerrado), creación/edición con fechas y cierre de sprint moviendo tickets pendientes vía apiClient.",
+   "filePath": "src/components/ConfigPanelComponents/SprintsConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx": {
+   "name": "SubTeamConfig.tsx",
+   "type": "file",
+   "summary": "Gestión de sub-equipos del equipo seleccionado y de sus integrantes, con asignación de usuarios.",
+   "filePath": "src/components/ConfigPanelComponents/SubTeamConfig.tsx"
+  },
+  "file:src/components/ConfigPanelComponents/UsersConfig.tsx": {
+   "name": "UsersConfig.tsx",
+   "type": "file",
+   "summary": "Administración de usuarios del sistema: listado con búsqueda, edición de rol/departamento/equipo, pre-registro, vinculación de identidades Entra ID, acceso a boards y activación/desactivación.",
+   "filePath": "src/components/ConfigPanelComponents/UsersConfig.tsx"
+  },
+  "file:src/components/hooks/useVersionCheck.ts": {
+   "name": "useVersionCheck.ts",
+   "type": "file",
+   "summary": "Hook que detecta nuevas versiones desplegadas consultando /version.json al montar, al volver a la pestaña y cada 5 minutos, comparándolo con __APP_VERSION__.",
+   "filePath": "src/components/hooks/useVersionCheck.ts"
+  },
+  "file:src/components/layout/AnnouncementBanner.tsx": {
+   "name": "AnnouncementBanner.tsx",
+   "type": "file",
+   "summary": "Banner superior de avisos activos y sección de avisos para la página de inicio, adaptados a móvil.",
+   "filePath": "src/components/layout/AnnouncementBanner.tsx"
+  },
+  "file:src/components/layout/AnnouncementModal.tsx": {
+   "name": "AnnouncementModal.tsx",
+   "type": "file",
+   "summary": "Modal que presenta avisos marcados como emergentes al usuario y registra su lectura.",
+   "filePath": "src/components/layout/AnnouncementModal.tsx"
+  },
+  "file:src/components/layout/AppLayout.tsx": {
+   "name": "AppLayout.tsx",
+   "type": "file",
+   "summary": "Layout raíz de la aplicación autenticada: compone Sidebar, Topbar, banners de avisos y versión, temporizador flotante y prompt de notificaciones alrededor del contenido.",
+   "filePath": "src/components/layout/AppLayout.tsx"
+  },
+  "file:src/components/layout/BugReportModal.tsx": {
+   "name": "BugReportModal.tsx",
+   "type": "file",
+   "summary": "Modal para que el usuario reporte errores de la plataforma, enviados con apiClient.call(\"createBugReport\").",
+   "filePath": "src/components/layout/BugReportModal.tsx"
+  },
+  "file:src/components/layout/FloatingTimer.tsx": {
+   "name": "FloatingTimer.tsx",
+   "type": "file",
+   "summary": "Temporizador flotante y arrastrable para medir tiempo de trabajo en un ticket, con posición persistida en localStorage y estado en timerStore.",
+   "filePath": "src/components/layout/FloatingTimer.tsx"
+  },
+  "file:src/components/layout/NotificationBell.tsx": {
+   "name": "NotificationBell.tsx",
+   "type": "file",
+   "summary": "Campana de notificaciones del Topbar con contador, lista desplegable, marcado como leído y habilitación de notificaciones del navegador.",
+   "filePath": "src/components/layout/NotificationBell.tsx"
+  },
+  "file:src/components/layout/NotificationPermissionPrompt.tsx": {
+   "name": "NotificationPermissionPrompt.tsx",
+   "type": "file",
+   "summary": "Aviso emergente que invita al usuario a habilitar las notificaciones del navegador, recordando su decisión en notifPromptStore.",
+   "filePath": "src/components/layout/NotificationPermissionPrompt.tsx"
+  },
+  "file:src/components/layout/SatisfactionModal.tsx": {
+   "name": "SatisfactionModal.tsx",
+   "type": "file",
+   "summary": "Modal de encuesta de satisfacción que envía una calificación y comentario mediante apiClient.call(\"createSatisfactionRating\").",
+   "filePath": "src/components/layout/SatisfactionModal.tsx"
+  },
+  "file:src/components/layout/Sidebar.tsx": {
+   "name": "Sidebar.tsx",
+   "type": "file",
+   "summary": "Barra lateral de navegación con los equipos/boards accesibles, rutas principales según rol, acceso al panel de configuración y versión móvil tipo drawer.",
+   "filePath": "src/components/layout/Sidebar.tsx"
+  },
+  "file:src/components/layout/Topbar.tsx": {
+   "name": "Topbar.tsx",
+   "type": "file",
+   "summary": "Barra superior con el equipo activo, campana de notificaciones, reporte de bugs, instalación PWA y menú de usuario.",
+   "filePath": "src/components/layout/Topbar.tsx"
+  },
+  "file:src/components/layout/VersionUpdateBanner.tsx": {
+   "name": "VersionUpdateBanner.tsx",
+   "type": "file",
+   "summary": "Banner que avisa de una nueva versión disponible y fuerza la actualización del service worker PWA registrado a nivel de módulo.",
+   "filePath": "src/components/layout/VersionUpdateBanner.tsx"
+  },
+  "file:src/components/layout/siderbarConstants.ts": {
+   "name": "siderbarConstants.ts",
+   "type": "file",
+   "summary": "Constantes y utilidades visuales de equipos: mapa de iconos Lucide por nombre y derivación de colores (punto, brillo, borde) a partir del color hex del equipo.",
+   "filePath": "src/components/layout/siderbarConstants.ts"
+  },
+  "file:src/features/requests/components/stats/BarChart.tsx": {
+   "name": "BarChart.tsx",
+   "type": "file",
+   "summary": "Componente React que envuelve Chart.js para renderizar gráficos de barras con un color por barra y adaptación al tema claro/oscuro en el dashboard de estadísticas.",
+   "filePath": "src/features/requests/components/stats/BarChart.tsx"
+  },
+  "file:src/features/requests/components/stats/FlowSection.tsx": {
+   "name": "FlowSection.tsx",
+   "type": "file",
+   "summary": "Sección de métricas de flujo (lead time, aging, throughput, precisión de estimación y aging crítico) del dashboard de estadísticas de solicitudes.",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx"
+  },
+  "file:src/features/requests/components/stats/GlobalSection.tsx": {
+   "name": "GlobalSection.tsx",
+   "type": "file",
+   "summary": "Sección de vista global del dashboard que muestra KPIs generales del tablero y distribuciones por estado/prioridad mediante gráficos de barras.",
+   "filePath": "src/features/requests/components/stats/GlobalSection.tsx"
+  },
+  "file:src/features/requests/components/stats/ResolutoresPanel.tsx": {
+   "name": "ResolutoresPanel.tsx",
+   "type": "file",
+   "summary": "Panel expandible que lista los resolutores de un equipo con sus solicitudes atendidas, etiquetas y prioridad.",
+   "filePath": "src/features/requests/components/stats/ResolutoresPanel.tsx"
+  },
+  "file:src/features/requests/components/stats/SprintSection.tsx": {
+   "name": "SprintSection.tsx",
+   "type": "file",
+   "summary": "Sección del sprint activo con tarjetas de avance, detalle de otros sprints, panel de puntaje (con penalización por bloqueos) y tiempos promedio.",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx"
+  },
+  "file:src/features/requests/components/stats/SprintSelector.tsx": {
+   "name": "SprintSelector.tsx",
+   "type": "file",
+   "summary": "Selector desplegable multi-selección de sprints con filtro por año, ordenamiento y cierre al hacer clic fuera.",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx"
+  },
+  "file:src/features/requests/components/stats/StatsAtoms.tsx": {
+   "name": "StatsAtoms.tsx",
+   "type": "file",
+   "summary": "Biblioteca de componentes atómicos reutilizables del dashboard de estadísticas: tarjetas KPI, tarjetas de sprint, filas de barra, donut de puntaje, divisores y mini throughput.",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx"
+  },
+  "file:src/features/requests/components/stats/StatsControlBar.tsx": {
+   "name": "StatsControlBar.tsx",
+   "type": "file",
+   "summary": "Barra de control superior del dashboard que combina el selector de sprints, el filtro de usuario y un badge con las fechas del sprint.",
+   "filePath": "src/features/requests/components/stats/StatsControlBar.tsx"
+  },
+  "file:src/features/requests/components/stats/TeamDetailSection.tsx": {
+   "name": "TeamDetailSection.tsx",
+   "type": "file",
+   "summary": "Sección de detalle por equipo con KPIs comparativos (delta), paneles de distribución y el panel de resolutores.",
+   "filePath": "src/features/requests/components/stats/TeamDetailSection.tsx"
+  },
+  "file:src/features/requests/components/stats/UserFilterDropdown.tsx": {
+   "name": "UserFilterDropdown.tsx",
+   "type": "file",
+   "summary": "Dropdown con búsqueda para filtrar estadísticas por usuario, agrupando miembros por subequipo y mostrando avatares.",
+   "filePath": "src/features/requests/components/stats/UserFilterDropdown.tsx"
+  },
+  "file:src/features/requests/components/stats/statsFormat.ts": {
+   "name": "statsFormat.ts",
+   "type": "file",
+   "summary": "Helpers de formato y presentación del dashboard de estadísticas: avatares, iniciales, fechas es-CO, horas/días, colores de prioridad, deltas y año/número de sprint.",
+   "filePath": "src/features/requests/components/stats/statsFormat.ts"
+  },
+  "file:src/features/requests/components/stats/useClickOutside.ts": {
+   "name": "useClickOutside.ts",
+   "type": "file",
+   "summary": "Hook que ejecuta un callback cuando se hace clic fuera del elemento referenciado, usado por los dropdowns de estadísticas.",
+   "filePath": "src/features/requests/components/stats/useClickOutside.ts"
+  },
+  "file:src/features/requests/components/stats/useStatsAutoSelection.ts": {
+   "name": "useStatsAutoSelection.ts",
+   "type": "file",
+   "summary": "Hook compuesto que sincroniza la selección automática de sprint, la validez del tab de equipo y el reseteo del filtro de usuario en el store de estadísticas.",
+   "filePath": "src/features/requests/components/stats/useStatsAutoSelection.ts"
+  },
+  "file:prisma-migrations/src/config/mapping.ts": {
+   "name": "mapping.ts",
+   "type": "file",
+   "summary": "Manifiesto de mapeo de la migración: define los encabezados exactos del Excel que se usan (COL), el enrutamiento de Status a columnas del tablero y las columnas descartadas. Es el único archivo a editar para adaptar otro Excel.",
+   "filePath": "prisma-migrations/src/config/mapping.ts"
+  },
+  "file:prisma-migrations/src/config/runConfig.ts": {
+   "name": "runConfig.ts",
+   "type": "file",
+   "summary": "Parámetros de cada corrida de migración: board, plantilla, equipo y columna destino, usuario autor de comentarios, columnas volcadas a \"datos adicionales\" y mapa de prioridad a score.",
+   "filePath": "prisma-migrations/src/config/runConfig.ts"
+  },
+  "file:prisma-migrations/src/lib/apiClient.ts": {
+   "name": "apiClient.ts",
+   "type": "file",
+   "summary": "Wrapper de llamadas al Edge Function de PRISMA para el script de migración, autenticado con X-Internal-Job-Secret desde variables de entorno; incluye reintentos con backoff.",
+   "filePath": "prisma-migrations/src/lib/apiClient.ts"
+  },
+  "file:prisma-migrations/src/lib/buildPayload.ts": {
+   "name": "buildPayload.ts",
+   "type": "file",
+   "summary": "Convierte una fila cruda del Excel en el payload de migrateRequest aplicando mapeo, transformaciones, mapas de sprints/labels y resolución de asignados, y acumula las incidencias de la fila para el dry-run.",
+   "filePath": "prisma-migrations/src/lib/buildPayload.ts"
+  },
+  "file:prisma-migrations/src/lib/excel.ts": {
+   "name": "excel.ts",
+   "type": "file",
+   "summary": "Lectura del libro Excel con SheetJS: carga la hoja indicada como filas crudas indexadas por encabezado y detecta encabezados obligatorios faltantes.",
+   "filePath": "prisma-migrations/src/lib/excel.ts"
+  },
+  "file:prisma-migrations/src/lib/transforms.ts": {
+   "name": "transforms.ts",
+   "type": "file",
+   "summary": "Funciones puras de conversión de datos del Excel: limpieza de texto, normalización de claves, horas a decimal, fechas colombianas a UTC, Sí/No a booleano, prioridad a score y progreso derivado.",
+   "filePath": "prisma-migrations/src/lib/transforms.ts"
+  },
+  "file:prisma-migrations/src/lib/users.ts": {
+   "name": "users.ts",
+   "type": "file",
+   "summary": "Resuelve el texto \"Asignada\" del Excel a un User_ID indexando usuarios por nombre completo, forma colombiana y primer nombre, distinguiendo coincidencias únicas, no encontradas y ambiguas.",
+   "filePath": "prisma-migrations/src/lib/users.ts"
+  },
+  "file:prisma-migrations/src/phases/01-resolve.ts": {
+   "name": "01-resolve.ts",
+   "type": "file",
+   "summary": "Fase 1 (RESOLVE) de la migración: extrae sprints y labels únicos de las filas y hace upsert vía Edge Function, devolviendo mapas nombre normalizado → ID para la carga.",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts"
+  },
+  "file:prisma-migrations/src/phases/02-validate.ts": {
+   "name": "02-validate.ts",
+   "type": "file",
+   "summary": "Fase 2 (dry-run): construye todos los payloads sin escribir en la base, agrega incidencias, usuarios no resueltos y sprints/labels por crear, e imprime un reporte de validación.",
+   "filePath": "prisma-migrations/src/phases/02-validate.ts"
+  },
+  "file:prisma-migrations/src/phases/03-load.ts": {
+   "name": "03-load.ts",
+   "type": "file",
+   "summary": "Fase 3 (LOAD/commit): resuelve sprints y labels, arma cada payload con los mapas reales y crea las solicitudes vía migrateRequest con reintentos; es idempotente y salta filas ya migradas.",
+   "filePath": "prisma-migrations/src/phases/03-load.ts"
+  },
+  "file:prisma-migrations/src/run.ts": {
+   "name": "run.ts",
+   "type": "file",
+   "summary": "Orquestador y punto de entrada CLI de la migración: parsea --dry-run/--commit, --file y --sheet, lee el Excel, construye el resolvedor de usuarios y ejecuta la fase de validación o de carga.",
+   "filePath": "prisma-migrations/src/run.ts"
+  },
+  "file:src/features/exports/hooks/useCreateExportJob.ts": {
+   "name": "useCreateExportJob.ts",
+   "type": "file",
+   "summary": "Hook de React Query (mutación) que crea un job de export en segundo plano llamando a la acción createExportJob del Edge Function.",
+   "filePath": "src/features/exports/hooks/useCreateExportJob.ts"
+  },
+  "file:src/features/exports/hooks/useExportData.ts": {
+   "name": "useExportData.ts",
+   "type": "file",
+   "summary": "Hook de React Query que consulta los datos de export (acción exportRequests) según los filtros seleccionados.",
+   "filePath": "src/features/exports/hooks/useExportData.ts"
+  },
+  "file:src/features/exports/hooks/useExportHistory.ts": {
+   "name": "useExportHistory.ts",
+   "type": "file",
+   "summary": "Hooks de React Query para el historial de exports del usuario: consulta, eliminación y repetición de un export, invalidando la caché del historial.",
+   "filePath": "src/features/exports/hooks/useExportHistory.ts"
+  },
+  "file:src/features/exports/hooks/useExportJob.ts": {
+   "name": "useExportJob.ts",
+   "type": "file",
+   "summary": "Hook de polling que consulta el estado de un job de export cada 2 segundos hasta que termina (done) o falla.",
+   "filePath": "src/features/exports/hooks/useExportJob.ts"
+  },
+  "file:src/features/exports/services/buildCsv.ts": {
+   "name": "buildCsv.ts",
+   "type": "file",
+   "summary": "Generación de archivos CSV de export: escapa y formatea celdas (fechas en hora local), construye el CSV de resumen y el de tickets por equipo, empaquetando varios archivos cuando aplica.",
+   "filePath": "src/features/exports/services/buildCsv.ts"
+  },
+  "file:src/features/exports/services/buildXlsx.ts": {
+   "name": "buildXlsx.ts",
+   "type": "file",
+   "summary": "Generación de libros Excel (.xlsx) de export: hoja de resumen con métricas, hojas de tickets por equipo con columnas tipadas y anchos, y conversión a Blob para descarga.",
+   "filePath": "src/features/exports/services/buildXlsx.ts"
+  },
+  "file:src/features/exports/services/columnRegistry.ts": {
+   "name": "columnRegistry.ts",
+   "type": "file",
+   "summary": "Registro de columnas exportables: columnas fijas con accessors (asignados, labels, cierre, prioridad…) y columnas dinámicas detectadas desde el snapshot del esquema de plantilla de cada ticket.",
+   "filePath": "src/features/exports/services/columnRegistry.ts"
+  },
+  "file:src/features/exports/services/processExportArtifact.ts": {
+   "name": "processExportArtifact.ts",
+   "type": "file",
+   "summary": "Orquesta la descarga de un export terminado: obtiene URLs de artifacts, descarga los chunks de tickets con concurrencia acotada, genera XLSX/CSV (o ZIP si supera el máximo de filas) y confirma la descarga.",
+   "filePath": "src/features/exports/services/processExportArtifact.ts"
+  },
+  "file:src/features/exports/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos compartidos del módulo de exports: filtros, formatos, configuración, columnas, tickets, datasets, jobs en segundo plano, historial y URLs de artifacts.",
+   "filePath": "src/features/exports/types.ts"
+  },
+  "file:src/auth/AuthProvider.tsx": {
+   "name": "AuthProvider.tsx",
+   "type": "file",
+   "summary": "Proveedor de contexto React de autenticación que unifica el flujo MSAL clásico y el nuevo flujo Supabase Auth (Azure), resuelve el usuario de base de datos vía upsertUserByEntraId y bloquea el acceso a usuarios inactivos. Expone el hook useAuth con token, login, logout y refresco del usuario.",
+   "filePath": "src/auth/AuthProvider.tsx"
+  },
+  "file:src/auth/msal.ts": {
+   "name": "msal.ts",
+   "type": "file",
+   "summary": "Inicializa la instancia singleton de PublicClientApplication de MSAL (Entra ID) y expone helpers para login por popup/redirect, obtención silenciosa de access tokens con fallback interactivo, logout y suscripción a eventos.",
+   "filePath": "src/auth/msal.ts"
+  },
+  "file:src/auth/supabaseAuth.ts": {
+   "name": "supabaseAuth.ts",
+   "type": "file",
+   "summary": "Implementa el login con Microsoft a través de Supabase Auth (provider Azure), conviviendo con MSAL: gestiona el provider_token de Graph con caché, refresco silencioso vía refresh_token contra Azure AD, reautenticación silenciosa y extracción del Entra ID (oid.tid) de la sesión.",
+   "filePath": "src/auth/supabaseAuth.ts"
+  },
+  "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml": {
+   "name": "azure-static-web-apps-white-coast-0bebe6a0f.yml",
+   "type": "pipeline",
+   "summary": "Workflow de GitHub Actions que, en cada push a main, instala dependencias con Node 22, compila el frontend con Vite inyectando secretos VITE_* (Supabase, Azure) y publica la carpeta dist en Azure Static Web Apps usando un ID token OIDC; incluye un job para cerrar entornos de pull request.",
+   "filePath": ".github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml"
+  },
+  "document:README.md": {
+   "name": "README.md",
+   "type": "document",
+   "summary": "Documentación principal de PRISMA con 14 secciones: características, stack tecnológico, arquitectura (React/Vite + Supabase Edge Functions + Entra ID), estructura del proyecto, instalación, desarrollo, generación de documentación TypeDoc, despliegue en Azure Static Web Apps, convenciones de diseño y roles del sistema.",
+   "filePath": "README.md"
+  },
+  "file:index.html": {
+   "name": "index.html",
+   "type": "file",
+   "summary": "Documento HTML de entrada de Vite que monta la SPA en #root cargando src/main.tsx, enlaza el manifest PWA y aplica el tema guardado en localStorage antes del render para evitar parpadeo.",
+   "filePath": "index.html"
+  },
+  "config:package.json": {
+   "name": "package.json",
+   "type": "config",
+   "summary": "Manifiesto npm de prisma-tickets: define scripts de dev, build (tsc -b && vite build), lint y generación de docs con TypeDoc, y dependencias como React 19, MSAL, Supabase, TanStack Query, Zustand, Tiptap, dnd-kit y Chart.js.",
+   "filePath": "package.json"
+  },
+  "config:tsconfig.app.json": {
+   "name": "tsconfig.app.json",
+   "type": "config",
+   "summary": "Configuración TypeScript del frontend (src/) en modo bundler, JSX react-jsx, modo strict, alias @/* hacia ./src/* y tipos de vite/client.",
+   "filePath": "tsconfig.app.json"
+  },
+  "config:tsconfig.json": {
+   "name": "tsconfig.json",
+   "type": "config",
+   "summary": "tsconfig raíz de tipo solution que solo referencia tsconfig.app.json y tsconfig.node.json para el build incremental con tsc -b.",
+   "filePath": "tsconfig.json"
+  },
+  "config:tsconfig.node.json": {
+   "name": "tsconfig.node.json",
+   "type": "config",
+   "summary": "Configuración TypeScript para el entorno Node (ES2023) que compila únicamente vite.config.ts.",
+   "filePath": "tsconfig.node.json"
+  },
+  "config:typedoc.backend.json": {
+   "name": "typedoc.backend.json",
+   "type": "config",
+   "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del backend (Edge Function supabase/functions/api) usando su propio tsconfig.",
+   "filePath": "typedoc.backend.json"
+  },
+  "config:typedoc.frontend.json": {
+   "name": "typedoc.frontend.json",
+   "type": "config",
+   "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del frontend (src/) con tsconfig.app.json, excluyendo tests.",
+   "filePath": "typedoc.frontend.json"
+  },
+  "config:typedoc.json": {
+   "name": "typedoc.json",
+   "type": "config",
+   "summary": "Configuración de TypeDoc en modo merge que fusiona los modelos frontend y backend en un único sitio HTML en docs/site usando el README como portada.",
+   "filePath": "typedoc.json"
+  },
+  "document:prisma-migrations/README.md": {
+   "name": "README.md",
+   "type": "document",
+   "summary": "Guía del proyecto de migración de solicitudes históricas a PRISMA: filosofía, estructura, uso dry-run/commit, cómo editar el manifiesto de mapeo y runConfig, decisiones de mapeo, reglas de resolución, rollback y solución de problemas.",
+   "filePath": "prisma-migrations/README.md"
+  },
+  "config:prisma-migrations/package.json": {
+   "name": "package.json",
+   "type": "config",
+   "summary": "Manifiesto npm del proyecto prisma-migrations (ESM) con scripts dry y commit que ejecutan src/run.ts vía tsx, y dependencias dotenv y xlsx (SheetJS).",
+   "filePath": "prisma-migrations/package.json"
+  },
+  "config:prisma-migrations/tsconfig.json": {
+   "name": "tsconfig.json",
+   "type": "config",
+   "summary": "Configuración TypeScript del proyecto de migración: ESNext/Bundler, ES2022, modo strict, sin emisión y con imports de extensión .ts permitidos para ejecución con tsx.",
+   "filePath": "prisma-migrations/tsconfig.json"
+  },
+  "config:public/manifest.json": {
+   "name": "manifest.json",
+   "type": "config",
+   "summary": "Web App Manifest de la PWA PRISMA - Estudio de Moda: nombre, idioma es-CO, modo standalone, colores de tema e íconos 192/512 (incluido maskable).",
+   "filePath": "public/manifest.json"
+  },
+  "config:public/staticwebapp.config.json": {
+   "name": "staticwebapp.config.json",
+   "type": "config",
+   "summary": "Configuración de Azure Static Web Apps: fallback de navegación SPA a /index.html (excluyendo assets, service workers y JSON estáticos), cabeceras no-cache para sw.js y version.json, y tipos MIME para .json y .webmanifest.",
+   "filePath": "public/staticwebapp.config.json"
+  },
+  "config:public/version.json": {
+   "name": "version.json",
+   "type": "config",
+   "summary": "Archivo de versión con el hash corto del commit desplegado, consultado por el frontend para detectar nuevas versiones; se sirve sin caché.",
+   "filePath": "public/version.json"
+  },
+  "file:src/styles/LoginPage.css": {
+   "name": "LoginPage.css",
+   "type": "file",
+   "summary": "Estilos de la página de login con prefijo BEM lp-*: fondo animado con orbes y grid, tarjeta dividida con panel de marca y bloque de autenticación con botón de Microsoft. Carga las fuentes Syne y DM Sans desde Google Fonts.",
+   "filePath": "src/styles/LoginPage.css"
+  },
+  "file:src/styles/automations.css": {
+   "name": "automations.css",
+   "type": "file",
+   "summary": "Hoja de estilos de la página de automatizaciones (auto-*): header, tarjetas de estadísticas, filtros y tarjetas de reglas con badges de estado activa/inactiva/error y visualización del flujo disparador-acción.",
+   "filePath": "src/styles/automations.css"
+  },
+  "file:src/styles/clientRequests.css": {
+   "name": "clientRequests.css",
+   "type": "file",
+   "summary": "Estilos de la vista de solicitudes de cliente: header, banner de atención, tabs, toolbar, resumen y tarjetas client-request-card con variantes por prioridad (crítica/alta/media/baja) y estado.",
+   "filePath": "src/styles/clientRequests.css"
+  },
+  "file:src/styles/configPanel.css": {
+   "name": "configPanel.css",
+   "type": "file",
+   "summary": "Hoja de estilos más extensa del proyecto para el panel lateral de configuración (cpanel-*/cp-*): backdrop, navegación lateral, secciones de administración como subequipos, dropdowns, tooltips y exportaciones.",
+   "filePath": "src/styles/configPanel.css"
+  },
+  "file:src/styles/customization.css": {
+   "name": "customization.css",
+   "type": "file",
+   "summary": "Estilos del panel BoardCustomization (cp-panel): tabs, secciones, filas por columna del Kanban, selector de color con swatch y valor hex, y footer de acciones para personalizar el tablero.",
+   "filePath": "src/styles/customization.css"
+  },
+  "file:src/styles/feedback.css": {
+   "name": "feedback.css",
+   "type": "file",
+   "summary": "Estilos del modal de feedback y satisfacción (feedback-modal): overlay, header, cuerpo con grilla de severidad, mensajes de error/pista y botones primario/ghost.",
+   "filePath": "src/styles/feedback.css"
+  },
+  "file:src/styles/filters.css": {
+   "name": "filters.css",
+   "type": "file",
+   "summary": "Estilos del sistema de filtros del tablero (board-filters/filter-*): botón disparador, chips de filtros activos, panel desplegable animado y selector de asignados agrupado con avatares.",
+   "filePath": "src/styles/filters.css"
+  },
+  "file:src/styles/globals.css": {
+   "name": "globals.css",
+   "type": "file",
+   "summary": "Punto de entrada de estilos globales importado por main.tsx; agrega mediante @import las hojas variables, layout, kanban, requestCard, filters y configPanel.",
+   "filePath": "src/styles/globals.css"
+  },
+  "file:src/styles/kanban.css": {
+   "name": "kanban.css",
+   "type": "file",
+   "summary": "Estilos del tablero Kanban: contenedor con scroll horizontal y scrollbar personalizado, columnas con colores por estado (backlog, cliente-review, etc.) y selector de columnas con pills para móvil.",
+   "filePath": "src/styles/kanban.css"
+  },
+  "file:src/styles/kanbanSkeleton.css": {
+   "name": "kanbanSkeleton.css",
+   "type": "file",
+   "summary": "Estilos del skeleton de carga del Kanban (sk-*), replicando 1:1 las dimensiones y colores de .kanban y .kanban__col con un efecto shimmer animado.",
+   "filePath": "src/styles/kanbanSkeleton.css"
+  },
+  "file:src/styles/layout.css": {
+   "name": "layout.css",
+   "type": "file",
+   "summary": "Estilos del layout principal de la aplicación: app-layout, sidebar colapsable con logo, navegación, grupos y subitems, avatar de usuario, backdrop móvil y toast de nueva versión.",
+   "filePath": "src/styles/layout.css"
+  },
+  "file:src/styles/mentions.css": {
+   "name": "mentions.css",
+   "type": "file",
+   "summary": "Estilos mínimos para menciones (@usuario) en el input de comentarios: wrapper, input y resaltado .prisma-mention.",
+   "filePath": "src/styles/mentions.css"
+  },
+  "file:src/styles/notifications.css": {
+   "name": "notifications.css",
+   "type": "file",
+   "summary": "Estilos del centro de notificaciones: campana con badge, panel desplegable animado, lista e items leídos/no leídos con actor, icono y acción de marcar como leído. Define alias de variables CSS hacia variables.css.",
+   "filePath": "src/styles/notifications.css"
+  },
+  "file:src/styles/onboarding.css": {
+   "name": "onboarding.css",
+   "type": "file",
+   "summary": "Estilos de la tarjeta de onboarding (ob-card) para usuarios nuevos: logo PRISMA, título, campos, error, botón y nota de contacto, con línea de acento superior al estilo del login.",
+   "filePath": "src/styles/onboarding.css"
+  },
+  "file:src/styles/requestCard.css": {
+   "name": "requestCard.css",
+   "type": "file",
+   "summary": "Estilos de la tarjeta de solicitud del Kanban (request-card): variantes por prioridad, estado de arrastre, avatares de solicitante/resolutor y punto de actividad pulsante.",
+   "filePath": "src/styles/requestCard.css"
+  },
+  "file:src/styles/solvi.css": {
+   "name": "solvi.css",
+   "type": "file",
+   "summary": "Estilos de la página de tickets de la integración SOLVI: toolbar, búsqueda, banner de error, tabla con columnas redimensionables, pills, paginación y skeleton shimmer.",
+   "filePath": "src/styles/solvi.css"
+  },
+  "file:src/styles/stats.css": {
+   "name": "stats.css",
+   "type": "file",
+   "summary": "Estilos del panel de estadísticas/métricas (dashboard unificado Sprint + General + Por equipo): barra de control, tabs de vista y equipo, tarjetas de métricas mensuales, chips de sprints, detalle de resolutor y skeletons.",
+   "filePath": "src/styles/stats.css"
+  },
+  "file:src/styles/tasks.css": {
+   "name": "tasks.css",
+   "type": "file",
+   "summary": "Estilos de la vista de tabla de tareas (tasks-*): layout, toolbar, búsqueda, tabla con columnas por tipo (criticidad, creación, cierre, asignados), avatares apilados y skeleton de carga.",
+   "filePath": "src/styles/tasks.css"
+  },
+  "file:src/styles/themeLight.css": {
+   "name": "themeLight.css",
+   "type": "file",
+   "summary": "Tema claro activado con data-theme=\"light\" en el elemento html: redefine los tokens de color de variables.css y ajusta overrides para topbar, columnas Kanban, tarjetas, panel de filtros y login.",
+   "filePath": "src/styles/themeLight.css"
+  },
+  "file:src/styles/variables.css": {
+   "name": "variables.css",
+   "type": "file",
+   "summary": "Define los design tokens globales (custom properties de color, fondo, acento, bordes, texto, sidebar) del tema oscuro por defecto, las fuentes Objektiv Mk3 vía @font-face y overrides de scrollbar.",
+   "filePath": "src/styles/variables.css"
+  },
+  "config:.ua/config.json": {
+   "name": "config.json",
+   "type": "config",
+   "summary": "Configuración local del plugin Understand-Anything que fija el idioma de salida del análisis en español.",
+   "filePath": ".ua/config.json"
+  },
+  "file:eslint.config.js": {
+   "name": "eslint.config.js",
+   "type": "file",
+   "summary": "Configuración flat de ESLint para los archivos TS/TSX: reglas recomendadas de JS y typescript-eslint, React Hooks y React Refresh para Vite, ignorando dist.",
+   "filePath": "eslint.config.js"
+  },
+  "file:postcss.config.js": {
+   "name": "postcss.config.js",
+   "type": "file",
+   "summary": "Configuración de PostCSS que registra el plugin @tailwindcss/postcss para procesar los estilos de Tailwind v4.",
+   "filePath": "postcss.config.js"
+  },
+  "file:public/_redirects": {
+   "name": "_redirects",
+   "type": "file",
+   "summary": "Regla de redirección catch-all (/* → /index.html 200) que permite el enrutado del lado del cliente de la SPA en el hosting estático.",
+   "filePath": "public/_redirects"
+  },
+  "file:public/sw-notifications.js": {
+   "name": "sw-notifications.js",
+   "type": "file",
+   "summary": "Fragmento de Service Worker inyectado en el SW de Workbox que maneja el click en notificaciones del SO: enfoca PRISMA y le envía un postMessage, o abre una ventana en la URL destino.",
+   "filePath": "public/sw-notifications.js"
+  },
+  "file:src/App.tsx": {
+   "name": "App.tsx",
+   "type": "file",
+   "summary": "Componente raíz de PRISMA que define todas las rutas de React Router, los guards de acceso por autenticación, onboarding y rol (TI, estadísticas, admin) y las rutas overlay de tickets SOLVI.",
+   "filePath": "src/App.tsx"
+  },
+  "file:src/api/BaseSharePointListService.ts": {
+   "name": "BaseSharePointListService.ts",
+   "type": "file",
+   "summary": "Clase base abstracta y genérica para CRUD sobre listas de SharePoint vía Microsoft Graph, con resolución de IDs de sitio/lista cacheada en localStorage y paginación.",
+   "filePath": "src/api/BaseSharePointListService.ts"
+  },
+  "file:src/auth/BaseSharePointListService.ts": {
+   "name": "BaseSharePointListService.ts",
+   "type": "file",
+   "summary": "Copia duplicada en la carpeta auth de la clase base genérica de servicios sobre listas de SharePoint (Graph), con caché de IDs y paginación; probablemente código heredado.",
+   "filePath": "src/auth/BaseSharePointListService.ts"
+  },
+  "file:src/auth/roles.ts": {
+   "name": "roles.ts",
+   "type": "file",
+   "summary": "Resuelve el rol de aplicación del usuario (admin TI, miembro TI o cliente) a partir de TBL_Users y expone guards para ver tablero, configuración, estadísticas y automatizaciones.",
+   "filePath": "src/auth/roles.ts"
+  },
+  "file:src/auth/useAuth.ts": {
+   "name": "useAuth.ts",
+   "type": "file",
+   "summary": "Define un AuthContext basado en MSAL (cuenta, token, signIn/signOut) y el hook useAuth que exige estar dentro de AuthProvider; variante heredada del contexto de autenticación.",
+   "filePath": "src/auth/useAuth.ts"
+  },
+  "file:src/components/hooks/useMediaQuery.ts": {
+   "name": "useMediaQuery.ts",
+   "type": "file",
+   "summary": "Hooks reutilizables para suscribirse a media queries CSS y detectar viewport móvil.",
+   "filePath": "src/components/hooks/useMediaQuery.ts"
+  },
+  "file:src/components/layout/ThemeToggle.tsx": {
+   "name": "ThemeToggle.tsx",
+   "type": "file",
+   "summary": "Botón de la barra superior que alterna entre tema claro y oscuro usando el store de tema.",
+   "filePath": "src/components/layout/ThemeToggle.tsx"
+  },
+  "file:src/config.ts": {
+   "name": "config.ts",
+   "type": "file",
+   "summary": "Flags globales de la aplicación: modo mock, bypass de auth, board por defecto y activación de Supabase Auth y lecturas directas.",
+   "filePath": "src/config.ts"
+  },
+  "file:src/features/automations/components/CreateAutomationModal.tsx": {
+   "name": "CreateAutomationModal.tsx",
+   "type": "file",
+   "summary": "Modal para crear reglas de automatización: elige disparador (solicitud creada, cambio de columna), acción (asignar resolutor/prioridad, notificar) y equipo, cargando equipos y usuarios desde la API.",
+   "filePath": "src/features/automations/components/CreateAutomationModal.tsx"
+  },
+  "file:src/features/automations/hooks/useAutomationRules.ts": {
+   "name": "useAutomationRules.ts",
+   "type": "file",
+   "summary": "Hooks de TanStack Query para listar, crear, activar/desactivar y eliminar reglas de automatización vía apiClient, mapeando filas de BD al tipo AutomationRule.",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts"
+  },
+  "file:src/features/automations/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos del dominio de automatizaciones (disparadores, acciones, reglas) y catálogos de etiquetas, columnas conocidas, prioridades y destinos de notificación.",
+   "filePath": "src/features/automations/types.ts"
+  },
+  "file:src/features/requests/components/AssignBugModal.tsx": {
+   "name": "AssignBugModal.tsx",
+   "type": "file",
+   "summary": "Modal que convierte un reporte de bug en solicitud asignada: elige equipo, subequipo, resolutor, sprint y horas, mapea severidad a prioridad y crea criterios de aceptación.",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx"
+  },
+  "file:src/features/requests/components/BoardCustomization.tsx": {
+   "name": "BoardCustomization.tsx",
+   "type": "file",
+   "summary": "Panel flotante (portal) y botón disparador para personalizar el tablero Kanban: columnas de horas, contadores y visibilidad de columnas, persistido en el store de personalización.",
+   "filePath": "src/features/requests/components/BoardCustomization.tsx"
+  },
+  "file:src/features/requests/components/KanbanSkeleton.tsx": {
+   "name": "KanbanSkeleton.tsx",
+   "type": "file",
+   "summary": "Skeleton de carga del tablero Kanban con columnas y tarjetas placeholder animadas.",
+   "filePath": "src/features/requests/components/KanbanSkeleton.tsx"
+  },
+  "file:src/features/requests/components/RichTextEditor.tsx": {
+   "name": "RichTextEditor.tsx",
+   "type": "file",
+   "summary": "Editor de texto enriquecido con barra de herramientas (negrita, listas, etc.) usado en formularios de solicitud.",
+   "filePath": "src/features/requests/components/RichTextEditor.tsx"
+  },
+  "file:src/features/requests/components/SolviRequestFormControls.tsx": {
+   "name": "SolviRequestFormControls.tsx",
+   "type": "file",
+   "summary": "Controles y estilos compartidos del formulario de solicitud SOLVI: etiquetas, errores, estilos de input/tarjeta, icono de adjunto y formateo de bytes.",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx"
+  },
+  "file:src/features/requests/components/SolviRequestPageComponents.tsx": {
+   "name": "SolviRequestPageComponents.tsx",
+   "type": "file",
+   "summary": "Componentes de la página de solicitud SOLVI: pantallas de error y éxito, tarjetas de solicitud, categoría en cascada, descripción, adjuntos, badge de SLA y barra de envío.",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx"
+  },
+  "file:src/features/requests/components/StatsSkeleton.tsx": {
+   "name": "StatsSkeleton.tsx",
+   "type": "file",
+   "summary": "Skeleton de carga de la página de estadísticas con KPIs y gráficos placeholder.",
+   "filePath": "src/features/requests/components/StatsSkeleton.tsx"
+  },
+  "file:src/features/requests/components/stats/StatsTeamTabs.tsx": {
+   "name": "StatsTeamTabs.tsx",
+   "type": "file",
+   "summary": "Pestañas para seleccionar el equipo en la vista de estadísticas usando los metadatos del tablero.",
+   "filePath": "src/features/requests/components/stats/StatsTeamTabs.tsx"
+  },
+  "file:src/features/requests/hooks/useAttachments.ts": {
+   "name": "useAttachments.ts",
+   "type": "file",
+   "summary": "Hooks de TanStack Query para listar, subir (codificando a base64) y borrar adjuntos de una solicitud, invalidando la lista tras cada mutación.",
+   "filePath": "src/features/requests/hooks/useAttachments.ts"
+  },
+  "file:src/features/requests/hooks/useBoardMetadata.ts": {
+   "name": "useBoardMetadata.ts",
+   "type": "file",
+   "summary": "Hooks de React Query para los metadatos del tablero: equipos, etiquetas y plantillas de solicitud, con mutaciones optimistas vía la Edge Function. Incluye helpers que mapean plantillas de BD a definiciones de UI y reemplazan el antiguo registry.ts.",
+   "filePath": "src/features/requests/hooks/useBoardMetadata.ts"
+  },
+  "file:src/features/requests/hooks/useBrowserNotifications.ts": {
+   "name": "useBrowserNotifications.ts",
+   "type": "file",
+   "summary": "Hook que dispara notificaciones nativas del navegador a partir de las notificaciones de la app, con un store externo compartido para el permiso y soporte de Service Worker para Chrome Android.",
+   "filePath": "src/features/requests/hooks/useBrowserNotifications.ts"
+  },
+  "file:src/features/requests/hooks/useComments.ts": {
+   "name": "useComments.ts",
+   "type": "file",
+   "summary": "Hooks de React Query para listar, crear y eliminar comentarios de una solicitud mediante apiClient.",
+   "filePath": "src/features/requests/hooks/useComments.ts"
+  },
+  "file:src/features/requests/hooks/useDepartments.ts": {
+   "name": "useDepartments.ts",
+   "type": "file",
+   "summary": "Hooks para consultar departamentos (con y sin equipos) y crear, actualizar o eliminar departamentos con actualizaciones optimistas; soporta datos mock con config.USE_MOCK.",
+   "filePath": "src/features/requests/hooks/useDepartments.ts"
+  },
+  "file:src/features/requests/hooks/useEmailTemplates.ts": {
+   "name": "useEmailTemplates.ts",
+   "type": "file",
+   "summary": "Hooks para administrar plantillas de correo (listar, crear, editar, activar/desactivar, eliminar y actualizar metadatos), más un fallback de variables por evento.",
+   "filePath": "src/features/requests/hooks/useEmailTemplates.ts"
+  },
+  "file:src/features/requests/hooks/useLabels.ts": {
+   "name": "useLabels.ts",
+   "type": "file",
+   "summary": "Hooks de solo lectura para obtener etiquetas por equipo o por tablero, con etiquetas simuladas para desarrollo offline.",
+   "filePath": "src/features/requests/hooks/useLabels.ts"
+  },
+  "file:src/features/requests/hooks/useMySolviTickets.ts": {
+   "name": "useMySolviTickets.ts",
+   "type": "file",
+   "summary": "Hooks que consultan los tickets SOLVI del usuario actual y aquellos en los que fue mencionado.",
+   "filePath": "src/features/requests/hooks/useMySolviTickets.ts"
+  },
+  "file:src/features/requests/hooks/useRequestParticipants.ts": {
+   "name": "useRequestParticipants.ts",
+   "type": "file",
+   "summary": "Hooks para listar participantes de una solicitud y quitar un participante, invalidando la caché correspondiente.",
+   "filePath": "src/features/requests/hooks/useRequestParticipants.ts"
+  },
+  "file:src/features/requests/hooks/useSolviComments.ts": {
+   "name": "useSolviComments.ts",
+   "type": "file",
+   "summary": "Hooks de React Query para leer, crear y eliminar comentarios de tickets SOLVI.",
+   "filePath": "src/features/requests/hooks/useSolviComments.ts"
+  },
+  "file:src/features/requests/hooks/useSolviParticipants.ts": {
+   "name": "useSolviParticipants.ts",
+   "type": "file",
+   "summary": "Hooks para listar y remover participantes de un ticket SOLVI.",
+   "filePath": "src/features/requests/hooks/useSolviParticipants.ts"
+  },
+  "file:src/features/requests/hooks/useSolviTickets.ts": {
+   "name": "useSolviTickets.ts",
+   "type": "file",
+   "summary": "Hooks de la integración SOLVI: listado paginado y vista previa de tickets, detalle de ticket y subida de adjuntos comprimidos; además una función que lee adjuntos directamente desde Supabase.",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts"
+  },
+  "file:src/features/requests/hooks/useSprints.ts": {
+   "name": "useSprints.ts",
+   "type": "file",
+   "summary": "Hooks para gestionar sprints del tablero (listar, crear, actualizar, eliminar) con actualizaciones optimistas, y un helper que deriva el año del sprint.",
+   "filePath": "src/features/requests/hooks/useSprints.ts"
+  },
+  "file:src/features/requests/hooks/useSubTeams.ts": {
+   "name": "useSubTeams.ts",
+   "type": "file",
+   "summary": "Hooks para subequipos y sus supervisores: consultas por uno o varios equipos, CRUD optimista y alta/baja de supervisores.",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts"
+  },
+  "file:src/features/requests/hooks/useTeams.ts": {
+   "name": "useTeams.ts",
+   "type": "file",
+   "summary": "Hooks CRUD de equipos por departamento que además sincronizan la caché anidada departments-with-teams compartida con useDepartments.",
+   "filePath": "src/features/requests/hooks/useTeams.ts"
+  },
+  "file:src/features/requests/templates/TemplateRenameModal.tsx": {
+   "name": "TemplateRenameModal.tsx",
+   "type": "file",
+   "summary": "Modal que confirma y muestra el progreso de renombrar claves de campos de una plantilla, propagando el cambio a las solicitudes existentes por fases (confirm, processing, done, error).",
+   "filePath": "src/features/requests/templates/TemplateRenameModal.tsx"
+  },
+  "file:src/features/requests/templates/renameUtils.ts": {
+   "name": "renameUtils.ts",
+   "type": "file",
+   "summary": "Utilidades para detectar renombres de claves en el schema de campos de una plantilla, anotando cada nodo con un __editId efímero y comparando el schema inicial contra el actual.",
+   "filePath": "src/features/requests/templates/renameUtils.ts"
+  },
+  "file:src/features/stats/types.ts": {
+   "name": "types.ts",
+   "type": "file",
+   "summary": "Tipos y constantes de dominio para estadísticas: equipos, columnas Kanban, columnas de cierre y mapeos entre prioridad y score.",
+   "filePath": "src/features/stats/types.ts"
+  },
+  "file:src/graph/GraphRest.ts": {
+   "name": "GraphRest.ts",
+   "type": "file",
+   "summary": "Cliente REST mínimo para Microsoft Graph API con token Bearer inyectado, soporte de GET/POST/PATCH/DELETE, descargas binarias y subidas, y mensajes de error detallados.",
+   "filePath": "src/graph/GraphRest.ts"
+  },
+  "file:src/graph/GraphServicesProvider.tsx": {
+   "name": "GraphServicesProvider.tsx",
+   "type": "file",
+   "summary": "Provider de React que construye e inyecta los servicios de la app (GraphRest para Graph API y SupabaseRequestsService para solicitudes) en el contexto, y re-exporta useGraphServices.",
+   "filePath": "src/graph/GraphServicesProvider.tsx"
+  },
+  "file:src/graph/useGraphServices.ts": {
+   "name": "useGraphServices.ts",
+   "type": "file",
+   "summary": "Define el contexto GraphServicesContext y el hook useGraphServices, que falla si se usa fuera del provider.",
+   "filePath": "src/graph/useGraphServices.ts"
+  },
+  "file:src/hooks/useInstallPrompt.ts": {
+   "name": "useInstallPrompt.ts",
+   "type": "file",
+   "summary": "Hook PWA que captura el evento beforeinstallprompt a nivel de módulo y expone si la app es instalable o ya está en modo standalone.",
+   "filePath": "src/hooks/useInstallPrompt.ts"
+  },
+  "file:src/index.css": {
+   "name": "index.css",
+   "type": "file",
+   "summary": "Hoja de estilos global con variables CSS (colores, tipografías, sombras), tema claro/oscuro y estilos base de la aplicación.",
+   "filePath": "src/index.css"
+  },
+  "file:src/lib/apiClient.ts": {
+   "name": "apiClient.ts",
+   "type": "file",
+   "summary": "Cliente central que llama a la Edge Function api de Supabase enviando acción y payload con el token de MSAL o de Supabase Auth según el flag USE_SUPABASE_AUTH.",
+   "filePath": "src/lib/apiClient.ts"
+  },
+  "file:src/lib/compressImage.ts": {
+   "name": "compressImage.ts",
+   "type": "file",
+   "summary": "Utilidad que comprime imágenes con Canvas antes de subirlas (redimensiona a 1920px y ajusta calidad) y valida el límite de 20 MB del bucket.",
+   "filePath": "src/lib/compressImage.ts"
+  },
+  "file:src/lib/supabaseClient.ts": {
+   "name": "supabaseClient.ts",
+   "type": "file",
+   "summary": "Inicializa el cliente supabase-js con flujo PKCE y sesión persistente para Supabase Auth, coexistiendo con MSAL durante la migración.",
+   "filePath": "src/lib/supabaseClient.ts"
+  },
+  "file:src/main.tsx": {
+   "name": "main.tsx",
+   "type": "file",
+   "summary": "Punto de entrada de la SPA: aplica el tema guardado antes del primer render, crea el QueryClient de TanStack Query y monta App envuelto en BrowserRouter, AuthProvider (MSAL) y GraphServicesProvider.",
+   "filePath": "src/main.tsx"
+  },
+  "file:src/pages/AutomationsPage.tsx": {
+   "name": "AutomationsPage.tsx",
+   "type": "file",
+   "summary": "Página de gestión de reglas de automatización: lista las reglas en tarjetas con estadísticas, permite activarlas/desactivarlas, eliminarlas y crear nuevas mediante un modal.",
+   "filePath": "src/pages/AutomationsPage.tsx"
+  },
+  "file:src/pages/BoardPage.tsx": {
+   "name": "BoardPage.tsx",
+   "type": "file",
+   "summary": "Página principal del tablero Kanban por equipo: valida el acceso al board desde la URL, carga columnas, solicitudes, sprints, etiquetas y miembros, y compone filtros, búsqueda, personalización, zoom y barra de horas.",
+   "filePath": "src/pages/BoardPage.tsx"
+  },
+  "file:src/pages/ClientRequestsPage.tsx": {
+   "name": "ClientRequestsPage.tsx",
+   "type": "file",
+   "summary": "Vista \"cliente\" de las solicitudes propias del usuario, con estados simplificados y lenguaje no técnico, que combina tickets internos y tickets SOLVI en tarjetas filtrables.",
+   "filePath": "src/pages/ClientRequestsPage.tsx"
+  },
+  "file:src/pages/HomePage.tsx": {
+   "name": "HomePage.tsx",
+   "type": "file",
+   "summary": "Página de inicio del ITSM: muestra el banner del sprint activo, anuncios y pestañas por equipo (internos, externos e integraciones como SOLVI) con listados de tickets y accesos para crear solicitudes o ver más.",
+   "filePath": "src/pages/HomePage.tsx"
+  },
+  "file:src/pages/LoginPage.tsx": {
+   "name": "LoginPage.tsx",
+   "type": "file",
+   "summary": "Pantalla de inicio de sesión con Microsoft 365 (MSAL popup) que muestra anuncios públicos y redirige a la ruta guardada post-login cuando la sesión y la BD están listas.",
+   "filePath": "src/pages/LoginPage.tsx"
+  },
+  "file:src/pages/MyMentionsPage.tsx": {
+   "name": "MyMentionsPage.tsx",
+   "type": "file",
+   "summary": "Página \"Mis menciones\" que lista las solicitudes y tickets SOLVI donde el usuario actual fue mencionado, abriéndolos como modal sobre la ruta actual.",
+   "filePath": "src/pages/MyMentionsPage.tsx"
+  },
+  "file:src/pages/MyRequestsPage.tsx": {
+   "name": "MyRequestsPage.tsx",
+   "type": "file",
+   "summary": "Página \"Mis solicitudes\" que lista las solicitudes creadas por el usuario actual (o datos mock) con horas, responsable y estado.",
+   "filePath": "src/pages/MyRequestsPage.tsx"
+  },
+  "file:src/pages/NewRequestPage.tsx": {
+   "name": "NewRequestPage.tsx",
+   "type": "file",
+   "summary": "Asistente multipaso para crear una nueva solicitud: selección de equipo y plantilla, formulario dinámico con campos extra condicionales y validación, criterios de aceptación, adjuntos comprimidos y pantalla de éxito.",
+   "filePath": "src/pages/NewRequestPage.tsx"
+  },
+  "file:src/pages/OnBoardingPage.tsx": {
+   "name": "OnBoardingPage.tsx",
+   "type": "file",
+   "summary": "Página de onboarding que obliga al usuario nuevo a elegir su departamento vía apiClient (getDepartments/completeOnboarding) antes de entrar a la aplicación.",
+   "filePath": "src/pages/OnBoardingPage.tsx"
+  },
+  "file:src/pages/PrismaAdminPage.tsx": {
+   "name": "PrismaAdminPage.tsx",
+   "type": "file",
+   "summary": "Panel de administración de PRISMA con pestañas de reportes de bugs (cambio de estado y asignación), calificaciones de satisfacción y calificaciones de resolución con ranking de resolutores.",
+   "filePath": "src/pages/PrismaAdminPage.tsx"
+  },
+  "file:src/pages/RequestsPage.tsx": {
+   "name": "RequestsPage.tsx",
+   "type": "file",
+   "summary": "Página de listado general de solicitudes de todos los boards con panel de detalle y movimiento de columnas, con soporte de datos mock.",
+   "filePath": "src/pages/RequestsPage.tsx"
+  },
+  "file:src/pages/StatsPage.tsx": {
+   "name": "StatsPage.tsx",
+   "type": "file",
+   "summary": "Página de métricas que compone las secciones global, de flujo, de sprint y de detalle por equipo según los equipos visibles para el usuario.",
+   "filePath": "src/pages/StatsPage.tsx"
+  },
+  "file:src/pages/TasksPage.tsx": {
+   "name": "TasksPage.tsx",
+   "type": "file",
+   "summary": "Página mínima que lee el equipo desde la URL y renderiza la tabla de tareas TasksTable para ese equipo.",
+   "filePath": "src/pages/TasksPage.tsx"
+  },
+  "file:src/pages/TeamRequestsPage.tsx": {
+   "name": "TeamRequestsPage.tsx",
+   "type": "file",
+   "summary": "Página de solicitudes de un equipo con pestañas \"mías\"/\"asignadas\", vistas alternables, filtros por sprint, etiquetas, subequipos y miembros, y apertura del modal de solicitud.",
+   "filePath": "src/pages/TeamRequestsPage.tsx"
+  },
+  "file:src/pages/TicketPage.tsx": {
+   "name": "TicketPage.tsx",
+   "type": "file",
+   "summary": "Ruta de ticket individual que resuelve el ticket desde la URL y lo muestra en RequestModal o HomeRequestModal, con estados de carga y de no encontrado.",
+   "filePath": "src/pages/TicketPage.tsx"
+  },
+  "file:src/pages/integrations/SolviRequestPage.tsx": {
+   "name": "SolviRequestPage.tsx",
+   "type": "file",
+   "summary": "Formulario para crear tickets en la integración SOLVI con selección en cascada de categoría, subcategoría y artículo (listas de SharePoint), cálculo de ANS y adjuntos comprimidos.",
+   "filePath": "src/pages/integrations/SolviRequestPage.tsx"
+  },
+  "file:src/pages/integrations/SolviTicketsPage.tsx": {
+   "name": "SolviTicketsPage.tsx",
+   "type": "file",
+   "summary": "Tabla de tickets SOLVI con columnas congeladas, colores por estado, skeleton de carga y modal de detalle enrutado por ticketId.",
+   "filePath": "src/pages/integrations/SolviTicketsPage.tsx"
+  },
+  "file:src/store/automationStore.ts": {
+   "name": "automationStore.ts",
+   "type": "file",
+   "summary": "Store Zustand de UI para automatizaciones: regla seleccionada y estado abierto/cerrado del modal.",
+   "filePath": "src/store/automationStore.ts"
+  },
+  "file:src/store/boardStore.ts": {
+   "name": "boardStore.ts",
+   "type": "file",
+   "summary": "Store Zustand de UI del tablero: equipo activo, sidebar, zoom del Kanban acotado por ZOOM_MIN/ZOOM_MAX y señal efímera para enfocar una columna.",
+   "filePath": "src/store/boardStore.ts"
+  },
+  "file:src/store/configStore.ts": {
+   "name": "configStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido (prisma-config-v4) para preferencias locales de UI genéricas por clave.",
+   "filePath": "src/store/configStore.ts"
+  },
+  "file:src/store/customizationStore.ts": {
+   "name": "customizationStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido con la personalización por board: colores y defaults de columnas y prioridades, columnas de horas y colapsadas, tarjetas, temas, agrupación y ordenamiento.",
+   "filePath": "src/store/customizationStore.ts"
+  },
+  "file:src/store/filterStore.ts": {
+   "name": "filterStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido de filtros avanzados por board (condiciones campo/operador/valor con conjunción AND/OR) más catálogos de etiquetas, iconos, operadores y opciones de cada campo.",
+   "filePath": "src/store/filterStore.ts"
+  },
+  "file:src/store/intakeStore.ts": {
+   "name": "intakeStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido que recuerda, por board, qué tickets sin categorizar ya fueron vistos, para el indicador de entrada (intake).",
+   "filePath": "src/store/intakeStore.ts"
+  },
+  "file:src/store/mobileNavStore.ts": {
+   "name": "mobileNavStore.ts",
+   "type": "file",
+   "summary": "Store Zustand del drawer de navegación móvil (≤768px), independiente del sidebar de escritorio de boardStore.",
+   "filePath": "src/store/mobileNavStore.ts"
+  },
+  "file:src/store/notifPromptStore.ts": {
+   "name": "notifPromptStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido que recuerda si el usuario descartó para siempre el aviso para activar notificaciones push.",
+   "filePath": "src/store/notifPromptStore.ts"
+  },
+  "file:src/store/searchStore.ts": {
+   "name": "searchStore.ts",
+   "type": "file",
+   "summary": "Store Zustand con la consulta de búsqueda global del tablero y helpers de normalización (minúsculas, sin acentos) y coincidencia por id/título de solicitud.",
+   "filePath": "src/store/searchStore.ts"
+  },
+  "file:src/store/statsStore.ts": {
+   "name": "statsStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido con la selección de UI del dashboard de estadísticas: sprints, filtro de usuario, tab/multi-selección de equipos, año y flags de auto-selección.",
+   "filePath": "src/store/statsStore.ts"
+  },
+  "file:src/store/timerStore.ts": {
+   "name": "timerStore.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido de cronómetros por ticket: inicia, pausa, resetea y acumula tiempo garantizando un único temporizador activo a la vez.",
+   "filePath": "src/store/timerStore.ts"
+  },
+  "file:src/store/useBoardTheme.ts": {
+   "name": "useBoardTheme.ts",
+   "type": "file",
+   "summary": "Hook que aplica las variables CSS del tema de tablero al :root, completas en modo oscuro y solo acentos/bordes en modo claro.",
+   "filePath": "src/store/useBoardTheme.ts"
+  },
+  "file:src/store/useTheme.ts": {
+   "name": "useTheme.ts",
+   "type": "file",
+   "summary": "Store Zustand persistido del tema claro/oscuro (claro por defecto) que sincroniza el atributo data-theme del documento.",
+   "filePath": "src/store/useTheme.ts"
+  },
+  "file:src/types/commons.ts": {
+   "name": "commons.ts",
+   "type": "file",
+   "summary": "Tipos compartidos del frontend: paginación, opciones de consulta, departamentos, equipos, perfiles de usuario, criterios de aceptación y notificaciones.",
+   "filePath": "src/types/commons.ts"
+  },
+  "file:src/types/supabase.types.ts": {
+   "name": "supabase.types.ts",
+   "type": "file",
+   "summary": "Tipos TypeScript autogenerados del esquema PostgreSQL de Supabase (tablas TBL_Requests, TBL_Boards, TBL_Sprint, TBL_Users, etc.) con helpers Tables/TablesInsert/TablesUpdate.",
+   "filePath": "src/types/supabase.types.ts"
+  },
+  "file:src/vite-env.d.ts": {
+   "name": "vite-env.d.ts",
+   "type": "file",
+   "summary": "Declaraciones de referencia de tipos para el cliente de Vite y los módulos virtuales de vite-plugin-pwa.",
+   "filePath": "src/vite-env.d.ts"
+  },
+  "config:supabase/config.toml": {
+   "name": "config.toml",
+   "type": "config",
+   "summary": "Configuración de Supabase para la Edge Function api que desactiva verify_jwt porque el cliente envía JWT RS256 de Azure AD en lugar del secreto HS256 de Supabase.",
+   "filePath": "supabase/config.toml"
+  },
+  "file:supabase/functions/api/globals.d.ts": {
+   "name": "globals.d.ts",
+   "type": "file",
+   "summary": "Declaraciones ambient de los globales del runtime Deno/Supabase Edge (Deno.env, Deno.serve, EdgeRuntime.waitUntil) para compilar sin los tipos completos del runtime.",
+   "filePath": "supabase/functions/api/globals.d.ts"
+  },
+  "config:supabase/functions/tsconfig.json": {
+   "name": "tsconfig.json",
+   "type": "config",
+   "summary": "Configuración de TypeScript para las Edge Functions de Supabase: ESNext, resolución bundler, modo estricto y sin emisión.",
+   "filePath": "supabase/functions/tsconfig.json"
+  },
+  "file:tailwind.config.js": {
+   "name": "tailwind.config.js",
+   "type": "file",
+   "summary": "Configuración de Tailwind CSS vacía (sin rutas de contenido ni extensiones), aparentemente residual.",
+   "filePath": "tailwind.config.js"
+  },
+  "file:tsconfig.app.tsbuildinfo": {
+   "name": "tsconfig.app.tsbuildinfo",
+   "type": "file",
+   "summary": "Artefacto generado por el compilador de TypeScript con información de compilación incremental del proyecto de la app; no es código fuente.",
+   "filePath": "tsconfig.app.tsbuildinfo"
+  },
+  "file:vite.config.ts": {
+   "name": "vite.config.ts",
+   "type": "file",
+   "summary": "Configuración de Vite: plugin React, plugin propio que escribe public/version.json con el hash de git, VitePWA con Workbox (registro manual, precache, fallback SPA) y alias @ hacia src.",
+   "filePath": "vite.config.ts"
+  }
+ },
+ "totalNodes": 325,
+ "totalEdges": 1309
+}

@@ -1,0 +1,41 @@
+{
+  "issues": [],
+  "warnings": [
+    "Node 'file:src/styles/feedback.css' has no edges (orphan)",
+    "Node 'file:src/styles/mentions.css' has no edges (orphan)",
+    "Node 'config:.ua/config.json' has no edges (orphan)",
+    "Node 'file:src/features/stats/types.ts' has no edges (orphan)",
+    "Node 'file:src/index.css' has no edges (orphan)",
+    "Node 'file:src/store/configStore.ts' has no edges (orphan)",
+    "Node 'file:src/types/supabase.types.ts' has no edges (orphan)",
+    "Node 'file:tailwind.config.js' has no edges (orphan)",
+    "Node 'file:tsconfig.app.tsbuildinfo' has no edges (orphan)"
+  ],
+  "stats": {
+    "totalNodes": 1127,
+    "totalEdges": 2876,
+    "totalLayers": 10,
+    "tourSteps": 14,
+    "nodeTypes": {
+      "file": 307,
+      "function": 793,
+      "class": 9,
+      "pipeline": 1,
+      "document": 2,
+      "config": 15
+    },
+    "edgeTypes": {
+      "imports": 953,
+      "contains": 829,
+      "exports": 521,
+      "calls": 423,
+      "depends_on": 100,
+      "related": 16,
+      "triggers": 1,
+      "deploys": 2,
+      "documents": 11,
+      "configures": 19,
+      "routes": 1
+    }
+  }
+}

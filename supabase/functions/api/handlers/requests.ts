@@ -22,11 +22,11 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { dispatchEvent, notifyEvent } from './notifyEvent.ts';
 // @ts-ignore
-import { getRequestParticipants, maybeSendClientReviewEmail, maybeSendInProgressEmail, planColumnTransition } from '../shared/requests.ts';
-// @ts-ignore
-import { sendEventEmail } from '../email/send.ts';
+import {
+  getRequestParticipants, notifyAssignment, notifyColumnMove, notifyRequestCreated, planColumnTransition,
+} from '../shared/requests.ts';
 // @ts-ignore
 import { BASE_SELECT, BASE_SELECT_LIGHT, DETAIL_SELECT, STATS_SELECT } from '../shared/selects.ts';
 // @ts-ignore
@@ -432,14 +432,12 @@ export const requestHandlers: Record<string, ActionHandler> = {
                 },
                 { onConflict: 'Request_Assignment_ID,Request_Assignment_User_ID' },
               );
-              await insertNotifications(supabase, {
-                userIds:   [userId],
-                type:      'assignment',
-                title:     `Te asignaron el ticket ${newId}`,
-                body:      `Fuiste asignado automáticamente al ticket "${p.titulo}".`,
+              dispatchEvent('rule:asignar_resolutor', notifyAssignment(supabase, {
                 requestId: newId,
+                userId,
                 actorId:   null,
-              });
+                reason:    `Fuiste asignado automáticamente al ticket "${p.titulo}".`,
+              }));
             }
           } else if (rule.Rule_Action === 'notificar_usuario') {
             let userIds: number[] = [];
@@ -458,14 +456,17 @@ export const requestHandlers: Record<string, ActionHandler> = {
               if (!isNaN(uid)) userIds = [uid];
             }
             if (userIds.length > 0) {
-              await insertNotifications(supabase, {
-                userIds,
-                type:      'assignment',
-                title:     `Automatización: ${rule.Rule_Name}`,
-                body:      `Se creó la solicitud "${p.titulo}" y tienes una notificación activa para este evento.`,
+              dispatchEvent('rule:notificar_usuario', notifyEvent(supabase, {
+                eventKey:  'automation',
                 requestId: newId,
                 actorId:   null,
-              });
+                inApp: {
+                  userIds,
+                  type:  'assignment',
+                  title: `Automatización: ${rule.Rule_Name}`,
+                  body:  `Se creó la solicitud "${p.titulo}" y tienes una notificación activa para este evento.`,
+                },
+              }));
             }
           }
           await supabase.from('TBL_Automation_Rules').update({
@@ -476,104 +477,21 @@ export const requestHandlers: Record<string, ActionHandler> = {
       }
     } catch (_autoErr) { /* no bloquear la creación */ }
 
-    // ── Notificación a sub-equipos — SOLO si la solicitud es EXTERNA (no TI) ──
-    // "Externa" = el solicitante NO pertenece al departamento de TI.
-    // La verdad de "es TI" es Department_ID === TI_DEPARTMENT_ID (ver auth/roles.ts).
-    // No se reutiliza isExternalRequester porque ese compara contra el rol
-    // 'ti_member', string que no existe en TBL_Users.User_Role (solo admin/member),
-    // y por eso trata a los member de TI como externos. Acá usamos el criterio real.
-    // Notifica a todos los miembros (dedup) de todos los sub-equipos de los
-    // board teams a los que se dirigió la solicitud (p.equipoIds).
-    try {
-      const TI_DEPARTMENT_ID = 7;
-      const isExternalByDept = p.requesterDepartmentId !== TI_DEPARTMENT_ID;
-      if (isExternalByDept && p.equipoIds.length > 0) {
-        const { data: subTeamRows } = await supabase
-          .from('TBL_Sub_Teams')
-          .select('Sub_Team_ID')
-          .in('Sub_Team_Team_ID', p.equipoIds);
-        const subTeamIds = ((subTeamRows ?? []) as { Sub_Team_ID: number }[])
-          .map((s) => s.Sub_Team_ID);
-
-        if (subTeamIds.length > 0) {
-          const { data: memberRows } = await supabase
-            .from('TBL_Sub_Team_Members')
-            .select('Sub_Team_Member_User_ID')
-            .in('Sub_Team_Member_Sub_Team_ID', subTeamIds);
-
-          const memberIds = [...new Set(
-            ((memberRows ?? []) as { Sub_Team_Member_User_ID: number }[])
-              .map((m) => m.Sub_Team_Member_User_ID)
-          )].filter((uid) => uid !== p.requestedBy);
-
-          if (memberIds.length > 0) {
-            await insertNotifications(supabase, {
-              userIds:   memberIds,
-              type:      'new_external_request',
-              title:     `Nueva solicitud externa ${newId}`,
-              body:      `Se creó la solicitud externa "${p.titulo}" dirigida a tu equipo.`,
-              requestId: newId,
-              actorId:   p.requestedBy,
-            });
-          }
-        }
-      }
-    } catch (_subTeamNotifErr) { /* no bloquear la creación */ }
-
     const { data, error } = await supabase
       .from('TBL_Requests').select(BASE_SELECT).eq('Request_ID', newId).single();
     if (error) throw new Error(error.message);
 
-    // ── Correo "solicitud recibida" — SOLO a solicitantes externos ────────
-    // Entre TI (admin / ti_member) no se manda: llenaría el correo sin sentido.
-    // Solo correo, sin notificación in-app (el solicitante ya sabe que la creó).
-    try {
-      if (!isExternalRequester) {
-        // interno → no se manda correo, se omite todo el bloque
-} else {
-        // Nombre del solicitante para el saludo (formato PRISMA: 1er nombre + 1er apellido)
-        const { data: reqUser } = await supabase
-          .from('TBL_Users').select('User_Name').eq('User_ID', p.requestedBy).single();
-        const fullName = (reqUser as any)?.User_Name ?? '';
-        const parts    = fullName.trim().split(/\s+/);
-        const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
-
-        const fmtFecha = (iso: string) => {
-        if (!iso) return '';
-        const clean = iso.includes('T') ? iso : `${iso}T00:00:00`;
-        return new Date(clean).toLocaleDateString('es-CO', {
-          timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
-        });
-      };
-
-      let sprintInfo: string;
-      if (autoAssignedSprint) {
-        const sp    = autoAssignedSprint as any;
-        const desde = fmtFecha(sp.Sprint_Start_Date ?? '');
-        const hasta = fmtFecha(sp.Sprint_End_Date ?? '');
-        const rango = (desde && hasta) ? ` (del ${desde} al ${hasta})` : '';
-        sprintInfo  = `Tu solicitud quedó programada para ${sp.Sprint_Text}${rango}.`;
-      } else {
-        sprintInfo = 'El equipo te notificará cuando tu solicitud quede programada en un sprint.';
-      }
-
-      await sendEventEmail(supabase, {
-        eventKey:  'ticket_recibido',
-        requestId: newId,
-        userIds:   [p.requestedBy],
-        vars: {
-          requester_name:     requesterName,
-          ticket_id:          newId,
-          ticket_title:       p.titulo ?? '',
-          ticket_description: p.descripcion ?? '',
-          ticket_url:         `${Deno.env.get('MAIL_APP_URL')}/ticket/${newId}`,
-          sprint_info:        sprintInfo,
-          sprint_name:        autoAssignedSprint ? String((autoAssignedSprint as any).Sprint_Text) : '',
-        },
-      });
-    }
-    } catch (_emailErr) { /* el correo nunca debe tumbar la creación */ }
-    // ── /Correo ───────────────────────────────────────────────────────────
+    // ── Evento "solicitud creada" en segundo plano: correo "solicitud recibida"
+    //    al solicitante + in-app a los sub-equipos si es externa (ver notifyRequestCreated).
+    dispatchEvent('createRequest', notifyRequestCreated(supabase, {
+      requestId:             newId,
+      title:                 p.titulo ?? '',
+      description:           p.descripcion ?? '',
+      requestedBy:           p.requestedBy,
+      requesterDepartmentId: p.requesterDepartmentId ?? null,
+      equipoIds:             p.equipoIds,
+      autoAssignedSprint:    autoAssignedSprint as Record<string, unknown> | null,
+    }));
 
     return autoAssignedSprint !== null
       ? { ...(data as object), _autoAssignedSprint: autoAssignedSprint }
@@ -672,36 +590,18 @@ export const requestHandlers: Record<string, ActionHandler> = {
       });
     }
 
+    // ── Evento de movimiento en segundo plano: in-app a participantes + correos
+    //    de revisión del cliente / en progreso según la columna (ver notifyColumnMove).
     if (movedBy) {
       const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, id);
-      const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
-        .filter((uid) => uid !== movedBy);
-      const colName = (colData as { Board_Column_Name: string } | null)?.Board_Column_Name ?? 'otra columna';
-      await insertNotifications(supabase, {
-        userIds:   recipientIds,
-        type:      'column_move',
-        title:     `Ticket movido a "${colName}"`,
-        body:      `El ticket ${id} fue movido a la columna "${colName}".`,
-        requestId: id,
-        actorId:   movedBy,
-      });
-
-      // ── Correos de cambio de columna ──────────────────────────────────
-      // Cada helper valida su propio slug destino y se auto-omite si no aplica.
-      // Nunca lanzan: el correo no puede tumbar el move.
-      await maybeSendClientReviewEmail(supabase, {
-        requestId:   id,
-        columnId:    Number(columnId),
-        requestedBy,
+      dispatchEvent('moveToColumn', notifyColumnMove(supabase, {
+        requestId:  id,
+        columnId:   Number(columnId),
+        columnName: (colData as { Board_Column_Name: string } | null)?.Board_Column_Name ?? 'otra columna',
+        movedBy,
         assigneeIds,
-      });
-      await maybeSendInProgressEmail(supabase, {
-        requestId:   id,
-        columnId:    Number(columnId),
         requestedBy,
-        assigneeIds,
-      });
-      // ── /Correos ──────────────────────────────────────────────────────
+      }));
     }
 
     // ── Ejecutar reglas columna_cambiada ──────────────────
@@ -737,14 +637,12 @@ export const requestHandlers: Record<string, ActionHandler> = {
                     },
                     { onConflict: 'Request_Assignment_ID,Request_Assignment_User_ID' },
                   );
-                  await insertNotifications(supabase, {
-                    userIds:   [userId],
-                    type:      'assignment',
-                    title:     `Te asignaron el ticket ${id}`,
-                    body:      `Fuiste asignado al ticket ${id} al mover a "${movedColName}".`,
+                  dispatchEvent('rule:asignar_resolutor', notifyAssignment(supabase, {
                     requestId: id,
+                    userId,
                     actorId:   null,
-                  });
+                    reason:    `Fuiste asignado al ticket ${id} al mover a "${movedColName}".`,
+                  }));
                 }
               } else if (rule.Rule_Action === 'asignar_prioridad') {
                 const scoreMap: Record<string, number> = {
@@ -769,14 +667,17 @@ export const requestHandlers: Record<string, ActionHandler> = {
                   if (!isNaN(uid)) userIds = [uid];
                 }
                 if (userIds.length > 0) {
-                  await insertNotifications(supabase, {
-                    userIds,
-                    type:      'column_move',
-                    title:     `Automatización: ${rule.Rule_Name}`,
-                    body:      `El ticket ${id} fue movido a "${movedColName}".`,
+                  dispatchEvent('rule:notificar_usuario', notifyEvent(supabase, {
+                    eventKey:  'automation',
                     requestId: id,
                     actorId:   null,
-                  });
+                    inApp: {
+                      userIds,
+                      type:  'column_move',
+                      title: `Automatización: ${rule.Rule_Name}`,
+                      body:  `El ticket ${id} fue movido a "${movedColName}".`,
+                    },
+                  }));
                 }
               }
               await supabase.from('TBL_Automation_Rules').update({

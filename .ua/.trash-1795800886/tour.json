@@ -1,0 +1,152 @@
+[
+  {
+    "order": 1,
+    "title": "Visión general de PRISMA",
+    "description": "PRISMA es el sistema interno ITSM de Estudio de Moda S.A.S.: centraliza las solicitudes que los departamentos dirigen a los equipos de tecnología y las gestiona en un tablero Kanban con sprints, plantillas y revisión con el cliente. El README describe la arquitectura full-stack: una SPA React + TypeScript + Vite, un backend Supabase (PostgreSQL + Edge Functions en Deno), autenticación corporativa con Microsoft Entra ID y despliegue en Azure Static Web Apps. Úsalo como mapa para el resto del recorrido.",
+    "nodeIds": [
+      "document:README.md"
+    ]
+  },
+  {
+    "order": 2,
+    "title": "Arranque de la SPA",
+    "description": "main.tsx es el punto de entrada real del frontend: aplica el tema guardado antes del primer render, crea el QueryClient de TanStack Query y monta App dentro de BrowserRouter, AuthProvider y GraphServicesProvider. App.tsx, a su vez, declara todas las rutas de React Router con guards por autenticación, onboarding y rol (TI, estadísticas, admin), y AppLayout compone Sidebar, Topbar y banners alrededor del contenido. Juntos definen el esqueleto en el que encaja todo lo demás.",
+    "nodeIds": [
+      "file:src/main.tsx",
+      "file:src/App.tsx",
+      "file:src/components/layout/AppLayout.tsx"
+    ],
+    "languageLesson": "En React, los providers de contexto (Context Providers) se anidan alrededor de la app para que cualquier componente descendiente acceda a servicios compartidos —QueryClient, sesión, servicios Graph— mediante hooks como useContext, sin pasar props manualmente por cada nivel."
+  },
+  {
+    "order": 3,
+    "title": "Autenticación y roles",
+    "description": "Antes de ver cualquier tablero, el usuario debe autenticarse. AuthProvider unifica dos flujos que conviven: MSAL clásico (msal.ts) y Supabase Auth con Azure como proveedor (supabaseAuth.ts), y resuelve el usuario de base de datos bloqueando a los inactivos. roles.ts traduce ese usuario en un rol de aplicación (admin TI, miembro TI o cliente) y expone los guards que App.tsx usa en sus rutas.",
+    "nodeIds": [
+      "file:src/auth/AuthProvider.tsx",
+      "file:src/auth/msal.ts",
+      "file:src/auth/supabaseAuth.ts",
+      "file:src/auth/roles.ts"
+    ]
+  },
+  {
+    "order": 4,
+    "title": "Modelo de dominio de solicitudes",
+    "description": "features/requests/types.ts es el archivo más referenciado del proyecto: define Request, los payloads de creación, movimiento, actualización y cierre, y constantes como las columnas Kanban y el mapeo prioridad-score. config.ts, el segundo más importado, concentra los flags globales (modo mock, bypass de auth, Supabase Auth y lecturas directas). Entender estos dos archivos da el vocabulario que usan todas las capas siguientes.",
+    "nodeIds": [
+      "file:src/features/requests/types.ts",
+      "file:src/config.ts"
+    ],
+    "languageLesson": "Centralizar los tipos de dominio en TypeScript crea un contrato único: si cambia la forma de Request, el compilador señala cada componente, hook o servicio afectado. Tener tipos de payload separados por operación (crear, mover, cerrar) evita objetos con todo opcional y hace explícito qué datos exige cada acción."
+  },
+  {
+    "order": 5,
+    "title": "Cliente API y servicios",
+    "description": "Toda comunicación con el backend pasa por apiClient.ts, que invoca la Edge Function api enviando una acción y un payload junto con el token de MSAL o de Supabase según el flag de config.ts. GraphServicesProvider construye e inyecta en contexto los servicios de la app: GraphRest para Microsoft Graph y SupabaseRequestsService, que mapea filas de base de datos al modelo Request del paso anterior.",
+    "nodeIds": [
+      "file:src/lib/apiClient.ts",
+      "file:src/graph/GraphServicesProvider.tsx",
+      "file:src/features/requests/services/SupabaseRequestsService.ts",
+      "file:src/graph/GraphRest.ts"
+    ]
+  },
+  {
+    "order": 6,
+    "title": "Hooks de datos con TanStack Query",
+    "description": "Sobre el cliente API se construyen hooks de React Query que consume el resto de la UI. useRequests define las requestKeys compartidas y las queries del tablero; useBoardMetadata gestiona equipos, etiquetas y plantillas con mutaciones optimistas; useCurrentUser y useSprints aportan el usuario actual y los sprints. Esta capa aísla la caché y la sincronización con el servidor de los componentes visuales.",
+    "nodeIds": [
+      "file:src/features/requests/hooks/useRequests.ts",
+      "file:src/features/requests/hooks/useBoardMetadata.ts",
+      "file:src/features/requests/hooks/useCurrentUser.ts",
+      "file:src/features/requests/hooks/useSprints.ts"
+    ],
+    "languageLesson": "En TanStack Query, las query keys (por ejemplo, un objeto requestKeys centralizado) identifican cada dato en caché. Una mutación optimista actualiza la caché antes de que responda el servidor y la revierte si falla, lo que hace que la UI se sienta instantánea."
+  },
+  {
+    "order": 7,
+    "title": "El tablero Kanban",
+    "description": "BoardPage es la pantalla central: valida el acceso al board desde la URL y carga columnas, solicitudes, sprints, etiquetas y miembros usando los hooks del paso anterior. KanbanBoard orquesta columnas, tarjetas y drag & drop con dnd-kit, mientras RequestModal —el componente con más dependencias— permite al equipo de soporte editar asignaciones, horas, comentarios, adjuntos, sub-solicitudes y cierre.",
+    "nodeIds": [
+      "file:src/pages/BoardPage.tsx",
+      "file:src/features/requests/components/KanbanBoard.tsx",
+      "file:src/features/requests/components/RequestModal.tsx"
+    ]
+  },
+  {
+    "order": 8,
+    "title": "Estado de cliente con Zustand",
+    "description": "No todo el estado viene del servidor: los stores de Zustand guardan preferencias de UI compartidas. boardStore maneja el equipo activo, el sidebar y el zoom del Kanban; filterStore persiste los filtros avanzados por board con condiciones campo/operador/valor. Esta separación —TanStack Query para datos remotos, Zustand para estado local— es un patrón clave del frontend.",
+    "nodeIds": [
+      "file:src/store/boardStore.ts",
+      "file:src/store/filterStore.ts"
+    ],
+    "languageLesson": "Zustand crea stores como hooks (por ejemplo, useBoardStore) sin providers ni reducers. Con el middleware persist, parte del estado se guarda automáticamente en localStorage, ideal para filtros y preferencias que deben sobrevivir a una recarga."
+  },
+  {
+    "order": 9,
+    "title": "Backend: Edge Function y router",
+    "description": "Del lado del servidor, todas las acciones que envía apiClient llegan a una única Edge Function en Deno. index.ts maneja CORS, verifica el JWT de Azure/Supabase y despacha la acción; router.ts fusiona los mapas de handlers de cada dominio en un registro único. shared/types.ts define el contrato Dispatch/ActionContext/ActionHandler, y config.toml desactiva verify_jwt porque el cliente envía JWT RS256 de Azure AD.",
+    "nodeIds": [
+      "file:supabase/functions/api/index.ts",
+      "file:supabase/functions/api/router.ts",
+      "file:supabase/functions/api/shared/types.ts",
+      "config:supabase/config.toml"
+    ],
+    "languageLesson": "Un router por acciones (action dispatch) sustituye las rutas REST por un mapa nombre→handler: el cliente envía { action, payload } y el servidor busca el handler correspondiente. Simplifica el despliegue (una sola función) y permite que unos handlers invoquen a otros reutilizando dispatch."
+  },
+  {
+    "order": 10,
+    "title": "Handlers y reglas de negocio",
+    "description": "handlers/requests.ts es el módulo central del ciclo de vida del ticket: lectura, creación, movimiento entre columnas, edición, búsqueda, filtrado y estadísticas. Se apoya en utilidades compartidas: boardAccess.ts es la fuente de verdad de qué boards ve cada usuario, notifications.ts hace fan-out de notificaciones in-app y email.ts interpola plantillas de correo; todo ello usa el cliente con service role de lib/supabase.ts.",
+    "nodeIds": [
+      "file:supabase/functions/api/handlers/requests.ts",
+      "file:supabase/functions/api/shared/boardAccess.ts",
+      "file:supabase/functions/api/shared/notifications.ts",
+      "file:supabase/functions/api/shared/email.ts",
+      "file:supabase/functions/api/lib/supabase.ts"
+    ]
+  },
+  {
+    "order": 11,
+    "title": "Estadísticas y métricas de flujo",
+    "description": "StatsPage compone las secciones global, de flujo, de sprint y por equipo según los equipos visibles para el usuario. useStatsData es el punto de entrada que combina los sub-hooks de métricas, y calcFlowMetrics calcula percentiles de lead time, aging del WIP, throughput semanal y precisión de estimación. Es un buen ejemplo de lógica de dominio pura separada de la presentación.",
+    "nodeIds": [
+      "file:src/pages/StatsPage.tsx",
+      "file:src/features/requests/hooks/useStatsData.ts",
+      "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts"
+    ]
+  },
+  {
+    "order": 12,
+    "title": "Integración SOLVI con SharePoint",
+    "description": "SOLVI es una integración para crear tickets apoyada en listas de SharePoint. SolviRequestPage ofrece un formulario con categoría, subcategoría y artículo en cascada, cálculo de ANS y adjuntos comprimidos, y useSolviTickets maneja el listado paginado, el detalle y la subida de adjuntos. Se apoya en el cliente GraphRest y los servicios presentados en el paso 5.",
+    "nodeIds": [
+      "file:src/pages/integrations/SolviRequestPage.tsx",
+      "file:src/features/requests/hooks/useSolviTickets.ts"
+    ]
+  },
+  {
+    "order": 13,
+    "title": "ETL PRISMA Migrations",
+    "description": "prisma-migrations es un sub-paquete Node independiente que migra solicitudes históricas desde Excel hacia PRISMA. run.ts es el CLI que elige entre dry-run y commit; mapping.ts es el manifiesto de columnas del Excel, y las fases validan (02-validate) y cargan (03-load) de forma idempotente, llamando a la misma Edge Function del paso 9 con un secreto de job interno.",
+    "nodeIds": [
+      "document:prisma-migrations/README.md",
+      "file:prisma-migrations/src/run.ts",
+      "file:prisma-migrations/src/config/mapping.ts",
+      "file:prisma-migrations/src/phases/02-validate.ts",
+      "file:prisma-migrations/src/phases/03-load.ts"
+    ]
+  },
+  {
+    "order": 14,
+    "title": "Build, PWA y despliegue",
+    "description": "vite.config.ts configura el build: plugin React, VitePWA con Workbox para que la app sea instalable y un plugin propio que escribe public/version.json con el hash de git para detectar nuevas versiones. El workflow de GitHub Actions compila el frontend en cada push a main inyectando secretos VITE_* y publica dist en Azure Static Web Apps, cuya configuración define el fallback SPA a index.html y cabeceras no-cache.",
+    "nodeIds": [
+      "file:vite.config.ts",
+      "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "config:public/staticwebapp.config.json",
+      "config:public/manifest.json"
+    ],
+    "languageLesson": "En GitHub Actions, el bloque on: push con branches: [main] dispara el workflow; cada job ejecuta sus steps en orden (checkout, setup-node, build, deploy). Los secretos se inyectan como variables de entorno en tiempo de build, por eso las variables VITE_* quedan embebidas en el bundle estático y nunca deben contener credenciales privadas."
+  }
+]

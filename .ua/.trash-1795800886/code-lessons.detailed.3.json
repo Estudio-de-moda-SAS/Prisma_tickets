@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-27T00:00:00.000Z",
+  "files": {
+    "supabase/functions/api/router.ts": {
+      "overview": "Router central de la Edge Function `api`. Importa los mapas de handlers de cada dominio (solicitudes, cierre, feedback, usuarios, sprints, SOLVI, etc.), los fusiona en una única tabla `action → handler` y expone `createDispatch`, la función que el entry point usa para ejecutar la acción recibida. Es la pieza que materializa el patrón de \"action dispatch\" descrito en el paso 9 del recorrido.",
+      "sections": [
+        {
+          "title": "Imports de handlers por dominio",
+          "lineRange": [1, 56],
+          "explanation": "Importa los tipos `ActionHandler`, `Dispatch` y `DB`, y luego un mapa de handlers por cada módulo de `handlers/`. Cada import va precedido de `// @ts-ignore` porque las rutas con extensión `.ts` son la convención de Deno y el TypeScript del editor (configurado para el frontend) no las resuelve. Ver la lista completa de imports da un inventario rápido de todos los dominios que expone el backend.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Tabla combinada de acciones",
+          "lineRange": [58, 104],
+          "explanation": "`handlers` se construye con *spread* de cada mapa de dominio en un único `Record<string, ActionHandler>`. Como indica el comentario, el orden importa: si dos módulos definen la misma clave, gana el último en fusionarse, sin ningún aviso. Por eso conviene que los nombres de acción sean únicos a nivel global; este archivo no valida colisiones.",
+          "tourOrder": 9
+        },
+        {
+          "title": "createDispatch y recursión",
+          "lineRange": [106, 126],
+          "explanation": "`createDispatch` recibe el cliente de Supabase y devuelve una función `dispatch` que busca el handler por nombre y lo invoca con el `payload` y un contexto `{ supabase, dispatch }`. El detalle clave es que `dispatch` se pasa a sí misma en el contexto: así un handler puede invocar otras acciones reutilizando el mismo cliente sin importar módulos ajenos. Una acción desconocida lanza `[API] Acción desconocida: <action>`, que el entry point convierte en error de respuesta.",
+          "tourOrder": 9
+        }
+      ]
+    },
+    "supabase/functions/api/shared/types.ts": {
+      "overview": "Define el contrato tipado del sistema de acciones del backend: `Dispatch`, `ActionContext` y `ActionHandler`, que todos los handlers y el router comparten. Además declara `ExportFilters`, la forma de los filtros usados por la exportación de solicitudes. Es el archivo de tipos que acompaña a `router.ts` en el paso 9 del recorrido.",
+      "sections": [
+        {
+          "title": "Tipo Dispatch",
+          "lineRange": [1, 23],
+          "explanation": "`Dispatch` es una función `(action, payload) => Promise<unknown>`. El payload se tipa como `Record<string, unknown>` porque el router es genérico: cada handler hace su propio *cast* al tipo concreto que espera. Devolver `unknown` obliga a quien invoca otra acción vía `dispatch` a estrechar el tipo explícitamente.",
+          "tourOrder": 9
+        },
+        {
+          "title": "ActionContext y ActionHandler",
+          "lineRange": [25, 45],
+          "explanation": "`ActionContext` agrupa lo que cada handler recibe además del payload: el cliente `supabase` con rol de servicio y la propia `dispatch` para encadenar acciones. `ActionHandler` es la firma que deben cumplir todas las entradas de los mapas de handlers. Inyectar el cliente por contexto (en vez de importarlo globalmente) facilita probar handlers con un cliente simulado.",
+          "tourOrder": 9
+        },
+        {
+          "title": "Filtros de exportación",
+          "lineRange": [47, 81],
+          "explanation": "`ExportFilters` describe los criterios de exportación: `boardId` es obligatorio y el resto son arreglos opcionales o `null`. La documentación distingue entre filtros relacionales (`teamIds`, `sprintIds`, `assignedToIds`, `labelIds`), que se resuelven vía tablas de unión, y escalares, que se aplican directo sobre `TBL_Requests`. Esa distinción explica por qué la consulta de exportación no puede ser un único `.eq()` por campo."
+        }
+      ]
+    },
+    "supabase/config.toml": {
+      "overview": "Configuración local de Supabase para la Edge Function `api`. Su única regla desactiva `verify_jwt` porque el gateway de Supabase validaría el token con su propio secreto HS256, mientras que el cliente envía un JWT RS256 emitido por Azure AD. La verificación real se hace dentro de la función, como explica el paso 9 del recorrido.",
+      "sections": [
+        {
+          "title": "verify_jwt desactivado",
+          "lineRange": [1, 2],
+          "explanation": "El bloque `[functions.api]` fija `verify_jwt = false`. Los comentarios en línea explican el motivo: el gateway intentaría verificar el token con el secreto simétrico (HS256) del proyecto y rechazaría los tokens asimétricos (RS256) de Azure AD. Desactivarlo no deja la función abierta: obliga a que `index.ts` valide el JWT por su cuenta, así que cualquier cambio en esa validación es crítico para la seguridad.",
+          "tourOrder": 9
+        }
+      ]
+    },
+    "supabase/functions/api/handlers/requests.ts": {
+      "overview": "Módulo central del backend de PRISMA: concentra el ciclo de vida completo del ticket (lectura, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas). Además de las operaciones principales, orquesta efectos colaterales como auto-asignación de sprint, reglas de automatización, notificaciones, correos, sincronización de bug reports y auditoría. Dos patrones lo recorren todo: `chunkedIn` para evitar URLs demasiado largas en PostgREST y efectos *best-effort* envueltos en try/catch. Es el protagonista del paso 10 del recorrido.",
+      "sections": [
+        {
+          "title": "Cabecera e imports",
+          "lineRange": [1, 33],
+          "explanation": "El comentario de módulo resume la responsabilidad del archivo y documenta los dos patrones transversales: lotes con `chunkedIn` y efectos *best-effort* que nunca deben tumbar la operación principal. Los imports traen helpers compartidos: `insertNotifications`, utilidades de solicitudes (`planColumnTransition`, correos de cambio de columna), `sendEventEmail`, los fragmentos de `select` reutilizables (`BASE_SELECT`, `DETAIL_SELECT`, etc.) y las funciones de auditoría (`logHistory`, `diffFields`, `diffFormData`).",
+          "tourOrder": 10
+        },
+        {
+          "title": "Constantes y chunkedIn",
+          "lineRange": [35, 68],
+          "explanation": "`HISTORIAL_COLUMN_ID` identifica la columna de tickets archivados y `HISTORIAL_INITIAL_LIMIT` el tope de filas de historial por página. `chunkedIn` parte un arreglo de IDs en lotes de `IN_CHUNK` (120), ejecuta la query que arma `build(slice)` por cada lote y concatena los resultados. Existe porque un `.in()` con muchos IDs genera una URL que PostgREST rechaza con un 500; ojo: no preserva el orden, así que el llamador debe reordenar.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Handlers de lectura básicos",
+          "lineRange": [70, 234],
+          "explanation": "`requestHandlers` arranca con las consultas de lectura: por board, por menciones, por código de equipo (separando activas e historial), por solicitante, sin categorizar y por ID. La mayoría usa `BASE_SELECT` y pasa el resultado por `attachCriteriaSummary` para adjuntar el resumen de criterios de aceptación. `fetchById` usa `maybeSingle()` a propósito: un ID inexistente devuelve `null` en lugar de un 500, y el frontend decide qué mostrar.",
+          "tourOrder": 10
+        },
+        {
+          "title": "createRequest",
+          "lineRange": [236, 581],
+          "explanation": "Crea la solicitud con todas sus relaciones y efectos, siguiendo el flujo numerado del JSDoc: snapshot de la plantilla, inserción, detección de solicitante externo, auto-asignación del primer sprint futuro con capacidad, relaciones (equipos, labels, sprint), reglas `solicitud_creada`, notificación a sub-equipos y correo `ticket_recibido`. Cada efecto secundario va en su propio try/catch para no bloquear la creación. Un detalle sutil documentado en el código: la notificación a sub-equipos usa `Department_ID !== TI_DEPARTMENT_ID` y no el flag por rol, porque el valor `ti_member` no existe en `TBL_Users.User_Role` y trataría a TI como externo. Si se auto-asignó un sprint, la respuesta incluye `_autoAssignedSprint`.",
+          "tourOrder": 10
+        },
+        {
+          "title": "moveToColumn",
+          "lineRange": [583, 792],
+          "explanation": "Mueve un ticket de columna y delega en `planColumnTransition` la decisión de cierre o reapertura (fijar `Request_Finished_At` y progreso 100, conservarlos o limpiarlos). Después registra el movimiento en auditoría, sincroniza el bug report vinculado por `Linked_Request_ID`, deja un comentario automático si hubo reapertura, notifica a participantes y dispara los correos de cambio de columna (cada helper se auto-omite según el slug destino). Por último ejecuta las reglas `columna_cambiada`, actualizando su contador de ejecuciones; todos los efectos son *best-effort* y la acción siempre devuelve `{ ok: true }` si el update principal tuvo éxito.",
+          "tourOrder": 10
+        },
+        {
+          "title": "updateRequest con auditoría",
+          "lineRange": [794, 895],
+          "explanation": "Aplica un patch parcial: separa `id` y `updatedBy` del resto y captura el estado previo de los escalares y del `formData` para poder calcular el diff. El estado previo de las relaciones (labels, sprint, equipos) solo se lee si el patch las incluye, ahorrando consultas. Las relaciones se reemplazan con la estrategia delete-all + insert y el progreso se acota a 0–100; al final se registran en historial el diff por campo (`diffFields`) y el del formulario (`diffFormData`).",
+          "tourOrder": 10
+        },
+        {
+          "title": "Sub-equipos, borrado y listados",
+          "lineRange": [897, 1005],
+          "explanation": "Agrupa operaciones más simples: `updateRequestSubTeams` reemplaza sub-equipos con delete-all + insert, `deleteRequest` borra en paralelo todas las filas dependientes (equipos, labels, sprint, asignaciones, criterios, feedback) antes de la solicitud, y `fetchChildRequests` lista sub-solicitudes. `fetchByAssignedTo` y `fetchByParticipant` siguen el patrón de dos pasos: primero resuelven los `Request_ID` desde la tabla de vínculos y luego hidratan las solicitudes del board.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Historial paginado por cursor",
+          "lineRange": [1007, 1083],
+          "explanation": "`fetchTeamHistorialCount` usa `count: 'exact', head: true` para contar sin traer filas. `fetchTeamHistorialPage` pagina con un cursor compuesto `(Request_Created_At, Request_ID)` expresado en un `.or()` de PostgREST, evitando los problemas de rendimiento y consistencia de `offset`. Como el `.in()` va por `chunkedIn`, cada lote aplica el mismo cursor y límite, y luego se reordena globalmente y se recorta una sola vez para obtener la página correcta.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Búsqueda y datos de estadísticas",
+          "lineRange": [1085, 1153],
+          "explanation": "`searchRequests` exige al menos 2 caracteres, escapa `%_,()` antes del `ilike` y filtra por equipo con un join `!inner` bajo el alias `team_filter` en lugar de un `.in()` con IDs, que reventaba la URL. El alias se elimina de la respuesta para no exponerlo. `fetchAllByBoardStats` recorre el board en tandas de 500 filas con `range()` hasta agotarlo, usando el select liviano `STATS_SELECT` que consume la página de estadísticas del paso 11.",
+          "tourOrder": 10
+        },
+        {
+          "title": "filterRequests vía RPC",
+          "lineRange": [1155, 1225],
+          "explanation": "Delega el filtrado avanzado (un AST de condiciones generado por los filtros del frontend) a la función PostgreSQL `filter_requests`, que devuelve IDs ordenados más metadata: total, conteos por columna y cursor siguiente. Luego hidrata esos IDs con `chunkedIn` y reordena según la secuencia original usando un `Map` id→índice, porque el chunking rompe el orden. Sin coincidencias devuelve la misma forma con `rows: []`, lo que simplifica el consumo en el cliente.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "supabase/functions/api/shared/boardAccess.ts": {
+      "overview": "Fuente de verdad de la visibilidad de boards (kanbans) por usuario en el backend. `resolveVisibleBoardIds` combina el rol, el departamento y los permisos explícitos para devolver qué boards puede ver alguien. Usa una convención de retorno importante: `null` significa sin restricción y `[]` significa ningún board. Forma parte de las reglas de negocio compartidas del paso 10.",
+      "sections": [
+        {
+          "title": "Reglas documentadas",
+          "lineRange": [1, 21],
+          "explanation": "El comentario de módulo resume las reglas: el admin de TI ve todo; cualquier otro miembro ve los boards de su departamento (excepto los admin-only) más los otorgados por grant explícito. Aclara dos casos límite: un board sin `Department_ID` solo lo ve un admin o alguien con grant, y un board admin-only sí se respeta si llega por grant, porque otorgarlo es una decisión deliberada.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Constante y tipo de retorno",
+          "lineRange": [23, 35],
+          "explanation": "`TI_DEPARTMENT_ID = 7` está fijo en el código e identifica al departamento cuyo admin obtiene visibilidad total. `VisibleBoardIds` es `number[] | null`; distinguir `null` de `[]` evita una ambigüedad peligrosa: quien consume el resultado debe tratar `null` como \"no filtrar\" y nunca como \"vacío\".",
+          "tourOrder": 10
+        },
+        {
+          "title": "resolveVisibleBoardIds",
+          "lineRange": [37, 98],
+          "explanation": "Primero lee `User_Role` y `Department_ID` del usuario y lanza `USER_NOT_FOUND` si no existe. Si es admin y pertenece a TI, devuelve `null` de inmediato. Si no, consulta los boards de su departamento excluyendo `Board_Team_Is_Admin_Only`, añade los grants de `TBL_Board_Team_Access` y devuelve la unión deduplicada con un `Set`. Cualquier error de consulta se propaga con el prefijo `[boardAccess]` en lugar de devolver una lista parcial, lo que evita conceder acceso por error.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "supabase/functions/api/shared/notifications.ts": {
+      "overview": "Utilidad compartida para crear notificaciones in-app. `insertNotifications` hace fan-out: toma un contenido común y genera una fila por destinatario en `TBL_Notifications`. La usan los handlers del paso 10, por ejemplo `createRequest` y `moveToColumn`.",
+      "sections": [
+        {
+          "title": "Firma y parámetros",
+          "lineRange": [1, 39],
+          "explanation": "La función recibe el cliente `DB` y un objeto con `userIds`, `type`, `title`, `body`, `requestId` y `actorId`. `requestId` y `actorId` admiten `null`: el primero para notificaciones no ligadas a un ticket y el segundo para acciones del sistema sin un usuario que las origine.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Fan-out e inserción",
+          "lineRange": [40, 52],
+          "explanation": "Si no hay destinatarios sale sin hacer nada. Si los hay, mapea cada `uid` a una fila marcada como no leída con la fecha actual y lo inserta todo en una sola llamada `insert(rows)`, más eficiente que insertar una por una. Ojo: no revisa el `error` del insert, así que un fallo pasa en silencio; encaja con la filosofía *best-effort* de los efectos colaterales, aunque dificulta diagnosticar problemas.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "supabase/functions/api/shared/email.ts": {
+      "overview": "Helpers de correo por evento basados en plantillas. `renderTemplate` interpola variables `{{clave}}` y `sendEventEmail` resuelve la plantilla activa de un evento y registra un correo por destinatario en `TBL_Email_Logs`. Hoy los correos quedan registrados con estado `pending`: el envío real aún no está activado. Forma parte de las utilidades compartidas del paso 10.",
+      "sections": [
+        {
+          "title": "renderTemplate",
+          "lineRange": [1, 26],
+          "explanation": "Una sola expresión regular `/\\{\\{(\\w+)\\}\\}/g` reemplaza cada marcador por `vars[clave]`, o por cadena vacía si la clave no existe. Solo reconoce claves alfanuméricas y no escapa HTML, así que los valores interpolados deben venir ya saneados si provienen del usuario.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Resolución de plantilla y usuarios",
+          "lineRange": [28, 76],
+          "explanation": "`sendEventEmail` busca en `TBL_Email_Templates` la plantilla activa para el `eventKey` y luego los correos de los usuarios destino. Tiene varias salidas tempranas silenciosas: sin destinatarios, sin plantilla activa o sin usuarios resueltos, la función simplemente retorna. Asunto y cuerpo se interpolan una sola vez con `renderTemplate`, ya que el contenido es igual para todos.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Registro en TBL_Email_Logs",
+          "lineRange": [78, 91],
+          "explanation": "Por cada usuario inserta una fila con asunto, cuerpo, plantilla y estado. El estado está fijado en `'pending'` y el comentario indica que debe pasar a ser variable cuando se active el envío real; por ahora esta función solo deja el correo registrado. Las inserciones son secuenciales (una `await` por destinatario), algo aceptable con pocos destinatarios."
+        }
+      ]
+    },
+    "supabase/functions/api/lib/supabase.ts": {
+      "overview": "Fábrica del cliente de Supabase con rol de servicio que usa todo el backend. Expone `createServiceClient` y el tipo `DB` derivado de él, que tipa el parámetro `supabase` de handlers y helpers. Es la base sobre la que operan todas las reglas de negocio del paso 10.",
+      "sections": [
+        {
+          "title": "createServiceClient",
+          "lineRange": [1, 30],
+          "explanation": "Crea el cliente con `SUPABASE_URL` y `SERVICE_KEY` leídos de `config.ts`. Al usar la service role key salta las políticas RLS, por lo que la autorización recae enteramente en el código de la función (por ejemplo, `boardAccess.ts`); nunca debe exponerse al cliente. `persistSession: false` tiene sentido porque una Edge Function no guarda estado entre invocaciones.",
+          "tourOrder": 10
+        },
+        {
+          "title": "Tipo DB derivado",
+          "lineRange": [32, 40],
+          "explanation": "`DB = ReturnType<typeof createServiceClient>` deriva el tipo del valor real devuelto, así se mantiene sincronizado automáticamente si cambia la versión de la librería o las opciones del cliente. Es el tipo que importan `types.ts`, `router.ts` y los helpers compartidos.",
+          "tourOrder": 10
+        }
+      ]
+    },
+    "src/pages/StatsPage.tsx": {
+      "overview": "Página del dashboard unificado de estadísticas. Lee los filtros del store Zustand `useStatsUIStore`, determina qué equipos ve el usuario y obtiene todas las métricas desde `useStatsData`. Luego compone las secciones de sprint, global, detalle de equipo y flujo según el modo activo: global, un equipo o varios combinados. Es la puerta de entrada al paso 11 del recorrido.",
+      "sections": [
+        {
+          "title": "Imports",
+          "lineRange": [1, 19],
+          "explanation": "Combina hooks de datos (`useStatsData`, `useBoardTeams`, `useCurrentUser`, `useStatsStartConfig`), el rol (`useRole`), la configuración global, el store `useStatsUIStore` y los componentes de cada sección. Separar las secciones en `components/stats/` deja a esta página como orquestadora, sin lógica de presentación detallada.",
+          "tourOrder": 11
+        },
+        {
+          "title": "useVisibleBoardTeams",
+          "lineRange": [21, 34],
+          "explanation": "Hook local que decide los equipos visibles: un admin ve todos los del board por defecto y el resto solo los que tiene asignados (`useMyBoardTeams`). Excluye los equipos externos y de integración porque no tienen métricas. Se memoiza con `useMemo` para que la lista no cambie de referencia en cada render y no dispare recálculos aguas abajo.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Estado, modos y métricas",
+          "lineRange": [36, 82],
+          "explanation": "Lee filtros y setters de `useStatsUIStore` con selectores individuales para minimizar re-renders. Deriva tres modos: `isGlobal` (solo si hay más de un equipo), `isCombined` (2+ equipos seleccionados) o equipo único. Con esos modos llama a `useStatsData` y elige `boardData`; el delta contra el sprint anterior (`boardPrev`) se oculta en global y combinado, según la decisión de producto anotada en el comentario.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Composición del dashboard",
+          "lineRange": [84, 143],
+          "explanation": "Renderiza las pestañas de equipos y la barra de control (sprints, año, usuario), luego el skeleton o el error según el estado de carga. Con datos listos, `SprintSection` y `FlowSection` aparecen siempre; `GlobalSection` solo en modo global y `TeamDetailSection` solo cuando hay un equipo o una combinación con datos. Esta lógica condicional es lo que permite que una única página sirva vistas tan distintas.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "src/features/requests/hooks/useStatsData.ts": {
+      "overview": "Punto de entrada de las métricas de estadísticas. `useStatsData` compone los sub-hooks de `./stats/` (fuente de datos, sprints seleccionados, scope de filtros, métricas generales, por board, de sprint y de flujo) y devuelve un único objeto `StatsData`. Todo se calcula en el cliente sobre las solicitudes ya cargadas, sin llamadas extra al backend. Es la capa intermedia entre `StatsPage` y la lógica pura del paso 11.",
+      "sections": [
+        {
+          "title": "Conceptos de dominio",
+          "lineRange": [1, 28],
+          "explanation": "El JSDoc del módulo funciona como glosario: las columnas done siempre cuentan como resueltas; el linaje de sprint distingue sprints con fecha (PRISMA) de los históricos migrados; el crédito único acredita cada solicitud terminada a un solo sprint (el de la ventana en que se cerró); el arrastre suma solicitudes de otros sprints, y la penalización está desactivada. Leer esto antes de los sub-hooks ahorra mucha confusión.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Imports y re-exports",
+          "lineRange": [30, 44],
+          "explanation": "Importa cada sub-hook de `./stats/` y re-exporta los tipos (`export type *`), la constante `PENALIZACION_ACTIVA`, `isBlockedLabelName` y `calcFlowMetrics`. Así este archivo actúa como fachada (barrel): los consumidores importan desde `useStatsData` sin conocer la estructura interna de la carpeta `stats/`.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Composición en cascada",
+          "lineRange": [46, 94],
+          "explanation": "Obtiene solicitudes y sprints con `useStatsSource`, resuelve los sprints seleccionados y aplica los filtros en cascada con `useStatsScope`, que produce un universo filtrado por usuario y otro por usuario más equipo. Las métricas generales y por board usan el primero; las de sprint y flujo, el segundo. Cuando hay 2+ equipos combinados, el filtro por equipo del sprint se anula (`null`) porque la unión ya está aplicada; cada bloque se memoiza dentro de su sub-hook.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts": {
+      "overview": "Lógica pura que calcula las métricas de flujo y salud del board con estándares ITSM y Kanban: percentiles de lead time, WIP actual, aging, throughput semanal, precisión de estimación y críticas más antiguas. No depende de React ni del backend, solo de las solicitudes ya cargadas, lo que la hace fácil de probar. Es el ejemplo de lógica de dominio separada de la presentación que destaca el paso 11.",
+      "sections": [
+        {
+          "title": "Imports y lead time",
+          "lineRange": [1, 25],
+          "explanation": "Importa los conjuntos de columnas (`DONE_COLUMNS`, `WIP_COLUMNS`, `BACKLOG_COLUMNS`), los buckets de aging y helpers matemáticos. `calcLeadTime` toma solo las solicitudes resueltas con fechas de apertura y cierre, calcula los días entre ambas, ordena y devuelve p50, p85 y p95. Los percentiles son preferibles al promedio porque unos pocos tickets muy largos no distorsionan el resultado.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Aging por buckets",
+          "lineRange": [27, 44],
+          "explanation": "`calcAging` reparte las solicitudes de las columnas indicadas (WIP o backlog) en buckets de antigüedad según su edad en días. Usa `findIndex` sobre los máximos de cada bucket y, si ninguno aplica, cae en el último: así el bucket final actúa como \"más de X días\" sin necesidad de un tope infinito explícito.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Throughput semanal",
+          "lineRange": [46, 74],
+          "explanation": "`calcThroughput` recorre ventanas de 7 días hacia atrás desde ahora y cuenta creadas (por `fechaApertura`) y resueltas (por `fechaCierre`, solo en columnas done) en cada una. Acumula totales para el flujo neto `resolved - created`: un valor negativo indica que entra más trabajo del que sale. Es O(semanas × solicitudes), suficiente para 8 semanas.",
+          "tourOrder": 11
+        },
+        {
+          "title": "Precisión de estimación",
+          "lineRange": [76, 103],
+          "explanation": "Calcula el ratio horas registradas / estimadas solo para resueltas con estimado positivo y horas registradas. La banda aceptable es 0.75–1.25; por encima cuenta como `tomoMas` (subestimado) y por debajo como `tomoMenos` (sobreestimado). Si no hay datos devuelve `null` en promedio y porcentaje en lugar de 0, para que la UI distinga \"sin datos\" de \"0 %\".",
+          "tourOrder": 11
+        },
+        {
+          "title": "calcFlowMetrics agregado",
+          "lineRange": [105, 132],
+          "explanation": "Función exportada que reúne todo: lead time, WIP actual, aging de WIP y backlog, throughput a 8 semanas con flujo neto y precisión de estimación. Añade `criticalAging`, el top 5 de solicitudes de prioridad crítica aún abiertas, ordenadas por antigüedad. Devuelve un objeto `FlowMetrics` que `useFlowStats` memoiza y `FlowSection` renderiza.",
+          "tourOrder": 11
+        }
+      ]
+    },
+    "src/pages/integrations/SolviRequestPage.tsx": {
+      "overview": "Página para crear solicitudes de la integración SOLVI desde PRISMA. Los tickets no van a `TBL_Requests` sino a un esquema propio, y la gestión posterior ocurre en la plataforma de SOLVI. La página solo maneja el estado del formulario (categoría, subcategoría y artículo en cascada, ANS, adjuntos) y `handleSubmit`; las secciones visuales viven en `SolviRequestPageComponents`. Corresponde al paso 12 del recorrido.",
+      "sections": [
+        {
+          "title": "Imports y propósito",
+          "lineRange": [1, 34],
+          "explanation": "Importa los hooks de SOLVI (acciones, categorías, subcategorías, artículos, ANS) y los componentes visuales del formulario. El bloque de comentario aclara que SOLVI se opera en su propia aplicación y que los tickets viven en `TBL_Ticket_Solvi`. Las constantes fijan un máximo de 5 adjuntos y un color de respaldo para cuando el equipo no define uno.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Estado y datos en cascada",
+          "lineRange": [36, 87],
+          "explanation": "Localiza el equipo SOLVI por `Board_Team_Integration_Key === 'solvi'` para tomar su color, sin depender de cómo se llegó a la página. Cada select guarda el `Id` de SharePoint y no el `Title`, porque las listas hijas filtran por ID de categoría o subcategoría; los títulos se resuelven aparte para el guardado. `subcategoriaSinArticulos` cambia cómo `useSolviAns` busca el ANS, y `treeLoading` agrupa todas las cargas pendientes para no validar contra listas vacías que aún no llegaron.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Validación y handlers de cambio",
+          "lineRange": [89, 120],
+          "explanation": "Los errores por campo solo se muestran después del primer intento de envío (`submitAttempted`) y desaparecen solos al corregir. Subcategoría y artículo solo son obligatorios si el nivel tiene opciones disponibles. Al cambiar la categoría se limpian subcategoría y artículo, y al cambiar la subcategoría se limpia el artículo, para no dejar selecciones huérfanas. `addFiles` respeta los huecos libres hasta `MAX_ATTACHMENTS`.",
+          "tourOrder": 12
+        },
+        {
+          "title": "handleSubmit",
+          "lineRange": [122, 183],
+          "explanation": "Bloquea el envío si el usuario o el árbol de opciones siguen cargando, cuenta los campos obligatorios faltantes y hace scroll al primero mediante `data-vfield` dentro de `requestAnimationFrame`, para esperar a que el DOM refleje los errores. Si todo es válido llama a `solviController.saveTicket` con títulos, adjuntos y datos del ANS. Ojo: `compressImage` se importa pero solo aparece como `void compressImage`, así que esta página no comprime imágenes por sí misma; cualquier compresión ocurriría dentro del controlador.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Pantallas y formulario",
+          "lineRange": [185, 269],
+          "explanation": "Hay tres salidas de render: pantalla de error si no se pudo cargar el usuario, pantalla de éxito tras enviar (con opción de crear otra, que reinicia parte del estado) y el formulario principal. El formulario compone `SolicitudCard`, `CategoriaCascadeCard`, `DescripcionCard`, `AdjuntosCard` y `SubmitBar`, pasando el color del equipo como `accent`. Los estilos son inline con variables CSS del tema y se adaptan a móvil con `isMobile`.",
+          "tourOrder": 12
+        }
+      ]
+    }
+  }
+}

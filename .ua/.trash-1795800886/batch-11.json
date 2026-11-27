@@ -1,0 +1,1163 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "type": "file",
+   "name": "useCreateExportJob.ts",
+   "filePath": "src/features/exports/hooks/useCreateExportJob.ts",
+   "summary": "Hook de React Query (mutación) que crea un job de export en segundo plano llamando a la acción createExportJob del Edge Function.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutación",
+    "exports"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useCreateExportJob.ts:useCreateExportJob",
+   "type": "function",
+   "name": "useCreateExportJob",
+   "filePath": "src/features/exports/hooks/useCreateExportJob.ts",
+   "lineRange": [
+    6,
+    15
+   ],
+   "summary": "Mutación que llama createExportJob y devuelve el job creado.",
+   "tags": [
+    "hook",
+    "mutación"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/exports/hooks/useExportData.ts",
+   "type": "file",
+   "name": "useExportData.ts",
+   "filePath": "src/features/exports/hooks/useExportData.ts",
+   "summary": "Hook de React Query que consulta los datos de export (acción exportRequests) según los filtros seleccionados.",
+   "tags": [
+    "hook",
+    "react-query",
+    "consulta",
+    "exports"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useExportData.ts:useExportData",
+   "type": "function",
+   "name": "useExportData",
+   "filePath": "src/features/exports/hooks/useExportData.ts",
+   "lineRange": [
+    16,
+    25
+   ],
+   "summary": "Consulta exportRequests con los filtros dados, habilitada solo cuando hay filtros.",
+   "tags": [
+    "hook",
+    "consulta"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/exports/hooks/useExportHistory.ts",
+   "type": "file",
+   "name": "useExportHistory.ts",
+   "filePath": "src/features/exports/hooks/useExportHistory.ts",
+   "summary": "Hooks de React Query para el historial de exports del usuario: consulta, eliminación y repetición de un export, invalidando la caché del historial.",
+   "tags": [
+    "hook",
+    "react-query",
+    "historial",
+    "exports"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useExportHistory.ts:useExportHistory",
+   "type": "function",
+   "name": "useExportHistory",
+   "filePath": "src/features/exports/hooks/useExportHistory.ts",
+   "lineRange": [
+    6,
+    13
+   ],
+   "summary": "Consulta el historial de exports del usuario con staleTime de 30s.",
+   "tags": [
+    "hook",
+    "consulta",
+    "historial"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useExportHistory.ts:useDeleteExport",
+   "type": "function",
+   "name": "useDeleteExport",
+   "filePath": "src/features/exports/hooks/useExportHistory.ts",
+   "lineRange": [
+    15,
+    21
+   ],
+   "summary": "Mutación que elimina una entrada del historial e invalida su caché.",
+   "tags": [
+    "hook",
+    "mutación"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useExportHistory.ts:useRepeatExport",
+   "type": "function",
+   "name": "useRepeatExport",
+   "filePath": "src/features/exports/hooks/useExportHistory.ts",
+   "lineRange": [
+    23,
+    29
+   ],
+   "summary": "Mutación que repite un export previo creando un nuevo job.",
+   "tags": [
+    "hook",
+    "mutación"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/exports/hooks/useExportJob.ts",
+   "type": "file",
+   "name": "useExportJob.ts",
+   "filePath": "src/features/exports/hooks/useExportJob.ts",
+   "summary": "Hook de polling que consulta el estado de un job de export cada 2 segundos hasta que termina (done) o falla.",
+   "tags": [
+    "hook",
+    "polling",
+    "react-query",
+    "background-job"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/hooks/useExportJob.ts:useExportJob",
+   "type": "function",
+   "name": "useExportJob",
+   "filePath": "src/features/exports/hooks/useExportJob.ts",
+   "lineRange": [
+    11,
+    23
+   ],
+   "summary": "Consulta getBackgroundJob con refetch cada 2s mientras el job esté pendiente o en ejecución.",
+   "tags": [
+    "hook",
+    "polling"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/exports/services/buildCsv.ts",
+   "type": "file",
+   "name": "buildCsv.ts",
+   "filePath": "src/features/exports/services/buildCsv.ts",
+   "summary": "Generación de archivos CSV de export: escapa y formatea celdas (fechas en hora local), construye el CSV de resumen y el de tickets por equipo, empaquetando varios archivos cuando aplica.",
+   "tags": [
+    "service",
+    "csv",
+    "exportación",
+    "serialization"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/buildCsv.ts:formatCell",
+   "type": "function",
+   "name": "formatCell",
+   "filePath": "src/features/exports/services/buildCsv.ts",
+   "lineRange": [
+    36,
+    58
+   ],
+   "summary": "Formatea un valor de celda según el tipo de columna (fecha, número, booleano, texto) para CSV.",
+   "tags": [
+    "formato",
+    "csv"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/buildCsv.ts:ticketsToCsv",
+   "type": "function",
+   "name": "ticketsToCsv",
+   "filePath": "src/features/exports/services/buildCsv.ts",
+   "lineRange": [
+    60,
+    65
+   ],
+   "summary": "Convierte una lista de tickets a texto CSV con las columnas seleccionadas.",
+   "tags": [
+    "csv",
+    "serialization"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/buildCsv.ts:buildSummaryCsv",
+   "type": "function",
+   "name": "buildSummaryCsv",
+   "filePath": "src/features/exports/services/buildCsv.ts",
+   "lineRange": [
+    74,
+    108
+   ],
+   "summary": "Construye el CSV de resumen con conteos agregados del dataset.",
+   "tags": [
+    "csv",
+    "resumen"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/buildCsv.ts:buildCsv",
+   "type": "function",
+   "name": "buildCsv",
+   "filePath": "src/features/exports/services/buildCsv.ts",
+   "lineRange": [
+    124,
+    192
+   ],
+   "summary": "Genera y descarga los CSV del export (resumen y tickets por equipo), en ZIP si hay varios archivos.",
+   "tags": [
+    "csv",
+    "descarga"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/exports/services/buildXlsx.ts",
+   "type": "file",
+   "name": "buildXlsx.ts",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "summary": "Generación de libros Excel (.xlsx) de export: hoja de resumen con métricas, hojas de tickets por equipo con columnas tipadas y anchos, y conversión a Blob para descarga.",
+   "tags": [
+    "service",
+    "xlsx",
+    "exportación",
+    "serialization"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildCell",
+   "type": "function",
+   "name": "buildCell",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    64,
+    113
+   ],
+   "summary": "Construye una celda de SheetJS tipada (fecha, número, booleano, texto) a partir del valor y tipo de columna.",
+   "tags": [
+    "xlsx",
+    "celda"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildSummarySheet",
+   "type": "function",
+   "name": "buildSummarySheet",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    132,
+    228
+   ],
+   "summary": "Arma la hoja de resumen con métricas del export (totales por equipo, columna, prioridad, etc.).",
+   "tags": [
+    "xlsx",
+    "resumen"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildEmptyTeamSheet",
+   "type": "function",
+   "name": "buildEmptyTeamSheet",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    254,
+    267
+   ],
+   "summary": "Crea una hoja para un equipo sin tickets.",
+   "tags": [
+    "xlsx",
+    "hoja"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildTicketSheets",
+   "type": "function",
+   "name": "buildTicketSheets",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    283,
+    359
+   ],
+   "summary": "Agrupa tickets por equipo y genera una hoja por equipo con nombres de hoja únicos y seguros.",
+   "tags": [
+    "xlsx",
+    "agrupación"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:sheetsToBlob",
+   "type": "function",
+   "name": "sheetsToBlob",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    363,
+    376
+   ],
+   "summary": "Ensambla las hojas en un libro y lo serializa a Blob.",
+   "tags": [
+    "xlsx",
+    "blob"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "type": "function",
+   "name": "buildXlsx",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    387,
+    397
+   ],
+   "summary": "Genera y descarga el libro completo del export (resumen + hojas de tickets).",
+   "tags": [
+    "xlsx",
+    "descarga"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildXlsxSummaryBlob",
+   "type": "function",
+   "name": "buildXlsxSummaryBlob",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    400,
+    404
+   ],
+   "summary": "Devuelve un Blob xlsx solo con la hoja de resumen.",
+   "tags": [
+    "xlsx",
+    "blob"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/buildXlsx.ts:buildXlsxTicketsBlob",
+   "type": "function",
+   "name": "buildXlsxTicketsBlob",
+   "filePath": "src/features/exports/services/buildXlsx.ts",
+   "lineRange": [
+    407,
+    424
+   ],
+   "summary": "Devuelve un Blob xlsx con las hojas de tickets de un subconjunto (para partición en ZIP).",
+   "tags": [
+    "xlsx",
+    "blob"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/exports/services/columnRegistry.ts",
+   "type": "file",
+   "name": "columnRegistry.ts",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "summary": "Registro de columnas exportables: columnas fijas con accessors (asignados, labels, cierre, prioridad…) y columnas dinámicas detectadas desde el snapshot del esquema de plantilla de cada ticket.",
+   "tags": [
+    "registry",
+    "columnas",
+    "exportación",
+    "metadata"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:collectSnapshotFields",
+   "type": "function",
+   "name": "collectSnapshotFields",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    186,
+    258
+   ],
+   "summary": "Recorre los snapshots de esquema de plantilla de los tickets y recolecta los campos dinámicos únicos.",
+   "tags": [
+    "columnas-dinámicas",
+    "snapshot"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:mapFieldTypeToColumnType",
+   "type": "function",
+   "name": "mapFieldTypeToColumnType",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    260,
+    269
+   ],
+   "summary": "Traduce el tipo de campo del formulario al tipo de columna de export.",
+   "tags": [
+    "mapeo",
+    "tipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:dynamicAccessor",
+   "type": "function",
+   "name": "dynamicAccessor",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    271,
+    308
+   ],
+   "summary": "Crea el accessor que extrae y formatea el valor de un campo dinámico desde los datos del ticket.",
+   "tags": [
+    "accessor",
+    "columnas-dinámicas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "type": "function",
+   "name": "detectDynamicColumnsByTemplate",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    317,
+    361
+   ],
+   "summary": "Detecta las columnas dinámicas agrupadas por plantilla a partir de los tickets devueltos.",
+   "tags": [
+    "columnas-dinámicas",
+    "detección"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:buildAvailableColumns",
+   "type": "function",
+   "name": "buildAvailableColumns",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    367,
+    375
+   ],
+   "summary": "Combina columnas fijas y dinámicas en la lista de columnas disponibles.",
+   "tags": [
+    "columnas",
+    "registry"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/columnRegistry.ts:resolveSelectedColumns",
+   "type": "function",
+   "name": "resolveSelectedColumns",
+   "filePath": "src/features/exports/services/columnRegistry.ts",
+   "lineRange": [
+    378,
+    403
+   ],
+   "summary": "Resuelve las claves de columnas seleccionadas a definiciones ExportColumn en orden.",
+   "tags": [
+    "columnas",
+    "selección"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/exports/services/processExportArtifact.ts",
+   "type": "file",
+   "name": "processExportArtifact.ts",
+   "filePath": "src/features/exports/services/processExportArtifact.ts",
+   "summary": "Orquesta la descarga de un export terminado: obtiene URLs de artifacts, descarga los chunks de tickets con concurrencia acotada, genera XLSX/CSV (o ZIP si supera el máximo de filas) y confirma la descarga.",
+   "tags": [
+    "service",
+    "orquestador",
+    "descarga",
+    "zip"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/processExportArtifact.ts:downloadAllTickets",
+   "type": "function",
+   "name": "downloadAllTickets",
+   "filePath": "src/features/exports/services/processExportArtifact.ts",
+   "lineRange": [
+    51,
+    60
+   ],
+   "summary": "Descarga todos los chunks JSON de tickets con concurrencia limitada y los concatena.",
+   "tags": [
+    "descarga",
+    "concurrencia"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/processExportArtifact.ts:buildXlsxZipSplit",
+   "type": "function",
+   "name": "buildXlsxZipSplit",
+   "filePath": "src/features/exports/services/processExportArtifact.ts",
+   "lineRange": [
+    63,
+    81
+   ],
+   "summary": "Parte los tickets en varios xlsx y los empaqueta en un ZIP con el resumen.",
+   "tags": [
+    "zip",
+    "xlsx",
+    "partición"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/exports/services/processExportArtifact.ts:buildCsvZipSplit",
+   "type": "function",
+   "name": "buildCsvZipSplit",
+   "filePath": "src/features/exports/services/processExportArtifact.ts",
+   "lineRange": [
+    84,
+    98
+   ],
+   "summary": "Parte los tickets en varios CSV y los empaqueta en un ZIP con el resumen.",
+   "tags": [
+    "zip",
+    "csv",
+    "partición"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "type": "function",
+   "name": "processExportArtifact",
+   "filePath": "src/features/exports/services/processExportArtifact.ts",
+   "lineRange": [
+    100,
+    167
+   ],
+   "summary": "Flujo completo de un export terminado: URLs, descarga, columnas, generación del archivo según formato/tamaño y confirmación.",
+   "tags": [
+    "orquestador",
+    "exportación"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/exports/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/exports/types.ts",
+   "summary": "Tipos compartidos del módulo de exports: filtros, formatos, configuración, columnas, tickets, datasets, jobs en segundo plano, historial y URLs de artifacts.",
+   "tags": [
+    "type-definition",
+    "exports",
+    "modelo-datos"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "target": "function:src/features/exports/hooks/useCreateExportJob.ts:useCreateExportJob",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "target": "function:src/features/exports/hooks/useCreateExportJob.ts:useCreateExportJob",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportData.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportData.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportData.ts",
+   "target": "function:src/features/exports/hooks/useExportData.ts:useExportData",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportData.ts",
+   "target": "function:src/features/exports/hooks/useExportData.ts:useExportData",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useExportHistory",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useExportHistory",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useDeleteExport",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useDeleteExport",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useRepeatExport",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportHistory.ts",
+   "target": "function:src/features/exports/hooks/useExportHistory.ts:useRepeatExport",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportJob.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportJob.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportJob.ts",
+   "target": "function:src/features/exports/hooks/useExportJob.ts:useExportJob",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/hooks/useExportJob.ts",
+   "target": "function:src/features/exports/hooks/useExportJob.ts:useExportJob",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:formatCell",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:ticketsToCsv",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:ticketsToCsv",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildSummaryCsv",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildSummaryCsv",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildCsv",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildCsv.ts",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildCsv",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildCell",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildSummarySheet",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildEmptyTeamSheet",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildTicketSheets",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:sheetsToBlob",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxSummaryBlob",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxSummaryBlob",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxTicketsBlob",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/buildXlsx.ts",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxTicketsBlob",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:collectSnapshotFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:mapFieldTypeToColumnType",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:dynamicAccessor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:buildAvailableColumns",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:buildAvailableColumns",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:resolveSelectedColumns",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/columnRegistry.ts",
+   "target": "function:src/features/exports/services/columnRegistry.ts:resolveSelectedColumns",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "file:src/features/exports/services/buildCsv.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "file:src/features/exports/services/buildXlsx.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "file:src/features/exports/services/columnRegistry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:downloadAllTickets",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:buildXlsxZipSplit",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:buildCsvZipSplit",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/exports/services/processExportArtifact.ts",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:downloadAllTickets",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:buildXlsxZipSplit",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/processExportArtifact.ts:buildCsvZipSplit",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildCsv",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/columnRegistry.ts:buildAvailableColumns",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:processExportArtifact",
+   "target": "function:src/features/exports/services/columnRegistry.ts:resolveSelectedColumns",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:buildXlsxZipSplit",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxSummaryBlob",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:buildXlsxZipSplit",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildXlsxTicketsBlob",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:buildCsvZipSplit",
+   "target": "function:src/features/exports/services/buildCsv.ts:ticketsToCsv",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/processExportArtifact.ts:buildCsvZipSplit",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildSummaryCsv",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildSummarySheet",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildTicketSheets",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildXlsx.ts:buildXlsx",
+   "target": "function:src/features/exports/services/buildXlsx.ts:sheetsToBlob",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildXlsx.ts:buildTicketSheets",
+   "target": "function:src/features/exports/services/buildXlsx.ts:buildEmptyTeamSheet",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildCsv.ts:buildCsv",
+   "target": "function:src/features/exports/services/buildCsv.ts:buildSummaryCsv",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/buildCsv.ts:ticketsToCsv",
+   "target": "function:src/features/exports/services/buildCsv.ts:formatCell",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "target": "function:src/features/exports/services/columnRegistry.ts:collectSnapshotFields",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "target": "function:src/features/exports/services/columnRegistry.ts:dynamicAccessor",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/exports/services/columnRegistry.ts:detectDynamicColumnsByTemplate",
+   "target": "function:src/features/exports/services/columnRegistry.ts:mapFieldTypeToColumnType",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

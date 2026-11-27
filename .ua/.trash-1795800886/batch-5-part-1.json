@@ -1,0 +1,1578 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "file",
+   "name": "constants.ts",
+   "filePath": "src/features/requests/hooks/stats/constants.ts",
+   "summary": "Constantes de las métricas de estadísticas: conjuntos de columnas done/activas/WIP/backlog, orden de columnas, metadatos visuales por columna y prioridad, gradientes de avatar, ratio de meta, bandera de penalización y buckets de aging.",
+   "tags": [
+    "constantes",
+    "configuracion",
+    "metricas",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "type": "file",
+   "name": "buildPrimaryTeamMap.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "summary": "Deriva el equipo principal de cada usuario contando sus asignaciones por equipo en el historial de solicitudes.",
+   "tags": [
+    "utility",
+    "metricas",
+    "equipos",
+    "funcion-pura"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts:buildPrimaryTeamMap",
+   "type": "function",
+   "name": "buildPrimaryTeamMap",
+   "filePath": "src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "lineRange": [
+    19,
+    37
+   ],
+   "summary": "Cuenta asignaciones por usuario y equipo y devuelve un Map userId → equipo con más apariciones.",
+   "tags": [
+    "utility",
+    "equipos",
+    "agregacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "type": "file",
+   "name": "calcBoard.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "summary": "Cálculo puro de las estadísticas por board/equipo: distribución por columna y prioridad, puntaje, meta, penalización, arrastre y top de resolutores, en variantes por equipo y combinada.",
+   "tags": [
+    "metricas",
+    "board",
+    "calculo",
+    "funcion-pura",
+    "sprint"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcResolutores",
+   "type": "function",
+   "name": "calcResolutores",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "lineRange": [
+    31,
+    54
+   ],
+   "summary": "Agrupa solicitudes resueltas por asignado y devuelve el top 5 de resolutores con iniciales y su lista de solicitudes.",
+   "tags": [
+    "ranking",
+    "resolutores",
+    "agregacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "type": "function",
+   "name": "calcBoardFromUniverse",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "lineRange": [
+    75,
+    137
+   ],
+   "summary": "Núcleo del cálculo de board: filtra el universo por sprints seleccionados y contables, calcula puntaje, meta, penalización, arrastre y distribuciones por columna y prioridad.",
+   "tags": [
+    "metricas",
+    "board",
+    "calculo-central"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoard",
+   "type": "function",
+   "name": "calcBoard",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "lineRange": [
+    149,
+    152
+   ],
+   "summary": "Calcula las estadísticas de un board para un equipo específico filtrando sus solicitudes.",
+   "tags": [
+    "metricas",
+    "board",
+    "equipo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:combinedMinPosOf",
+   "type": "function",
+   "name": "combinedMinPosOf",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "lineRange": [
+    162,
+    167
+   ],
+   "summary": "Obtiene la posición mínima de inicio de stats entre varios equipos combinados.",
+   "tags": [
+    "utility",
+    "configuracion",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "type": "function",
+   "name": "calcBoardCombined",
+   "filePath": "src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "lineRange": [
+    184,
+    188
+   ],
+   "summary": "Calcula las estadísticas de board para la unión de varios equipos combinados.",
+   "tags": [
+    "metricas",
+    "board",
+    "combinado"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "type": "file",
+   "name": "calcFlowMetrics.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "summary": "Calcula métricas de flujo y salud del board: percentiles de lead time, aging de WIP y backlog, throughput semanal, precisión de estimación y críticas abiertas más antiguas.",
+   "tags": [
+    "metricas",
+    "flujo",
+    "lead-time",
+    "throughput",
+    "funcion-pura"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcAging",
+   "type": "function",
+   "name": "calcAging",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "lineRange": [
+    34,
+    44
+   ],
+   "summary": "Distribuye las solicitudes de un conjunto de columnas en buckets de antigüedad.",
+   "tags": [
+    "aging",
+    "metricas",
+    "buckets"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcThroughput",
+   "type": "function",
+   "name": "calcThroughput",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "lineRange": [
+    53,
+    74
+   ],
+   "summary": "Construye la serie semanal de solicitudes creadas vs resueltas en una ventana reciente.",
+   "tags": [
+    "throughput",
+    "metricas",
+    "serie-temporal"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcEstimation",
+   "type": "function",
+   "name": "calcEstimation",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "lineRange": [
+    87,
+    103
+   ],
+   "summary": "Mide la precisión de estimación comparando horas registradas vs estimadas en solicitudes cerradas.",
+   "tags": [
+    "estimacion",
+    "metricas",
+    "horas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "type": "function",
+   "name": "calcFlowMetrics",
+   "filePath": "src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "lineRange": [
+    116,
+    132
+   ],
+   "summary": "Agrega lead time, aging de WIP y backlog, throughput, estimación y críticas abiertas más antiguas en un objeto FlowMetrics.",
+   "tags": [
+    "metricas",
+    "flujo",
+    "agregacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "type": "file",
+   "name": "calcGeneral.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "summary": "Calcula las métricas generales del board (total, resueltas, tasa global, tiempo promedio de cierre) con desglose de creadas, resueltas, críticas y puntaje por equipo.",
+   "tags": [
+    "metricas",
+    "general",
+    "calculo",
+    "funcion-pura"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "type": "function",
+   "name": "calcGeneral",
+   "filePath": "src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "lineRange": [
+    28,
+    56
+   ],
+   "summary": "Calcula totales, tasa de resolución, tiempo promedio de cierre y desglose por equipo.",
+   "tags": [
+    "metricas",
+    "general",
+    "equipos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "type": "file",
+   "name": "calcSprint.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "summary": "Calcula las métricas de sprint (planeadas, activas, completadas, post-planning, puntajes, meta, cumplimiento y arrastre de otros sprints) tanto sin sprint seleccionado como para uno o varios sprints.",
+   "tags": [
+    "metricas",
+    "sprint",
+    "calculo",
+    "funcion-pura",
+    "puntaje"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "type": "function",
+   "name": "calcSprintUnselected",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "lineRange": [
+    41,
+    67
+   ],
+   "summary": "Calcula métricas de sprint cuando no hay sprint seleccionado, sobre todas las solicitudes activas.",
+   "tags": [
+    "sprint",
+    "metricas",
+    "fallback"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:makeIsSprintMonth",
+   "type": "function",
+   "name": "makeIsSprintMonth",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "lineRange": [
+    75,
+    87
+   ],
+   "summary": "Fabrica un predicado que indica si una fecha cae en el mes del sprint más temprano seleccionado.",
+   "tags": [
+    "factory",
+    "fechas",
+    "sprint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "type": "function",
+   "name": "calcSprintSelected",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "lineRange": [
+    98,
+    176
+   ],
+   "summary": "Calcula métricas para los sprints seleccionados: planeadas, post-planning, completadas con crédito único, puntajes, meta, penalización y arrastre.",
+   "tags": [
+    "sprint",
+    "metricas",
+    "calculo-central"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "type": "function",
+   "name": "calcSprint",
+   "filePath": "src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "lineRange": [
+    198,
+    203
+   ],
+   "summary": "Punto de entrada que resuelve la posición mínima contable y delega en la variante con o sin sprints seleccionados.",
+   "tags": [
+    "sprint",
+    "metricas",
+    "dispatcher"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "type": "file",
+   "name": "math.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "summary": "Helpers matemáticos y de fechas para las métricas: diferencia en días, mes actual, normalización a UTC, edad en días, promedio de horas y percentiles.",
+   "tags": [
+    "utility",
+    "fechas",
+    "matematica",
+    "funcion-pura"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:daysBetween",
+   "type": "function",
+   "name": "daysBetween",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    18,
+    20
+   ],
+   "summary": "Devuelve la diferencia absoluta en días entre dos fechas ISO.",
+   "tags": [
+    "fechas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:isThisMonth",
+   "type": "function",
+   "name": "isThisMonth",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    28,
+    32
+   ],
+   "summary": "Indica si una fecha pertenece al mes y año actuales.",
+   "tags": [
+    "fechas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:toUtcMs",
+   "type": "function",
+   "name": "toUtcMs",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    44,
+    47
+   ],
+   "summary": "Normaliza una fecha ISO sin zona horaria a milisegundos UTC.",
+   "tags": [
+    "fechas",
+    "utc",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "type": "function",
+   "name": "ageInDays",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    55,
+    57
+   ],
+   "summary": "Calcula la edad en días de una fecha respecto al momento actual.",
+   "tags": [
+    "fechas",
+    "aging",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:avgHoras",
+   "type": "function",
+   "name": "avgHoras",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    70,
+    74
+   ],
+   "summary": "Promedia un campo numérico de horas sobre las solicitudes que lo tienen definido.",
+   "tags": [
+    "promedio",
+    "horas",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/math.ts:percentile",
+   "type": "function",
+   "name": "percentile",
+   "filePath": "src/features/requests/hooks/stats/lib/math.ts",
+   "lineRange": [
+    83,
+    90
+   ],
+   "summary": "Calcula un percentil por interpolación lineal sobre un arreglo ordenado.",
+   "tags": [
+    "estadistica",
+    "percentil",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "type": "file",
+   "name": "predicates.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/predicates.ts",
+   "summary": "Predicados de solicitudes: detección de etiqueta y estado bloqueado, y fábrica del filtro de solicitudes contables según la posición de inicio de stats.",
+   "tags": [
+    "utility",
+    "validation",
+    "predicados",
+    "metricas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlockedLabelName",
+   "type": "function",
+   "name": "isBlockedLabelName",
+   "filePath": "src/features/requests/hooks/stats/lib/predicates.ts",
+   "lineRange": [
+    22,
+    25
+   ],
+   "summary": "Determina si el nombre de una etiqueta corresponde a un estado bloqueado.",
+   "tags": [
+    "predicado",
+    "etiquetas",
+    "bloqueo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "function",
+   "name": "isBlocked",
+   "filePath": "src/features/requests/hooks/stats/lib/predicates.ts",
+   "lineRange": [
+    33,
+    35
+   ],
+   "summary": "Indica si una solicitud tiene alguna categoría de bloqueo.",
+   "tags": [
+    "predicado",
+    "bloqueo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "function",
+   "name": "makeCountable",
+   "filePath": "src/features/requests/hooks/stats/lib/predicates.ts",
+   "lineRange": [
+    49,
+    52
+   ],
+   "summary": "Fabrica el predicado de solicitudes contables: done siempre cuenta, el resto según posición de columna y no bloqueado.",
+   "tags": [
+    "factory",
+    "predicado",
+    "metricas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "type": "file",
+   "name": "scoring.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/scoring.ts",
+   "summary": "Lógica de puntaje: suma de puntos, meta como fracción del planeado y penalización por solicitudes con atraso de sprints (actualmente desactivable).",
+   "tags": [
+    "puntaje",
+    "metricas",
+    "sprint",
+    "funcion-pura"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "function",
+   "name": "sumScore",
+   "filePath": "src/features/requests/hooks/stats/lib/scoring.ts",
+   "lineRange": [
+    22,
+    24
+   ],
+   "summary": "Suma el puntaje de un conjunto de solicitudes.",
+   "tags": [
+    "puntaje",
+    "agregacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "function",
+   "name": "calcMeta",
+   "filePath": "src/features/requests/hooks/stats/lib/scoring.ts",
+   "lineRange": [
+    32,
+    34
+   ],
+   "summary": "Calcula la meta como fracción (META_RATIO) del puntaje planeado.",
+   "tags": [
+    "puntaje",
+    "meta"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "function",
+   "name": "calcPenalizacion",
+   "filePath": "src/features/requests/hooks/stats/lib/scoring.ts",
+   "lineRange": [
+    50,
+    79
+   ],
+   "summary": "Calcula la penalización (doble de puntos) de solicitudes abiertas con atraso de SPRINT_LAG sprints respecto al sprint de referencia.",
+   "tags": [
+    "penalizacion",
+    "puntaje",
+    "sprint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "type": "file",
+   "name": "sprints.ts",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "summary": "Utilidades de sprints: orden y numeración, sprint de referencia, sprint anterior del mismo linaje, crédito único de cierre por ventana de sprint y agrupación del arrastre por sprint.",
+   "tags": [
+    "utility",
+    "sprint",
+    "fechas",
+    "funcion-pura"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:sprintOrder",
+   "type": "function",
+   "name": "sprintOrder",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    49,
+    54
+   ],
+   "summary": "Clave de ordenamiento de sprints por número de sprint o fecha de inicio.",
+   "tags": [
+    "sprint",
+    "ordenamiento"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:refSprintIdOf",
+   "type": "function",
+   "name": "refSprintIdOf",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    62,
+    66
+   ],
+   "summary": "Devuelve el ID del sprint de referencia (el más reciente) de una selección.",
+   "tags": [
+    "sprint",
+    "referencia"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:findPrevSprint",
+   "type": "function",
+   "name": "findPrevSprint",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    81,
+    103
+   ],
+   "summary": "Encuentra el sprint anterior dentro del mismo linaje (con fecha vs histórico sin fecha).",
+   "tags": [
+    "sprint",
+    "linaje",
+    "busqueda"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:buildCreditSprint",
+   "type": "function",
+   "name": "buildCreditSprint",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    121,
+    136
+   ],
+   "summary": "Construye la función que asigna a cada solicitud cerrada un único sprint de crédito según la ventana en que se cerró.",
+   "tags": [
+    "sprint",
+    "credito-unico",
+    "factory"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "type": "function",
+   "name": "makeCreditedIn",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    145,
+    151
+   ],
+   "summary": "Fabrica un predicado que indica si una solicitud está acreditada en alguno de los sprints dados.",
+   "tags": [
+    "factory",
+    "predicado",
+    "sprint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/stats/lib/sprints.ts:groupBySprint",
+   "type": "function",
+   "name": "groupBySprint",
+   "filePath": "src/features/requests/hooks/stats/lib/sprints.ts",
+   "lineRange": [
+    159,
+    167
+   ],
+   "summary": "Agrupa solicitudes de arrastre por sprint de origen con su conteo, ordenadas.",
+   "tags": [
+    "agregacion",
+    "sprint",
+    "arrastre"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts:buildPrimaryTeamMap",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts:buildPrimaryTeamMap",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcResolutores",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:combinedMinPosOf",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:combinedMinPosOf",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcAging",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcThroughput",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcEstimation",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:makeIsSprintMonth",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:daysBetween",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:daysBetween",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:isThisMonth",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:isThisMonth",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:toUtcMs",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:toUtcMs",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:avgHoras",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:avgHoras",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:percentile",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/math.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:percentile",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlockedLabelName",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlockedLabelName",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "file:src/features/requests/hooks/stats/constants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "target": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:sprintOrder",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:sprintOrder",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:refSprintIdOf",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:refSprintIdOf",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:findPrevSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:findPrevSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:buildCreditSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:buildCreditSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:groupBySprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:groupBySprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "target": "file:src/features/requests/hooks/stats/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:refSprintIdOf",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:groupBySprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcResolutores",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoard",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardFromUniverse",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:calcBoardCombined",
+   "target": "function:src/features/requests/hooks/stats/lib/calcBoard.ts:combinedMinPosOf",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcAging",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcThroughput",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:toUtcMs",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcThroughput",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcAging",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "target": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcEstimation",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts:calcFlowMetrics",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:daysBetween",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcGeneral.ts:calcGeneral",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:isThisMonth",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:avgHoras",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:makeIsSprintMonth",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:sumScore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcMeta",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:refSprintIdOf",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:avgHoras",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:groupBySprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintUnselected",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprint",
+   "target": "function:src/features/requests/hooks/stats/lib/calcSprint.ts:calcSprintSelected",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/math.ts:ageInDays",
+   "target": "function:src/features/requests/hooks/stats/lib/math.ts:toUtcMs",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/predicates.ts:makeCountable",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:sprintOrder",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/scoring.ts:calcPenalizacion",
+   "target": "function:src/features/requests/hooks/stats/lib/predicates.ts:isBlocked",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/stats/lib/sprints.ts:makeCreditedIn",
+   "target": "function:src/features/requests/hooks/stats/lib/sprints.ts:buildCreditSprint",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

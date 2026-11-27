@@ -1,0 +1,39 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 0,
+  "filesSkipped": [
+    "src/styles/LoginPage.css",
+    "src/styles/automations.css",
+    "src/styles/clientRequests.css",
+    "src/styles/configPanel.css",
+    "src/styles/customization.css",
+    "src/styles/feedback.css",
+    "src/styles/filters.css",
+    "src/styles/globals.css",
+    "src/styles/kanban.css",
+    "src/styles/kanbanSkeleton.css",
+    "src/styles/layout.css",
+    "src/styles/mentions.css",
+    "src/styles/notifications.css",
+    "src/styles/onboarding.css",
+    "src/styles/requestCard.css",
+    "src/styles/solvi.css",
+    "src/styles/stats.css",
+    "src/styles/tasks.css",
+    "src/styles/themeLight.css",
+    "src/styles/variables.css"
+  ],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 0,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": []
+}

@@ -1,0 +1,997 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "type": "file",
+   "name": "CategoriasSharepointSolvi.service.ts",
+   "filePath": "src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "summary": "Servicio de acceso a la lista SharePoint de categorías SOLVI vía Graph, con caché local de IDs de sitio y lista.",
+   "tags": [
+    "service",
+    "sharepoint",
+    "microsoft-graph",
+    "catalogo"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/features/requests/services/CategoriasSharepointSolvi.service.ts:CategoriasSPService",
+   "type": "class",
+   "name": "CategoriasSPService",
+   "filePath": "src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "lineRange": [
+    9,
+    93
+   ],
+   "summary": "Clase de acceso a la lista SharePoint de categorías con caché de IDs.",
+   "tags": [
+    "class",
+    "service",
+    "sharepoint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/services/HolidayService.service.ts",
+   "type": "file",
+   "name": "HolidayService.service.ts",
+   "filePath": "src/features/requests/services/HolidayService.service.ts",
+   "summary": "Consulta la API externa festivos.com.co para obtener los días festivos colombianos del año actual, usados en el cálculo de días hábiles.",
+   "tags": [
+    "service",
+    "festivos",
+    "api-externa",
+    "calendario"
+   ],
+   "complexity": "simple",
+   "languageNotes": "Contiene una API key embebida en el código fuente; convendría moverla a variables de entorno."
+  },
+  {
+   "id": "function:src/features/requests/services/HolidayService.service.ts:fetchHolidays",
+   "type": "function",
+   "name": "fetchHolidays",
+   "filePath": "src/features/requests/services/HolidayService.service.ts",
+   "lineRange": [
+    19,
+    42
+   ],
+   "summary": "Descarga los festivos del año en curso desde festivos.com.co y los mapea al tipo Holiday.",
+   "tags": [
+    "api-externa",
+    "festivos",
+    "fetch"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "type": "file",
+   "name": "SolviAttachments.service.ts",
+   "filePath": "src/features/requests/services/SolviAttachments.service.ts",
+   "summary": "Sube adjuntos de tickets SOLVI al bucket de Supabase Storage \"ticket-attachments\" y registra la metadata en TBL_Ticket_Attachments_Solvi.",
+   "tags": [
+    "service",
+    "supabase-storage",
+    "adjuntos",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviAttachments.service.ts:getPublicUrl",
+   "type": "function",
+   "name": "getPublicUrl",
+   "filePath": "src/features/requests/services/SolviAttachments.service.ts",
+   "lineRange": [
+    13,
+    22
+   ],
+   "summary": "Obtiene la URL pública de un archivo en Supabase Storage.",
+   "tags": [
+    "supabase-storage",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviAttachments.service.ts:uploadFile",
+   "type": "function",
+   "name": "uploadFile",
+   "filePath": "src/features/requests/services/SolviAttachments.service.ts",
+   "lineRange": [
+    24,
+    40
+   ],
+   "summary": "Sube un archivo a un bucket de Supabase Storage y devuelve su URL pública.",
+   "tags": [
+    "supabase-storage",
+    "upload"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviAttachments.service.ts:uploadSolviAttachment",
+   "type": "function",
+   "name": "uploadSolviAttachment",
+   "filePath": "src/features/requests/services/SolviAttachments.service.ts",
+   "lineRange": [
+    42,
+    59
+   ],
+   "summary": "Sube un adjunto de creación de ticket y registra su metadata en TBL_Ticket_Attachments_Solvi.",
+   "tags": [
+    "adjuntos",
+    "supabase",
+    "upload"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "type": "file",
+   "name": "SolviBusinessDate.service.ts",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "summary": "Utilidades de fechas hábiles en zona horaria de Bogotá: parseo flexible de fechas, detección de turno nocturno, formato de SLA y cálculo de la fecha máxima de solución saltando fines de semana, festivos y horario no laboral.",
+   "tags": [
+    "service",
+    "fechas",
+    "sla",
+    "dias-habiles",
+    "utility"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Usa TZDate de @date-fns/tz para aritmética de fechas consciente de zona horaria."
+  },
+  {
+   "id": "function:src/features/requests/services/SolviBusinessDate.service.ts:parseDateFlex",
+   "type": "function",
+   "name": "parseDateFlex",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "lineRange": [
+    37,
+    66
+   ],
+   "summary": "Parsea fechas en múltiples formatos (ISO, dd/mm/yyyy, con hora) a Date.",
+   "tags": [
+    "parsing",
+    "fechas",
+    "utility"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviBusinessDate.service.ts:toISODateTimeFlex",
+   "type": "function",
+   "name": "toISODateTimeFlex",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "lineRange": [
+    68,
+    72
+   ],
+   "summary": "Convierte una fecha flexible a cadena ISO o null si es inválida.",
+   "tags": [
+    "fechas",
+    "serialization"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviBusinessDate.service.ts:isTurnoNocturnoAhora",
+   "type": "function",
+   "name": "isTurnoNocturnoAhora",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "lineRange": [
+    75,
+    78
+   ],
+   "summary": "Indica si la hora actual cae fuera del horario laboral (turno nocturno, fin de semana o festivo).",
+   "tags": [
+    "turnos",
+    "fechas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviBusinessDate.service.ts:formatSlaHorasHabiles",
+   "type": "function",
+   "name": "formatSlaHorasHabiles",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "lineRange": [
+    84,
+    91
+   ],
+   "summary": "Formatea un SLA en horas hábiles como texto legible.",
+   "tags": [
+    "formatting",
+    "sla"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviBusinessDate.service.ts:calcularFechaSolucion",
+   "type": "function",
+   "name": "calcularFechaSolucion",
+   "filePath": "src/features/requests/services/SolviBusinessDate.service.ts",
+   "lineRange": [
+    96,
+    126
+   ],
+   "summary": "Calcula la fecha máxima de solución sumando horas hábiles y saltando fines de semana, festivos y horario no laboral.",
+   "tags": [
+    "sla",
+    "dias-habiles",
+    "calculo"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/services/SolviShifts.service.ts",
+   "type": "file",
+   "name": "SolviShifts.service.ts",
+   "filePath": "src/features/requests/services/SolviShifts.service.ts",
+   "summary": "Cliente de la Edge Function de Supabase \"obtener-disponibilidad-hoy\" que devuelve los turnos de Teams Shifts del grupo SOLVI y la persona disponible ahora.",
+   "tags": [
+    "service",
+    "edge-function",
+    "turnos",
+    "supabase"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviShifts.service.ts:fetchDisponibilidadHoy",
+   "type": "function",
+   "name": "fetchDisponibilidadHoy",
+   "filePath": "src/features/requests/services/SolviShifts.service.ts",
+   "lineRange": [
+    25,
+    34
+   ],
+   "summary": "Invoca la Edge Function obtener-disponibilidad-hoy y devuelve turnos y disponibilidad.",
+   "tags": [
+    "edge-function",
+    "turnos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviShifts.service.ts:fetchTurnosHoy",
+   "type": "function",
+   "name": "fetchTurnosHoy",
+   "filePath": "src/features/requests/services/SolviShifts.service.ts",
+   "lineRange": [
+    36,
+    39
+   ],
+   "summary": "Devuelve solo los turnos del día.",
+   "tags": [
+    "turnos",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviShifts.service.ts:fetchPersonaDisponibleAhora",
+   "type": "function",
+   "name": "fetchPersonaDisponibleAhora",
+   "filePath": "src/features/requests/services/SolviShifts.service.ts",
+   "lineRange": [
+    41,
+    44
+   ],
+   "summary": "Devuelve la persona de turno disponible en este momento.",
+   "tags": [
+    "turnos",
+    "disponibilidad"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "type": "file",
+   "name": "SolviTicketAssignment.service.ts",
+   "filePath": "src/features/requests/services/SolviTicketAssignment.service.ts",
+   "summary": "Lógica de asignación de tickets SOLVI: elige al técnico disponible con menos casos (desempate aleatorio) o recupera un usuario fijo de SharePoint.",
+   "tags": [
+    "service",
+    "asignacion",
+    "balanceo-carga",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketAssignment.service.ts:pickTecnicoConMenosCasos",
+   "type": "function",
+   "name": "pickTecnicoConMenosCasos",
+   "filePath": "src/features/requests/services/SolviTicketAssignment.service.ts",
+   "lineRange": [
+    4,
+    26
+   ],
+   "summary": "Selecciona el técnico disponible con menos casos activos, desempatando aleatoriamente.",
+   "tags": [
+    "asignacion",
+    "balanceo-carga"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketAssignment.service.ts:getAlexUser",
+   "type": "function",
+   "name": "getAlexUser",
+   "filePath": "src/features/requests/services/SolviTicketAssignment.service.ts",
+   "lineRange": [
+    28,
+    33
+   ],
+   "summary": "Recupera un usuario fijo (ID 121) de la lista de técnicos.",
+   "tags": [
+    "asignacion",
+    "sharepoint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "type": "file",
+   "name": "SolviTicketNotifications.service.ts",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "summary": "Servicio de notificaciones por correo de SOLVI: construye HTML con enlace al ticket, resuelve destinatarios de comentarios y menciones, y envía avisos de creación a solicitante y resolutor mediante una API de envío de correos.",
+   "tags": [
+    "service",
+    "notificaciones",
+    "email",
+    "solvi",
+    "menciones"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildTicketUrl",
+   "type": "function",
+   "name": "buildTicketUrl",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    53,
+    62
+   ],
+   "summary": "Construye la URL del ticket en la aplicación para incluirla en los correos.",
+   "tags": [
+    "email",
+    "url",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildOpenTicketButton",
+   "type": "function",
+   "name": "buildOpenTicketButton",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    64,
+    78
+   ],
+   "summary": "Genera el HTML de un botón \"abrir ticket\" para los correos.",
+   "tags": [
+    "email",
+    "html"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:resolveSolviCommentNotificationRecipients",
+   "type": "function",
+   "name": "resolveSolviCommentNotificationRecipients",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    110,
+    135
+   ],
+   "summary": "Resuelve destinatarios de conversación y de mención para un comentario, excluyendo al autor.",
+   "tags": [
+    "notificaciones",
+    "destinatarios",
+    "menciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyConversationComment",
+   "type": "function",
+   "name": "notifyConversationComment",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    145,
+    171
+   ],
+   "summary": "Envía el correo de nuevo comentario a los participantes del ticket.",
+   "tags": [
+    "notificaciones",
+    "email"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyCommentMention",
+   "type": "function",
+   "name": "notifyCommentMention",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    173,
+    198
+   ],
+   "summary": "Envía el correo de mención a los usuarios mencionados en un comentario.",
+   "tags": [
+    "notificaciones",
+    "email",
+    "menciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "type": "function",
+   "name": "notifySolviCommentActivity",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    210,
+    237
+   ],
+   "summary": "Orquesta las notificaciones de un comentario: resuelve destinatarios y envía correos de conversación y mención en paralelo.",
+   "tags": [
+    "notificaciones",
+    "orquestacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedSolicitante",
+   "type": "function",
+   "name": "notifyTicketCreatedSolicitante",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    239,
+    266
+   ],
+   "summary": "Envía al solicitante el correo de confirmación de creación del ticket.",
+   "tags": [
+    "notificaciones",
+    "email",
+    "creacion-tickets"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedResolutor",
+   "type": "function",
+   "name": "notifyTicketCreatedResolutor",
+   "filePath": "src/features/requests/services/SolviTicketNotifications.service.ts",
+   "lineRange": [
+    268,
+    295
+   ],
+   "summary": "Envía al resolutor el correo de asignación de un nuevo ticket.",
+   "tags": [
+    "notificaciones",
+    "email",
+    "creacion-tickets"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "type": "file",
+   "name": "SubcategoriasSharepointSolvi.service.ts",
+   "filePath": "src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "summary": "Servicio de acceso a la lista SharePoint de subcategorías SOLVI vía Graph, con caché de IDs y consulta por categoría.",
+   "tags": [
+    "service",
+    "sharepoint",
+    "microsoft-graph",
+    "catalogo"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts:SubcategoriasSPService",
+   "type": "class",
+   "name": "SubcategoriasSPService",
+   "filePath": "src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "lineRange": [
+    10,
+    99
+   ],
+   "summary": "Clase de acceso a la lista SharePoint de subcategorías con caché de IDs y filtro por categoría.",
+   "tags": [
+    "class",
+    "service",
+    "sharepoint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "file",
+   "name": "TecnicosSharepointSolvi.service.ts",
+   "filePath": "src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "summary": "Servicio CRUD sobre la lista SharePoint \"Usuarios\" (técnicos SOLVI) vía Microsoft Graph: lectura, listado con filtros OData y actualización del número de casos; define los tipos UsuariosSP y GetAllOpts compartidos.",
+   "tags": [
+    "service",
+    "sharepoint",
+    "microsoft-graph",
+    "tecnicos",
+    "type-definition"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/features/requests/services/TecnicosSharepointSolvi.service.ts:UsuariosSPService",
+   "type": "class",
+   "name": "UsuariosSPService",
+   "filePath": "src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "lineRange": [
+    19,
+    167
+   ],
+   "summary": "Clase CRUD sobre la lista SharePoint de técnicos: get, getAll con OData y update de campos.",
+   "tags": [
+    "class",
+    "service",
+    "sharepoint",
+    "tecnicos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/types/SolviTicket.ts",
+   "type": "file",
+   "name": "SolviTicket.ts",
+   "filePath": "src/features/requests/types/SolviTicket.ts",
+   "summary": "Tipo TypeScript que modela un registro de la tabla TBL_Ticket_Solvi (título, estado, solicitante, resolutor, categoría, ANS, fechas).",
+   "tags": [
+    "type-definition",
+    "data-model",
+    "solvi"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/CategoriasSharepointSolvi.service.ts:CategoriasSPService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/CategoriasSharepointSolvi.service.ts:CategoriasSPService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/HolidayService.service.ts",
+   "target": "function:src/features/requests/services/HolidayService.service.ts:fetchHolidays",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/HolidayService.service.ts",
+   "target": "function:src/features/requests/services/HolidayService.service.ts:fetchHolidays",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:getPublicUrl",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:uploadFile",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:uploadSolviAttachment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviAttachments.service.ts",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:uploadSolviAttachment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:parseDateFlex",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:parseDateFlex",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:toISODateTimeFlex",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:toISODateTimeFlex",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:isTurnoNocturnoAhora",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:isTurnoNocturnoAhora",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:formatSlaHorasHabiles",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:formatSlaHorasHabiles",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:calcularFechaSolucion",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "function:src/features/requests/services/SolviBusinessDate.service.ts:calcularFechaSolucion",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "target": "file:src/features/requests/services/HolidayService.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchDisponibilidadHoy",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchDisponibilidadHoy",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchTurnosHoy",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchTurnosHoy",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchPersonaDisponibleAhora",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviShifts.service.ts",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchPersonaDisponibleAhora",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketAssignment.service.ts:pickTecnicoConMenosCasos",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketAssignment.service.ts:pickTecnicoConMenosCasos",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketAssignment.service.ts:getAlexUser",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketAssignment.service.ts:getAlexUser",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildTicketUrl",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildOpenTicketButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:resolveSolviCommentNotificationRecipients",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:resolveSolviCommentNotificationRecipients",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyConversationComment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyCommentMention",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedSolicitante",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedSolicitante",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedResolutor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedResolutor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "target": "file:src/features/requests/types/SolviTicket.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts:SubcategoriasSPService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts:SubcategoriasSPService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "target": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/TecnicosSharepointSolvi.service.ts:UsuariosSPService",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "target": "class:src/features/requests/services/TecnicosSharepointSolvi.service.ts:UsuariosSPService",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviBusinessDate.service.ts:calcularFechaSolucion",
+   "target": "function:src/features/requests/services/HolidayService.service.ts:fetchHolidays",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:resolveSolviCommentNotificationRecipients",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyConversationComment",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifySolviCommentActivity",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyCommentMention",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedSolicitante",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildOpenTicketButton",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:notifyTicketCreatedResolutor",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildOpenTicketButton",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildOpenTicketButton",
+   "target": "function:src/features/requests/services/SolviTicketNotifications.service.ts:buildTicketUrl",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviAttachments.service.ts:uploadSolviAttachment",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:uploadFile",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviAttachments.service.ts:uploadFile",
+   "target": "function:src/features/requests/services/SolviAttachments.service.ts:getPublicUrl",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviShifts.service.ts:fetchTurnosHoy",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchDisponibilidadHoy",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/services/SolviShifts.service.ts:fetchPersonaDisponibleAhora",
+   "target": "function:src/features/requests/services/SolviShifts.service.ts:fetchDisponibilidadHoy",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

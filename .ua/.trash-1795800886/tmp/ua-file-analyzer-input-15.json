@@ -1,0 +1,28 @@
+{
+ "projectRoot": "C:/Dev/Prisma_tickets",
+ "batchFiles": [
+  {
+   "path": "prisma-migrations/README.md",
+   "language": "markdown",
+   "sizeLines": 261,
+   "fileCategory": "docs"
+  },
+  {
+   "path": "prisma-migrations/package.json",
+   "language": "json",
+   "sizeLines": 25,
+   "fileCategory": "config"
+  },
+  {
+   "path": "prisma-migrations/tsconfig.json",
+   "language": "json",
+   "sizeLines": 20,
+   "fileCategory": "config"
+  }
+ ],
+ "batchImportData": {
+  "prisma-migrations/README.md": [],
+  "prisma-migrations/package.json": [],
+  "prisma-migrations/tsconfig.json": []
+ }
+}

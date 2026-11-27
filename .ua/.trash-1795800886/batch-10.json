@@ -1,0 +1,1216 @@
+{
+ "nodes": [
+  {
+   "id": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "file",
+   "name": "mapping.ts",
+   "filePath": "prisma-migrations/src/config/mapping.ts",
+   "summary": "Manifiesto de mapeo de la migración: define los encabezados exactos del Excel que se usan (COL), el enrutamiento de Status a columnas del tablero y las columnas descartadas. Es el único archivo a editar para adaptar otro Excel.",
+   "tags": [
+    "configuración",
+    "mapeo",
+    "etl",
+    "migración"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "file",
+   "name": "runConfig.ts",
+   "filePath": "prisma-migrations/src/config/runConfig.ts",
+   "summary": "Parámetros de cada corrida de migración: board, plantilla, equipo y columna destino, usuario autor de comentarios, columnas volcadas a \"datos adicionales\" y mapa de prioridad a score.",
+   "tags": [
+    "configuración",
+    "constantes",
+    "etl",
+    "migración"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:prisma-migrations/src/lib/apiClient.ts",
+   "type": "file",
+   "name": "apiClient.ts",
+   "filePath": "prisma-migrations/src/lib/apiClient.ts",
+   "summary": "Wrapper de llamadas al Edge Function de PRISMA para el script de migración, autenticado con X-Internal-Job-Secret desde variables de entorno; incluye reintentos con backoff.",
+   "tags": [
+    "api-client",
+    "http",
+    "reintentos",
+    "service"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "function",
+   "name": "call",
+   "filePath": "prisma-migrations/src/lib/apiClient.ts",
+   "lineRange": [
+    26,
+    51
+   ],
+   "summary": "Invoca una acción del Edge Function con el secreto interno y devuelve su data; lanza ApiError con status y acción si la respuesta no es 2xx.",
+   "tags": [
+    "http",
+    "api-client",
+    "manejo-errores"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/apiClient.ts:callWithRetry",
+   "type": "function",
+   "name": "callWithRetry",
+   "filePath": "prisma-migrations/src/lib/apiClient.ts",
+   "lineRange": [
+    58,
+    79
+   ],
+   "summary": "Envuelve call con reintentos y backoff ante errores transitorios (5xx o de red).",
+   "tags": [
+    "reintentos",
+    "resiliencia",
+    "http"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "type": "file",
+   "name": "buildPayload.ts",
+   "filePath": "prisma-migrations/src/lib/buildPayload.ts",
+   "summary": "Convierte una fila cruda del Excel en el payload de migrateRequest aplicando mapeo, transformaciones, mapas de sprints/labels y resolución de asignados, y acumula las incidencias de la fila para el dry-run.",
+   "tags": [
+    "transformación",
+    "payload",
+    "etl",
+    "validación"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "type": "function",
+   "name": "buildPayload",
+   "filePath": "prisma-migrations/src/lib/buildPayload.ts",
+   "lineRange": [
+    63,
+    202
+   ],
+   "summary": "Mapea una fila del Excel al payload de migrateRequest (título, descripción, columna, prioridad, fechas, horas, asignados, sprint, labels, datos adicionales) registrando incidencias por campo.",
+   "tags": [
+    "transformación",
+    "payload",
+    "validación"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "file",
+   "name": "excel.ts",
+   "filePath": "prisma-migrations/src/lib/excel.ts",
+   "summary": "Lectura del libro Excel con SheetJS: carga la hoja indicada como filas crudas indexadas por encabezado y detecta encabezados obligatorios faltantes.",
+   "tags": [
+    "excel",
+    "parsing",
+    "utility",
+    "etl"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/excel.ts:readExcel",
+   "type": "function",
+   "name": "readExcel",
+   "filePath": "prisma-migrations/src/lib/excel.ts",
+   "lineRange": [
+    29,
+    80
+   ],
+   "summary": "Lee un archivo .xlsx y devuelve las filas de la hoja elegida como objetos indexados por encabezado.",
+   "tags": [
+    "excel",
+    "parsing",
+    "io"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/excel.ts:findMissingHeaders",
+   "type": "function",
+   "name": "findMissingHeaders",
+   "filePath": "prisma-migrations/src/lib/excel.ts",
+   "lineRange": [
+    87,
+    90
+   ],
+   "summary": "Devuelve los encabezados requeridos que no están presentes en el Excel.",
+   "tags": [
+    "validación",
+    "excel",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "file",
+   "name": "transforms.ts",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "summary": "Funciones puras de conversión de datos del Excel: limpieza de texto, normalización de claves, horas a decimal, fechas colombianas a UTC, Sí/No a booleano, prioridad a score y progreso derivado.",
+   "tags": [
+    "utility",
+    "transformación",
+    "fechas",
+    "normalización"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:cleanText",
+   "type": "function",
+   "name": "cleanText",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    9,
+    13
+   ],
+   "summary": "Recorta y normaliza un valor de celda a texto o null si está vacío.",
+   "tags": [
+    "utility",
+    "texto"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:normalizeKey",
+   "type": "function",
+   "name": "normalizeKey",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    16,
+    21
+   ],
+   "summary": "Genera una clave normalizada (minúsculas, sin tildes ni espacios extra) para comparar nombres.",
+   "tags": [
+    "utility",
+    "normalización"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:hoursToDecimal",
+   "type": "function",
+   "name": "hoursToDecimal",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    27,
+    41
+   ],
+   "summary": "Convierte un valor de horas del Excel (número o texto) a decimal.",
+   "tags": [
+    "utility",
+    "conversión"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:colombianDateToUTC",
+   "type": "function",
+   "name": "colombianDateToUTC",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    53,
+    78
+   ],
+   "summary": "Interpreta fechas en formato/zona horaria colombiana (o serial de Excel) y las convierte a ISO UTC.",
+   "tags": [
+    "fechas",
+    "zona-horaria",
+    "conversión"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:siNoToBool",
+   "type": "function",
+   "name": "siNoToBool",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    81,
+    84
+   ],
+   "summary": "Convierte valores Sí/No a booleano.",
+   "tags": [
+    "utility",
+    "conversión"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:priorityToScore",
+   "type": "function",
+   "name": "priorityToScore",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    87,
+    91
+   ],
+   "summary": "Traduce la prioridad textual al score numérico usando PRIORITY_TO_SCORE.",
+   "tags": [
+    "utility",
+    "prioridad"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/transforms.ts:deriveProgress",
+   "type": "function",
+   "name": "deriveProgress",
+   "filePath": "prisma-migrations/src/lib/transforms.ts",
+   "lineRange": [
+    94,
+    96
+   ],
+   "summary": "Deriva el progreso de la solicitud a partir de la columna destino/estado.",
+   "tags": [
+    "utility",
+    "progreso"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:prisma-migrations/src/lib/users.ts",
+   "type": "file",
+   "name": "users.ts",
+   "filePath": "prisma-migrations/src/lib/users.ts",
+   "summary": "Resuelve el texto \"Asignada\" del Excel a un User_ID indexando usuarios por nombre completo, forma colombiana y primer nombre, distinguiendo coincidencias únicas, no encontradas y ambiguas.",
+   "tags": [
+    "resolución",
+    "usuarios",
+    "service",
+    "etl"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "type": "function",
+   "name": "buildUserResolver",
+   "filePath": "prisma-migrations/src/lib/users.ts",
+   "lineRange": [
+    33,
+    67
+   ],
+   "summary": "Carga los usuarios vía Edge Function y construye un índice de alias para resolver nombres a User_ID, reportando ambigüedades.",
+   "tags": [
+    "factory",
+    "resolución",
+    "usuarios"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "type": "file",
+   "name": "01-resolve.ts",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts",
+   "summary": "Fase 1 (RESOLVE) de la migración: extrae sprints y labels únicos de las filas y hace upsert vía Edge Function, devolviendo mapas nombre normalizado → ID para la carga.",
+   "tags": [
+    "fase-etl",
+    "upsert",
+    "sprints",
+    "labels"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/01-resolve.ts:uniqueByKey",
+   "type": "function",
+   "name": "uniqueByKey",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts",
+   "lineRange": [
+    23,
+    32
+   ],
+   "summary": "Obtiene los valores únicos de una columna por clave normalizada, preservando el primer texto original.",
+   "tags": [
+    "utility",
+    "deduplicación"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueSprints",
+   "type": "function",
+   "name": "extractUniqueSprints",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts",
+   "lineRange": [
+    35,
+    46
+   ],
+   "summary": "Extrae los sprints únicos presentes en las filas del Excel.",
+   "tags": [
+    "sprints",
+    "extracción"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueLabels",
+   "type": "function",
+   "name": "extractUniqueLabels",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts",
+   "lineRange": [
+    49,
+    60
+   ],
+   "summary": "Extrae los labels únicos (épicas/etiquetas) presentes en las filas.",
+   "tags": [
+    "labels",
+    "extracción"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/01-resolve.ts:resolveSprintsAndLabels",
+   "type": "function",
+   "name": "resolveSprintsAndLabels",
+   "filePath": "prisma-migrations/src/phases/01-resolve.ts",
+   "lineRange": [
+    66,
+    112
+   ],
+   "summary": "Hace upsert de sprints y labels únicos vía Edge Function y devuelve los mapas de IDs y los nombres creados.",
+   "tags": [
+    "upsert",
+    "resolución",
+    "api"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:prisma-migrations/src/phases/02-validate.ts",
+   "type": "file",
+   "name": "02-validate.ts",
+   "filePath": "prisma-migrations/src/phases/02-validate.ts",
+   "summary": "Fase 2 (dry-run): construye todos los payloads sin escribir en la base, agrega incidencias, usuarios no resueltos y sprints/labels por crear, e imprime un reporte de validación.",
+   "tags": [
+    "fase-etl",
+    "dry-run",
+    "validación",
+    "reporte"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "type": "function",
+   "name": "runDryRun",
+   "filePath": "prisma-migrations/src/phases/02-validate.ts",
+   "lineRange": [
+    40,
+    102
+   ],
+   "summary": "Recorre las filas no vacías, arma los payloads sin escribir y agrega incidencias, usuarios no resueltos y sprints/labels nuevos.",
+   "tags": [
+    "dry-run",
+    "validación"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/02-validate.ts:printDryRunReport",
+   "type": "function",
+   "name": "printDryRunReport",
+   "filePath": "prisma-migrations/src/phases/02-validate.ts",
+   "lineRange": [
+    105,
+    153
+   ],
+   "summary": "Imprime en consola el reporte resumido del dry-run.",
+   "tags": [
+    "reporte",
+    "consola"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:prisma-migrations/src/phases/03-load.ts",
+   "type": "file",
+   "name": "03-load.ts",
+   "filePath": "prisma-migrations/src/phases/03-load.ts",
+   "summary": "Fase 3 (LOAD/commit): resuelve sprints y labels, arma cada payload con los mapas reales y crea las solicitudes vía migrateRequest con reintentos; es idempotente y salta filas ya migradas.",
+   "tags": [
+    "fase-etl",
+    "carga",
+    "idempotente",
+    "reporte"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "type": "function",
+   "name": "runLoad",
+   "filePath": "prisma-migrations/src/phases/03-load.ts",
+   "lineRange": [
+    28,
+    71
+   ],
+   "summary": "Ejecuta la carga real: resuelve sprints/labels y crea cada solicitud vía migrateRequest con reintentos, contando creadas, saltadas y fallidas.",
+   "tags": [
+    "carga",
+    "commit",
+    "api"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/phases/03-load.ts:printLoadReport",
+   "type": "function",
+   "name": "printLoadReport",
+   "filePath": "prisma-migrations/src/phases/03-load.ts",
+   "lineRange": [
+    74,
+    93
+   ],
+   "summary": "Imprime el resumen de la carga (creadas, saltadas, fallidas, sprints/labels creados).",
+   "tags": [
+    "reporte",
+    "consola"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:prisma-migrations/src/run.ts",
+   "type": "file",
+   "name": "run.ts",
+   "filePath": "prisma-migrations/src/run.ts",
+   "summary": "Orquestador y punto de entrada CLI de la migración: parsea --dry-run/--commit, --file y --sheet, lee el Excel, construye el resolvedor de usuarios y ejecuta la fase de validación o de carga.",
+   "tags": [
+    "entry-point",
+    "cli",
+    "orquestador",
+    "etl"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:prisma-migrations/src/run.ts:parseArgs",
+   "type": "function",
+   "name": "parseArgs",
+   "filePath": "prisma-migrations/src/run.ts",
+   "lineRange": [
+    23,
+    38
+   ],
+   "summary": "Parsea argumentos de línea de comandos (modo dry/commit, archivo y hoja).",
+   "tags": [
+    "cli",
+    "argumentos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:prisma-migrations/src/run.ts:main",
+   "type": "function",
+   "name": "main",
+   "filePath": "prisma-migrations/src/run.ts",
+   "lineRange": [
+    40,
+    69
+   ],
+   "summary": "Flujo principal: valida argumentos, lee el Excel, construye el resolvedor de usuarios y ejecuta dry-run o carga con su reporte.",
+   "tags": [
+    "entry-point",
+    "orquestador"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:prisma-migrations/src/config/mapping.ts",
+   "target": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/apiClient.ts",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/apiClient.ts",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/apiClient.ts",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:callWithRetry",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/apiClient.ts",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:callWithRetry",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "file:prisma-migrations/src/lib/users.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "target": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/excel.ts",
+   "target": "function:prisma-migrations/src/lib/excel.ts:readExcel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/excel.ts",
+   "target": "function:prisma-migrations/src/lib/excel.ts:readExcel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/excel.ts",
+   "target": "function:prisma-migrations/src/lib/excel.ts:findMissingHeaders",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/excel.ts",
+   "target": "function:prisma-migrations/src/lib/excel.ts:findMissingHeaders",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:cleanText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:cleanText",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:normalizeKey",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:normalizeKey",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:hoursToDecimal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:hoursToDecimal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:colombianDateToUTC",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:colombianDateToUTC",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:siNoToBool",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:siNoToBool",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:priorityToScore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:priorityToScore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:deriveProgress",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/transforms.ts",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:deriveProgress",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/users.ts",
+   "target": "file:prisma-migrations/src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/users.ts",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/users.ts",
+   "target": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/lib/users.ts",
+   "target": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "file:prisma-migrations/src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:uniqueByKey",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueSprints",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueSprints",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueLabels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueLabels",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:resolveSprintsAndLabels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:resolveSprintsAndLabels",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/lib/users.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:printDryRunReport",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/02-validate.ts",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:printDryRunReport",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/lib/buildPayload.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/lib/users.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:printLoadReport",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/phases/03-load.ts",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:printLoadReport",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "file:prisma-migrations/src/lib/excel.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "file:prisma-migrations/src/lib/users.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "file:prisma-migrations/src/phases/02-validate.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "file:prisma-migrations/src/phases/03-load.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "function:prisma-migrations/src/run.ts:parseArgs",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:prisma-migrations/src/run.ts",
+   "target": "function:prisma-migrations/src/run.ts:main",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/apiClient.ts:callWithRetry",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:normalizeKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/01-resolve.ts:resolveSprintsAndLabels",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:call",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueSprints",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:uniqueByKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueLabels",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:uniqueByKey",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:colombianDateToUTC",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:hoursToDecimal",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:priorityToScore",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "target": "function:prisma-migrations/src/lib/transforms.ts:cleanText",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "target": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueSprints",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:extractUniqueLabels",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "target": "function:prisma-migrations/src/phases/01-resolve.ts:resolveSprintsAndLabels",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "target": "function:prisma-migrations/src/lib/buildPayload.ts:buildPayload",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "target": "function:prisma-migrations/src/lib/apiClient.ts:callWithRetry",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/run.ts:parseArgs",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/lib/excel.ts:readExcel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/lib/users.ts:buildUserResolver",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:runDryRun",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/phases/02-validate.ts:printDryRunReport",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:runLoad",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:prisma-migrations/src/run.ts:main",
+   "target": "function:prisma-migrations/src/phases/03-load.ts:printLoadReport",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

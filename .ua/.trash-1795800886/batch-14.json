@@ -1,0 +1,286 @@
+{
+  "nodes": [
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Documentación principal de PRISMA con 14 secciones: características, stack tecnológico, arquitectura (React/Vite + Supabase Edge Functions + Entra ID), estructura del proyecto, instalación, desarrollo, generación de documentación TypeDoc, despliegue en Azure Static Web Apps, convenciones de diseño y roles del sistema.",
+      "tags": [
+        "documentation",
+        "entry-point",
+        "overview",
+        "architecture"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "index.html",
+      "summary": "Documento HTML de entrada de Vite que monta la SPA en #root cargando src/main.tsx, enlaza el manifest PWA y aplica el tema guardado en localStorage antes del render para evitar parpadeo.",
+      "tags": [
+        "entry-point",
+        "markup",
+        "pwa",
+        "theming"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Script inline que lee el estado persistido de Zustand (prisma-theme) y fija data-theme en <html> antes de cargar React."
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Manifiesto npm de prisma-tickets: define scripts de dev, build (tsc -b && vite build), lint y generación de docs con TypeDoc, y dependencias como React 19, MSAL, Supabase, TanStack Query, Zustand, Tiptap, dnd-kit y Chart.js.",
+      "tags": [
+        "configuration",
+        "build-system",
+        "dependencies",
+        "npm"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:tsconfig.app.json",
+      "type": "config",
+      "name": "tsconfig.app.json",
+      "filePath": "tsconfig.app.json",
+      "summary": "Configuración TypeScript del frontend (src/) en modo bundler, JSX react-jsx, modo strict, alias @/* hacia ./src/* y tipos de vite/client.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "build-system",
+        "path-alias"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "tsconfig raíz de tipo solution que solo referencia tsconfig.app.json y tsconfig.node.json para el build incremental con tsc -b.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "project-references"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:tsconfig.node.json",
+      "type": "config",
+      "name": "tsconfig.node.json",
+      "filePath": "tsconfig.node.json",
+      "summary": "Configuración TypeScript para el entorno Node (ES2023) que compila únicamente vite.config.ts.",
+      "tags": [
+        "configuration",
+        "typescript",
+        "build-system",
+        "vite"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:typedoc.backend.json",
+      "type": "config",
+      "name": "typedoc.backend.json",
+      "filePath": "typedoc.backend.json",
+      "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del backend (Edge Function supabase/functions/api) usando su propio tsconfig.",
+      "tags": [
+        "configuration",
+        "documentation",
+        "typedoc",
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:typedoc.frontend.json",
+      "type": "config",
+      "name": "typedoc.frontend.json",
+      "filePath": "typedoc.frontend.json",
+      "summary": "Configuración de TypeDoc que genera el modelo JSON de documentación del frontend (src/) con tsconfig.app.json, excluyendo tests.",
+      "tags": [
+        "configuration",
+        "documentation",
+        "typedoc",
+        "frontend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:typedoc.json",
+      "type": "config",
+      "name": "typedoc.json",
+      "filePath": "typedoc.json",
+      "summary": "Configuración de TypeDoc en modo merge que fusiona los modelos frontend y backend en un único sitio HTML en docs/site usando el README como portada.",
+      "tags": [
+        "configuration",
+        "documentation",
+        "typedoc",
+        "build-system"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:README.md",
+      "target": "file:src/main.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:supabase/functions/api/index.ts",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "config:typedoc.frontend.json",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "config:typedoc.backend.json",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "config:package.json",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:index.html",
+      "target": "file:src/main.tsx",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:index.html",
+      "target": "config:public/manifest.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:vite.config.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "config:typedoc.json",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:package.json",
+      "target": "config:tsconfig.json",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:tsconfig.json",
+      "target": "config:tsconfig.app.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.json",
+      "target": "config:tsconfig.node.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.app.json",
+      "target": "file:src/main.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.app.json",
+      "target": "file:src/App.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.node.json",
+      "target": "file:vite.config.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.backend.json",
+      "target": "file:supabase/functions/api/index.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.backend.json",
+      "target": "config:supabase/functions/tsconfig.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.frontend.json",
+      "target": "config:tsconfig.app.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.frontend.json",
+      "target": "file:src/main.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.json",
+      "target": "config:typedoc.frontend.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.json",
+      "target": "config:typedoc.backend.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:typedoc.json",
+      "target": "document:README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

@@ -11,9 +11,9 @@
  */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { dispatchEvent } from './notifyEvent.ts';
 // @ts-ignore
-import { getRequestParticipants, maybeSendCommentEmail } from '../shared/requests.ts';
+import { getRequestParticipants, notifyComment } from '../shared/requests.ts';
 
 /**
  * Mapa de handlers de comentarios indexado por nombre de acción.
@@ -90,7 +90,6 @@ export const commentHandlers: Record<string, ActionHandler> = {
       payload as { requestId: string; userId: number; text: string; mentionedUserIds?: number[] };
 
     const trimmed = text.trim();
-    const preview = trimmed.slice(0, 80) + (trimmed.length > 80 ? '…' : '');
 
     // 1. Insertar comentario (igual que antes)
     const { data, error } = await supabase
@@ -135,7 +134,7 @@ export const commentHandlers: Record<string, ActionHandler> = {
       allowedMentionIds = allowedMentionIds.filter((id) => id !== userId); // no auto-mención
     }
 
-    // 3. Persistir menciones + acceso durable + notificar
+    // 3. Persistir menciones + acceso durable
     if (allowedMentionIds.length > 0) {
       const commentId = (data as { Comment_ID: number }).Comment_ID;
 
@@ -148,31 +147,19 @@ export const commentHandlers: Record<string, ActionHandler> = {
         })),
         { onConflict: 'Request_ID,User_ID', ignoreDuplicates: true },
       );
-      await insertNotifications(supabase, {
-        userIds:   allowedMentionIds,
-        type:      'mention',
-        title:     `Te mencionaron en ${requestId}`,
-        body:      preview,
-        requestId,
-        actorId:   userId,
-      });
     }
 
-    // 4. Notificación 'comment' a involucrados — excluyendo autor y a los ya notificados por mención
+    // 4. Evento de comentario en segundo plano: in-app a mencionados e
+    //    involucrados + correo a involucrados (ver notifyComment).
     const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, requestId);
-    const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
-      .filter((uid) => uid !== userId && !allowedMentionIds.includes(uid));
-    if (recipientIds.length > 0) {
-      await insertNotifications(supabase, {
-        userIds: recipientIds, type: 'comment',
-        title: `Nuevo comentario en ${requestId}`, body: preview,
-        requestId, actorId: userId,
-      });
-    }
-
-    await maybeSendCommentEmail(supabase, {
-      requestId, actorId: userId, commentText: text, assigneeIds, requestedBy,
-    });
+    dispatchEvent('createComment', notifyComment(supabase, {
+      requestId,
+      actorId:      userId,
+      commentText:  trimmed,
+      mentionedIds: allowedMentionIds,
+      assigneeIds,
+      requestedBy,
+    }));
 
     return data;
   },

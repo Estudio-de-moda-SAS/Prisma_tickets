@@ -1,0 +1,123 @@
+{
+ "projectRoot": "C:/Dev/Prisma_tickets",
+ "batchFiles": [
+  {
+   "path": "prisma-migrations/src/config/mapping.ts",
+   "language": "typescript",
+   "sizeLines": 62,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/config/runConfig.ts",
+   "language": "typescript",
+   "sizeLines": 54,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/lib/apiClient.ts",
+   "language": "typescript",
+   "sizeLines": 78,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/lib/buildPayload.ts",
+   "language": "typescript",
+   "sizeLines": 201,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/lib/excel.ts",
+   "language": "typescript",
+   "sizeLines": 89,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/lib/transforms.ts",
+   "language": "typescript",
+   "sizeLines": 95,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/lib/users.ts",
+   "language": "typescript",
+   "sizeLines": 66,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/phases/01-resolve.ts",
+   "language": "typescript",
+   "sizeLines": 111,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/phases/02-validate.ts",
+   "language": "typescript",
+   "sizeLines": 152,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/phases/03-load.ts",
+   "language": "typescript",
+   "sizeLines": 92,
+   "fileCategory": "code"
+  },
+  {
+   "path": "prisma-migrations/src/run.ts",
+   "language": "typescript",
+   "sizeLines": 74,
+   "fileCategory": "code"
+  }
+ ],
+ "batchImportData": {
+  "prisma-migrations/src/config/mapping.ts": [
+   "prisma-migrations/src/config/runConfig.ts"
+  ],
+  "prisma-migrations/src/config/runConfig.ts": [],
+  "prisma-migrations/src/lib/apiClient.ts": [],
+  "prisma-migrations/src/lib/buildPayload.ts": [
+   "prisma-migrations/src/config/mapping.ts",
+   "prisma-migrations/src/config/runConfig.ts",
+   "prisma-migrations/src/lib/excel.ts",
+   "prisma-migrations/src/lib/transforms.ts",
+   "prisma-migrations/src/lib/users.ts"
+  ],
+  "prisma-migrations/src/lib/excel.ts": [],
+  "prisma-migrations/src/lib/transforms.ts": [
+   "prisma-migrations/src/config/runConfig.ts"
+  ],
+  "prisma-migrations/src/lib/users.ts": [
+   "prisma-migrations/src/lib/apiClient.ts",
+   "prisma-migrations/src/lib/transforms.ts"
+  ],
+  "prisma-migrations/src/phases/01-resolve.ts": [
+   "prisma-migrations/src/config/mapping.ts",
+   "prisma-migrations/src/lib/apiClient.ts",
+   "prisma-migrations/src/lib/excel.ts",
+   "prisma-migrations/src/lib/transforms.ts"
+  ],
+  "prisma-migrations/src/phases/02-validate.ts": [
+   "prisma-migrations/src/config/mapping.ts",
+   "prisma-migrations/src/lib/buildPayload.ts",
+   "prisma-migrations/src/lib/excel.ts",
+   "prisma-migrations/src/lib/transforms.ts",
+   "prisma-migrations/src/lib/users.ts",
+   "prisma-migrations/src/phases/01-resolve.ts"
+  ],
+  "prisma-migrations/src/phases/03-load.ts": [
+   "prisma-migrations/src/config/mapping.ts",
+   "prisma-migrations/src/lib/apiClient.ts",
+   "prisma-migrations/src/lib/buildPayload.ts",
+   "prisma-migrations/src/lib/excel.ts",
+   "prisma-migrations/src/lib/transforms.ts",
+   "prisma-migrations/src/lib/users.ts",
+   "prisma-migrations/src/phases/01-resolve.ts"
+  ],
+  "prisma-migrations/src/run.ts": [
+   "prisma-migrations/src/config/runConfig.ts",
+   "prisma-migrations/src/lib/excel.ts",
+   "prisma-migrations/src/lib/users.ts",
+   "prisma-migrations/src/phases/02-validate.ts",
+   "prisma-migrations/src/phases/03-load.ts"
+  ]
+ }
+}

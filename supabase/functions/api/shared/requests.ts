@@ -1,22 +1,25 @@
 import type { DB } from '../lib/supabase.ts';
 // @ts-ignore
-import { sendEventEmail } from '../email/send.ts';
+import { notifyEvent } from '../handlers/notifyEvent.ts';
 
 /**
- * Orquestación de correos transaccionales por evento del ticket.
+ * Notificadores por evento del ticket y helpers de participantes/cierre.
  *
- * Reúne las funciones `maybeSend*` que deciden si corresponde enviar cada tipo
- * de correo (inicio de trabajo, revisión del cliente, nuevo comentario,
- * feedback del cliente) según reglas de negocio, y helpers para resolver
- * participantes ({@link getRequestParticipants}) y detectar columnas de cierre
- * ({@link isCloseColumn}).
+ * Cada función `notify*` decide destinatarios y contenido de un evento
+ * (creación, asignación, movimiento de columna, revisión del cliente, en
+ * progreso, comentario, cierre con evidencia, feedback del cliente) y lo emite
+ * siempre a través de {@link notifyEvent}. Los handlers las despachan en segundo
+ * plano con `dispatchEvent`.
+ *
+ * También expone helpers para resolver participantes
+ * ({@link getRequestParticipants}) y planificar el cierre al mover columnas
+ * ({@link planColumnTransition}).
  *
  * @remarks
- * Todas las funciones `maybeSend*` son best-effort: capturan cualquier error y
- * solo lo loguean, porque el correo nunca debe tumbar la operación principal
- * (mover columna, crear comentario, registrar feedback).
+ * Todas las funciones `notify*` son best-effort: nunca lanzan, porque la
+ * notificación no puede tumbar la operación principal.
  *
- * @module notificationEmails
+ * @module notificationEvents
  */
 
 /** ID del departamento de TI; sus solicitantes se consideran internos. */
@@ -27,210 +30,8 @@ const CLIENT_REVIEW_SLUG = 'cliente_review';
 const IN_PROGRESS_SLUG   = 'en_progreso';
 
 /**
- * Correo "ya empezamos a trabajar".
- *
- * @remarks
- * Se dispara al mover a *En progreso*. Solo pasa por `moveToColumn`: en_progreso
- * no requiere evidencia, así que nunca abre el ClosureModal.
- *
- * Condiciones para enviar: (a) columna destino = en_progreso, (b) hay
- * solicitante, (c) el solicitante NO es también resolutor, (d) el solicitante es
- * EXTERNO (`Department_ID !== 7`), (e) NO se envió antes este correo para el ticket.
- *
- * La condición (e) importa porque en_progreso no es columna de cierre: un ticket
- * puede volver a entrar varias veces (rechazo del cliente → QAS → en progreso).
- * El aviso "ya empezamos" solo tiene sentido la primera vez.
- *
- * Nunca lanza: el correo no puede tumbar el move.
- *
- * @param supabase - Cliente de Supabase.
- * @param args - Datos del movimiento.
- * @param args.requestId - ID del request movido.
- * @param args.columnId - Columna destino del movimiento.
- * @param args.requestedBy - Usuario solicitante, o `null`.
- * @param args.assigneeIds - IDs de los resolutores asignados.
- */
-export async function maybeSendInProgressEmail(
-  supabase: DB,
-  args: {
-    requestId:   string;
-    columnId:    number;
-    requestedBy: number | null;
-    assigneeIds: number[];
-  },
-): Promise<void> {
-  try {
-    if (!args.requestedBy) return;
-
-    const { data: col } = await supabase
-      .from('TBL_Board_Columns')
-      .select('Board_Column_Slug')
-      .eq('Board_Column_ID', args.columnId)
-      .single();
-    if ((col as any)?.Board_Column_Slug !== IN_PROGRESS_SLUG) return;
-
-    if (args.assigneeIds.includes(args.requestedBy)) {
-      console.log('[in-progress-mail] omitido: el solicitante es también resolutor');
-      return;
-    }
-
-    const { data: reqUser } = await supabase
-      .from('TBL_Users')
-      .select('User_Name, Department_ID')
-      .eq('User_ID', args.requestedBy)
-      .single();
-
-    const deptId = (reqUser as any)?.Department_ID as number | null | undefined;
-    if (deptId === TI_DEPARTMENT_ID) {
-      console.log('[in-progress-mail] omitido: solicitante interno (TI)');
-      return;
-    }
-
-    // Solo una vez por ticket: si ya salió, no se repite aunque vuelva a entrar.
-    const { data: previous } = await supabase
-      .from('TBL_Email_Logs')
-      .select('Email_Log_ID')
-      .eq('Email_Log_Request_ID', args.requestId)
-      .eq('Email_Log_Event_Key', 'movido_en_progreso')
-      .eq('Email_Log_Status', 'sent')
-      .limit(1)
-      .maybeSingle();
-
-    if (previous) {
-      console.log('[in-progress-mail] omitido: ya se envió antes para este ticket');
-      return;
-    }
-
-    const requesterName = shortName((reqUser as any)?.User_Name ?? '');
-
-    const { data: reqRow } = await supabase
-      .from('TBL_Requests')
-      .select('Request_Title')
-      .eq('Request_ID', args.requestId)
-      .single();
-
-    console.log(`[in-progress-mail] ✅ enviando a userId=${args.requestedBy} (dept=${deptId})`);
-    await sendEventEmail(supabase, {
-      eventKey:  'movido_en_progreso',
-      requestId: args.requestId,
-      userIds:   [args.requestedBy],
-      vars: {
-        requester_name: requesterName,
-        ticket_id:      args.requestId,
-        ticket_title:   (reqRow as any)?.Request_Title ?? '',
-        ticket_url:     `${Deno.env.get('MAIL_APP_URL')}/ticket/${args.requestId}`,
-      },
-    });
-  } catch (e) {
-    console.error('[in-progress-mail] falló:', e);
-  }
-}
-
-/**
- * Correo "listo para revisión del cliente".
- *
- * @remarks
- * Se llama desde `moveToColumn` Y desde `closeRequest` (los dos caminos reales
- * para llegar a Client Review). Nunca lanza: el correo no puede tumbar el move.
- *
- * Condiciones para enviar: (a) columna destino = cliente_review, (b) hay
- * solicitante, (c) el solicitante es EXTERNO (`Department_ID !== 7` — la verdad
- * real, no el rol `ti_member`, que no existe en `TBL_Users.User_Role`).
- *
- * A diferencia de {@link maybeSendInProgressEmail}, aquí NO se omite cuando el
- * solicitante es también resolutor: en client review el solicitante actúa como
- * aprobador (rol distinto del de resolutor) y debe recibir el aviso aunque haya
- * trabajado el ticket.
- *
- * @param supabase - Cliente de Supabase.
- * @param args - Datos del movimiento.
- * @param args.requestId - ID del request movido.
- * @param args.columnId - Columna destino del movimiento.
- * @param args.requestedBy - Usuario solicitante, o `null`.
- * @param args.assigneeIds - IDs de los resolutores asignados.
- */
-export async function maybeSendClientReviewEmail(
-  supabase: DB,
-  args: {
-    requestId:   string;
-    columnId:    number;
-    requestedBy: number | null;
-    assigneeIds: number[];
-  },
-): Promise<void> {
-  try {
-    //console.log(`[client-review-mail] ENTRADA req=${args.requestId} columnId=${args.columnId} requestedBy=${args.requestedBy}`);
-
-    if (!args.requestedBy) {
-      //console.log('[client-review-mail] omitido: sin requestedBy');
-      return;
-    }
-
-    const { data: col, error: colErr } = await supabase
-      .from('TBL_Board_Columns')
-      .select('Board_Column_Slug')
-      .eq('Board_Column_ID', args.columnId)
-      .single();
-    const slug = (col as any)?.Board_Column_Slug;
-    //console.log(`[client-review-mail] slug="${slug}" (esperado "${CLIENT_REVIEW_SLUG}") colErr=${colErr?.message ?? 'none'}`);
-    if (slug !== CLIENT_REVIEW_SLUG) {
-      //console.log('[client-review-mail] omitido: no es cliente_review');
-      return;
-    }
-
-    // NOTA: a diferencia de en_progreso, acá NO se omite si el solicitante
-    // es también resolutor. En client review el solicitante actúa como
-    // aprobador — rol distinto del de resolutor — y debe recibir el aviso
-    // aunque haya trabajado el ticket.
-
-    const { data: reqUser } = await supabase
-      .from('TBL_Users')
-      .select('User_Name, Department_ID')
-      .eq('User_ID', args.requestedBy)
-      .single();
-
-    const deptId = (reqUser as any)?.Department_ID as number | null | undefined;
-    if (deptId === TI_DEPARTMENT_ID) {
-      console.log('[client-review-mail] omitido: solicitante interno (TI)');
-      return;
-    }
-
-    const fullName = (reqUser as any)?.User_Name ?? '';
-    const parts    = fullName.trim().split(/\s+/);
-    const requesterName = parts.length >= 4 ? `${parts[0]} ${parts[2]}` : fullName.trim();
-
-    const { data: reqRow } = await supabase
-      .from('TBL_Requests')
-      .select('Request_Title')
-      .eq('Request_ID', args.requestId)
-      .single();
-
-    console.log(`[client-review-mail] ✅ enviando a userId=${args.requestedBy} (dept=${deptId})`);
-    await sendEventEmail(supabase, {
-      eventKey:  'movido_client_review',
-      requestId: args.requestId,
-      userIds:   [args.requestedBy],
-      vars: {
-        requester_name: requesterName,
-        ticket_id:      args.requestId,
-        ticket_title:   (reqRow as any)?.Request_Title ?? '',
-        ticket_url:     `${Deno.env.get('MAIL_APP_URL')}/ticket/${args.requestId}`,
-      },
-    });
-  } catch (e) {
-    console.error('[client-review-mail] falló:', e);
-  }
-}
-
-/**
- * Ventana anti-spam (en minutos): no se manda otro correo de comentario al mismo
- * destinatario/ticket si ya salió uno dentro de este lapso.
- */
-const COMMENT_MAIL_COOLDOWN_MIN = 15;
-
-/**
  * Escapa caracteres HTML para no romper la plantilla ni permitir inyección desde
- * un comentario.
+ * texto del usuario.
  *
  * @param s - Texto a escapar.
  * @returns El texto con `&`, `<`, `>`, `"` y `'` convertidos a entidades HTML.
@@ -256,132 +57,570 @@ function shortName(fullName: string): string {
   return parts.length >= 4 ? `${parts[0]} ${parts[2]}` : (fullName ?? '').trim();
 }
 
+/** URL del ticket en la app, para los correos. */
+function ticketUrl(requestId: string): string {
+  return `${Deno.env.get('MAIL_APP_URL')}/ticket/${requestId}`;
+}
+
+/** Recorta un texto y lo deja listo para insertar como HTML en un correo. */
+function clipHtml(text: string | null | undefined, max: number): string {
+  const raw     = (text ?? '').trim();
+  const clipped = raw.length > max ? `${raw.slice(0, max)}…` : raw;
+  return escapeHtml(clipped).replace(/\n/g, '<br />');
+}
+
+/** Título y confidencialidad de un ticket. */
+async function getRequestInfo(
+  supabase: DB,
+  requestId: string,
+): Promise<{ title: string; isConfidential: boolean }> {
+  const { data } = await supabase
+    .from('TBL_Requests')
+    .select('Request_Title, Request_Is_Confidential')
+    .eq('Request_ID', requestId)
+    .single();
+  return {
+    title:          (data as any)?.Request_Title ?? '',
+    isConfidential: !!(data as any)?.Request_Is_Confidential,
+  };
+}
+
+/** Slug de una columna del tablero, o `null` si no existe. */
+async function getColumnSlug(supabase: DB, columnId: number): Promise<string | null> {
+  const { data } = await supabase
+    .from('TBL_Board_Columns')
+    .select('Board_Column_Slug')
+    .eq('Board_Column_ID', columnId)
+    .maybeSingle();
+  return (data as { Board_Column_Slug: string } | null)?.Board_Column_Slug ?? null;
+}
+
+/** Nombre corto de un usuario, o `fallback` si no existe. */
+async function getShortUserName(supabase: DB, userId: number, fallback: string): Promise<string> {
+  const { data } = await supabase
+    .from('TBL_Users').select('User_Name').eq('User_ID', userId).maybeSingle();
+  return shortName((data as any)?.User_Name ?? '') || fallback;
+}
+
 /**
- * Correo "nuevo comentario".
+ * Evento "solicitud creada por formulario".
  *
  * @remarks
- * Destinatarios: resolutores + solicitante, excluyendo al autor del comentario.
- * Si el ticket es confidencial, se avisa que hay comentario pero NO se incluye el
- * contenido. Anti-spam: se descartan los destinatarios que ya recibieron un
- * correo de comentario para este ticket dentro de {@link COMMENT_MAIL_COOLDOWN_MIN}
- * minutos. Se hace un envío por destinatario para personalizar el saludo. Nunca
- * lanza: el correo no puede tumbar la creación del comentario.
+ * - Correo `ticket_recibido` al solicitante, siempre (sin filtro por departamento).
+ * - In-app `new_external_request` a los miembros de los sub-equipos de los
+ *   equipos destino, solo si la solicitud es externa (el solicitante no es de TI).
  *
  * @param supabase - Cliente de Supabase.
- * @param args - Datos del comentario.
- * @param args.requestId - ID del request comentado.
- * @param args.actorId - Autor del comentario (se excluye de los destinatarios).
- * @param args.commentText - Texto del comentario (se recorta a 200 chars en el preview).
- * @param args.assigneeIds - IDs de los resolutores asignados.
- * @param args.requestedBy - Usuario solicitante, o `null`.
+ * @param args.requestId - Ticket creado.
+ * @param args.title - Título del ticket.
+ * @param args.description - Descripción del ticket.
+ * @param args.requestedBy - Solicitante.
+ * @param args.requesterDepartmentId - Departamento del solicitante.
+ * @param args.equipoIds - Equipos a los que se dirigió la solicitud.
+ * @param args.autoAssignedSprint - Sprint asignado automáticamente, o `null`.
  */
-export async function maybeSendCommentEmail(
+export async function notifyRequestCreated(
   supabase: DB,
   args: {
-    requestId:   string;
-    actorId:     number;
-    commentText: string;
-    assigneeIds: number[];
-    requestedBy: number | null;
+    requestId:             string;
+    title:                 string;
+    description:           string;
+    requestedBy:           number;
+    requesterDepartmentId: number | null;
+    equipoIds:             number[];
+    autoAssignedSprint:    Record<string, unknown> | null;
   },
 ): Promise<void> {
   try {
-    const candidates = [...new Set([
-      ...args.assigneeIds,
-      ...(args.requestedBy ? [args.requestedBy] : []),
-    ])].filter((uid) => uid !== args.actorId);
+    // In-app a los sub-equipos (solo solicitudes externas).
+    let memberIds: number[] = [];
+    if (args.requesterDepartmentId !== TI_DEPARTMENT_ID && args.equipoIds.length > 0) {
+      const { data: subTeamRows } = await supabase
+        .from('TBL_Sub_Teams')
+        .select('Sub_Team_ID')
+        .in('Sub_Team_Team_ID', args.equipoIds);
+      const subTeamIds = ((subTeamRows ?? []) as { Sub_Team_ID: number }[]).map((s) => s.Sub_Team_ID);
 
-    if (candidates.length === 0) {
-      console.log('[comment-mail] omitido: sin destinatarios');
-      return;
+      if (subTeamIds.length > 0) {
+        const { data: memberRows } = await supabase
+          .from('TBL_Sub_Team_Members')
+          .select('Sub_Team_Member_User_ID')
+          .in('Sub_Team_Member_Sub_Team_ID', subTeamIds);
+        memberIds = [...new Set(
+          ((memberRows ?? []) as { Sub_Team_Member_User_ID: number }[])
+            .map((m) => m.Sub_Team_Member_User_ID),
+        )].filter((uid) => uid !== args.requestedBy);
+      }
     }
 
-    const { data: reqRow } = await supabase
-      .from('TBL_Requests')
-      .select('Request_Title, Request_Is_Confidential')
-      .eq('Request_ID', args.requestId)
-      .single();
-
-    const isConfidential = !!(reqRow as any)?.Request_Is_Confidential;
-
-    const { data: actorRow } = await supabase
-      .from('TBL_Users').select('User_Name').eq('User_ID', args.actorId).single();
-    const actorName = shortName((actorRow as any)?.User_Name ?? 'Un miembro del equipo');
-
-    // Bloque de contenido: texto real o aviso de confidencialidad
-    const raw     = (args.commentText ?? '').trim();
-    const clipped = raw.length > 200 ? `${raw.slice(0, 200)}…` : raw;
-    const preview = isConfidential
-      ? '<strong>Esta solicitud es confidencial.</strong><br />Por seguridad no incluimos el contenido del comentario en este correo. Ingresá a PRISMA para leerlo.'
-      : escapeHtml(clipped).replace(/\n/g, '<br />');
-
-    // Anti-spam: descartar destinatarios con correo reciente para este ticket
-    const cutoff = new Date(Date.now() - COMMENT_MAIL_COOLDOWN_MIN * 60_000).toISOString();
-    const { data: recentLogs } = await supabase
-      .from('TBL_Email_Logs')
-      .select('Email_Log_Sent_To')
-      .eq('Email_Log_Request_ID', args.requestId)
-      .eq('Email_Log_Event_Key', 'createComment')
-      .eq('Email_Log_Status', 'sent')
-      .gte('Email_Log_Sent_At', cutoff);
-
-    const recentSet = new Set(
-      ((recentLogs ?? []) as { Email_Log_Sent_To: number }[]).map((l) => l.Email_Log_Sent_To),
-    );
-    const finalIds = candidates.filter((uid) => !recentSet.has(uid));
-
-    if (finalIds.length === 0) {
-      console.log(`[comment-mail] omitido: todos en cooldown (${COMMENT_MAIL_COOLDOWN_MIN} min)`);
-      return;
-    }
-
-    // Un envío por destinatario: el saludo lleva su propio nombre.
-    const { data: users } = await supabase
-      .from('TBL_Users').select('User_ID, User_Name').in('User_ID', finalIds);
-
-    for (const u of ((users ?? []) as { User_ID: number; User_Name: string }[])) {
-      await sendEventEmail(supabase, {
-        eventKey:  'createComment',
-        requestId: args.requestId,
-        userIds:   [u.User_ID],
-        vars: {
-          recipient_name:  shortName(u.User_Name),
-          actor_name:      actorName,
-          ticket_id:       args.requestId,
-          ticket_title:    (reqRow as any)?.Request_Title ?? '',
-          ticket_url:      `${Deno.env.get('MAIL_APP_URL')}/ticket/${args.requestId}`,
-          comment_preview: preview,
-          is_confidential: isConfidential ? 'true' : 'false',
-        },
+    const fmtFecha = (iso: string) => {
+      if (!iso) return '';
+      const clean = iso.includes('T') ? iso : `${iso}T00:00:00`;
+      return new Date(clean).toLocaleDateString('es-CO', {
+        timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric',
       });
+    };
+
+    const sp = args.autoAssignedSprint as any;
+    let sprintInfo: string;
+    if (sp) {
+      const desde = fmtFecha(sp.Sprint_Start_Date ?? '');
+      const hasta = fmtFecha(sp.Sprint_End_Date ?? '');
+      const rango = (desde && hasta) ? ` (del ${desde} al ${hasta})` : '';
+      sprintInfo  = `Tu solicitud quedó programada para ${sp.Sprint_Text}${rango}.`;
+    } else {
+      sprintInfo = 'El equipo te notificará cuando tu solicitud quede programada en un sprint.';
     }
-    console.log(`[comment-mail] ✅ enviado a ${finalIds.length} destinatario(s) · confidencial=${isConfidential}`);
+
+    const requesterName = await getShortUserName(supabase, args.requestedBy, '');
+
+    await notifyEvent(supabase, {
+      eventKey:  'ticket_recibido',
+      requestId: args.requestId,
+      actorId:   args.requestedBy,
+      inApp: {
+        userIds: memberIds,
+        type:    'new_external_request',
+        title:   `Nueva solicitud externa ${args.requestId}`,
+        body:    `Se creó la solicitud externa "${args.title}" dirigida a tu equipo.`,
+      },
+      email: {
+        userIds: [args.requestedBy],
+        vars: {
+          requester_name:     requesterName,
+          ticket_id:          args.requestId,
+          ticket_title:       args.title ?? '',
+          ticket_description: args.description ?? '',
+          ticket_url:         ticketUrl(args.requestId),
+          sprint_info:        sprintInfo,
+          sprint_name:        sp ? String(sp.Sprint_Text) : '',
+        },
+      },
+    });
   } catch (e) {
-    console.error('[comment-mail] falló:', e);
+    console.error('[notify:created] falló:', e);
   }
 }
 
 /**
- * Correo "el cliente respondió la revisión".
+ * Evento "asignación de resolutor".
  *
  * @remarks
- * Destinatarios: los que ya calculó el handler (resolutores; el solicitante
- * queda fuera porque es quien envía el feedback). Si el ticket es confidencial no
- * se manda el texto de la nota del cliente, solo el aviso. Construye un stepper
- * visual y una paleta según la decisión: si `approved`, avanza a Ready to Deploy;
- * si `rejected`, el ticket retrocede a En revisión QAS. Se hace un envío por
- * destinatario para personalizar el saludo. Nunca lanza: el correo no puede
- * tumbar el registro del feedback.
+ * In-app `assignment` + correo `assignRequest` al resolutor asignado. No se
+ * notifica si el resolutor se asignó a sí mismo, ni si ya tiene una
+ * notificación de asignación sin leer para el mismo ticket (evita duplicados).
+ * Cubre tanto la asignación manual (`actorId`) como la automática por reglas
+ * (`actorId = null`, con `reason` como cuerpo de la in-app).
  *
  * @param supabase - Cliente de Supabase.
- * @param args - Datos del feedback.
- * @param args.requestId - ID del request revisado.
+ * @param args.requestId - Ticket asignado.
+ * @param args.userId - Resolutor asignado.
+ * @param args.actorId - Quién asignó, o `null` si fue una automatización.
+ * @param args.reason - Texto de la in-app para asignaciones automáticas.
+ */
+export async function notifyAssignment(
+  supabase: DB,
+  args: { requestId: string; userId: number; actorId: number | null; reason?: string },
+): Promise<void> {
+  try {
+    if (args.actorId === args.userId) return;
+
+    const { data: existing } = await supabase
+      .from('TBL_Notifications')
+      .select('Notification_ID')
+      .eq('Notification_User_ID', args.userId)
+      .eq('Notification_Type', 'assignment')
+      .eq('Notification_Request_ID', args.requestId)
+      .eq('Notification_Is_Read', false)
+      .limit(1);
+    if (existing && existing.length > 0) return;
+
+    const [{ title }, assigneeName, actorName] = await Promise.all([
+      getRequestInfo(supabase, args.requestId),
+      getShortUserName(supabase, args.userId, ''),
+      args.actorId ? getShortUserName(supabase, args.actorId, 'Alguien') : Promise.resolve(''),
+    ]);
+
+    await notifyEvent(supabase, {
+      eventKey:  'assignRequest',
+      requestId: args.requestId,
+      actorId:   args.actorId,
+      inApp: args.actorId
+        ? {
+            userIds: [args.userId],
+            type:    'assignment',
+            title:   'Te asignaron una solicitud',
+            body:    `${actorName} te asignó ${args.requestId}`,
+          }
+        : {
+            userIds: [args.userId],
+            type:    'assignment',
+            title:   `Te asignaron el ticket ${args.requestId}`,
+            body:    args.reason ?? `Fuiste asignado automáticamente al ticket "${title}".`,
+          },
+      email: {
+        userIds: [args.userId],
+        vars: {
+          assignee_name: assigneeName,
+          actor_name:    actorName || 'PRISMA (automatización)',
+          ticket_id:     args.requestId,
+          ticket_title:  title,
+          ticket_url:    ticketUrl(args.requestId),
+        },
+      },
+    });
+  } catch (e) {
+    console.error('[notify:assignment] falló:', e);
+  }
+}
+
+/**
+ * Evento "ticket movido de columna".
+ *
+ * @remarks
+ * In-app `column_move` a los participantes (resolutores + solicitante, sin quien
+ * movió) y, según la columna destino, los correos de revisión del cliente
+ * ({@link notifyClientReview}) y de en progreso ({@link notifyInProgress}).
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket movido.
+ * @param args.columnId - Columna destino.
+ * @param args.columnName - Nombre de la columna destino.
+ * @param args.movedBy - Quién movió el ticket.
+ * @param args.assigneeIds - Resolutores asignados.
+ * @param args.requestedBy - Solicitante, o `null`.
+ */
+export async function notifyColumnMove(
+  supabase: DB,
+  args: {
+    requestId:   string;
+    columnId:    number;
+    columnName:  string;
+    movedBy:     number;
+    assigneeIds: number[];
+    requestedBy: number | null;
+  },
+): Promise<void> {
+  const recipientIds = [...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]
+    .filter((uid) => uid !== args.movedBy);
+
+  await notifyEvent(supabase, {
+    eventKey:  'moveToColumn',
+    requestId: args.requestId,
+    actorId:   args.movedBy,
+    inApp: {
+      userIds: recipientIds,
+      type:    'column_move',
+      title:   `Ticket movido a "${args.columnName}"`,
+      body:    `El ticket ${args.requestId} fue movido a la columna "${args.columnName}".`,
+    },
+  });
+
+  await notifyClientReview(supabase, args);
+  await notifyInProgress(supabase, args);
+}
+
+/**
+ * Correo "ya empezamos a trabajar" (paso a En progreso).
+ *
+ * @remarks
+ * Es el único evento que conserva filtros. Condiciones para enviar:
+ * (a) columna destino = en_progreso, (b) hay solicitante, (c) el solicitante NO
+ * es también resolutor, (d) el solicitante es EXTERNO (`Department_ID !== 7`),
+ * (e) NO se envió antes este correo para el ticket.
+ *
+ * La condición (e) importa porque en_progreso no es columna de cierre: un ticket
+ * puede volver a entrar varias veces (rechazo del cliente → QAS → en progreso).
+ * El aviso "ya empezamos" solo tiene sentido la primera vez.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket movido.
+ * @param args.columnId - Columna destino.
+ * @param args.requestedBy - Solicitante, o `null`.
+ * @param args.assigneeIds - Resolutores asignados.
+ */
+export async function notifyInProgress(
+  supabase: DB,
+  args: { requestId: string; columnId: number; requestedBy: number | null; assigneeIds: number[] },
+): Promise<void> {
+  try {
+    if (!args.requestedBy) return;
+    if (await getColumnSlug(supabase, args.columnId) !== IN_PROGRESS_SLUG) return;
+
+    if (args.assigneeIds.includes(args.requestedBy)) {
+      console.log('[notify:in-progress] omitido: el solicitante es también resolutor');
+      return;
+    }
+
+    const { data: reqUser } = await supabase
+      .from('TBL_Users')
+      .select('User_Name, Department_ID')
+      .eq('User_ID', args.requestedBy)
+      .single();
+    if ((reqUser as any)?.Department_ID === TI_DEPARTMENT_ID) {
+      console.log('[notify:in-progress] omitido: solicitante interno (TI)');
+      return;
+    }
+
+    const { data: previous } = await supabase
+      .from('TBL_Email_Logs')
+      .select('Email_Log_ID')
+      .eq('Email_Log_Request_ID', args.requestId)
+      .eq('Email_Log_Event_Key', 'movido_en_progreso')
+      .eq('Email_Log_Status', 'sent')
+      .limit(1)
+      .maybeSingle();
+    if (previous) {
+      console.log('[notify:in-progress] omitido: ya se envió antes para este ticket');
+      return;
+    }
+
+    const { title } = await getRequestInfo(supabase, args.requestId);
+
+    await notifyEvent(supabase, {
+      eventKey:  'movido_en_progreso',
+      requestId: args.requestId,
+      actorId:   null,
+      email: {
+        userIds: [args.requestedBy],
+        vars: {
+          requester_name: shortName((reqUser as any)?.User_Name ?? ''),
+          ticket_id:      args.requestId,
+          ticket_title:   title,
+          ticket_url:     ticketUrl(args.requestId),
+        },
+      },
+    });
+  } catch (e) {
+    console.error('[notify:in-progress] falló:', e);
+  }
+}
+
+/**
+ * Correo "listo para revisión del cliente" (envío a revisión).
+ *
+ * @remarks
+ * Se dispara al llegar a la columna cliente_review, ya sea moviendo la tarjeta
+ * (`moveToColumn`) o cerrando con evidencia (`closeRequest`). Va siempre al
+ * solicitante, aunque también sea resolutor o sea de TI: en revisión actúa como
+ * aprobador.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket movido.
+ * @param args.columnId - Columna destino.
+ * @param args.requestedBy - Solicitante, o `null`.
+ */
+export async function notifyClientReview(
+  supabase: DB,
+  args: { requestId: string; columnId: number; requestedBy: number | null },
+): Promise<void> {
+  try {
+    if (!args.requestedBy) return;
+    if (await getColumnSlug(supabase, args.columnId) !== CLIENT_REVIEW_SLUG) return;
+
+    const [{ title }, requesterName] = await Promise.all([
+      getRequestInfo(supabase, args.requestId),
+      getShortUserName(supabase, args.requestedBy, ''),
+    ]);
+
+    await notifyEvent(supabase, {
+      eventKey:  'movido_client_review',
+      requestId: args.requestId,
+      actorId:   null,
+      email: {
+        userIds: [args.requestedBy],
+        vars: {
+          requester_name: requesterName,
+          ticket_id:      args.requestId,
+          ticket_title:   title,
+          ticket_url:     ticketUrl(args.requestId),
+        },
+      },
+    });
+  } catch (e) {
+    console.error('[notify:client-review] falló:', e);
+  }
+}
+
+/**
+ * Evento "nuevo comentario".
+ *
+ * @remarks
+ * - In-app `mention` a los mencionados (ya validados por el handler).
+ * - In-app `comment` a resolutores + solicitante, sin el autor ni los mencionados.
+ * - Correo `createComment` a resolutores + solicitante, sin el autor; un envío
+ *   por destinatario con su nombre. Si el ticket es confidencial, el correo
+ *   avisa que hay comentario pero no incluye el contenido.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket comentado.
+ * @param args.actorId - Autor del comentario.
+ * @param args.commentText - Texto completo del comentario.
+ * @param args.mentionedIds - Usuarios mencionados (ya filtrados por las reglas de mención).
+ * @param args.assigneeIds - Resolutores asignados.
+ * @param args.requestedBy - Solicitante, o `null`.
+ */
+export async function notifyComment(
+  supabase: DB,
+  args: {
+    requestId:    string;
+    actorId:      number;
+    commentText:  string;
+    mentionedIds: number[];
+    assigneeIds:  number[];
+    requestedBy:  number | null;
+  },
+): Promise<void> {
+  try {
+    const trimmed    = (args.commentText ?? '').trim();
+    const shortPrev  = trimmed.slice(0, 80) + (trimmed.length > 80 ? '…' : '');
+    const participants = [...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]
+      .filter((uid) => uid !== args.actorId);
+
+    if (args.mentionedIds.length > 0) {
+      await notifyEvent(supabase, {
+        eventKey:  'mention',
+        requestId: args.requestId,
+        actorId:   args.actorId,
+        inApp: {
+          userIds: args.mentionedIds,
+          type:    'mention',
+          title:   `Te mencionaron en ${args.requestId}`,
+          body:    shortPrev,
+        },
+      });
+    }
+
+    const [{ title, isConfidential }, actorName] = await Promise.all([
+      getRequestInfo(supabase, args.requestId),
+      getShortUserName(supabase, args.actorId, 'Un miembro del equipo'),
+    ]);
+    const preview = isConfidential
+      ? '<strong>Esta solicitud es confidencial.</strong><br />Por seguridad no incluimos el contenido del comentario en este correo. Ingresá a PRISMA para leerlo.'
+      : clipHtml(trimmed, 200);
+
+    await notifyEvent(supabase, {
+      eventKey:  'createComment',
+      requestId: args.requestId,
+      actorId:   args.actorId,
+      inApp: {
+        userIds: participants.filter((uid) => !args.mentionedIds.includes(uid)),
+        type:    'comment',
+        title:   `Nuevo comentario en ${args.requestId}`,
+        body:    shortPrev,
+      },
+      email: {
+        userIds: participants,
+        vars: (u) => ({
+          recipient_name:  shortName(u.User_Name),
+          actor_name:      actorName,
+          ticket_id:       args.requestId,
+          ticket_title:    title,
+          ticket_url:      ticketUrl(args.requestId),
+          comment_preview: preview,
+          is_confidential: isConfidential ? 'true' : 'false',
+        }),
+      },
+    });
+  } catch (e) {
+    console.error('[notify:comment] falló:', e);
+  }
+}
+
+/**
+ * Evento "cierre con evidencia".
+ *
+ * @remarks
+ * - In-app `closure` a resolutores + solicitante, sin quien cerró.
+ * - Correo `closeRequest` a esos mismos destinatarios, con la nota de cierre
+ *   (oculta si el ticket es confidencial). Si el cierre manda el ticket a
+ *   revisión del cliente, el solicitante no recibe este correo porque ya recibe
+ *   el de revisión ({@link notifyClientReview}), que también se dispara aquí.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket cerrado.
+ * @param args.closedBy - Quién cerró.
+ * @param args.closureNote - Nota de cierre.
+ * @param args.targetColumnId - Columna destino del cierre.
+ * @param args.assigneeIds - Resolutores asignados.
+ * @param args.requestedBy - Solicitante, o `null`.
+ */
+export async function notifyClosure(
+  supabase: DB,
+  args: {
+    requestId:      string;
+    closedBy:       number;
+    closureNote:    string;
+    targetColumnId: number;
+    assigneeIds:    number[];
+    requestedBy:    number | null;
+  },
+): Promise<void> {
+  try {
+    const recipientIds = [...new Set([...args.assigneeIds, ...(args.requestedBy ? [args.requestedBy] : [])])]
+      .filter((uid) => uid !== args.closedBy);
+    const toClientReview = await getColumnSlug(supabase, args.targetColumnId) === CLIENT_REVIEW_SLUG;
+    const note = args.closureNote ?? '';
+
+    const [{ title, isConfidential }, actorName] = await Promise.all([
+      getRequestInfo(supabase, args.requestId),
+      getShortUserName(supabase, args.closedBy, 'Un miembro del equipo'),
+    ]);
+    const closureNotes = isConfidential
+      ? '<strong>Esta solicitud es confidencial.</strong><br />Por seguridad no incluimos la nota de cierre en este correo. Ingresá a PRISMA para leerla.'
+      : clipHtml(note, 400);
+
+    await notifyEvent(supabase, {
+      eventKey:  'closeRequest',
+      requestId: args.requestId,
+      actorId:   args.closedBy,
+      inApp: {
+        userIds: recipientIds,
+        type:    'closure',
+        title:   `Ticket ${args.requestId} enviado a revisión`,
+        body:    `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${note.slice(0, 80)}${note.length > 80 ? '…' : ''}`,
+      },
+      email: {
+        userIds: toClientReview ? recipientIds.filter((uid) => uid !== args.requestedBy) : recipientIds,
+        vars: (u) => ({
+          recipient_name: shortName(u.User_Name),
+          actor_name:     actorName,
+          ticket_id:      args.requestId,
+          ticket_title:   title,
+          ticket_url:     ticketUrl(args.requestId),
+          closure_notes:  closureNotes,
+        }),
+      },
+    });
+
+    await notifyClientReview(supabase, {
+      requestId:   args.requestId,
+      columnId:    args.targetColumnId,
+      requestedBy: args.requestedBy,
+    });
+  } catch (e) {
+    console.error('[notify:closure] falló:', e);
+  }
+}
+
+/**
+ * Evento "el cliente respondió la revisión".
+ *
+ * @remarks
+ * In-app `client_approved` / `client_rejected` + correo `submitClientFeedback` a
+ * los destinatarios que calculó el handler (participantes sin el cliente). Si el
+ * ticket es confidencial no se manda el texto de la nota, solo el aviso. El
+ * correo lleva un stepper visual y una paleta según la decisión: si `approved`,
+ * avanza a Ready to Deploy; si `rejected`, retrocede a En revisión QAS.
+ *
+ * @param supabase - Cliente de Supabase.
+ * @param args.requestId - Ticket revisado.
  * @param args.recipientIds - Destinatarios ya calculados por el handler.
- * @param args.clientId - Usuario cliente que dio el feedback.
- * @param args.decision - Decisión del cliente: `'approved'` o `'rejected'`.
+ * @param args.clientId - Cliente que dio el feedback.
+ * @param args.decision - `'approved'` o `'rejected'`.
  * @param args.feedbackNote - Nota del cliente, o `null` (se recorta a 400 chars).
  */
-export async function maybeSendClientFeedbackEmail(
+export async function notifyClientFeedback(
   supabase: DB,
   args: {
     requestId:    string;
@@ -392,29 +631,19 @@ export async function maybeSendClientFeedbackEmail(
   },
 ): Promise<void> {
   try {
-    if (args.recipientIds.length === 0) {
-      console.log('[feedback-mail] omitido: sin destinatarios (nadie asignado)');
-      return;
-    }
-
-    const { data: reqRow } = await supabase
-      .from('TBL_Requests')
-      .select('Request_Title, Request_Is_Confidential')
-      .eq('Request_ID', args.requestId)
-      .single();
-    const isConfidential = !!(reqRow as any)?.Request_Is_Confidential;
-
-    const { data: clientRow } = await supabase
-      .from('TBL_Users').select('User_Name').eq('User_ID', args.clientId).single();
-    const clientName = shortName((clientRow as any)?.User_Name ?? 'El cliente');
-
     const approved = args.decision === 'approved';
+    const notePrev = args.feedbackNote ? ` Nota: ${args.feedbackNote.slice(0, 60)}` : '';
+
+    const [{ title, isConfidential }, clientName] = await Promise.all([
+      getRequestInfo(supabase, args.requestId),
+      getShortUserName(supabase, args.clientId, 'El cliente'),
+    ]);
 
     // Paleta y copy según la decisión
     const statusColor  = approved ? '#16a34a' : '#dc2626';
     const statusBg     = approved ? '#f0fdf4' : '#fef2f2';
     const statusBorder = approved ? '#bbf7d0' : '#fecaca';
-    const statusLower  = approved ? 'aprob\u00F3' : 'solicit\u00F3 ajustes en';
+    const statusLower  = approved ? 'aprobó' : 'solicitó ajustes en';
 
     /* ── Stepper: Recibida → En proceso → Revisión → Completada ──────────
        Aprobado  → pasos 1-3 verdes, paso 4 activo (morado ★).
@@ -426,52 +655,57 @@ export async function maybeSendClientFeedbackEmail(
 
     const step = approved
       ? {
-          s2_bg: GREEN, s2_icon: '\u2713', s2_label_color: '#333333', s2_bold: 'normal',
-          s3_bg: GREEN, s3_fg: '#ffffff', s3_icon: '\u2713', s3_label_color: '#333333',
-          s4_bg: PURPLE, s4_fg: '#ffffff', s4_icon: '\u2605', s4_label_color: PURPLE, s4_bold: 'bold',
+          s2_bg: GREEN, s2_icon: '✓', s2_label_color: '#333333', s2_bold: 'normal',
+          s3_bg: GREEN, s3_fg: '#ffffff', s3_icon: '✓', s3_label_color: '#333333',
+          s4_bg: PURPLE, s4_fg: '#ffffff', s4_icon: '★', s4_label_color: PURPLE, s4_bold: 'bold',
           line23: GREEN, line34: GREEN,
         }
       : {
-          s2_bg: RED, s2_icon: '\u21BB', s2_label_color: RED, s2_bold: 'bold',
+          s2_bg: RED, s2_icon: '↻', s2_label_color: RED, s2_bold: 'bold',
           s3_bg: GREY_BG, s3_fg: GREY_TXT, s3_icon: '3', s3_label_color: GREY_TXT,
           s4_bg: GREY_BG, s4_fg: GREY_TXT, s4_icon: '4', s4_label_color: GREY_TXT, s4_bold: 'normal',
           line23: GREY_LINE, line34: GREY_LINE,
         };
 
     const statusMessage = approved
-      ? `<strong>${escapeHtml(clientName)}</strong> revis\u00F3 la solicitud y la <strong style="color:${statusColor};">aprob\u00F3</strong>.`
-      : `<strong>${escapeHtml(clientName)}</strong> revis\u00F3 la solicitud y <strong style="color:${statusColor};">solicit\u00F3 ajustes</strong>.`;
+      ? `<strong>${escapeHtml(clientName)}</strong> revisó la solicitud y la <strong style="color:${statusColor};">aprobó</strong>.`
+      : `<strong>${escapeHtml(clientName)}</strong> revisó la solicitud y <strong style="color:${statusColor};">solicitó ajustes</strong>.`;
 
     const nextStep = approved
-      ? 'La solicitud avanz\u00F3 a <strong>Ready to Deploy</strong>. No requiere m\u00E1s trabajo de tu parte, salvo el despliegue.'
-      : 'La solicitud volvi\u00F3 a <strong>En revisi\u00F3n QAS</strong>. Revis\u00E1 los comentarios del cliente y realiz\u00E1 los ajustes necesarios.';
+      ? 'La solicitud avanzó a <strong>Ready to Deploy</strong>. No requiere más trabajo de tu parte, salvo el despliegue.'
+      : 'La solicitud volvió a <strong>En revisión QAS</strong>. Revisá los comentarios del cliente y realizá los ajustes necesarios.';
 
     // Bloque de la nota del cliente: <tr> completo, o vacío si no aplica
     const rawNote = (args.feedbackNote ?? '').trim();
     let feedbackBlock = '';
     if (isConfidential && rawNote) {
-      feedbackBlock = `<tr><td style="padding:4px 0 20px;"><div style="padding:16px 18px; border-radius:8px; background:#fffbeb; border:1px solid #fde68a; font-size:13px; line-height:1.6; color:#92400e;"><strong>Esta solicitud es confidencial.</strong><br />Por seguridad no incluimos el comentario del cliente en este correo. Ingres\u00E1 a PRISMA para leerlo.</div></td></tr>`;
+      feedbackBlock = `<tr><td style="padding:4px 0 20px;"><div style="padding:16px 18px; border-radius:8px; background:#fffbeb; border:1px solid #fde68a; font-size:13px; line-height:1.6; color:#92400e;"><strong>Esta solicitud es confidencial.</strong><br />Por seguridad no incluimos el comentario del cliente en este correo. Ingresá a PRISMA para leerlo.</div></td></tr>`;
     } else if (rawNote) {
-      const clipped = rawNote.length > 400 ? `${rawNote.slice(0, 400)}\u2026` : rawNote;
-      const safe    = escapeHtml(clipped).replace(/\n/g, '<br />');
-      feedbackBlock = `<tr><td style="padding:4px 0 20px;"><p style="margin:0 0 8px; font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:#888888;">Comentario del cliente</p><div style="padding:16px 18px; border-radius:8px; background:#f5f0ff; border:1px solid #d9c9ff; border-left:4px solid ${statusColor}; font-size:13px; line-height:1.6; color:#4a2a99; font-style:italic;">&ldquo;${safe}&rdquo;</div></td></tr>`;
+      feedbackBlock = `<tr><td style="padding:4px 0 20px;"><p style="margin:0 0 8px; font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:#888888;">Comentario del cliente</p><div style="padding:16px 18px; border-radius:8px; background:#f5f0ff; border:1px solid #d9c9ff; border-left:4px solid ${statusColor}; font-size:13px; line-height:1.6; color:#4a2a99; font-style:italic;">&ldquo;${clipHtml(rawNote, 400)}&rdquo;</div></td></tr>`;
     }
 
-    // Un envío por destinatario: el saludo lleva su propio nombre.
-    const { data: users } = await supabase
-      .from('TBL_Users').select('User_ID, User_Name').in('User_ID', args.recipientIds);
-
-    for (const u of ((users ?? []) as { User_ID: number; User_Name: string }[])) {
-      await sendEventEmail(supabase, {
-        eventKey:  'submitClientFeedback',
-        requestId: args.requestId,
-        userIds:   [u.User_ID],
-        vars: {
+    await notifyEvent(supabase, {
+      eventKey:  'submitClientFeedback',
+      requestId: args.requestId,
+      actorId:   args.clientId,
+      inApp: {
+        userIds: args.recipientIds,
+        type:    approved ? 'client_approved' : 'client_rejected',
+        title:   approved
+          ? `Ticket ${args.requestId} aprobado por el cliente ✓`
+          : `Ticket ${args.requestId} rechazado por el cliente ✗`,
+        body:    approved
+          ? `El cliente aprobó la solicitud. Pasa a Ready to Deploy.${notePrev}`
+          : `El cliente rechazó la solicitud y solicita correcciones.${notePrev}`,
+      },
+      email: {
+        userIds: args.recipientIds,
+        vars: (u) => ({
           recipient_name:        shortName(u.User_Name),
           client_name:           clientName,
           ticket_id:             args.requestId,
-          ticket_title:          (reqRow as any)?.Request_Title ?? '',
-          ticket_url:            `${Deno.env.get('MAIL_APP_URL')}/ticket/${args.requestId}`,
+          ticket_title:          title,
+          ticket_url:            ticketUrl(args.requestId),
           feedback_status_lower: statusLower,
           status_color:          statusColor,
           status_bg:             statusBg,
@@ -480,12 +714,11 @@ export async function maybeSendClientFeedbackEmail(
           next_step:             nextStep,
           feedback_block:        feedbackBlock,
           ...step,
-        },
-      });
-    }
-    console.log(`[feedback-mail] ✅ ${args.decision} · enviado a ${args.recipientIds.length} destinatario(s) · confidencial=${isConfidential}`);
+        }),
+      },
+    });
   } catch (e) {
-    console.error('[feedback-mail] falló:', e);
+    console.error('[notify:feedback] falló:', e);
   }
 }
 
@@ -494,7 +727,7 @@ export async function maybeSendClientFeedbackEmail(
  *
  * @remarks
  * Ejecuta en paralelo la lectura de asignaciones y del solicitante. Se usa para
- * calcular destinatarios de los correos `maybeSend*`.
+ * calcular destinatarios de los `notify*`.
  *
  * @param supabase - Cliente de Supabase.
  * @param requestId - ID del request.

@@ -29,7 +29,7 @@ export async function sendEventEmail(
   // El correo NUNCA debe romper la acción principal.
   try {
     if (!MAIL_API_URL || !MAIL_SENDER) {
-      //console.warn('[email] MAIL_API_URL / MAIL_SENDER sin configurar — se omite envío');
+      console.warn('[email] MAIL_API_URL / MAIL_SENDER sin configurar — se omite envío');
       return;
     }
     if (params.userIds.length === 0) return;
@@ -41,8 +41,9 @@ export async function sendEventEmail(
       .eq('Email_Template_Event_Key', params.eventKey)
       .eq('Email_Template_Is_Active', true)
       .maybeSingle();
+
     if (!tpl) {
-      //console.warn(`[email] sin template activo para Event_Key="${params.eventKey}" — no se envía nada`);
+      console.warn(`[email] sin template activo para Event_Key="${params.eventKey}" — no se envía nada`);
       return;
     }
 
@@ -50,14 +51,16 @@ export async function sendEventEmail(
     //    Un mismo User_ID puede tener N correos registrados; la vista ya
     //    filtra usuarios inactivos e identidades con Identity_Notify = false.
     const { data: rows } = await supabase
-      .from('VW_User_Notification_Emails')
-      .select('User_ID, Identity_Email')
+      .from('TBL_Users')
+      .select('User_ID, User_Email')
       .in('User_ID', params.userIds);
+
+    console.log("Users: ", rows)
 
     const seen = new Set<string>();
     const recipients: Recipient[] = [];
-    for (const row of (rows ?? []) as { User_ID: number; Identity_Email: string }[]) {
-      const addr = (row.Identity_Email ?? '').trim().toLowerCase();
+    for (const row of (rows ?? []) as { User_ID: number; User_Email: string }[]) {
+      const addr = (row.User_Email ?? '').trim().toLowerCase();
       if (!addr || seen.has(addr)) continue;
       seen.add(addr);
       recipients.push({ User_ID: row.User_ID, User_Email: addr });
@@ -117,10 +120,17 @@ export async function sendEventEmail(
             'Content-Type': 'application/json',
             ...(MAIL_API_TOKEN ? { Authorization: `Bearer ${MAIL_API_TOKEN}` } : {}),
           },
-          body: JSON.stringify({ senderMail: MAIL_SENDER, message, saveToSentItems: true }),
+          body: JSON.stringify({             
+            senderMail: MAIL_SENDER, 
+            message, 
+            saveToSentItems: true 
+          }),
         });
-const rawText = await res.text();
+        const rawText = await res.text();
         let json: any = {};
+
+        console.log("Respuesta envio de correo ", res)
+
         try { json = JSON.parse(rawText); } catch { /* respuesta no-JSON */ }
 
         if (!res.ok || json.ok === false) {
@@ -130,6 +140,7 @@ const rawText = await res.text();
           providerMsgId = json.graph?.internetMessageId ?? json.graph?.id ?? null;
         }
         } catch (e) {
+          console.log("Error enviando el correo ", e)
         status  = 'error';
         errText = String(e);
       }

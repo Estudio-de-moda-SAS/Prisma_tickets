@@ -1,0 +1,1942 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 11,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 11,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "prisma-migrations/src/config/mapping.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 63,
+      "nonEmptyLines": 58,
+      "exports": [
+        {
+          "name": "COL",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "STATUS_TO_COLUMN",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "DEFAULT_COLUMN_ID",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "DISCARDED_COLUMNS",
+          "line": 50,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/config/runConfig.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 55,
+      "nonEmptyLines": 48,
+      "exports": [
+        {
+          "name": "BOARD_ID",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "TEMPLATE_ID",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "TARGET_TEAM_ID",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "TARGET_COLUMN_ID",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "COMMENT_USER_ID",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "EXTRA_DATA_COLS",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "EXTRA_DATA_FIELD_KEY",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "PRIORITY_TO_SCORE",
+          "line": 50,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 8,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/lib/apiClient.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 79,
+      "nonEmptyLines": 71,
+      "functions": [
+        {
+          "name": "call",
+          "startLine": 26,
+          "endLine": 51,
+          "params": [
+            "action",
+            "payload"
+          ]
+        },
+        {
+          "name": "callWithRetry",
+          "startLine": 58,
+          "endLine": 79,
+          "params": [
+            "action",
+            "payload",
+            "maxRetries"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "call",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "callWithRetry",
+          "line": 58,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "call",
+          "callee": "fetch",
+          "lineNumber": 30
+        },
+        {
+          "caller": "call",
+          "callee": "JSON.stringify",
+          "lineNumber": 36
+        },
+        {
+          "caller": "call",
+          "callee": "res.json",
+          "lineNumber": 40
+        },
+        {
+          "caller": "callWithRetry",
+          "callee": "await call",
+          "lineNumber": 66
+        },
+        {
+          "caller": "callWithRetry",
+          "callee": "setTimeout",
+          "lineNumber": 74
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/lib/buildPayload.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 202,
+      "nonEmptyLines": 177,
+      "functions": [
+        {
+          "name": "buildPayload",
+          "startLine": 63,
+          "endLine": 202,
+          "params": [
+            "row",
+            "sourceRow",
+            "ctx"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildPayload",
+          "line": 63,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 71
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 73
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 75
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 78
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "priorityToScore",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 81
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "siNoToBool",
+          "lineNumber": 83
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 86
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "colombianDateToUTC",
+          "lineNumber": 87
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 91
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "colombianDateToUTC",
+          "lineNumber": 92
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 94
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "deriveProgress",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "hoursToDecimal",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "hoursToDecimal",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 103
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "normalizeKey",
+          "lineNumber": 106
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 111
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "sprintRaw.split(',')[0].trim",
+          "lineNumber": 113
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "sprintRaw.split",
+          "lineNumber": 113
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "ctx.sprintMap.get",
+          "lineNumber": 115
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "normalizeKey",
+          "lineNumber": 115
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 117
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 123
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "epicaRaw.split(',').map((n) => n.trim()).filter",
+          "lineNumber": 125
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "epicaRaw.split(',').map",
+          "lineNumber": 125
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "epicaRaw.split",
+          "lineNumber": 125
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "n.trim",
+          "lineNumber": 125
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "ctx.labelMap.get",
+          "lineNumber": 127
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "normalizeKey",
+          "lineNumber": 127
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "labelIds.includes",
+          "lineNumber": 129
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "labelIds.push",
+          "lineNumber": 129
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 131
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "asignadaRaw\r\n      .split(',')\r\n      .map((n) => n.trim())\r\n      .filter",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "asignadaRaw\r\n      .split(',')\r\n      .map",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "asignadaRaw\r\n      .split",
+          "lineNumber": 142
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "n.trim",
+          "lineNumber": 144
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "ctx.userResolver.resolve",
+          "lineNumber": 148
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "assigneeIds.includes",
+          "lineNumber": 150
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "assigneeIds.push",
+          "lineNumber": 150
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 152
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "issues.push",
+          "lineNumber": 154
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "r.candidates.join",
+          "lineNumber": 154
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 160
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "cleanText",
+          "lineNumber": 169
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "partes.push",
+          "lineNumber": 170
+        },
+        {
+          "caller": "buildPayload",
+          "callee": "partes.join",
+          "lineNumber": 173
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/lib/excel.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 79,
+      "functions": [
+        {
+          "name": "readExcel",
+          "startLine": 29,
+          "endLine": 80,
+          "params": [
+            "path",
+            "sheetName"
+          ]
+        },
+        {
+          "name": "findMissingHeaders",
+          "startLine": 87,
+          "endLine": 90,
+          "params": [
+            "headers",
+            "expected"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "readExcel",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "findMissingHeaders",
+          "line": 87,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "readExcel",
+          "callee": "readFileSync",
+          "lineNumber": 30
+        },
+        {
+          "caller": "readExcel",
+          "callee": "XLSX.read",
+          "lineNumber": 31
+        },
+        {
+          "caller": "readExcel",
+          "callee": "wb.SheetNames.join",
+          "lineNumber": 37
+        },
+        {
+          "caller": "readExcel",
+          "callee": "XLSX.utils.sheet_to_json",
+          "lineNumber": 43
+        },
+        {
+          "caller": "readExcel",
+          "callee": "XLSX.utils.sheet_to_json",
+          "lineNumber": 49
+        },
+        {
+          "caller": "readExcel",
+          "callee": "formattedRows.map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "readExcel",
+          "callee": "Object.entries",
+          "lineNumber": 63
+        },
+        {
+          "caller": "readExcel",
+          "callee": "k.trim().replace",
+          "lineNumber": 64
+        },
+        {
+          "caller": "readExcel",
+          "callee": "k.trim",
+          "lineNumber": 64
+        },
+        {
+          "caller": "readExcel",
+          "callee": "XLSX.utils.sheet_to_json",
+          "lineNumber": 72
+        },
+        {
+          "caller": "readExcel",
+          "callee": "((headerRows[0] ?? []) as unknown[])\r\n    .map((h) => String(h ?? '').trim())\r\n    .filter",
+          "lineNumber": 73
+        },
+        {
+          "caller": "readExcel",
+          "callee": "((headerRows[0] ?? []) as unknown[])\r\n    .map",
+          "lineNumber": 73
+        },
+        {
+          "caller": "readExcel",
+          "callee": "String(h ?? '').trim",
+          "lineNumber": 74
+        },
+        {
+          "caller": "readExcel",
+          "callee": "String",
+          "lineNumber": 74
+        },
+        {
+          "caller": "readExcel",
+          "callee": "path.split(/[/\\\\]/).pop",
+          "lineNumber": 77
+        },
+        {
+          "caller": "readExcel",
+          "callee": "path.split",
+          "lineNumber": 77
+        },
+        {
+          "caller": "findMissingHeaders",
+          "callee": "headers.map",
+          "lineNumber": 88
+        },
+        {
+          "caller": "findMissingHeaders",
+          "callee": "h.trim",
+          "lineNumber": 88
+        },
+        {
+          "caller": "findMissingHeaders",
+          "callee": "expected.filter",
+          "lineNumber": 89
+        },
+        {
+          "caller": "findMissingHeaders",
+          "callee": "present.has",
+          "lineNumber": 89
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/lib/transforms.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 96,
+      "nonEmptyLines": 83,
+      "functions": [
+        {
+          "name": "cleanText",
+          "startLine": 9,
+          "endLine": 13,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "normalizeKey",
+          "startLine": 16,
+          "endLine": 21,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "hoursToDecimal",
+          "startLine": 27,
+          "endLine": 41,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "colombianDateToUTC",
+          "startLine": 53,
+          "endLine": 78,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "siNoToBool",
+          "startLine": 81,
+          "endLine": 84,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "priorityToScore",
+          "startLine": 87,
+          "endLine": 91,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "deriveProgress",
+          "startLine": 94,
+          "endLine": 96,
+          "params": [
+            "finishedAtIso"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "cleanText",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "normalizeKey",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "hoursToDecimal",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "colombianDateToUTC",
+          "line": 53,
+          "isDefault": false
+        },
+        {
+          "name": "siNoToBool",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "priorityToScore",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "deriveProgress",
+          "line": 94,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "cleanText",
+          "callee": "String(v).trim",
+          "lineNumber": 11
+        },
+        {
+          "caller": "cleanText",
+          "callee": "String",
+          "lineNumber": 11
+        },
+        {
+          "caller": "normalizeKey",
+          "callee": "String(v ?? '')\r\n    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '') // quita tildes\r\n    .toLowerCase()\r\n    .trim",
+          "lineNumber": 17
+        },
+        {
+          "caller": "normalizeKey",
+          "callee": "String(v ?? '')\r\n    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '') // quita tildes\r\n    .toLowerCase",
+          "lineNumber": 17
+        },
+        {
+          "caller": "normalizeKey",
+          "callee": "String(v ?? '')\r\n    .normalize('NFD').replace",
+          "lineNumber": 17
+        },
+        {
+          "caller": "normalizeKey",
+          "callee": "String(v ?? '')\r\n    .normalize",
+          "lineNumber": 17
+        },
+        {
+          "caller": "normalizeKey",
+          "callee": "String",
+          "lineNumber": 17
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "cleanText",
+          "lineNumber": 28
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "s.includes",
+          "lineNumber": 31
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "s.split",
+          "lineNumber": 32
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "parseInt",
+          "lineNumber": 33
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "parseInt",
+          "lineNumber": 34
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "Number.isNaN",
+          "lineNumber": 35
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "Number.isNaN",
+          "lineNumber": 36
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "parseFloat",
+          "lineNumber": 39
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "s.replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "hoursToDecimal",
+          "callee": "Number.isNaN",
+          "lineNumber": 40
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "v.getUTCFullYear",
+          "lineNumber": 59
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "v.getUTCMonth",
+          "lineNumber": 59
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "v.getUTCDate",
+          "lineNumber": 59
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "Date.UTC",
+          "lineNumber": 62
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "dt.getUTCFullYear",
+          "lineNumber": 64
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "dt.getUTCMonth",
+          "lineNumber": 64
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "dt.getUTCDate",
+          "lineNumber": 64
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "String(v).trim",
+          "lineNumber": 66
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "String",
+          "lineNumber": 66
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "s.split",
+          "lineNumber": 67
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "parseInt",
+          "lineNumber": 69
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "parseInt",
+          "lineNumber": 70
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "parseInt",
+          "lineNumber": 71
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "Number.isNaN",
+          "lineNumber": 72
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "Number.isNaN",
+          "lineNumber": 72
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "Number.isNaN",
+          "lineNumber": 72
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "new Date(Date.UTC(y, mo - 1, d, 5, 0, 0)).toISOString",
+          "lineNumber": 77
+        },
+        {
+          "caller": "colombianDateToUTC",
+          "callee": "Date.UTC",
+          "lineNumber": 77
+        },
+        {
+          "caller": "siNoToBool",
+          "callee": "normalizeKey",
+          "lineNumber": 82
+        },
+        {
+          "caller": "priorityToScore",
+          "callee": "normalizeKey",
+          "lineNumber": 88
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/lib/users.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 67,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "addAlias",
+          "startLine": 26,
+          "endLine": 30,
+          "params": [
+            "index",
+            "key",
+            "id"
+          ]
+        },
+        {
+          "name": "buildUserResolver",
+          "startLine": 33,
+          "endLine": 67,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildUserResolver",
+          "line": 33,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "addAlias",
+          "callee": "index.has",
+          "lineNumber": 28
+        },
+        {
+          "caller": "addAlias",
+          "callee": "index.set",
+          "lineNumber": 28
+        },
+        {
+          "caller": "addAlias",
+          "callee": "index.get(key)!.add",
+          "lineNumber": 29
+        },
+        {
+          "caller": "addAlias",
+          "callee": "index.get",
+          "lineNumber": 29
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "await call",
+          "lineNumber": 34
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "nameById.set",
+          "lineNumber": 40
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "u.User_Name.trim().split",
+          "lineNumber": 41
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "u.User_Name.trim",
+          "lineNumber": 41
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "addAlias",
+          "lineNumber": 44
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "normalizeKey",
+          "lineNumber": 44
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "addAlias",
+          "lineNumber": 46
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "normalizeKey",
+          "lineNumber": 46
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "addAlias",
+          "lineNumber": 49
+        },
+        {
+          "caller": "buildUserResolver",
+          "callee": "normalizeKey",
+          "lineNumber": 49
+        },
+        {
+          "caller": "resolve",
+          "callee": "normalizeKey",
+          "lineNumber": 54
+        },
+        {
+          "caller": "resolve",
+          "callee": "index.get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "resolve",
+          "callee": "ids.map",
+          "lineNumber": 63
+        },
+        {
+          "caller": "resolve",
+          "callee": "nameById.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "resolve",
+          "callee": "String",
+          "lineNumber": 63
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/phases/01-resolve.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 112,
+      "nonEmptyLines": 103,
+      "functions": [
+        {
+          "name": "uniqueByKey",
+          "startLine": 23,
+          "endLine": 32,
+          "params": [
+            "rows",
+            "column"
+          ]
+        },
+        {
+          "name": "extractUniqueSprints",
+          "startLine": 35,
+          "endLine": 46,
+          "params": [
+            "rows"
+          ]
+        },
+        {
+          "name": "extractUniqueLabels",
+          "startLine": 49,
+          "endLine": 60,
+          "params": [
+            "rows"
+          ]
+        },
+        {
+          "name": "resolveSprintsAndLabels",
+          "startLine": 66,
+          "endLine": 112,
+          "params": [
+            "rows",
+            "opts"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "extractUniqueSprints",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "extractUniqueLabels",
+          "line": 49,
+          "isDefault": false
+        },
+        {
+          "name": "resolveSprintsAndLabels",
+          "line": 66,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "uniqueByKey",
+          "callee": "cleanText",
+          "lineNumber": 26
+        },
+        {
+          "caller": "uniqueByKey",
+          "callee": "normalizeKey",
+          "lineNumber": 28
+        },
+        {
+          "caller": "uniqueByKey",
+          "callee": "map.has",
+          "lineNumber": 29
+        },
+        {
+          "caller": "uniqueByKey",
+          "callee": "map.set",
+          "lineNumber": 29
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "cleanText",
+          "lineNumber": 38
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "raw.split(',').map((n) => n.trim()).filter",
+          "lineNumber": 40
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "raw.split(',').map",
+          "lineNumber": 40
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "raw.split",
+          "lineNumber": 40
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "n.trim",
+          "lineNumber": 40
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "normalizeKey",
+          "lineNumber": 41
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "map.has",
+          "lineNumber": 42
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "map.set",
+          "lineNumber": 42
+        },
+        {
+          "caller": "extractUniqueSprints",
+          "callee": "map.values",
+          "lineNumber": 45
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "cleanText",
+          "lineNumber": 52
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "raw.split(',').map((n) => n.trim()).filter",
+          "lineNumber": 54
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "raw.split(',').map",
+          "lineNumber": 54
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "raw.split",
+          "lineNumber": 54
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "n.trim",
+          "lineNumber": 54
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "normalizeKey",
+          "lineNumber": 55
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "map.has",
+          "lineNumber": 56
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "map.set",
+          "lineNumber": 56
+        },
+        {
+          "caller": "extractUniqueLabels",
+          "callee": "map.values",
+          "lineNumber": 59
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "cleanText",
+          "lineNumber": 78
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split(',').map((n) => n.trim()).filter",
+          "lineNumber": 80
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split(',').map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split",
+          "lineNumber": 80
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "n.trim",
+          "lineNumber": 80
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "normalizeKey",
+          "lineNumber": 81
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "sprintMapUnique.has",
+          "lineNumber": 82
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "sprintMapUnique.set",
+          "lineNumber": 82
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "await call",
+          "lineNumber": 86
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "sprintMap.set",
+          "lineNumber": 89
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "createdSprints.push",
+          "lineNumber": 90
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "cleanText",
+          "lineNumber": 96
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split(',').map((n) => n.trim()).filter",
+          "lineNumber": 98
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split(',').map",
+          "lineNumber": 98
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "raw.split",
+          "lineNumber": 98
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "n.trim",
+          "lineNumber": 98
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "normalizeKey",
+          "lineNumber": 99
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "labelMapUnique.has",
+          "lineNumber": 100
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "labelMapUnique.set",
+          "lineNumber": 100
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "await call",
+          "lineNumber": 104
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "labelMap.set",
+          "lineNumber": 107
+        },
+        {
+          "caller": "resolveSprintsAndLabels",
+          "callee": "createdLabels.push",
+          "lineNumber": 108
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/phases/02-validate.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 153,
+      "nonEmptyLines": 132,
+      "functions": [
+        {
+          "name": "isBlankRow",
+          "startLine": 36,
+          "endLine": 38,
+          "params": [
+            "row"
+          ]
+        },
+        {
+          "name": "runDryRun",
+          "startLine": 40,
+          "endLine": 102,
+          "params": [
+            "rows",
+            "fileName",
+            "headers",
+            "userResolver"
+          ]
+        },
+        {
+          "name": "printDryRunReport",
+          "startLine": 105,
+          "endLine": 153,
+          "params": [
+            "r"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runDryRun",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "printDryRunReport",
+          "line": 105,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isBlankRow",
+          "callee": "Object.values(COL).every",
+          "lineNumber": 37
+        },
+        {
+          "caller": "isBlankRow",
+          "callee": "Object.values",
+          "lineNumber": 37
+        },
+        {
+          "caller": "isBlankRow",
+          "callee": "cleanText",
+          "lineNumber": 37
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "findMissingHeaders",
+          "lineNumber": 53
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "Object.values",
+          "lineNumber": 53
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "rows.forEach",
+          "lineNumber": 61
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "isBlankRow",
+          "lineNumber": 64
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "buildPayload",
+          "lineNumber": 66
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.match",
+          "lineNumber": 73
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.includes",
+          "lineNumber": 76
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "unresolved.has",
+          "lineNumber": 77
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.includes",
+          "lineNumber": 78
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.split('→ ')[1]?.replace(' → sin asignar', '').split",
+          "lineNumber": 79
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.split('→ ')[1]?.replace",
+          "lineNumber": 79
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issue.message.split",
+          "lineNumber": 79
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "unresolved.set",
+          "lineNumber": 81
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issues.some",
+          "lineNumber": 86
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "rowIssues.push",
+          "lineNumber": 87
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "issues.filter",
+          "lineNumber": 87
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "unresolved.values",
+          "lineNumber": 97
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "extractUniqueSprints",
+          "lineNumber": 98
+        },
+        {
+          "caller": "runDryRun",
+          "callee": "extractUniqueLabels",
+          "lineNumber": 99
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "'─'.repeat",
+          "lineNumber": 106
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 107
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 108
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 109
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 110
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 111
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 112
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 113
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 116
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 117
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 119
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 122
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 123
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 125
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 126
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 129
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 132
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "a.candidates?.join",
+          "lineNumber": 132
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 134
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 137
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 141
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "r.rowIssues.slice",
+          "lineNumber": 142
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "ri.issues.map((x) => `${x.field}: ${x.message}`).join",
+          "lineNumber": 143
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "ri.issues.map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 144
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 147
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 150
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 151
+        },
+        {
+          "caller": "printDryRunReport",
+          "callee": "console.log",
+          "lineNumber": 152
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/phases/03-load.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 93,
+      "nonEmptyLines": 79,
+      "functions": [
+        {
+          "name": "isBlankRow",
+          "startLine": 24,
+          "endLine": 26,
+          "params": [
+            "row"
+          ]
+        },
+        {
+          "name": "runLoad",
+          "startLine": 28,
+          "endLine": 71,
+          "params": [
+            "rows",
+            "fileName",
+            "userResolver",
+            "opts"
+          ]
+        },
+        {
+          "name": "printLoadReport",
+          "startLine": 74,
+          "endLine": 93,
+          "params": [
+            "r"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "runLoad",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "printLoadReport",
+          "line": 74,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isBlankRow",
+          "callee": "Object.values(COL).every",
+          "lineNumber": 25
+        },
+        {
+          "caller": "isBlankRow",
+          "callee": "Object.values",
+          "lineNumber": 25
+        },
+        {
+          "caller": "isBlankRow",
+          "callee": "cleanText",
+          "lineNumber": 25
+        },
+        {
+          "caller": "runLoad",
+          "callee": "console.log",
+          "lineNumber": 35
+        },
+        {
+          "caller": "runLoad",
+          "callee": "resolveSprintsAndLabels",
+          "lineNumber": 37
+        },
+        {
+          "caller": "runLoad",
+          "callee": "console.log",
+          "lineNumber": 38
+        },
+        {
+          "caller": "runLoad",
+          "callee": "rows\r\n    .map((row, i) => ({ row, excelRow: i + 2 }))\r\n    .filter",
+          "lineNumber": 47
+        },
+        {
+          "caller": "runLoad",
+          "callee": "rows\r\n    .map",
+          "lineNumber": 47
+        },
+        {
+          "caller": "runLoad",
+          "callee": "isBlankRow",
+          "lineNumber": 49
+        },
+        {
+          "caller": "runLoad",
+          "callee": "console.log",
+          "lineNumber": 51
+        },
+        {
+          "caller": "runLoad",
+          "callee": "buildPayload",
+          "lineNumber": 55
+        },
+        {
+          "caller": "runLoad",
+          "callee": "await callWithRetry",
+          "lineNumber": 57
+        },
+        {
+          "caller": "runLoad",
+          "callee": "failed.push",
+          "lineNumber": 62
+        },
+        {
+          "caller": "runLoad",
+          "callee": "console.log",
+          "lineNumber": 67
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "'─'.repeat",
+          "lineNumber": 75
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 76
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 77
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 78
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 79
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 80
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 81
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 82
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 83
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 86
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 87
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 89
+        },
+        {
+          "caller": "printLoadReport",
+          "callee": "console.log",
+          "lineNumber": 92
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "prisma-migrations/src/run.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 75,
+      "nonEmptyLines": 65,
+      "functions": [
+        {
+          "name": "parseArgs",
+          "startLine": 23,
+          "endLine": 38,
+          "params": []
+        },
+        {
+          "name": "main",
+          "startLine": 40,
+          "endLine": 69,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parseArgs",
+          "callee": "process.argv.slice",
+          "lineNumber": 25
+        },
+        {
+          "caller": "main",
+          "callee": "parseArgs",
+          "lineNumber": 41
+        },
+        {
+          "caller": "main",
+          "callee": "console.error",
+          "lineNumber": 44
+        },
+        {
+          "caller": "main",
+          "callee": "console.error",
+          "lineNumber": 45
+        },
+        {
+          "caller": "main",
+          "callee": "console.error",
+          "lineNumber": 46
+        },
+        {
+          "caller": "main",
+          "callee": "process.exit",
+          "lineNumber": 48
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 51
+        },
+        {
+          "caller": "main",
+          "callee": "readExcel",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 55
+        },
+        {
+          "caller": "main",
+          "callee": "buildUserResolver",
+          "lineNumber": 56
+        },
+        {
+          "caller": "main",
+          "callee": "runDryRun",
+          "lineNumber": 59
+        },
+        {
+          "caller": "main",
+          "callee": "printDryRunReport",
+          "lineNumber": 60
+        },
+        {
+          "caller": "main",
+          "callee": "console.log",
+          "lineNumber": 62
+        },
+        {
+          "caller": "main",
+          "callee": "runLoad",
+          "lineNumber": 63
+        },
+        {
+          "caller": "main",
+          "callee": "printLoadReport",
+          "lineNumber": 67
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    }
+  ]
+}

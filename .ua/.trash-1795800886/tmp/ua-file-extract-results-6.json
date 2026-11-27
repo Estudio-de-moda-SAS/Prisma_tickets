@@ -1,0 +1,3774 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 20,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 20,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 20,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/features/requests/hooks/useSolviActions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 289,
+      "nonEmptyLines": 260,
+      "functions": [
+        {
+          "name": "emptyTicket",
+          "startLine": 51,
+          "endLine": 69,
+          "params": [
+            "user"
+          ]
+        },
+        {
+          "name": "assignTechnicianAndBumpLoad",
+          "startLine": 94,
+          "endLine": 101,
+          "params": [
+            "tecnicosService"
+          ]
+        },
+        {
+          "name": "assignResolutor",
+          "startLine": 120,
+          "endLine": 136,
+          "params": [
+            "tecnicosService",
+            "isTurnoNocturnoAhora"
+          ]
+        },
+        {
+          "name": "notifyTicketCreated",
+          "startLine": 148,
+          "endLine": 162,
+          "params": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "useSolviActionsTickets",
+          "startLine": 199,
+          "endLine": 289,
+          "params": [
+            "user"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SolviTicket",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "notifySolviCommentActivity",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "resolveSolviCommentNotificationRecipients",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "parseDateFlex",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "toISODateTimeFlex",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "useSolviActionsTickets",
+          "line": 199,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "assignTechnicianAndBumpLoad",
+          "callee": "pickTecnicoConMenosCasos",
+          "lineNumber": 95
+        },
+        {
+          "caller": "assignTechnicianAndBumpLoad",
+          "callee": "Number",
+          "lineNumber": 98
+        },
+        {
+          "caller": "assignTechnicianAndBumpLoad",
+          "callee": "tecnicosService.update",
+          "lineNumber": 99
+        },
+        {
+          "caller": "assignTechnicianAndBumpLoad",
+          "callee": "String",
+          "lineNumber": 99
+        },
+        {
+          "caller": "assignResolutor",
+          "callee": "fetchPersonaDisponibleAhora",
+          "lineNumber": 124
+        },
+        {
+          "caller": "assignResolutor",
+          "callee": "console.error",
+          "lineNumber": 126
+        },
+        {
+          "caller": "assignResolutor",
+          "callee": "assignTechnicianAndBumpLoad",
+          "lineNumber": 134
+        },
+        {
+          "caller": "notifyTicketCreated",
+          "callee": "notifyTicketCreatedSolicitante",
+          "lineNumber": 152
+        },
+        {
+          "caller": "notifyTicketCreated",
+          "callee": "console.error",
+          "lineNumber": 154
+        },
+        {
+          "caller": "notifyTicketCreated",
+          "callee": "notifyTicketCreatedResolutor",
+          "lineNumber": 158
+        },
+        {
+          "caller": "notifyTicketCreated",
+          "callee": "console.error",
+          "lineNumber": 160
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "useAuth",
+          "lineNumber": 200
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useMemo",
+          "lineNumber": 201
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useMemo",
+          "lineNumber": 202
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useState",
+          "lineNumber": 207
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "emptyTicket",
+          "lineNumber": 207
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useState",
+          "lineNumber": 208
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useEffect",
+          "lineNumber": 210
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "setState",
+          "lineNumber": 211
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "emptyTicket",
+          "lineNumber": 211
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useCallback",
+          "lineNumber": 214
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "setLoading",
+          "lineNumber": 215
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "uploadSolviAttachmentToStorage",
+          "lineNumber": 217
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "setLoading",
+          "lineNumber": 219
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "React.useCallback",
+          "lineNumber": 223
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "setLoading",
+          "lineNumber": 237
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "isTurnoNocturnoAhora",
+          "lineNumber": 239
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "calcularFechaSolucion",
+          "lineNumber": 241
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "assignResolutor",
+          "lineNumber": 242
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "fechaMaxima.toISOString",
+          "lineNumber": 246
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "supabase\r\n        .from('TBL_Ticket_Solvi')\r\n        .insert(payload)\r\n        .select('*')\r\n        .maybeSingle",
+          "lineNumber": 258
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "supabase\r\n        .from('TBL_Ticket_Solvi')\r\n        .insert(payload)\r\n        .select",
+          "lineNumber": 258
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "supabase\r\n        .from('TBL_Ticket_Solvi')\r\n        .insert",
+          "lineNumber": 258
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "supabase\r\n        .from",
+          "lineNumber": 258
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "Promise.all",
+          "lineNumber": 265
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "archivos.map",
+          "lineNumber": 266
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "uploadSolviAttachmentToStorage",
+          "lineNumber": 266
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "notifyTicketCreated",
+          "lineNumber": 270
+        },
+        {
+          "caller": "useSolviActionsTickets",
+          "callee": "setLoading",
+          "lineNumber": 276
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 6,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useSolviAns.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 62,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "normalizarAns",
+          "startLine": 21,
+          "endLine": 23,
+          "params": [
+            "valor"
+          ]
+        },
+        {
+          "name": "resolverAns",
+          "startLine": 25,
+          "endLine": 29,
+          "params": [
+            "ans"
+          ]
+        },
+        {
+          "name": "useSolviAns",
+          "startLine": 42,
+          "endLine": 62,
+          "params": [
+            "categoriaId",
+            "subcategoriaId",
+            "articuloId",
+            "subcategoriaSinArticulos"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "horasPorANS",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "useSolviAns",
+          "line": 42,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "normalizarAns",
+          "callee": "valor.trim().toLowerCase().replace",
+          "lineNumber": 22
+        },
+        {
+          "caller": "normalizarAns",
+          "callee": "valor.trim().toLowerCase",
+          "lineNumber": 22
+        },
+        {
+          "caller": "normalizarAns",
+          "callee": "valor.trim",
+          "lineNumber": 22
+        },
+        {
+          "caller": "resolverAns",
+          "callee": "normalizarAns",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "useAuth",
+          "lineNumber": 48
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "React.useMemo",
+          "lineNumber": 49
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "React.useMemo",
+          "lineNumber": 50
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "useQuery",
+          "lineNumber": 52
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "ansService.getByCombinacion",
+          "lineNumber": 55
+        },
+        {
+          "caller": "useSolviAns",
+          "callee": "resolverAns",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useSolviArticulos.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 29,
+      "functions": [
+        {
+          "name": "useSolviArticulos",
+          "startLine": 13,
+          "endLine": 32,
+          "params": [
+            "subcategoriaId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSolviArticulos",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSolviArticulos",
+          "callee": "useAuth",
+          "lineNumber": 14
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "React.useMemo",
+          "lineNumber": 15
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "React.useMemo",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "useQuery",
+          "lineNumber": 21
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "articulosService.getBySubcategoria",
+          "lineNumber": 24
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "articulos.sort",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useSolviArticulos",
+          "callee": "a.Title.localeCompare",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useSolviCategorias.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "useSolviCategorias",
+          "startLine": 12,
+          "endLine": 27,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSolviCategorias",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSolviCategorias",
+          "callee": "useAuth",
+          "lineNumber": 13
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "React.useMemo",
+          "lineNumber": 14
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "React.useMemo",
+          "lineNumber": 15
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "useQuery",
+          "lineNumber": 17
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "categoriasService.getAll",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "categorias.sort",
+          "lineNumber": 21
+        },
+        {
+          "caller": "useSolviCategorias",
+          "callee": "a.Title.localeCompare",
+          "lineNumber": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useSolviSubcategorias.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "useSolviSubcategorias",
+          "startLine": 14,
+          "endLine": 33,
+          "params": [
+            "categoriaId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSolviSubcategorias",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "useAuth",
+          "lineNumber": 15
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "React.useMemo",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "React.useMemo",
+          "lineNumber": 17
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "useQuery",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "subcategoriasService.getByCategoria",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "subcategorias.sort",
+          "lineNumber": 26
+        },
+        {
+          "caller": "useSolviSubcategorias",
+          "callee": "a.Title.localeCompare",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useSubTeamMembers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 180,
+      "nonEmptyLines": 169,
+      "functions": [
+        {
+          "name": "useSubTeamMembers",
+          "startLine": 29,
+          "endLine": 37,
+          "params": [
+            "subTeamId"
+          ]
+        },
+        {
+          "name": "useSubTeamMembersGrouped",
+          "startLine": 50,
+          "endLine": 65,
+          "params": [
+            "subTeams"
+          ]
+        },
+        {
+          "name": "useSubTeamMembersBulk",
+          "startLine": 76,
+          "endLine": 84,
+          "params": [
+            "subTeamIds"
+          ]
+        },
+        {
+          "name": "useAddSubTeamMember",
+          "startLine": 95,
+          "endLine": 102,
+          "params": [
+            "subTeamId"
+          ]
+        },
+        {
+          "name": "useRemoveSubTeamMember",
+          "startLine": 113,
+          "endLine": 120,
+          "params": [
+            "subTeamId"
+          ]
+        },
+        {
+          "name": "useSubTeamSupervisors",
+          "startLine": 131,
+          "endLine": 138,
+          "params": [
+            "subTeamId"
+          ]
+        },
+        {
+          "name": "useAddSubTeamSupervisor",
+          "startLine": 150,
+          "endLine": 159,
+          "params": [
+            "subTeamId"
+          ]
+        },
+        {
+          "name": "useRemoveSubTeamSupervisor",
+          "startLine": 171,
+          "endLine": 180,
+          "params": [
+            "subTeamId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useSubTeamMembers",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "useSubTeamMembersGrouped",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "useSubTeamMembersBulk",
+          "line": 76,
+          "isDefault": false
+        },
+        {
+          "name": "useAddSubTeamMember",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "useRemoveSubTeamMember",
+          "line": 113,
+          "isDefault": false
+        },
+        {
+          "name": "useSubTeamSupervisors",
+          "line": 131,
+          "isDefault": false
+        },
+        {
+          "name": "useAddSubTeamSupervisor",
+          "line": 150,
+          "isDefault": false
+        },
+        {
+          "name": "useRemoveSubTeamSupervisor",
+          "line": 171,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSubTeamMembers",
+          "callee": "useQuery",
+          "lineNumber": 30
+        },
+        {
+          "caller": "useSubTeamMembers",
+          "callee": "apiClient.call",
+          "lineNumber": 32
+        },
+        {
+          "caller": "useSubTeamMembersGrouped",
+          "callee": "useQueries",
+          "lineNumber": 51
+        },
+        {
+          "caller": "useSubTeamMembersGrouped",
+          "callee": "subTeams.map",
+          "lineNumber": 52
+        },
+        {
+          "caller": "useSubTeamMembersGrouped",
+          "callee": "apiClient.call",
+          "lineNumber": 54
+        },
+        {
+          "caller": "useSubTeamMembersGrouped",
+          "callee": "subTeams.map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "useSubTeamMembersBulk",
+          "callee": "useQuery",
+          "lineNumber": 77
+        },
+        {
+          "caller": "useSubTeamMembersBulk",
+          "callee": "apiClient.call",
+          "lineNumber": 79
+        },
+        {
+          "caller": "useAddSubTeamMember",
+          "callee": "useQueryClient",
+          "lineNumber": 96
+        },
+        {
+          "caller": "useAddSubTeamMember",
+          "callee": "useMutation",
+          "lineNumber": 97
+        },
+        {
+          "caller": "useAddSubTeamMember",
+          "callee": "apiClient.call",
+          "lineNumber": 99
+        },
+        {
+          "caller": "useAddSubTeamMember",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 100
+        },
+        {
+          "caller": "useRemoveSubTeamMember",
+          "callee": "useQueryClient",
+          "lineNumber": 114
+        },
+        {
+          "caller": "useRemoveSubTeamMember",
+          "callee": "useMutation",
+          "lineNumber": 115
+        },
+        {
+          "caller": "useRemoveSubTeamMember",
+          "callee": "apiClient.call",
+          "lineNumber": 117
+        },
+        {
+          "caller": "useRemoveSubTeamMember",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 118
+        },
+        {
+          "caller": "useSubTeamSupervisors",
+          "callee": "useQuery",
+          "lineNumber": 132
+        },
+        {
+          "caller": "useSubTeamSupervisors",
+          "callee": "apiClient.call",
+          "lineNumber": 134
+        },
+        {
+          "caller": "useAddSubTeamSupervisor",
+          "callee": "useQueryClient",
+          "lineNumber": 151
+        },
+        {
+          "caller": "useAddSubTeamSupervisor",
+          "callee": "useMutation",
+          "lineNumber": 152
+        },
+        {
+          "caller": "useAddSubTeamSupervisor",
+          "callee": "apiClient.call",
+          "lineNumber": 153
+        },
+        {
+          "caller": "useAddSubTeamSupervisor",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 155
+        },
+        {
+          "caller": "useAddSubTeamSupervisor",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 156
+        },
+        {
+          "caller": "useRemoveSubTeamSupervisor",
+          "callee": "useQueryClient",
+          "lineNumber": 172
+        },
+        {
+          "caller": "useRemoveSubTeamSupervisor",
+          "callee": "useMutation",
+          "lineNumber": 173
+        },
+        {
+          "caller": "useRemoveSubTeamSupervisor",
+          "callee": "apiClient.call",
+          "lineNumber": 174
+        },
+        {
+          "caller": "useRemoveSubTeamSupervisor",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 176
+        },
+        {
+          "caller": "useRemoveSubTeamSupervisor",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 177
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/hooks/useUsers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 48,
+      "functions": [
+        {
+          "name": "useUsers",
+          "startLine": 15,
+          "endLine": 22,
+          "params": []
+        },
+        {
+          "name": "useAssignRequest",
+          "startLine": 24,
+          "endLine": 29,
+          "params": []
+        },
+        {
+          "name": "useUnassignRequest",
+          "startLine": 31,
+          "endLine": 36,
+          "params": []
+        },
+        {
+          "name": "useDeactivateUser",
+          "startLine": 38,
+          "endLine": 45,
+          "params": []
+        },
+        {
+          "name": "useReactivateUser",
+          "startLine": 47,
+          "endLine": 54,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useUsers",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "useAssignRequest",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "useUnassignRequest",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "useDeactivateUser",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "useReactivateUser",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useUsers",
+          "callee": "useQuery",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useUsers",
+          "callee": "apiClient.call",
+          "lineNumber": 18
+        },
+        {
+          "caller": "useAssignRequest",
+          "callee": "useMutation",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useAssignRequest",
+          "callee": "apiClient.call",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useUnassignRequest",
+          "callee": "useMutation",
+          "lineNumber": 32
+        },
+        {
+          "caller": "useUnassignRequest",
+          "callee": "apiClient.call",
+          "lineNumber": 34
+        },
+        {
+          "caller": "useDeactivateUser",
+          "callee": "useQueryClient",
+          "lineNumber": 39
+        },
+        {
+          "caller": "useDeactivateUser",
+          "callee": "useMutation",
+          "lineNumber": 40
+        },
+        {
+          "caller": "useDeactivateUser",
+          "callee": "apiClient.call",
+          "lineNumber": 42
+        },
+        {
+          "caller": "useDeactivateUser",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 43
+        },
+        {
+          "caller": "useReactivateUser",
+          "callee": "useQueryClient",
+          "lineNumber": 48
+        },
+        {
+          "caller": "useReactivateUser",
+          "callee": "useMutation",
+          "lineNumber": 49
+        },
+        {
+          "caller": "useReactivateUser",
+          "callee": "apiClient.call",
+          "lineNumber": 51
+        },
+        {
+          "caller": "useReactivateUser",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/lib/mentions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 107,
+      "nonEmptyLines": 94,
+      "functions": [
+        {
+          "name": "canMention",
+          "startLine": 9,
+          "endLine": 11,
+          "params": [
+            "m",
+            "isConfidential"
+          ]
+        },
+        {
+          "name": "isPreRegistered",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "u"
+          ]
+        },
+        {
+          "name": "mentionablePool",
+          "startLine": 22,
+          "endLine": 27,
+          "params": [
+            "users",
+            "_m"
+          ]
+        },
+        {
+          "name": "groupByDepartment",
+          "startLine": 33,
+          "endLine": 48,
+          "params": [
+            "users"
+          ]
+        },
+        {
+          "name": "filterMentionables",
+          "startLine": 49,
+          "endLine": 64,
+          "params": [
+            "query",
+            "users",
+            "m",
+            "isConfidential",
+            "opts"
+          ]
+        },
+        {
+          "name": "extractMentionIds",
+          "startLine": 67,
+          "endLine": 73,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "shortName",
+          "startLine": 83,
+          "endLine": 107,
+          "params": [
+            "full"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TI_DEPARTMENT_ID",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "canMention",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "mentionablePool",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "groupByDepartment",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "filterMentionables",
+          "line": 49,
+          "isDefault": false
+        },
+        {
+          "name": "extractMentionIds",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "shortName",
+          "line": 83,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isPreRegistered",
+          "callee": "(u.User_Name ?? '').trim",
+          "lineNumber": 19
+        },
+        {
+          "caller": "mentionablePool",
+          "callee": "users.filter",
+          "lineNumber": 26
+        },
+        {
+          "caller": "mentionablePool",
+          "callee": "isPreRegistered",
+          "lineNumber": 26
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "map.has",
+          "lineNumber": 38
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "map.set",
+          "lineNumber": 38
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "map.get(deptId)!.users.push",
+          "lineNumber": 39
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "map.get",
+          "lineNumber": 39
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "[...map.values()].sort",
+          "lineNumber": 41
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "map.values",
+          "lineNumber": 41
+        },
+        {
+          "caller": "groupByDepartment",
+          "callee": "a.deptName.localeCompare",
+          "lineNumber": 46
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "canMention",
+          "lineNumber": 56
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "query.trim().toLowerCase",
+          "lineNumber": 58
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "query.trim",
+          "lineNumber": 58
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "mentionablePool(users, m).filter",
+          "lineNumber": 59
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "mentionablePool",
+          "lineNumber": 59
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "pool.filter",
+          "lineNumber": 61
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "u.User_Name.toLowerCase().includes",
+          "lineNumber": 62
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "u.User_Name.toLowerCase",
+          "lineNumber": 62
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "u.User_Email.toLowerCase().includes",
+          "lineNumber": 62
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "u.User_Email.toLowerCase",
+          "lineNumber": 62
+        },
+        {
+          "caller": "filterMentionables",
+          "callee": "matched.slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "extractMentionIds",
+          "callee": "re.exec",
+          "lineNumber": 71
+        },
+        {
+          "caller": "extractMentionIds",
+          "callee": "ids.add",
+          "lineNumber": 71
+        },
+        {
+          "caller": "extractMentionIds",
+          "callee": "Number",
+          "lineNumber": 71
+        },
+        {
+          "caller": "shortName",
+          "callee": "full.trim().split(/\\s+/).filter",
+          "lineNumber": 84
+        },
+        {
+          "caller": "shortName",
+          "callee": "full.trim().split",
+          "lineNumber": 84
+        },
+        {
+          "caller": "shortName",
+          "callee": "full.trim",
+          "lineNumber": 84
+        },
+        {
+          "caller": "shortName",
+          "callee": "full.trim",
+          "lineNumber": 85
+        },
+        {
+          "caller": "shortName",
+          "callee": "PARTICULAS.has",
+          "lineNumber": 96
+        },
+        {
+          "caller": "shortName",
+          "callee": "parts[i].toLowerCase",
+          "lineNumber": 96
+        },
+        {
+          "caller": "shortName",
+          "callee": "ap.push",
+          "lineNumber": 96
+        },
+        {
+          "caller": "shortName",
+          "callee": "ap.push",
+          "lineNumber": 98
+        },
+        {
+          "caller": "shortName",
+          "callee": "PARTICULAS.has",
+          "lineNumber": 101
+        },
+        {
+          "caller": "shortName",
+          "callee": "parts[i - 1]?.toLowerCase",
+          "lineNumber": 101
+        },
+        {
+          "caller": "shortName",
+          "callee": "PARTICULAS.has",
+          "lineNumber": 101
+        },
+        {
+          "caller": "shortName",
+          "callee": "parts[i].toLowerCase",
+          "lineNumber": 101
+        },
+        {
+          "caller": "shortName",
+          "callee": "ap.push",
+          "lineNumber": 102
+        },
+        {
+          "caller": "shortName",
+          "callee": "ap.push",
+          "lineNumber": 103
+        },
+        {
+          "caller": "shortName",
+          "callee": "`${first} ${ap.join(' ')}`.trim",
+          "lineNumber": 106
+        },
+        {
+          "caller": "shortName",
+          "callee": "ap.join",
+          "lineNumber": 106
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/AnsSharepointSolvi.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 112,
+      "nonEmptyLines": 95,
+      "classes": [
+        {
+          "name": "AnsSPService",
+          "startLine": 12,
+          "endLine": 112,
+          "methods": [
+            "constructor",
+            "esc",
+            "cacheKey",
+            "loadCache",
+            "saveCache",
+            "ensureIds",
+            "toModel",
+            "getAll",
+            "getByCombinacion"
+          ],
+          "properties": [
+            "graph",
+            "hostname",
+            "sitePath",
+            "listName",
+            "siteId",
+            "listId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnsSPService",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "sitePath.startsWith",
+          "lineNumber": 29
+        },
+        {
+          "caller": "esc",
+          "callee": "String(s).replace",
+          "lineNumber": 33
+        },
+        {
+          "caller": "esc",
+          "callee": "String",
+          "lineNumber": 33
+        },
+        {
+          "caller": "loadCache",
+          "callee": "localStorage.getItem",
+          "lineNumber": 39
+        },
+        {
+          "caller": "loadCache",
+          "callee": "JSON.parse",
+          "lineNumber": 41
+        },
+        {
+          "caller": "saveCache",
+          "callee": "localStorage.setItem",
+          "lineNumber": 50
+        },
+        {
+          "caller": "saveCache",
+          "callee": "JSON.stringify",
+          "lineNumber": 50
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.loadCache",
+          "lineNumber": 55
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 58
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 61
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 65
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.esc",
+          "lineNumber": 66
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 78
+        },
+        {
+          "caller": "toModel",
+          "callee": "String(f.Title ?? '').trim",
+          "lineNumber": 82
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 82
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.ensureIds",
+          "lineNumber": 87
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 92
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 92
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 93
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 95
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 95
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString",
+          "lineNumber": 95
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 96
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res.value ?? []).map",
+          "lineNumber": 97
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 97
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "this.esc",
+          "lineNumber": 105
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "this.esc",
+          "lineNumber": 106
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "clauses.push",
+          "lineNumber": 108
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "this.esc",
+          "lineNumber": 108
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "this.getAll",
+          "lineNumber": 110
+        },
+        {
+          "caller": "getByCombinacion",
+          "callee": "clauses.join",
+          "lineNumber": 110
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 99,
+      "nonEmptyLines": 83,
+      "classes": [
+        {
+          "name": "ArticulosSPService",
+          "startLine": 10,
+          "endLine": 99,
+          "methods": [
+            "constructor",
+            "esc",
+            "cacheKey",
+            "loadCache",
+            "saveCache",
+            "ensureIds",
+            "toModel",
+            "getAll",
+            "getBySubcategoria"
+          ],
+          "properties": [
+            "graph",
+            "hostname",
+            "sitePath",
+            "listName",
+            "siteId",
+            "listId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ArticulosSPService",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "sitePath.startsWith",
+          "lineNumber": 27
+        },
+        {
+          "caller": "esc",
+          "callee": "String(s).replace",
+          "lineNumber": 31
+        },
+        {
+          "caller": "esc",
+          "callee": "String",
+          "lineNumber": 31
+        },
+        {
+          "caller": "loadCache",
+          "callee": "localStorage.getItem",
+          "lineNumber": 37
+        },
+        {
+          "caller": "loadCache",
+          "callee": "JSON.parse",
+          "lineNumber": 39
+        },
+        {
+          "caller": "saveCache",
+          "callee": "localStorage.setItem",
+          "lineNumber": 48
+        },
+        {
+          "caller": "saveCache",
+          "callee": "JSON.stringify",
+          "lineNumber": 48
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.loadCache",
+          "lineNumber": 53
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 59
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.esc",
+          "lineNumber": 64
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 69
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 76
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.ensureIds",
+          "lineNumber": 83
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 86
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 87
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 88
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 88
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 89
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res.value ?? []).map",
+          "lineNumber": 93
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 93
+        },
+        {
+          "caller": "getBySubcategoria",
+          "callee": "this.getAll",
+          "lineNumber": 97
+        },
+        {
+          "caller": "getBySubcategoria",
+          "callee": "this.esc",
+          "lineNumber": 97
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 93,
+      "nonEmptyLines": 78,
+      "classes": [
+        {
+          "name": "CategoriasSPService",
+          "startLine": 9,
+          "endLine": 93,
+          "methods": [
+            "constructor",
+            "esc",
+            "cacheKey",
+            "loadCache",
+            "saveCache",
+            "ensureIds",
+            "toModel",
+            "getAll"
+          ],
+          "properties": [
+            "graph",
+            "hostname",
+            "sitePath",
+            "listName",
+            "siteId",
+            "listId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CategoriasSPService",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "sitePath.startsWith",
+          "lineNumber": 26
+        },
+        {
+          "caller": "esc",
+          "callee": "String(s).replace",
+          "lineNumber": 30
+        },
+        {
+          "caller": "esc",
+          "callee": "String",
+          "lineNumber": 30
+        },
+        {
+          "caller": "loadCache",
+          "callee": "localStorage.getItem",
+          "lineNumber": 36
+        },
+        {
+          "caller": "loadCache",
+          "callee": "JSON.parse",
+          "lineNumber": 38
+        },
+        {
+          "caller": "saveCache",
+          "callee": "localStorage.setItem",
+          "lineNumber": 47
+        },
+        {
+          "caller": "saveCache",
+          "callee": "JSON.stringify",
+          "lineNumber": 47
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.loadCache",
+          "lineNumber": 52
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 58
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.esc",
+          "lineNumber": 63
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 68
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 75
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.ensureIds",
+          "lineNumber": 81
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 84
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 85
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 86
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 86
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 87
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 89
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 89
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString",
+          "lineNumber": 89
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 90
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res.value ?? []).map",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 91
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/features/requests/services/HolidayService.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 42,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "fetchHolidays",
+          "startLine": 19,
+          "endLine": 42,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "fetchHolidays",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fetchHolidays",
+          "callee": "new Date().getFullYear",
+          "lineNumber": 20
+        },
+        {
+          "caller": "fetchHolidays",
+          "callee": "fetch",
+          "lineNumber": 22
+        },
+        {
+          "caller": "fetchHolidays",
+          "callee": "request.json",
+          "lineNumber": 35
+        },
+        {
+          "caller": "fetchHolidays",
+          "callee": "response.data.map",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SolviAttachments.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 46,
+      "functions": [
+        {
+          "name": "getFileExtension",
+          "startLine": 5,
+          "endLine": 11,
+          "params": [
+            "file"
+          ]
+        },
+        {
+          "name": "getPublicUrl",
+          "startLine": 13,
+          "endLine": 22,
+          "params": [
+            "bucket",
+            "path"
+          ]
+        },
+        {
+          "name": "uploadFile",
+          "startLine": 24,
+          "endLine": 40,
+          "params": [
+            "file",
+            "bucket",
+            "path"
+          ]
+        },
+        {
+          "name": "uploadSolviAttachment",
+          "startLine": 42,
+          "endLine": 59,
+          "params": [
+            "file",
+            "ticketId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TICKETS_ATTACHMENTS_BUCKET",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "uploadSolviAttachment",
+          "line": 42,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getFileExtension",
+          "callee": "file.name.split('.').pop()?.trim().toLowerCase",
+          "lineNumber": 6
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.name.split('.').pop()?.trim",
+          "lineNumber": 6
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.name.split('.').pop",
+          "lineNumber": 6
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.name.split",
+          "lineNumber": 6
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.type.split('/').pop()?.trim().toLowerCase",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.type.split('/').pop()?.trim",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.type.split('/').pop",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getFileExtension",
+          "callee": "file.type.split",
+          "lineNumber": 9
+        },
+        {
+          "caller": "getPublicUrl",
+          "callee": "supabase.storage.from(bucket).getPublicUrl",
+          "lineNumber": 14
+        },
+        {
+          "caller": "getPublicUrl",
+          "callee": "supabase.storage.from",
+          "lineNumber": 14
+        },
+        {
+          "caller": "getPublicUrl",
+          "callee": "alert",
+          "lineNumber": 17
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "getFileExtension",
+          "lineNumber": 25
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "crypto.randomUUID",
+          "lineNumber": 26
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "supabase.storage.from(bucket).upload",
+          "lineNumber": 28
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "supabase.storage.from",
+          "lineNumber": 28
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "alert",
+          "lineNumber": 35
+        },
+        {
+          "caller": "uploadFile",
+          "callee": "getPublicUrl",
+          "lineNumber": 39
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "uploadFile",
+          "lineNumber": 43
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "supabase\n    .from('TBL_Ticket_Attachments_Solvi')\n    .insert({\n      attachment_path: url,\n      attachment_type: 'Creacion',\n      created_at: new Date().toISOString(),\n      file_name: file.name,\n      id_ticket: Number(ticketId),\n      storage_bucket: TICKETS_ATTACHMENTS_BUCKET,\n    })\n    .select()\n    .single",
+          "lineNumber": 45
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "supabase\n    .from('TBL_Ticket_Attachments_Solvi')\n    .insert({\n      attachment_path: url,\n      attachment_type: 'Creacion',\n      created_at: new Date().toISOString(),\n      file_name: file.name,\n      id_ticket: Number(ticketId),\n      storage_bucket: TICKETS_ATTACHMENTS_BUCKET,\n    })\n    .select",
+          "lineNumber": 45
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "supabase\n    .from('TBL_Ticket_Attachments_Solvi')\n    .insert",
+          "lineNumber": 45
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "supabase\n    .from",
+          "lineNumber": 45
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "new Date().toISOString",
+          "lineNumber": 50
+        },
+        {
+          "caller": "uploadSolviAttachment",
+          "callee": "Number",
+          "lineNumber": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SolviBusinessDate.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 126,
+      "nonEmptyLines": 103,
+      "functions": [
+        {
+          "name": "pad",
+          "startLine": 15,
+          "endLine": 15,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "sliceYMD",
+          "startLine": 17,
+          "endLine": 17,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "toYMD",
+          "startLine": 19,
+          "endLine": 23,
+          "params": [
+            "d"
+          ]
+        },
+        {
+          "name": "isHoliday",
+          "startLine": 25,
+          "endLine": 28,
+          "params": [
+            "date",
+            "holidays"
+          ]
+        },
+        {
+          "name": "minutosDelDia",
+          "startLine": 30,
+          "endLine": 30,
+          "params": [
+            "d"
+          ]
+        },
+        {
+          "name": "atMinuto",
+          "startLine": 32,
+          "endLine": 33,
+          "params": [
+            "d",
+            "minuto",
+            "sumarDias"
+          ]
+        },
+        {
+          "name": "nextWorkDayStart",
+          "startLine": 35,
+          "endLine": 35,
+          "params": [
+            "from"
+          ]
+        },
+        {
+          "name": "parseDateFlex",
+          "startLine": 37,
+          "endLine": 66,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "toISODateTimeFlex",
+          "startLine": 68,
+          "endLine": 72,
+          "params": [
+            "v"
+          ]
+        },
+        {
+          "name": "isTurnoNocturnoAhora",
+          "startLine": 75,
+          "endLine": 78,
+          "params": []
+        },
+        {
+          "name": "formatSlaHorasHabiles",
+          "startLine": 84,
+          "endLine": 91,
+          "params": [
+            "horas"
+          ]
+        },
+        {
+          "name": "calcularFechaSolucion",
+          "startLine": 96,
+          "endLine": 126,
+          "params": [
+            "ansHoras"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "DEFAULT_SLA_HORAS",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "parseDateFlex",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "toISODateTimeFlex",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "isTurnoNocturnoAhora",
+          "line": 75,
+          "isDefault": false
+        },
+        {
+          "name": "formatSlaHorasHabiles",
+          "line": 84,
+          "isDefault": false
+        },
+        {
+          "name": "calcularFechaSolucion",
+          "line": 96,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pad",
+          "callee": "String(n).padStart",
+          "lineNumber": 15
+        },
+        {
+          "caller": "pad",
+          "callee": "String",
+          "lineNumber": 15
+        },
+        {
+          "caller": "sliceYMD",
+          "callee": "s.slice",
+          "lineNumber": 17
+        },
+        {
+          "caller": "toYMD",
+          "callee": "dd.setHours",
+          "lineNumber": 21
+        },
+        {
+          "caller": "toYMD",
+          "callee": "dd.getFullYear",
+          "lineNumber": 22
+        },
+        {
+          "caller": "toYMD",
+          "callee": "pad",
+          "lineNumber": 22
+        },
+        {
+          "caller": "toYMD",
+          "callee": "dd.getMonth",
+          "lineNumber": 22
+        },
+        {
+          "caller": "toYMD",
+          "callee": "pad",
+          "lineNumber": 22
+        },
+        {
+          "caller": "toYMD",
+          "callee": "dd.getDate",
+          "lineNumber": 22
+        },
+        {
+          "caller": "isHoliday",
+          "callee": "toYMD",
+          "lineNumber": 26
+        },
+        {
+          "caller": "isHoliday",
+          "callee": "holidays.some",
+          "lineNumber": 27
+        },
+        {
+          "caller": "isHoliday",
+          "callee": "sliceYMD",
+          "lineNumber": 27
+        },
+        {
+          "caller": "minutosDelDia",
+          "callee": "d.getHours",
+          "lineNumber": 30
+        },
+        {
+          "caller": "minutosDelDia",
+          "callee": "d.getMinutes",
+          "lineNumber": 30
+        },
+        {
+          "caller": "atMinuto",
+          "callee": "d.getFullYear",
+          "lineNumber": 33
+        },
+        {
+          "caller": "atMinuto",
+          "callee": "d.getMonth",
+          "lineNumber": 33
+        },
+        {
+          "caller": "atMinuto",
+          "callee": "d.getDate",
+          "lineNumber": 33
+        },
+        {
+          "caller": "atMinuto",
+          "callee": "Math.floor",
+          "lineNumber": 33
+        },
+        {
+          "caller": "nextWorkDayStart",
+          "callee": "atMinuto",
+          "lineNumber": 35
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "isNaN",
+          "lineNumber": 39
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "v.getTime",
+          "lineNumber": 39
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "String(v).trim",
+          "lineNumber": 41
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "String",
+          "lineNumber": 41
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number.isNaN",
+          "lineNumber": 46
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "attempt.getTime",
+          "lineNumber": 46
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "/^(\\d{1,2})[\\/\\-](\\d{1,2})[\\/\\-](\\d{2}|\\d{4})(?:\\s+(\\d{1,2})(?::(\\d{1,2}))?)?$/.exec",
+          "lineNumber": 49
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 52
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 52
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 53
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 54
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 55
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "Number",
+          "lineNumber": 56
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "d.getFullYear",
+          "lineNumber": 59
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "d.getMonth",
+          "lineNumber": 60
+        },
+        {
+          "caller": "parseDateFlex",
+          "callee": "d.getDate",
+          "lineNumber": 61
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "parseDateFlex",
+          "lineNumber": 69
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "d.getFullYear",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "pad",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "d.getMonth",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "pad",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "d.getDate",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "pad",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "d.getHours",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "pad",
+          "lineNumber": 71
+        },
+        {
+          "caller": "toISODateTimeFlex",
+          "callee": "d.getMinutes",
+          "lineNumber": 71
+        },
+        {
+          "caller": "isTurnoNocturnoAhora",
+          "callee": "minutosDelDia",
+          "lineNumber": 76
+        },
+        {
+          "caller": "formatSlaHorasHabiles",
+          "callee": "Number.isInteger",
+          "lineNumber": 89
+        },
+        {
+          "caller": "formatSlaHorasHabiles",
+          "callee": "String",
+          "lineNumber": 89
+        },
+        {
+          "caller": "formatSlaHorasHabiles",
+          "callee": "dias.toFixed",
+          "lineNumber": 89
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "fetchHolidays",
+          "lineNumber": 100
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "isSaturday",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "isSunday",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "isHoliday",
+          "lineNumber": 103
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "nextWorkDayStart",
+          "lineNumber": 104
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "minutosDelDia",
+          "lineNumber": 108
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "atMinuto",
+          "lineNumber": 111
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "nextWorkDayStart",
+          "lineNumber": 116
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "Math.min",
+          "lineNumber": 120
+        },
+        {
+          "caller": "calcularFechaSolucion",
+          "callee": "addMinutes",
+          "lineNumber": 121
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SolviShifts.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 44,
+      "nonEmptyLines": 36,
+      "functions": [
+        {
+          "name": "fetchDisponibilidadHoy",
+          "startLine": 25,
+          "endLine": 34,
+          "params": [
+            "teamId"
+          ]
+        },
+        {
+          "name": "fetchTurnosHoy",
+          "startLine": 36,
+          "endLine": 39,
+          "params": [
+            "teamId"
+          ]
+        },
+        {
+          "name": "fetchPersonaDisponibleAhora",
+          "startLine": 41,
+          "endLine": 44,
+          "params": [
+            "teamId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "fetchDisponibilidadHoy",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "fetchTurnosHoy",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "fetchPersonaDisponibleAhora",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fetchDisponibilidadHoy",
+          "callee": "await supabase.functions.invoke",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fetchTurnosHoy",
+          "callee": "fetchDisponibilidadHoy",
+          "lineNumber": 37
+        },
+        {
+          "caller": "fetchPersonaDisponibleAhora",
+          "callee": "fetchDisponibilidadHoy",
+          "lineNumber": 42
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SolviTicketAssignment.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 26,
+      "functions": [
+        {
+          "name": "pickTecnicoConMenosCasos",
+          "startLine": 4,
+          "endLine": 26,
+          "params": [
+            "usuarios"
+          ]
+        },
+        {
+          "name": "getAlexUser",
+          "startLine": 28,
+          "endLine": 33,
+          "params": [
+            "usuarios"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "pickTecnicoConMenosCasos",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "getAlexUser",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pickTecnicoConMenosCasos",
+          "callee": "usuarios.getAll",
+          "lineNumber": 5
+        },
+        {
+          "caller": "pickTecnicoConMenosCasos",
+          "callee": "Number",
+          "lineNumber": 16
+        },
+        {
+          "caller": "pickTecnicoConMenosCasos",
+          "callee": "candidatos.push",
+          "lineNumber": 21
+        },
+        {
+          "caller": "pickTecnicoConMenosCasos",
+          "callee": "Math.floor",
+          "lineNumber": 25
+        },
+        {
+          "caller": "pickTecnicoConMenosCasos",
+          "callee": "Math.random",
+          "lineNumber": 25
+        },
+        {
+          "caller": "getAlexUser",
+          "callee": "usuarios.get",
+          "lineNumber": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SolviTicketNotifications.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 295,
+      "nonEmptyLines": 259,
+      "functions": [
+        {
+          "name": "sendMail",
+          "startLine": 10,
+          "endLine": 16,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "normalizeEmails",
+          "startLine": 18,
+          "endLine": 24,
+          "params": [
+            "emails"
+          ]
+        },
+        {
+          "name": "excludeEmails",
+          "startLine": 26,
+          "endLine": 29,
+          "params": [
+            "emails",
+            "excluded"
+          ]
+        },
+        {
+          "name": "buildRecipients",
+          "startLine": 31,
+          "endLine": 35,
+          "params": [
+            "emails"
+          ]
+        },
+        {
+          "name": "escapeHtml",
+          "startLine": 37,
+          "endLine": 44,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "buildCommentSnippet",
+          "startLine": 46,
+          "endLine": 51,
+          "params": [
+            "commentText"
+          ]
+        },
+        {
+          "name": "buildTicketUrl",
+          "startLine": 53,
+          "endLine": 62,
+          "params": [
+            "ticketId"
+          ]
+        },
+        {
+          "name": "buildOpenTicketButton",
+          "startLine": 64,
+          "endLine": 78,
+          "params": [
+            "ticketId"
+          ]
+        },
+        {
+          "name": "findUserEmailsByIds",
+          "startLine": 80,
+          "endLine": 87,
+          "params": [
+            "userIds",
+            "users"
+          ]
+        },
+        {
+          "name": "resolveSolviCommentNotificationRecipients",
+          "startLine": 110,
+          "endLine": 135,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "notifyConversationComment",
+          "startLine": 145,
+          "endLine": 171,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "notifyCommentMention",
+          "startLine": 173,
+          "endLine": 198,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "notifySolviCommentActivity",
+          "startLine": 210,
+          "endLine": 237,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "notifyTicketCreatedSolicitante",
+          "startLine": 239,
+          "endLine": 266,
+          "params": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "notifyTicketCreatedResolutor",
+          "startLine": 268,
+          "endLine": 295,
+          "params": [
+            "ticket"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "resolveSolviCommentNotificationRecipients",
+          "line": 110,
+          "isDefault": false
+        },
+        {
+          "name": "notifySolviCommentActivity",
+          "line": 210,
+          "isDefault": false
+        },
+        {
+          "name": "notifyTicketCreatedSolicitante",
+          "line": 239,
+          "isDefault": false
+        },
+        {
+          "name": "notifyTicketCreatedResolutor",
+          "line": 268,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "sendMail",
+          "callee": "fetch",
+          "lineNumber": 11
+        },
+        {
+          "caller": "sendMail",
+          "callee": "JSON.stringify",
+          "lineNumber": 14
+        },
+        {
+          "caller": "normalizeEmails",
+          "callee": "emails\n      .map((email) => String(email ?? '').trim().toLowerCase())\n      .filter",
+          "lineNumber": 20
+        },
+        {
+          "caller": "normalizeEmails",
+          "callee": "emails\n      .map",
+          "lineNumber": 20
+        },
+        {
+          "caller": "normalizeEmails",
+          "callee": "String(email ?? '').trim().toLowerCase",
+          "lineNumber": 21
+        },
+        {
+          "caller": "normalizeEmails",
+          "callee": "String(email ?? '').trim",
+          "lineNumber": 21
+        },
+        {
+          "caller": "normalizeEmails",
+          "callee": "String",
+          "lineNumber": 21
+        },
+        {
+          "caller": "excludeEmails",
+          "callee": "normalizeEmails",
+          "lineNumber": 27
+        },
+        {
+          "caller": "excludeEmails",
+          "callee": "normalizeEmails(emails).filter",
+          "lineNumber": 28
+        },
+        {
+          "caller": "excludeEmails",
+          "callee": "normalizeEmails",
+          "lineNumber": 28
+        },
+        {
+          "caller": "excludeEmails",
+          "callee": "excludedSet.has",
+          "lineNumber": 28
+        },
+        {
+          "caller": "buildRecipients",
+          "callee": "normalizeEmails(emails).map",
+          "lineNumber": 32
+        },
+        {
+          "caller": "buildRecipients",
+          "callee": "normalizeEmails",
+          "lineNumber": 32
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "value\n    .replace('&', '&amp;')\n    .replace('<', '&lt;')\n    .replace('>', '&gt;')\n    .replace('\"', '&quot;')\n    .replace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "value\n    .replace('&', '&amp;')\n    .replace('<', '&lt;')\n    .replace('>', '&gt;')\n    .replace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "value\n    .replace('&', '&amp;')\n    .replace('<', '&lt;')\n    .replace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "value\n    .replace('&', '&amp;')\n    .replace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "escapeHtml",
+          "callee": "value\n    .replace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "buildCommentSnippet",
+          "callee": "String(commentText ?? '').trim",
+          "lineNumber": 47
+        },
+        {
+          "caller": "buildCommentSnippet",
+          "callee": "String",
+          "lineNumber": 47
+        },
+        {
+          "caller": "buildCommentSnippet",
+          "callee": "trimmed.replace",
+          "lineNumber": 48
+        },
+        {
+          "caller": "buildCommentSnippet",
+          "callee": "compact.slice",
+          "lineNumber": 49
+        },
+        {
+          "caller": "buildCommentSnippet",
+          "callee": "escapeHtml",
+          "lineNumber": 50
+        },
+        {
+          "caller": "buildTicketUrl",
+          "callee": "String(ticketId ?? '').trim",
+          "lineNumber": 55
+        },
+        {
+          "caller": "buildTicketUrl",
+          "callee": "String",
+          "lineNumber": 55
+        },
+        {
+          "caller": "buildTicketUrl",
+          "callee": "encodeURIComponent",
+          "lineNumber": 61
+        },
+        {
+          "caller": "buildOpenTicketButton",
+          "callee": "buildTicketUrl",
+          "lineNumber": 65
+        },
+        {
+          "caller": "buildOpenTicketButton",
+          "callee": "`\n    <div style=\"margin-top:18px;\">\n      <a\n        href=\"${escapeHtml(ticketUrl)}\"\n        target=\"_blank\"\n        rel=\"noopener noreferrer\"\n        style=\"display:inline-block;padding:12px 18px;border-radius:10px;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;\"\n      >\n        Ver ticket en Prisma\n      </a>\n    </div>\n  `.trim",
+          "lineNumber": 66
+        },
+        {
+          "caller": "buildOpenTicketButton",
+          "callee": "escapeHtml",
+          "lineNumber": 69
+        },
+        {
+          "caller": "findUserEmailsByIds",
+          "callee": "users.map",
+          "lineNumber": 81
+        },
+        {
+          "caller": "findUserEmailsByIds",
+          "callee": "normalizeEmails",
+          "lineNumber": 82
+        },
+        {
+          "caller": "findUserEmailsByIds",
+          "callee": "userIds\n      .map((userId) => lookup.get(userId) ?? '')\n      .filter",
+          "lineNumber": 83
+        },
+        {
+          "caller": "findUserEmailsByIds",
+          "callee": "userIds\n      .map",
+          "lineNumber": 83
+        },
+        {
+          "caller": "findUserEmailsByIds",
+          "callee": "lookup.get",
+          "lineNumber": 84
+        },
+        {
+          "caller": "resolveSolviCommentNotificationRecipients",
+          "callee": "excludeEmails",
+          "lineNumber": 113
+        },
+        {
+          "caller": "resolveSolviCommentNotificationRecipients",
+          "callee": "findUserEmailsByIds",
+          "lineNumber": 114
+        },
+        {
+          "caller": "resolveSolviCommentNotificationRecipients",
+          "callee": "findUserEmailsByIds",
+          "lineNumber": 118
+        },
+        {
+          "caller": "resolveSolviCommentNotificationRecipients",
+          "callee": "normalizeEmails",
+          "lineNumber": 119
+        },
+        {
+          "caller": "resolveSolviCommentNotificationRecipients",
+          "callee": "excludeEmails",
+          "lineNumber": 126
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "buildRecipients",
+          "lineNumber": 146
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "`\n    <div style=\"font-family:Segoe UI,Arial,sans-serif;color:#111827;line-height:1.5;\">\n      <p>Hola,</p>\n      <p>Se agrego un nuevo comentario en el ticket <strong>${escapeHtml(String(params.ticket.ticket_solvi_id ?? '-'))}</strong>.</p>\n      <div style=\"border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#f9fafb;\">\n        <p style=\"margin:0 0 8px 0;\"><strong>Ticket:</strong> ${escapeHtml(String(params.ticket.ticket_solvi_titulo ?? 'Sin asunto'))}</p>\n        <p style=\"margin:0 0 8px 0;\"><strong>Autor:</strong> ${escapeHtml(params.authorName)}${params.authorEmail ? ` (${escapeHtml(params.authorEmail)})` : ''}</p>\n        <p style=\"margin:0;\"><strong>Comentario:</strong><br>${buildCommentSnippet(params.commentText)}</p>\n      </div>\n      ${buildOpenTicketButton(params.ticket.ticket_solvi_id)}\n      <p style=\"margin-top:16px;\">Este es un mensaje automatico, por favor no respondas.</p>\n    </div>\n  `.trim",
+          "lineNumber": 150
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "escapeHtml",
+          "lineNumber": 153
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "String",
+          "lineNumber": 153
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "escapeHtml",
+          "lineNumber": 155
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "String",
+          "lineNumber": 155
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "escapeHtml",
+          "lineNumber": 156
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "escapeHtml",
+          "lineNumber": 156
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "buildCommentSnippet",
+          "lineNumber": 157
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "buildOpenTicketButton",
+          "lineNumber": 159
+        },
+        {
+          "caller": "notifyConversationComment",
+          "callee": "sendMail",
+          "lineNumber": 164
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "buildRecipients",
+          "lineNumber": 174
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "`\n    <div style=\"font-family:Segoe UI,Arial,sans-serif;color:#111827;line-height:1.5;\">\n      <p>Hola,</p>\n      <p><strong>${escapeHtml(params.authorName)}</strong>${params.authorEmail ? ` (${escapeHtml(params.authorEmail)})` : ''} te menciono en el ticket <strong>${escapeHtml(String(params.ticket.ticket_solvi_id ?? '-'))}</strong>.</p>\n      <div style=\"border:1px solid #dbeafe;border-radius:12px;padding:16px;background:#eff6ff;\">\n        <p style=\"margin:0 0 8px 0;\"><strong>Asunto:</strong> ${escapeHtml(String(params.ticket.ticket_solvi_titulo ?? 'Sin asunto'))}</p>\n        <p style=\"margin:0;\"><strong>Comentario:</strong><br>${buildCommentSnippet(params.commentText)}</p>\n      </div>\n      ${buildOpenTicketButton(params.ticket.ticket_solvi_id)}\n      <p style=\"margin-top:16px;\">Este es un mensaje automatico, por favor no respondas.</p>\n    </div>\n  `.trim",
+          "lineNumber": 178
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "escapeHtml",
+          "lineNumber": 181
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "escapeHtml",
+          "lineNumber": 181
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "escapeHtml",
+          "lineNumber": 181
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "String",
+          "lineNumber": 181
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "escapeHtml",
+          "lineNumber": 183
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "String",
+          "lineNumber": 183
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "buildCommentSnippet",
+          "lineNumber": 184
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "buildOpenTicketButton",
+          "lineNumber": 186
+        },
+        {
+          "caller": "notifyCommentMention",
+          "callee": "sendMail",
+          "lineNumber": 191
+        },
+        {
+          "caller": "notifySolviCommentActivity",
+          "callee": "resolveSolviCommentNotificationRecipients",
+          "lineNumber": 213
+        },
+        {
+          "caller": "notifySolviCommentActivity",
+          "callee": "Promise.all",
+          "lineNumber": 221
+        },
+        {
+          "caller": "notifySolviCommentActivity",
+          "callee": "notifyConversationComment",
+          "lineNumber": 222
+        },
+        {
+          "caller": "notifySolviCommentActivity",
+          "callee": "notifyCommentMention",
+          "lineNumber": 229
+        },
+        {
+          "caller": "notifyTicketCreatedSolicitante",
+          "callee": "(ticket.ticket_solvi_correo_solicitante ?? '').trim",
+          "lineNumber": 240
+        },
+        {
+          "caller": "notifyTicketCreatedSolicitante",
+          "callee": "`\n    <p>¡Hola ${ticket.ticket_solvi_solicitante ?? ''}!<br><br>\n    Tu solicitud ha sido registrada exitosamente y ha sido asignada a un técnico para su gestión. Estos son los detalles del caso:<br><br>\n    <strong>ID del Caso:</strong> ${ticket.ticket_solvi_id}<br>\n    <strong>Espacio fisico:</strong> ${ticket.ticket_solvi_titulo}<br>\n    <strong>Resolutor asignado:</strong> ${ticket.ticket_solvi_correo_resolutor ?? '—'}<br>\n    <strong>Fecha máxima de solución:</strong> ${toISODateTimeFlex(ticket.ticket_solvi_fechamaxima) ?? 'No aplica'}<br><br>\n    El resolutor asignado se pondrá en contacto contigo en el menor tiempo posible para darte solución a tu requerimiento.<br><br>\n    Este es un mensaje automático, por favor no respondas.\n    </p>\n  `.trim",
+          "lineNumber": 245
+        },
+        {
+          "caller": "notifyTicketCreatedSolicitante",
+          "callee": "toISODateTimeFlex",
+          "lineNumber": 251
+        },
+        {
+          "caller": "notifyTicketCreatedSolicitante",
+          "callee": "sendMail",
+          "lineNumber": 259
+        },
+        {
+          "caller": "notifyTicketCreatedResolutor",
+          "callee": "`\n    <p>¡Hola!<br><br>\n    Tienes un nuevo caso asignado con estos detalles:<br><br>\n    <strong>ID del Caso:</strong> ${ticket.ticket_solvi_id}<br>\n    <strong>Solicitante:</strong> ${ticket.ticket_solvi_solicitante ?? '—'}<br>\n    <strong>Correo del Solicitante:</strong> ${ticket.ticket_solvi_correo_solicitante ?? '—'}<br>\n    <strong>Asunto:</strong> ${ticket.ticket_solvi_titulo}<br>\n    <strong>Fecha máxima de solución:</strong> ${ticket.ticket_solvi_fechamaxima}<br><br>\n    Por favor, contacta al usuario para brindarle solución.<br><br>\n    Este es un mensaje automático, por favor no respondas.\n    </p>\n  `.trim",
+          "lineNumber": 273
+        },
+        {
+          "caller": "notifyTicketCreatedResolutor",
+          "callee": "sendMail",
+          "lineNumber": 288
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 4,
+        "functionCount": 15,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 99,
+      "nonEmptyLines": 83,
+      "classes": [
+        {
+          "name": "SubcategoriasSPService",
+          "startLine": 10,
+          "endLine": 99,
+          "methods": [
+            "constructor",
+            "esc",
+            "cacheKey",
+            "loadCache",
+            "saveCache",
+            "ensureIds",
+            "toModel",
+            "getAll",
+            "getByCategoria"
+          ],
+          "properties": [
+            "graph",
+            "hostname",
+            "sitePath",
+            "listName",
+            "siteId",
+            "listId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SubcategoriasSPService",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "sitePath.startsWith",
+          "lineNumber": 27
+        },
+        {
+          "caller": "esc",
+          "callee": "String(s).replace",
+          "lineNumber": 31
+        },
+        {
+          "caller": "esc",
+          "callee": "String",
+          "lineNumber": 31
+        },
+        {
+          "caller": "loadCache",
+          "callee": "localStorage.getItem",
+          "lineNumber": 37
+        },
+        {
+          "caller": "loadCache",
+          "callee": "JSON.parse",
+          "lineNumber": 39
+        },
+        {
+          "caller": "saveCache",
+          "callee": "localStorage.setItem",
+          "lineNumber": 48
+        },
+        {
+          "caller": "saveCache",
+          "callee": "JSON.stringify",
+          "lineNumber": 48
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.loadCache",
+          "lineNumber": 53
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 59
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.esc",
+          "lineNumber": 64
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 69
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 76
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.ensureIds",
+          "lineNumber": 83
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 86
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 87
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 88
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 88
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 89
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res.value ?? []).map",
+          "lineNumber": 93
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 93
+        },
+        {
+          "caller": "getByCategoria",
+          "callee": "this.getAll",
+          "lineNumber": 97
+        },
+        {
+          "caller": "getByCategoria",
+          "callee": "this.esc",
+          "lineNumber": 97
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 168,
+      "nonEmptyLines": 142,
+      "classes": [
+        {
+          "name": "UsuariosSPService",
+          "startLine": 19,
+          "endLine": 167,
+          "methods": [
+            "constructor",
+            "esc",
+            "loadCache",
+            "saveCache",
+            "ensureIds",
+            "toModel",
+            "get",
+            "getAll",
+            "update"
+          ],
+          "properties": [
+            "graph",
+            "hostname",
+            "sitePath",
+            "listName",
+            "siteId",
+            "listId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "UsuariosSPService",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "constructor",
+          "callee": "sitePath.startsWith",
+          "lineNumber": 36
+        },
+        {
+          "caller": "esc",
+          "callee": "String(s).replace",
+          "lineNumber": 41
+        },
+        {
+          "caller": "esc",
+          "callee": "String",
+          "lineNumber": 41
+        },
+        {
+          "caller": "loadCache",
+          "callee": "localStorage.getItem",
+          "lineNumber": 47
+        },
+        {
+          "caller": "loadCache",
+          "callee": "JSON.parse",
+          "lineNumber": 49
+        },
+        {
+          "caller": "saveCache",
+          "callee": "localStorage.setItem",
+          "lineNumber": 59
+        },
+        {
+          "caller": "saveCache",
+          "callee": "JSON.stringify",
+          "lineNumber": 59
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.loadCache",
+          "lineNumber": 64
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 67
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 70
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "await this.graph.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.esc",
+          "lineNumber": 75
+        },
+        {
+          "caller": "ensureIds",
+          "callee": "this.saveCache",
+          "lineNumber": 80
+        },
+        {
+          "caller": "toModel",
+          "callee": "String",
+          "lineNumber": 88
+        },
+        {
+          "caller": "get",
+          "callee": "this.ensureIds",
+          "lineNumber": 98
+        },
+        {
+          "caller": "get",
+          "callee": "await this.graph.get",
+          "lineNumber": 99
+        },
+        {
+          "caller": "get",
+          "callee": "this.toModel",
+          "lineNumber": 102
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.ensureIds",
+          "lineNumber": 106
+        },
+        {
+          "caller": "normalizeFieldTokens",
+          "callee": "s\r\n        .replace(/\\bID\\b/g, 'id')\r\n        .replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "normalizeFieldTokens",
+          "callee": "s\r\n        .replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "escapeODataLiteral",
+          "callee": "v.replace",
+          "lineNumber": 114
+        },
+        {
+          "caller": "normalizeFilter",
+          "callee": "normalizeFieldTokens",
+          "lineNumber": 118
+        },
+        {
+          "caller": "normalizeFilter",
+          "callee": "raw.trim",
+          "lineNumber": 118
+        },
+        {
+          "caller": "normalizeFilter",
+          "callee": "out.replace",
+          "lineNumber": 120
+        },
+        {
+          "caller": "normalizeFilter",
+          "callee": "escapeODataLiteral",
+          "lineNumber": 120
+        },
+        {
+          "caller": "normalizeOrderby",
+          "callee": "normalizeFieldTokens",
+          "lineNumber": 124
+        },
+        {
+          "caller": "normalizeOrderby",
+          "callee": "raw.trim",
+          "lineNumber": 124
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 127
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 128
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 129
+        },
+        {
+          "caller": "getAll",
+          "callee": "normalizeOrderby",
+          "lineNumber": 129
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 130
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 130
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.set",
+          "lineNumber": 131
+        },
+        {
+          "caller": "getAll",
+          "callee": "normalizeFilter",
+          "lineNumber": 131
+        },
+        {
+          "caller": "getAll",
+          "callee": "String",
+          "lineNumber": 131
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString().replace",
+          "lineNumber": 134
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs.toString",
+          "lineNumber": 134
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 136
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 136
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 139
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res.value ?? []).map",
+          "lineNumber": 140
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 140
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs2.delete",
+          "lineNumber": 146
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 147
+        },
+        {
+          "caller": "getAll",
+          "callee": "encodeURIComponent",
+          "lineNumber": 147
+        },
+        {
+          "caller": "getAll",
+          "callee": "qs2.toString",
+          "lineNumber": 147
+        },
+        {
+          "caller": "getAll",
+          "callee": "await this.graph.get",
+          "lineNumber": 148
+        },
+        {
+          "caller": "getAll",
+          "callee": "(res2.value ?? []).map",
+          "lineNumber": 149
+        },
+        {
+          "caller": "getAll",
+          "callee": "this.toModel",
+          "lineNumber": 149
+        },
+        {
+          "caller": "update",
+          "callee": "this.ensureIds",
+          "lineNumber": 156
+        },
+        {
+          "caller": "update",
+          "callee": "await this.graph.patch",
+          "lineNumber": 157
+        },
+        {
+          "caller": "update",
+          "callee": "await this.graph.get",
+          "lineNumber": 161
+        },
+        {
+          "caller": "update",
+          "callee": "this.toModel",
+          "lineNumber": 164
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "src/features/requests/types/SolviTicket.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 18,
+      "nonEmptyLines": 18,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

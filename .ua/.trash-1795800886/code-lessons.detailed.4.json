@@ -1,0 +1,479 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-27T17:32:58.327Z",
+  "files": {
+    "src/features/requests/hooks/useSolviTickets.ts": {
+      "overview": "Reúne los hooks de TanStack Query que consumen los tickets de SOLVI: listado paginado por cursor con búsqueda, vista previa acotada, detalle con seguimientos y adjuntos, y subida de adjuntos comprimidos. Casi todo pasa por `apiClient.call`, que invoca acciones nombradas del backend, salvo `fetchTicketAttachments`, que consulta Supabase directamente. Es la capa de datos que usa la integración SOLVI del paso 12 del tour.",
+      "sections": [
+        {
+          "title": "Imports y documentación del módulo",
+          "lineRange": [
+            1,
+            18
+          ],
+          "explanation": "Importa las primitivas de React Query (`useInfiniteQuery`, `useQuery`, `useMutation`, `useQueryClient`), el helper `compressImage`, el `apiClient` y el cliente `supabase`. El bloque JSDoc del módulo resume los cinco exports, así que sirve como índice rápido del archivo.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Tipos del ticket y del cursor",
+          "lineRange": [
+            20,
+            40
+          ],
+          "explanation": "`SolviTicket` refleja las columnas principales de la tabla con el prefijo `ticket_solvi_`; casi todos los campos aceptan `null` porque vienen de datos importados. `SolviCursor` combina `fecha` + `id`: es una paginación por keyset, que se mantiene estable aunque entren filas nuevas, a diferencia de un offset. `SolviPage` empaqueta los items con el `nextCursor` del siguiente bloque.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Listado infinito con búsqueda",
+          "lineRange": [
+            42,
+            65
+          ],
+          "explanation": "`useSolviTickets` usa `useInfiniteQuery` con `queryKey: ['solviTickets', search]`, de modo que cada término de búsqueda tiene su propia caché. El `pageParam` arranca en `null` y `getNextPageParam` devuelve el `nextCursor` del servidor; cuando es `null`, React Query sabe que no hay más páginas. Un `search` vacío se manda como `undefined` para que el backend no filtre, y las páginas son de 300 filas con `staleTime` de 30 s.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Vista previa sin paginación",
+          "lineRange": [
+            67,
+            85
+          ],
+          "explanation": "`useSolviTicketsPreview` llama a la misma acción `fetchSolviTickets` pero solo con `limit` y se queda con `page.items`, descartando el cursor. Usa otra `queryKey` (`solviTicketsPreview`), así que su caché no se mezcla con la del listado infinito.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Tipos de seguimientos, adjuntos y detalle",
+          "lineRange": [
+            87,
+            125
+          ],
+          "explanation": "Define `SolviSeguimiento` (acciones registradas sobre un ticket) y `SolviAttachment`, que incluye `signedUrl` porque el backend devuelve URLs firmadas del storage. `SolviTicketFull` se modela como `Record<string, unknown>` con `ticket_solvi_id` obligatorio: así se aceptan todas las columnas sin tiparlas una por una, a cambio de perder seguridad de tipos en los demás campos. `SolviTicketDetail` agrupa las tres piezas.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Hook de detalle del ticket",
+          "lineRange": [
+            127,
+            143
+          ],
+          "explanation": "`useSolviTicketDetail` consulta `fetchSolviTicketDetail` y se desactiva con `enabled: id != null`. Es el patrón habitual para abrir un panel de detalle: mientras no haya ticket seleccionado no sale ninguna petición. La clave `['solviTicketDetail', id]` es la misma que invalida la mutación de subida.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Mutación de subida de adjuntos",
+          "lineRange": [
+            145,
+            186
+          ],
+          "explanation": "Primero pasa el archivo por `compressImage` (las imágenes se comprimen; PDF y video pasan tal cual y se lanza un error si superan 20 MB). Después envuelve `FileReader.readAsDataURL` en una `Promise` y quita el prefijo `data:...;base64,` con `split(',')[1]` antes de mandar el contenido a `uploadSolviAttachment`. Los errores se normalizan a `Error`. En `onSuccess` invalida el detalle de ese ticket para que el nuevo adjunto aparezca sin recargar.",
+          "tourOrder": 12
+        },
+        {
+          "title": "Lectura directa de adjuntos",
+          "lineRange": [
+            188,
+            211
+          ],
+          "explanation": "`fetchTicketAttachments` no es un hook: es una función async que consulta `TBL_Ticket_Attachments_Solvi` en Supabase sin pasar por `apiClient`, filtrando por `id_ticket` y ordenando por `created_at` ascendente. Como el `select('*')` lee la tabla directamente, `signedUrl` no vendrá poblado aunque el tipo de retorno `SolviAttachment` lo declare. Ojo: con TypeScript estricto el guard `id == null` sobra porque el parámetro es `number`; solo protege ante llamadas desde código sin tipar.",
+          "tourOrder": 12
+        }
+      ]
+    },
+    "prisma-migrations/README.md": {
+      "overview": "Documentación del sub-proyecto `prisma-migrations`, un ETL independiente que migra solicitudes históricas desde Excel hacia la base de PRISMA en Supabase. Explica las fases Extract/Transform/Load, los principios de idempotencia y dry-run, cómo adaptar el manifiesto a otro Excel, la tabla de mapeo de columnas, las reglas de resolución, el rollback y la solución de problemas. Es la puerta de entrada al paso 13 del tour.",
+      "sections": [
+        {
+          "title": "Propósito y alcance",
+          "lineRange": [
+            1,
+            7
+          ],
+          "explanation": "Presenta el proyecto como **hermano** de la app: vive fuera de `src/` y `supabase/`, no se despliega y se ejecuta puntualmente desde la máquina del desarrollador. Deja claro desde el inicio que respeta el modelo de plantillas, junctions y generación de IDs de PRISMA.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Patrón ETL y principios",
+          "lineRange": [
+            9,
+            24
+          ],
+          "explanation": "Describe las tres fases y los principios que guían el diseño: idempotencia mediante `TBL_Migration_Map` por `(archivo, fila)`, dry-run antes de escribir, no perder datos (lo imperfecto se migra y se marca) y no adivinar nunca los asignados. Estos principios explican buena parte del código de `02-validate.ts` y `03-load.ts`.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Usuario del sistema y estructura",
+          "lineRange": [
+            26,
+            56
+          ],
+          "explanation": "Exige que exista el usuario id 17, autor de los comentarios migrados desde la columna \"Notas\". Luego muestra el árbol de carpetas: `run.ts` como orquestador, `config/` para la configuración editable, `lib/` para el motor (cliente HTTP con `X-Internal-Job-Secret`, lectura de Excel, transformaciones, resolución de usuarios) y `phases/` con las tres fases numeradas.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Uso del CLI y lectura del reporte",
+          "lineRange": [
+            58,
+            86
+          ],
+          "explanation": "Indica que siempre se corre primero `npm run dry` y luego `npm run commit`, con `--sheet` opcional, y recuerda que el `--` es obligatorio para separar los argumentos de npm de los del script. Explica qué mirar en el reporte del dry-run (encabezados faltantes, asignados sin resolver, sprints y etiquetas nuevos) y que reejecutar el commit es seguro gracias a la idempotencia.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Cómo adaptar el manifiesto",
+          "lineRange": [
+            88,
+            201
+          ],
+          "explanation": "Es la sección central del diseño: para otro Excel solo se tocan `mapping.ts` y `runConfig.ts`, nunca el motor. Cubre el objeto `COL` (coincidencia exacta de encabezados), `DISCARDED_COLUMNS` como pura documentación, el enrutamiento por status con claves normalizadas, la elección de plantilla (General vs. Migraciones con `datos_adicionales`), `EXTRA_DATA_COLS`, los IDs de cada corrida y el mapa de prioridad a score.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Tabla de mapeo y reglas de resolución",
+          "lineRange": [
+            204,
+            234
+          ],
+          "explanation": "La tabla relaciona cada columna del Excel con su destino en PRISMA y la conversión aplicada (HH:MM a decimal, D/M/AAAA a UTC de Bogotá, Sí/No a booleano, junctions para sprint, etiquetas y asignados). Las reglas de resolución explican cómo se emparejan los sprints por texto exacto, las etiquetas por la tripleta `(nombre, equipo, board)` y los asignados por nombre normalizado; si hay cero o varias coincidencias, la solicitud queda sin asignar.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Rollback, problemas y mantenimiento",
+          "lineRange": [
+            236,
+            261
+          ],
+          "explanation": "El rollback se basa en `TBL_Migration_Map` y `Request_Is_Legacy = true`; el SQL no se incluye a propósito para evitar borrados accidentales. La tabla de problemas relaciona síntomas como `401 No autorizado (internal)` con su causa (un secreto que no coincide). Al final advierte que el pool de íconos y colores está duplicado en el handler del Edge Function, porque este no puede importar desde `src/`.",
+          "tourOrder": 13
+        }
+      ]
+    },
+    "prisma-migrations/src/run.ts": {
+      "overview": "Punto de entrada CLI del ETL de migraciones. Interpreta los argumentos (`--commit`/`--dry-run`, `--file`, `--sheet`), lee el Excel, construye el resolvedor de usuarios y delega en la fase de validación o en la de carga según el modo. Es el orquestador que menciona el paso 13 del tour.",
+      "sections": [
+        {
+          "title": "Cabecera e imports",
+          "lineRange": [
+            1,
+            15
+          ],
+          "explanation": "El comentario documenta los dos comandos de uso y la opción `--sheet`. Los imports llevan extensión `.ts` explícita, lo que indica que el proyecto se ejecuta con un runtime que carga TypeScript directamente en lugar de compilar a JS. Trae las dos fases, el lector de Excel, el resolvedor de usuarios y los IDs `BOARD_ID`/`TARGET_TEAM_ID` de `runConfig`.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Parseo de argumentos",
+          "lineRange": [
+            17,
+            38
+          ],
+          "explanation": "`parseArgs` recorre `process.argv` a mano, sin librería. El modo por defecto es `'dry'`, una decisión deliberada de seguridad: solo un `--commit` explícito escribe en la base. `--file` y `--sheet` consumen el argumento siguiente con `argv[++i]`. Los `@ts-ignore` tapan la falta de tipos de Node para `process`.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Flujo principal",
+          "lineRange": [
+            40,
+            69
+          ],
+          "explanation": "`main` aborta con un mensaje de uso si falta `--file`. Luego lee el Excel con `readExcel`, informa filas, columnas, equipo y board de destino, y construye el `userResolver` (que consulta la base incluso en dry-run). Según el modo llama a `runDryRun` (síncrono, sin escritura) o a `runLoad` (async, con un aviso visible de que escribe) y después imprime el reporte correspondiente. La línea 52 junta dos sentencias en una sola línea, un detalle de formato sin efecto funcional.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Manejo de errores fatales",
+          "lineRange": [
+            71,
+            75
+          ],
+          "explanation": "Cualquier excepción que escape de `main` se captura, se imprime su `message` y el proceso termina con código 1. Así un script o el operador puede detectar el fallo por el código de salida.",
+          "tourOrder": 13
+        }
+      ]
+    },
+    "prisma-migrations/src/config/mapping.ts": {
+      "overview": "Manifiesto declarativo del ETL: define qué encabezado del Excel alimenta cada campo de destino, cómo se enruta el status a columnas del Kanban y qué columnas se descartan a propósito. El motor lee por nombre de encabezado, así que adaptar otro Excel consiste en editar solo este archivo. Corresponde al \"manifiesto de columnas\" del paso 13 del tour.",
+      "sections": [
+        {
+          "title": "Propósito del manifiesto",
+          "lineRange": [
+            1,
+            10
+          ],
+          "explanation": "El comentario fija la regla de diseño: el motor busca columnas por **nombre**, no por posición, y para otro Excel se edita solo este archivo. Importa `TARGET_COLUMN_ID` desde `runConfig` para usarlo como columna por defecto.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Mapa de encabezados COL",
+          "lineRange": [
+            12,
+            31
+          ],
+          "explanation": "`COL` asocia cada clave lógica (`titulo`, `asignada`, `prioridad`…) con el texto exacto del encabezado en el Excel. El `as const` convierte los valores en tipos literales, y las fases usan `Object.values(COL)` para detectar encabezados faltantes y filas en blanco. Si en el Excel cambia una tilde o un espacio, el campo queda vacío y el dry-run lo avisa.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Enrutamiento de status",
+          "lineRange": [
+            33,
+            44
+          ],
+          "explanation": "`STATUS_TO_COLUMN` está vacío a propósito: hoy todas las solicitudes van a `DEFAULT_COLUMN_ID` (la columna Historial). La estructura ya permite enrutar por status agregando entradas con clave normalizada, sin tocar el motor.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Columnas descartadas",
+          "lineRange": [
+            46,
+            63
+          ],
+          "explanation": "`DISCARDED_COLUMNS` no se usa en la ejecución; existe para dejar documentado qué se ignora y por qué (adjuntos que no se migran, columnas que vienen vacías, el puntaje que se deriva de la prioridad). Mantener esta lista evita que alguien crea más adelante que una columna se olvidó por error.",
+          "tourOrder": 13
+        }
+      ]
+    },
+    "prisma-migrations/src/phases/02-validate.ts": {
+      "overview": "Fase 2 del ETL: el dry-run. Recorre las filas, construye cada payload con mapas de sprint y etiqueta vacíos (sin resolver nada en la base), acumula advertencias e incidencias y genera un reporte legible por consola. No escribe nada; su objetivo es que el operador revise el resultado antes de ejecutar `--commit`, como describe el paso 13.",
+      "sections": [
+        {
+          "title": "Imports y tipos del resultado",
+          "lineRange": [
+            1,
+            33
+          ],
+          "explanation": "Importa los tipos de fila y del resolvedor, el builder `buildPayload`, `findMissingHeaders` y los extractores de sprints y etiquetas de la fase 1. `DryRunResult` define todo lo que mostrará el reporte: totales, encabezados faltantes, contadores warn/info, asignados sin resolver (con motivo `not_found` o `ambiguous`), sprints y etiquetas únicos, e incidencias por fila.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Detección de filas en blanco",
+          "lineRange": [
+            35,
+            38
+          ],
+          "explanation": "Una fila se considera en blanco si todas las columnas de `COL` quedan en `null` después de `cleanText`. Así se filtran las filas vacías que los Excel suelen arrastrar al final. La misma función está duplicada en `03-load.ts`.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Ejecución del dry-run",
+          "lineRange": [
+            40,
+            102
+          ],
+          "explanation": "Arma un `BuildContext` con `sprintMap` y `labelMap` vacíos, así que el builder corre igual que en el commit pero sin IDs reales. Calcula `excelRow = i + 2` para que los números de fila coincidan con los que ve el usuario en Excel. Por cada incidencia cuenta warn/info y, si afecta a la columna `asignada`, extrae el nombre y los candidatos **parseando el texto del mensaje** con regex y `split`: funciona, pero queda acoplado al formato exacto de los mensajes de `buildPayload`. En `rowIssues` solo guarda las filas con advertencias de nivel warn.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Impresión del reporte",
+          "lineRange": [
+            104,
+            153
+          ],
+          "explanation": "`printDryRunReport` da formato al resultado con separadores y secciones: totales, encabezados faltantes, sprints y etiquetas a crear, asignados sin resolver (con los candidatos cuando hay ambigüedad) y filas con advertencias, de las que muestra solo las primeras 30 para no saturar la consola. Cierra recordando que no se escribió nada.",
+          "tourOrder": 13
+        }
+      ]
+    },
+    "prisma-migrations/src/phases/03-load.ts": {
+      "overview": "Fase 3 del ETL: la carga real (commit). Primero resuelve o crea sprints y etiquetas, luego construye cada payload con los mapas reales y crea las solicitudes una por una llamando a la acción `migrateRequest` del Edge Function con reintentos. Es idempotente: el servidor responde `skipped` para las filas ya migradas, como resume el paso 13.",
+      "sections": [
+        {
+          "title": "Imports y tipo LoadResult",
+          "lineRange": [
+            1,
+            21
+          ],
+          "explanation": "El comentario resume la fase e insiste en la idempotencia. `LoadResult` cuenta las solicitudes creadas y saltadas (ya registradas en `TBL_Migration_Map`), las fallidas con su fila y error, y los sprints y etiquetas creados, que también sirven para un posible rollback.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Filtro de filas en blanco",
+          "lineRange": [
+            23,
+            26
+          ],
+          "explanation": "Es la misma lógica que en el dry-run: se descartan las filas cuyas columnas mapeadas están todas vacías. Está duplicada en lugar de compartida, así que si cambia el criterio hay que actualizar ambos archivos.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Resolución de dependencias",
+          "lineRange": [
+            28,
+            40
+          ],
+          "explanation": "`runLoad` llama primero a `resolveSprintsAndLabels`, que **sí escribe** en la base (hace upsert de sprints y etiquetas) y devuelve mapas de texto a ID. Con esos mapas se crea el `BuildContext` real, a diferencia del dry-run, donde iban vacíos.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Creación secuencial de solicitudes",
+          "lineRange": [
+            42,
+            71
+          ],
+          "explanation": "Asocia cada fila a su número de fila de Excel (`i + 2`) antes de filtrar las vacías, para que los números del reporte sigan siendo correctos. Procesa las filas en serie con `await` dentro del `for`, lo que evita saturar el Edge Function y mantiene el orden. Cada llamada usa `callWithRetry('migrateRequest', ...)`; si el servidor responde `skipped`, la fila ya estaba migrada. Los errores se acumulan sin detener la corrida, y cada 25 filas se imprime el progreso.",
+          "tourOrder": 13
+        },
+        {
+          "title": "Reporte final de la carga",
+          "lineRange": [
+            73,
+            93
+          ],
+          "explanation": "`printLoadReport` muestra los totales y lista las filas fallidas con su error, e indica que basta con reejecutar para reintentarlas, ya que la idempotencia evita duplicados.",
+          "tourOrder": 13
+        }
+      ]
+    },
+    "vite.config.ts": {
+      "overview": "Configuración de build de Vite para el frontend. Registra el plugin de React, un plugin propio que escribe `public/version.json` con el hash corto de git y el plugin VitePWA con Workbox, que hace la app instalable y precachea el shell. También expone `__APP_VERSION__` y el alias `@` hacia `src`. Es la primera pieza del paso 14 del tour.",
+      "sections": [
+        {
+          "title": "Imports y cálculo de versión",
+          "lineRange": [
+            1,
+            16
+          ],
+          "explanation": "`getVersion` ejecuta `git rev-parse --short HEAD` al cargar la configuración; si no hay git, usa un timestamp en base 36. El resultado, `APP_VERSION`, identifica cada build y es la base del mecanismo que detecta versiones nuevas.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Plugin prisma-version",
+          "lineRange": [
+            18,
+            27
+          ],
+          "explanation": "Es un plugin inline con el hook `buildStart`, que se ejecuta tanto en `dev` como en `build`, y escribe `public/version.json` con `{ v: APP_VERSION }`. Por eso ese archivo aparece modificado en git tras cada ejecución. La app desplegada puede pedir este JSON y compararlo con su `__APP_VERSION__` para saber si hay un despliegue más reciente.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Configuración de VitePWA",
+          "lineRange": [
+            28,
+            62
+          ],
+          "explanation": "`registerType: 'prompt'` y `injectRegister: null` dejan el control al componente `VersionUpdateBanner`, que registra el service worker con `virtual:pwa-register`: así hay un solo mecanismo de actualización. `manifest: false` hace que se use el `public/manifest.json` propio. En Workbox se precachean los assets (incluidas las fuentes .ttf, para evitar el parpadeo de fuente), se excluye `version.json` del precache y del fallback de navegación (si se cacheara, el aviso de versión nueva dejaría de funcionar), se fija el fallback SPA a `/index.html`, se sube el límite a 4 MB y se inyecta `sw-notifications.js` para gestionar los clics en notificaciones. En dev el service worker está desactivado.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Define y alias",
+          "lineRange": [
+            64,
+            72
+          ],
+          "explanation": "`define` sustituye `__APP_VERSION__` en el bundle por la versión como literal de string. El alias `@` apunta a `./src` mediante `import.meta.dirname` (disponible en Node moderno con módulos ESM), lo que permite imports como `@/lib/apiClient`.",
+          "tourOrder": 14
+        }
+      ]
+    },
+    ".github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml": {
+      "overview": "Workflow de GitHub Actions que compila el frontend y lo publica en Azure Static Web Apps en cada push a `main`. Instala dependencias, ejecuta `npm run build` con los secretos `VITE_*` inyectados como variables de entorno y sube la carpeta `dist` ya compilada usando autenticación OIDC. Es el pipeline de despliegue del paso 14.",
+      "sections": [
+        {
+          "title": "Disparador",
+          "lineRange": [
+            1,
+            6
+          ],
+          "explanation": "El workflow solo se dispara con `push` a `main`. Aunque los jobs tienen condiciones para eventos `pull_request` (heredadas de la plantilla de Azure), esos eventos no figuran en `on:`, así que no se crean entornos de preview por PR y el job de cierre nunca se ejecuta.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Job de build: entorno y permisos",
+          "lineRange": [
+            8,
+            21
+          ],
+          "explanation": "`build_and_deploy_job` corre en `ubuntu-24.04`. Pide `id-token: write` para poder emitir un token OIDC de GitHub y `contents: read` para el checkout, siguiendo el principio de mínimo privilegio.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Checkout, Node e instalación",
+          "lineRange": [
+            22,
+            36
+          ],
+          "explanation": "Clona el repositorio (con submódulos, sin LFS), configura Node 22 con caché de npm e instala con `npm ci --include=optional`. Incluir las dependencias opcionales suele ser necesario para los binarios nativos específicos de plataforma que usan algunas herramientas de build.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Build con secretos inyectados",
+          "lineRange": [
+            38,
+            48
+          ],
+          "explanation": "`npm run build` recibe los secretos como variables de entorno. Las `VITE_*` (URL de Supabase, clave publishable, client y tenant de Azure) quedan **embebidas en el bundle estático**, así que solo deben contener valores públicos, nunca credenciales privadas. Las variables `EXPORT_*` y `MAX_EXPORT_SIZE` no llevan el prefijo `VITE_`, por lo que Vite no las expone al cliente por defecto.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Token OIDC y despliegue",
+          "lineRange": [
+            50,
+            74
+          ],
+          "explanation": "Instala `@actions/core` y obtiene un ID token con `actions/github-script`, que luego se pasa como `github_id_token` a `Azure/static-web-apps-deploy`. Con `skip_app_build: true` y `app_location: dist`, Azure no recompila: sube tal cual lo generado en el paso anterior, que ya lleva las variables de entorno embebidas. No hay API asociada (`api_location` vacío).",
+          "tourOrder": 14
+        },
+        {
+          "title": "Job de cierre de PR",
+          "lineRange": [
+            76,
+            89
+          ],
+          "explanation": "Llama a la acción de Azure con `action: close` para eliminar el entorno de preview cuando se cierra un PR. Como el disparador solo incluye `push`, en la práctica este job nunca corre; es código heredado de la plantilla que genera Azure.",
+          "tourOrder": 14
+        }
+      ]
+    },
+    "public/staticwebapp.config.json": {
+      "overview": "Configuración de Azure Static Web Apps para el sitio publicado. Define el fallback SPA a `index.html` con excepciones para los assets y los archivos de la PWA, y fija cabeceras de caché para el service worker, `version.json` y el manifest. Complementa el workflow y la configuración de Workbox del paso 14.",
+      "sections": [
+        {
+          "title": "Fallback de navegación",
+          "lineRange": [
+            2,
+            15
+          ],
+          "explanation": "Cualquier ruta que no exista como archivo se reescribe a `/index.html`, para que React Router resuelva las rutas del lado del cliente. La lista `exclude` evita que los assets, iconos, `manifest.json`, `version.json`, `sw.js` y los scripts de Workbox reciban el HTML por error: si `sw.js` devolviera HTML, el registro del service worker fallaría.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Cabeceras de caché por ruta",
+          "lineRange": [
+            16,
+            20
+          ],
+          "explanation": "`sw.js` y `version.json` se sirven con `no-cache, no-store, must-revalidate`, de modo que el navegador siempre obtiene la última versión; es imprescindible para que funcionen el chequeo de versión y la actualización del service worker. El manifest usa `max-age=0, must-revalidate`, que permite cachearlo pero obliga a revalidar.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Tipos MIME",
+          "lineRange": [
+            21,
+            25
+          ],
+          "explanation": "Fuerza `application/json` para `.json` y `application/manifest+json` para `.webmanifest`, para que el servidor entregue el manifest de la PWA con el tipo que esperan los navegadores.",
+          "tourOrder": 14
+        }
+      ]
+    },
+    "public/manifest.json": {
+      "overview": "Web App Manifest de la PWA de PRISMA. Declara el nombre, el idioma `es-CO`, el modo `standalone`, los colores y los iconos que permiten instalar la app en escritorio y móvil. Vite lo usa en lugar del manifest generado por VitePWA (`manifest: false`), como se describe en el paso 14.",
+      "sections": [
+        {
+          "title": "Identidad y comportamiento",
+          "lineRange": [
+            1,
+            12
+          ],
+          "explanation": "`id`, `start_url` y `scope` apuntan a `/`, así que toda la app forma parte de la PWA instalada. `display: standalone` la abre sin la interfaz del navegador. `name` y `short_name` controlan el texto que aparece al instalarla y en el lanzador, y `theme_color`/`background_color` en blanco definen la barra y la pantalla de arranque.",
+          "tourOrder": 14
+        },
+        {
+          "title": "Iconos",
+          "lineRange": [
+            13,
+            18
+          ],
+          "explanation": "Declara iconos PNG de 192 y 512 px con `purpose: any`, más una variante `maskable` de 512 px que Android puede recortar con formas adaptativas sin cortar el logo. Estos `/prisma-*.png` coinciden con la exclusión `/*.png` del fallback de `staticwebapp.config.json`.",
+          "tourOrder": 14
+        }
+      ]
+    }
+  }
+}

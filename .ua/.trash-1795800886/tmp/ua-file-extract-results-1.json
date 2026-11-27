@@ -1,0 +1,1161 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 25,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 25,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "supabase/functions/api/config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 43,
+      "nonEmptyLines": 40,
+      "exports": [
+        {
+          "name": "TENANT_ID",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "SUPABASE_URL",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "SERVICE_KEY",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "CLIENT_ID",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "INTERNAL_JOB_SECRET",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "SELF_URL",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "JOB_CHUNK_SIZE",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "JOB_MAX_CHUNKS_PER_INVOKE",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "RATING_RATE_LIMIT_DAYS",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "MAX_EXPORT_SIZE",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "EXPORT_JOB_CHUNK_SIZE",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "EXPORT_MAX_CHUNKS_PER_INVOKE",
+          "line": 41,
+          "isDefault": false
+        },
+        {
+          "name": "EXPORT_BUCKET",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 13,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/deps.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 18,
+      "exports": [
+        {
+          "name": "createClient",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "createRemoteJWKSet",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "jwtVerify",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/email/send.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 156,
+      "nonEmptyLines": 140,
+      "functions": [
+        {
+          "name": "renderTemplate",
+          "startLine": 13,
+          "endLine": 15,
+          "params": [
+            "html",
+            "vars"
+          ]
+        },
+        {
+          "name": "sendEventEmail",
+          "startLine": 19,
+          "endLine": 156,
+          "params": [
+            "supabase",
+            "params"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "renderTemplate",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "sendEventEmail",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "renderTemplate",
+          "callee": "html.replace",
+          "lineNumber": 14
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('TBL_Email_Templates')\r\n      .select('Email_Template_ID, Email_Template_Name, Email_Template_Subject, Email_Template_Body_html')\r\n      .eq('Email_Template_Event_Key', params.eventKey)\r\n      .eq('Email_Template_Is_Active', true)\r\n      .maybeSingle",
+          "lineNumber": 38
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('TBL_Email_Templates')\r\n      .select('Email_Template_ID, Email_Template_Name, Email_Template_Subject, Email_Template_Body_html')\r\n      .eq('Email_Template_Event_Key', params.eventKey)\r\n      .eq",
+          "lineNumber": 38
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('TBL_Email_Templates')\r\n      .select('Email_Template_ID, Email_Template_Name, Email_Template_Subject, Email_Template_Body_html')\r\n      .eq",
+          "lineNumber": 38
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('TBL_Email_Templates')\r\n      .select",
+          "lineNumber": 38
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 38
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('VW_User_Notification_Emails')\r\n      .select('User_ID, Identity_Email')\r\n      .in",
+          "lineNumber": 52
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from('VW_User_Notification_Emails')\r\n      .select",
+          "lineNumber": 52
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n      .from",
+          "lineNumber": 52
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(row.Identity_Email ?? '').trim().toLowerCase",
+          "lineNumber": 60
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(row.Identity_Email ?? '').trim",
+          "lineNumber": 60
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "seen.has",
+          "lineNumber": 61
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "seen.add",
+          "lineNumber": 62
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "recipients.push",
+          "lineNumber": 63
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "renderTemplate",
+          "lineNumber": 67
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "renderTemplate",
+          "lineNumber": 68
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "new Date().toISOString",
+          "lineNumber": 69
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq('Email_Log_Request_ID', params.requestId)\r\n          .eq('Email_Log_Sent_To_Address', r.User_Email)\r\n          .not('Email_Log_Provider_Msg_ID', 'is', null)\r\n          .order('Email_Log_Sent_At', { ascending: false })\r\n          .limit(1)\r\n          .maybeSingle",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq('Email_Log_Request_ID', params.requestId)\r\n          .eq('Email_Log_Sent_To_Address', r.User_Email)\r\n          .not('Email_Log_Provider_Msg_ID', 'is', null)\r\n          .order('Email_Log_Sent_At', { ascending: false })\r\n          .limit",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq('Email_Log_Request_ID', params.requestId)\r\n          .eq('Email_Log_Sent_To_Address', r.User_Email)\r\n          .not('Email_Log_Provider_Msg_ID', 'is', null)\r\n          .order",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq('Email_Log_Request_ID', params.requestId)\r\n          .eq('Email_Log_Sent_To_Address', r.User_Email)\r\n          .not",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq('Email_Log_Request_ID', params.requestId)\r\n          .eq",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select('Email_Log_Provider_Msg_ID, Email_Log_References')\r\n          .eq",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from('TBL_Email_Logs')\r\n          .select",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase\r\n          .from",
+          "lineNumber": 77
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "[last.Email_Log_References, last.Email_Log_Provider_Msg_ID]\r\n            .filter(Boolean).join",
+          "lineNumber": 88
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "[last.Email_Log_References, last.Email_Log_Provider_Msg_ID]\r\n            .filter",
+          "lineNumber": 88
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "params.cc.map",
+          "lineNumber": 99
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(references ?? '').split(' ').filter(Boolean).map((id) => `<${id}>`).join",
+          "lineNumber": 105
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(references ?? '').split(' ').filter(Boolean).map",
+          "lineNumber": 105
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(references ?? '').split(' ').filter",
+          "lineNumber": 105
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "(references ?? '').split",
+          "lineNumber": 105
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "fetch",
+          "lineNumber": 114
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "JSON.stringify",
+          "lineNumber": 120
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "res.text",
+          "lineNumber": 122
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "JSON.parse",
+          "lineNumber": 124
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "rawText.slice",
+          "lineNumber": 128
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "String",
+          "lineNumber": 134
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase.from('TBL_Email_Logs').insert",
+          "lineNumber": 137
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "supabase.from",
+          "lineNumber": 137
+        },
+        {
+          "caller": "sendEventEmail",
+          "callee": "console.error",
+          "lineNumber": 154
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/announcements.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 184,
+      "nonEmptyLines": 176,
+      "functions": [
+        {
+          "name": "getPublicAnnouncements",
+          "startLine": 27,
+          "endLine": 39,
+          "params": [
+            "supabase"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getPublicAnnouncements",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "announcementHandlers",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "new Date().toISOString",
+          "lineNumber": 28
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select('*')\r\n    .eq('is_active', true)\r\n    .lte('starts_at', now)\r\n    .or(`ends_at.is.null,ends_at.gte.${now}`)\r\n    .contains('show_in', ['login'])\r\n    .order",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select('*')\r\n    .eq('is_active', true)\r\n    .lte('starts_at', now)\r\n    .or(`ends_at.is.null,ends_at.gte.${now}`)\r\n    .contains",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select('*')\r\n    .eq('is_active', true)\r\n    .lte('starts_at', now)\r\n    .or",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select('*')\r\n    .eq('is_active', true)\r\n    .lte",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select('*')\r\n    .eq",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from('TBL_Announcements')\r\n    .select",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "supabase\r\n    .from",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getPublicAnnouncements",
+          "callee": "(data ?? []).map",
+          "lineNumber": 38
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/assignments.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 129,
+      "nonEmptyLines": 121,
+      "exports": [
+        {
+          "name": "assignmentHandlers",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "shortName",
+          "callee": "(full ?? '').trim().split",
+          "lineNumber": 65
+        },
+        {
+          "caller": "shortName",
+          "callee": "(full ?? '').trim",
+          "lineNumber": 65
+        },
+        {
+          "caller": "shortName",
+          "callee": "(full ?? '').trim",
+          "lineNumber": 66
+        },
+        {
+          "caller": "nameOf",
+          "callee": "(people ?? []).find",
+          "lineNumber": 74
+        },
+        {
+          "caller": "nameOf",
+          "callee": "shortName",
+          "lineNumber": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/attachments.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 136,
+      "nonEmptyLines": 133,
+      "exports": [
+        {
+          "name": "attachmentHandlers",
+          "line": 22,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/automationRules.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 162,
+      "nonEmptyLines": 153,
+      "exports": [
+        {
+          "name": "automationRuleHandlers",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/boardTeams.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 330,
+      "nonEmptyLines": 300,
+      "exports": [
+        {
+          "name": "boardTeamHandlers",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/closure.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 272,
+      "nonEmptyLines": 255,
+      "exports": [
+        {
+          "name": "closureHandlers",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/columns.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 128,
+      "exports": [
+        {
+          "name": "columnHandlers",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/comments.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 231,
+      "nonEmptyLines": 214,
+      "exports": [
+        {
+          "name": "commentHandlers",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/criteria.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 237,
+      "nonEmptyLines": 217,
+      "exports": [
+        {
+          "name": "criteriaHandlers",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/emailTemplates.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 191,
+      "nonEmptyLines": 183,
+      "exports": [
+        {
+          "name": "emailTemplateHandlers",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/exportJobs.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 591,
+      "nonEmptyLines": 542,
+      "exports": [
+        {
+          "name": "exportJobHandlers",
+          "line": 38,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "chunk",
+          "callee": "out.push",
+          "lineNumber": 404
+        },
+        {
+          "caller": "chunk",
+          "callee": "arr.slice",
+          "lineNumber": 404
+        },
+        {
+          "caller": "parseTs",
+          "callee": "String",
+          "lineNumber": 408
+        },
+        {
+          "caller": "parseTs",
+          "callee": "new Date(s.endsWith('Z') ? s : `${s}Z`).getTime",
+          "lineNumber": 410
+        },
+        {
+          "caller": "parseTs",
+          "callee": "s.endsWith",
+          "lineNumber": 410
+        },
+        {
+          "caller": "parseTs",
+          "callee": "Number.isNaN",
+          "lineNumber": 411
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "Promise.all",
+          "lineNumber": 415
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Board_Teams')\r\n          .select('Board_Team_ID, Board_Team_Name, Board_Team_Code, Board_Team_Color, Board_Team_Sort_Order')\r\n          .order",
+          "lineNumber": 416
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Board_Teams')\r\n          .select",
+          "lineNumber": 416
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from",
+          "lineNumber": 416
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Board_Columns')\r\n          .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color')\r\n          .eq('Board_Column_Board_ID', p.boardId)\r\n          .order",
+          "lineNumber": 419
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Board_Columns')\r\n          .select('Board_Column_ID, Board_Column_Name, Board_Column_Slug, Board_Column_Position, Board_Column_Color')\r\n          .eq",
+          "lineNumber": 419
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Board_Columns')\r\n          .select",
+          "lineNumber": 419
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from",
+          "lineNumber": 419
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Requests_Templates')\r\n          .select('Request_Template_ID, Request_Template_Name, Request_Template_Icon, Request_Template_Color, Request_Template_Form_Schema')\r\n          .eq('Request_Template_Board_ID', p.boardId)\r\n          .order",
+          "lineNumber": 423
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Requests_Templates')\r\n          .select('Request_Template_ID, Request_Template_Name, Request_Template_Icon, Request_Template_Color, Request_Template_Form_Schema')\r\n          .eq",
+          "lineNumber": 423
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from('TBL_Requests_Templates')\r\n          .select",
+          "lineNumber": 423
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "supabase.from",
+          "lineNumber": 423
+        },
+        {
+          "caller": "emptyResponse",
+          "callee": "new Date().toISOString",
+          "lineNumber": 438
+        },
+        {
+          "caller": "intersect",
+          "callee": "a.filter",
+          "lineNumber": 447
+        },
+        {
+          "caller": "intersect",
+          "callee": "setB.has",
+          "lineNumber": 447
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "supabase.from('TBL_Requests').select",
+          "lineNumber": 498
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "supabase.from",
+          "lineNumber": 498
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "supabase.from('TBL_Requests').select",
+          "lineNumber": 499
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "supabase.from",
+          "lineNumber": 499
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.eq",
+          "lineNumber": 500
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.in",
+          "lineNumber": 501
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.in",
+          "lineNumber": 502
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.in",
+          "lineNumber": 503
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.in",
+          "lineNumber": 504
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.eq",
+          "lineNumber": 505
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.gte",
+          "lineNumber": 506
+        },
+        {
+          "caller": "buildQuery",
+          "callee": "q.lte",
+          "lineNumber": 507
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/feedback.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 181,
+      "nonEmptyLines": 171,
+      "exports": [
+        {
+          "name": "feedbackHandlers",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/history.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 76,
+      "nonEmptyLines": 71,
+      "exports": [
+        {
+          "name": "historyHandlers",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/labels.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 98,
+      "nonEmptyLines": 93,
+      "exports": [
+        {
+          "name": "labelHandlers",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/migration.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 337,
+      "nonEmptyLines": 305,
+      "functions": [
+        {
+          "name": "pickRandom",
+          "startLine": 69,
+          "endLine": 71,
+          "params": [
+            "arr"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "migrationHandlers",
+          "line": 79,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pickRandom",
+          "callee": "Math.floor",
+          "lineNumber": 70
+        },
+        {
+          "caller": "pickRandom",
+          "callee": "Math.random",
+          "lineNumber": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/notifications.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 82,
+      "exports": [
+        {
+          "name": "notificationHandlers",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/notifyEvent.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 71,
+      "nonEmptyLines": 69,
+      "functions": [
+        {
+          "name": "notifyEvent",
+          "startLine": 38,
+          "endLine": 71,
+          "params": [
+            "supabase",
+            "params"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "notifyEvent",
+          "line": 38,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "notifyEvent",
+          "callee": "insertNotifications",
+          "lineNumber": 51
+        },
+        {
+          "caller": "notifyEvent",
+          "callee": "sendEventEmail",
+          "lineNumber": 63
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/orgUnits.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 209,
+      "nonEmptyLines": 200,
+      "exports": [
+        {
+          "name": "orgUnitHandlers",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/requests.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1225,
+      "nonEmptyLines": 1150,
+      "functions": [
+        {
+          "name": "chunkedIn",
+          "startLine": 56,
+          "endLine": 68,
+          "params": [
+            "supabase",
+            "ids",
+            "build"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "requestHandlers",
+          "line": 76,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "chunkedIn",
+          "callee": "build",
+          "lineNumber": 63
+        },
+        {
+          "caller": "chunkedIn",
+          "callee": "ids.slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "chunkedIn",
+          "callee": "out.push",
+          "lineNumber": 65
+        },
+        {
+          "caller": "fmtFecha",
+          "callee": "iso.includes",
+          "lineNumber": 543
+        },
+        {
+          "caller": "fmtFecha",
+          "callee": "new Date(clean).toLocaleDateString",
+          "lineNumber": 544
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/resolutionRatings.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 119,
+      "nonEmptyLines": 112,
+      "exports": [
+        {
+          "name": "resolutionRatingHandlers",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/solvi.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 488,
+      "nonEmptyLines": 447,
+      "exports": [
+        {
+          "name": "solviHandlers",
+          "line": 84,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "supabase/functions/api/handlers/sprints.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 188,
+      "nonEmptyLines": 170,
+      "exports": [
+        {
+          "name": "sprintHandlers",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

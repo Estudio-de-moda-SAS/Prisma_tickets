@@ -1,0 +1,1356 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 3,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 3,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/auth/AuthProvider.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 511,
+      "nonEmptyLines": 458,
+      "functions": [
+        {
+          "name": "BlockedScreen",
+          "startLine": 69,
+          "endLine": 201,
+          "params": [
+            "{ email, onSignOut }"
+          ]
+        },
+        {
+          "name": "loadDbUser",
+          "startLine": 209,
+          "endLine": 216,
+          "params": [
+            "account"
+          ]
+        },
+        {
+          "name": "loadDbUserFromSupabase",
+          "startLine": 220,
+          "endLine": 229,
+          "params": []
+        },
+        {
+          "name": "AuthProvider",
+          "startLine": 232,
+          "endLine": 503,
+          "params": [
+            "{ children }"
+          ]
+        },
+        {
+          "name": "useAuth",
+          "startLine": 507,
+          "endLine": 511,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthProvider",
+          "line": 232,
+          "isDefault": false
+        },
+        {
+          "name": "useAuth",
+          "line": 507,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadDbUser",
+          "callee": "await apiClient.call",
+          "lineNumber": 210
+        },
+        {
+          "caller": "loadDbUserFromSupabase",
+          "callee": "getSupabaseEntraId",
+          "lineNumber": 221
+        },
+        {
+          "caller": "loadDbUserFromSupabase",
+          "callee": "await apiClient.call",
+          "lineNumber": 223
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 233
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 234
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 235
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 236
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 239
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useEffect",
+          "lineNumber": 244
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "supabase.auth.onAuthStateChange",
+          "lineNumber": 252
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "getSupabaseProviderToken().catch",
+          "lineNumber": 263
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "getSupabaseProviderToken",
+          "lineNumber": 263
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "syncSupabaseSession",
+          "lineNumber": 265
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "(async () => {\r\n        const { data } = await supabase.auth.getSession();\r\n        if (!cancel) await syncSupabaseSession(data.session ?? null);\r\n      })",
+          "lineNumber": 270
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "supabase.auth.getSession",
+          "lineNumber": 271
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "syncSupabaseSession",
+          "lineNumber": 272
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "authListener.subscription.unsubscribe",
+          "lineNumber": 277
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "(async () => {\r\n      try {\r\n        await initMSAL();\r\n        const acc = ensureActiveAccount();\r\n        if (cancel) return;\r\n        setAccount(acc ?? null);\r\n        setReady(true);\r\n        if (acc) {\r\n          try {\r\n            const user = await loadDbUser(acc);\r\n            if (!cancel) {\r\n              if (user.Is_Active === false) setBlocked(true);\r\n              else setDbUser(user);\r\n            }\r\n          } catch (err) {\r\n            console.error('[AuthProvider] Error cargando usuario DB:', err);\r\n          }\r\n        }\r\n        if (!cancel) setDbReady(true);\r\n      } catch {\r\n        if (!cancel) { setReady(true); setDbReady(true); }\r\n      }\r\n    })",
+          "lineNumber": 282
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "initMSAL",
+          "lineNumber": 284
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 285
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 287
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 288
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "loadDbUser",
+          "lineNumber": 291
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 293
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 294
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "console.error",
+          "lineNumber": 297
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 300
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 302
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 302
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useRef",
+          "lineNumber": 310
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useRef",
+          "lineNumber": 314
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useState",
+          "lineNumber": 315
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useCallback",
+          "lineNumber": 318
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "import",
+          "lineNumber": 318
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 319
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 323
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 324
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 325
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 326
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbError",
+          "lineNumber": 327
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 346
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 355
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbError",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "(async () => {\r\n      try {\r\n        const user = await loadDbUserFromSupabase();\r\n        if (!user) {\r\n          // getSupabaseEntraId() devolvió null: faltan los claims oid/tid.\r\n          // Antes esto caía en silencio y dejaba la app cargando para siempre.\r\n          throw new Error(\r\n            'No se pudieron leer los datos de tu cuenta Microsoft (claims oid/tid ausentes).',\r\n          );\r\n        }\r\n        loadedUserIdRef.current = session.user.id;\r\n        if (user.Is_Active === false) { setBlocked(true); setDbUser(null); }\r\n        else { setBlocked(false); setDbUser(user); }\r\n      } catch (err) {\r\n        console.error('[AuthProvider] Error cargando usuario DB (Supabase):', err);\r\n        setDbUser(null);\r\n        setDbError(err instanceof Error ? err.message : 'Error resolviendo tu usuario.');\r\n      } finally {\r\n        setDbReady(true);\r\n      }\r\n    })",
+          "lineNumber": 358
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "loadDbUserFromSupabase",
+          "lineNumber": 360
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 369
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 369
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 370
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 370
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "console.error",
+          "lineNumber": 372
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 373
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbError",
+          "lineNumber": 374
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 376
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useCallback",
+          "lineNumber": 387
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 389
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 390
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 391
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 392
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "signInWithSupabaseAzure",
+          "lineNumber": 398
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "ensureLogin",
+          "lineNumber": 404
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 405
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 406
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 407
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "loadDbUser",
+          "lineNumber": 410
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 412
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 414
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "console.error",
+          "lineNumber": 417
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 419
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useCallback",
+          "lineNumber": 424
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 426
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 427
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 428
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 429
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbError",
+          "lineNumber": 430
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "signOutSupabase",
+          "lineNumber": 436
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 437
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 438
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 439
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 440
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 441
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "logout",
+          "lineNumber": 446
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setAccount",
+          "lineNumber": 447
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 448
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 449
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setReady",
+          "lineNumber": 450
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbReady",
+          "lineNumber": 451
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useCallback",
+          "lineNumber": 455
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "getSupabaseProviderToken",
+          "lineNumber": 458
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "isLoggedIn",
+          "lineNumber": 460
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "getAccessToken",
+          "lineNumber": 461
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useCallback",
+          "lineNumber": 465
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "loadDbUserFromSupabase",
+          "lineNumber": 471
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "loadDbUser",
+          "lineNumber": 472
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 475
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 476
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setBlocked",
+          "lineNumber": 478
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "setDbUser",
+          "lineNumber": 479
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "console.error",
+          "lineNumber": 482
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "React.useMemo",
+          "lineNumber": 486
+        },
+        {
+          "caller": "useAuth",
+          "callee": "React.useContext",
+          "lineNumber": 508
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 2,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/auth/msal.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 248,
+      "nonEmptyLines": 221,
+      "functions": [
+        {
+          "name": "clearInteractionInProgress",
+          "startLine": 64,
+          "endLine": 74,
+          "params": []
+        },
+        {
+          "name": "initMSAL",
+          "startLine": 77,
+          "endLine": 86,
+          "params": []
+        },
+        {
+          "name": "ensureActiveAccount",
+          "startLine": 92,
+          "endLine": 96,
+          "params": []
+        },
+        {
+          "name": "isLoggedIn",
+          "startLine": 98,
+          "endLine": 100,
+          "params": []
+        },
+        {
+          "name": "getAccount",
+          "startLine": 102,
+          "endLine": 104,
+          "params": []
+        },
+        {
+          "name": "ensureLoginPopup",
+          "startLine": 110,
+          "endLine": 130,
+          "params": []
+        },
+        {
+          "name": "ensureLoginRedirect",
+          "startLine": 132,
+          "endLine": 140,
+          "params": []
+        },
+        {
+          "name": "ensureLogin",
+          "startLine": 142,
+          "endLine": 144,
+          "params": [
+            "mode"
+          ]
+        },
+        {
+          "name": "getAccessToken",
+          "startLine": 150,
+          "endLine": 205,
+          "params": [
+            "opts"
+          ]
+        },
+        {
+          "name": "logout",
+          "startLine": 211,
+          "endLine": 218,
+          "params": []
+        },
+        {
+          "name": "wireEventsOnce",
+          "startLine": 225,
+          "endLine": 244,
+          "params": []
+        },
+        {
+          "name": "onMsalEvent",
+          "startLine": 246,
+          "endLine": 248,
+          "params": [
+            "cb"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "msal",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "SCOPES",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "initMSAL",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "ensureActiveAccount",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "isLoggedIn",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "getAccount",
+          "line": 102,
+          "isDefault": false
+        },
+        {
+          "name": "ensureLoginPopup",
+          "line": 110,
+          "isDefault": false
+        },
+        {
+          "name": "ensureLoginRedirect",
+          "line": 132,
+          "isDefault": false
+        },
+        {
+          "name": "ensureLogin",
+          "line": 142,
+          "isDefault": false
+        },
+        {
+          "name": "getAccessToken",
+          "line": 150,
+          "isDefault": false
+        },
+        {
+          "name": "logout",
+          "line": 211,
+          "isDefault": false
+        },
+        {
+          "name": "onMsalEvent",
+          "line": 246,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "clearInteractionInProgress",
+          "callee": "Object.keys(sessionStorage).find",
+          "lineNumber": 67
+        },
+        {
+          "caller": "clearInteractionInProgress",
+          "callee": "Object.keys",
+          "lineNumber": 67
+        },
+        {
+          "caller": "clearInteractionInProgress",
+          "callee": "k.includes",
+          "lineNumber": 68
+        },
+        {
+          "caller": "clearInteractionInProgress",
+          "callee": "sessionStorage.removeItem",
+          "lineNumber": 70
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "msal.initialize",
+          "lineNumber": 79
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "msal.handleRedirectPromise().catch",
+          "lineNumber": 80
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "msal.handleRedirectPromise",
+          "lineNumber": 80
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "console.error",
+          "lineNumber": 81
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "wireEventsOnce",
+          "lineNumber": 83
+        },
+        {
+          "caller": "initMSAL",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 84
+        },
+        {
+          "caller": "ensureActiveAccount",
+          "callee": "msal.getActiveAccount",
+          "lineNumber": 93
+        },
+        {
+          "caller": "ensureActiveAccount",
+          "callee": "msal.getAllAccounts",
+          "lineNumber": 93
+        },
+        {
+          "caller": "ensureActiveAccount",
+          "callee": "msal.setActiveAccount",
+          "lineNumber": 94
+        },
+        {
+          "caller": "isLoggedIn",
+          "callee": "msal.getActiveAccount",
+          "lineNumber": 99
+        },
+        {
+          "caller": "isLoggedIn",
+          "callee": "msal.getAllAccounts",
+          "lineNumber": 99
+        },
+        {
+          "caller": "getAccount",
+          "callee": "msal.getActiveAccount",
+          "lineNumber": 103
+        },
+        {
+          "caller": "getAccount",
+          "callee": "msal.getAllAccounts",
+          "lineNumber": 103
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "initMSAL",
+          "lineNumber": 111
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 112
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "msal.loginPopup",
+          "lineNumber": 115
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "msal.getAllAccounts",
+          "lineNumber": 116
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "msal.setActiveAccount",
+          "lineNumber": 117
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "console.warn",
+          "lineNumber": 119
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "clearInteractionInProgress",
+          "lineNumber": 124
+        },
+        {
+          "caller": "ensureLoginPopup",
+          "callee": "msal.loginRedirect",
+          "lineNumber": 125
+        },
+        {
+          "caller": "ensureLoginRedirect",
+          "callee": "initMSAL",
+          "lineNumber": 133
+        },
+        {
+          "caller": "ensureLoginRedirect",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 134
+        },
+        {
+          "caller": "ensureLoginRedirect",
+          "callee": "msal.loginRedirect",
+          "lineNumber": 136
+        },
+        {
+          "caller": "ensureLogin",
+          "callee": "ensureLoginPopup",
+          "lineNumber": 143
+        },
+        {
+          "caller": "ensureLogin",
+          "callee": "ensureLoginRedirect",
+          "lineNumber": 143
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "initMSAL",
+          "lineNumber": 155
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 156
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.loginPopup",
+          "lineNumber": 162
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.setActiveAccount",
+          "lineNumber": 163
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "clearInteractionInProgress",
+          "lineNumber": 165
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.loginRedirect",
+          "lineNumber": 166
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.loginRedirect",
+          "lineNumber": 170
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 176
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.acquireTokenSilent",
+          "lineNumber": 181
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.acquireTokenPopup",
+          "lineNumber": 190
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "console.warn",
+          "lineNumber": 193
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "clearInteractionInProgress",
+          "lineNumber": 194
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.acquireTokenRedirect",
+          "lineNumber": 195
+        },
+        {
+          "caller": "getAccessToken",
+          "callee": "msal.acquireTokenRedirect",
+          "lineNumber": 199
+        },
+        {
+          "caller": "logout",
+          "callee": "initMSAL",
+          "lineNumber": 212
+        },
+        {
+          "caller": "logout",
+          "callee": "ensureActiveAccount",
+          "lineNumber": 213
+        },
+        {
+          "caller": "logout",
+          "callee": "msal.logoutRedirect",
+          "lineNumber": 214
+        },
+        {
+          "caller": "wireEventsOnce",
+          "callee": "msal.addEventCallback",
+          "lineNumber": 227
+        },
+        {
+          "caller": "wireEventsOnce",
+          "callee": "msal.setActiveAccount",
+          "lineNumber": 231
+        },
+        {
+          "caller": "wireEventsOnce",
+          "callee": "console.warn",
+          "lineNumber": 237
+        },
+        {
+          "caller": "onMsalEvent",
+          "callee": "msal.addEventCallback",
+          "lineNumber": 247
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 12,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/auth/supabaseAuth.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 271,
+      "nonEmptyLines": 235,
+      "functions": [
+        {
+          "name": "cacheGraphAccessToken",
+          "startLine": 28,
+          "endLine": 31,
+          "params": [
+            "token",
+            "expiresInSec"
+          ]
+        },
+        {
+          "name": "getCachedGraphAccessToken",
+          "startLine": 33,
+          "endLine": 36,
+          "params": []
+        },
+        {
+          "name": "clearGraphAccessTokenCache",
+          "startLine": 38,
+          "endLine": 40,
+          "params": []
+        },
+        {
+          "name": "saveProviderRefreshToken",
+          "startLine": 49,
+          "endLine": 52,
+          "params": [
+            "token"
+          ]
+        },
+        {
+          "name": "getStoredProviderRefreshToken",
+          "startLine": 54,
+          "endLine": 56,
+          "params": []
+        },
+        {
+          "name": "clearStoredProviderRefreshToken",
+          "startLine": 58,
+          "endLine": 60,
+          "params": []
+        },
+        {
+          "name": "refreshProviderTokenSilently",
+          "startLine": 69,
+          "endLine": 108,
+          "params": []
+        },
+        {
+          "name": "signInWithSupabaseAzure",
+          "startLine": 118,
+          "endLine": 132,
+          "params": [
+            "opts"
+          ]
+        },
+        {
+          "name": "savePostLoginRedirect",
+          "startLine": 138,
+          "endLine": 140,
+          "params": [
+            "path"
+          ]
+        },
+        {
+          "name": "consumePostLoginRedirect",
+          "startLine": 143,
+          "endLine": 151,
+          "params": []
+        },
+        {
+          "name": "hasRecentSilentReauthAttempt",
+          "startLine": 162,
+          "endLine": 169,
+          "params": []
+        },
+        {
+          "name": "clearSilentReauthAttempt",
+          "startLine": 171,
+          "endLine": 173,
+          "params": []
+        },
+        {
+          "name": "trySilentGraphReauth",
+          "startLine": 181,
+          "endLine": 187,
+          "params": []
+        },
+        {
+          "name": "getSupabaseSession",
+          "startLine": 190,
+          "endLine": 194,
+          "params": []
+        },
+        {
+          "name": "getSupabaseProviderToken",
+          "startLine": 200,
+          "endLine": 230,
+          "params": []
+        },
+        {
+          "name": "signOutSupabase",
+          "startLine": 233,
+          "endLine": 243,
+          "params": []
+        },
+        {
+          "name": "getSupabaseEntraId",
+          "startLine": 250,
+          "endLine": 271,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "signInWithSupabaseAzure",
+          "line": 118,
+          "isDefault": false
+        },
+        {
+          "name": "savePostLoginRedirect",
+          "line": 138,
+          "isDefault": false
+        },
+        {
+          "name": "consumePostLoginRedirect",
+          "line": 143,
+          "isDefault": false
+        },
+        {
+          "name": "trySilentGraphReauth",
+          "line": 181,
+          "isDefault": false
+        },
+        {
+          "name": "getSupabaseSession",
+          "line": 190,
+          "isDefault": false
+        },
+        {
+          "name": "getSupabaseProviderToken",
+          "line": 200,
+          "isDefault": false
+        },
+        {
+          "name": "signOutSupabase",
+          "line": 233,
+          "isDefault": false
+        },
+        {
+          "name": "getSupabaseEntraId",
+          "line": 250,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "cacheGraphAccessToken",
+          "callee": "Date.now",
+          "lineNumber": 30
+        },
+        {
+          "caller": "getCachedGraphAccessToken",
+          "callee": "Date.now",
+          "lineNumber": 34
+        },
+        {
+          "caller": "saveProviderRefreshToken",
+          "callee": "localStorage.setItem",
+          "lineNumber": 51
+        },
+        {
+          "caller": "getStoredProviderRefreshToken",
+          "callee": "localStorage.getItem",
+          "lineNumber": 55
+        },
+        {
+          "caller": "clearStoredProviderRefreshToken",
+          "callee": "localStorage.removeItem",
+          "lineNumber": 59
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "getStoredProviderRefreshToken",
+          "lineNumber": 70
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "fetch",
+          "lineNumber": 74
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "new URLSearchParams({\r\n          client_id: AZURE_CLIENT_ID,\r\n          grant_type: 'refresh_token',\r\n          refresh_token: refreshToken,\r\n          scope: SUPABASE_AZURE_SCOPES,\r\n        }).toString",
+          "lineNumber": 79
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "clearStoredProviderRefreshToken",
+          "lineNumber": 90
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "res.json",
+          "lineNumber": 94
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "saveProviderRefreshToken",
+          "lineNumber": 102
+        },
+        {
+          "caller": "refreshProviderTokenSilently",
+          "callee": "cacheGraphAccessToken",
+          "lineNumber": 103
+        },
+        {
+          "caller": "signInWithSupabaseAzure",
+          "callee": "supabase.auth.signInWithOAuth",
+          "lineNumber": 121
+        },
+        {
+          "caller": "savePostLoginRedirect",
+          "callee": "sessionStorage.setItem",
+          "lineNumber": 139
+        },
+        {
+          "caller": "consumePostLoginRedirect",
+          "callee": "sessionStorage.getItem",
+          "lineNumber": 145
+        },
+        {
+          "caller": "consumePostLoginRedirect",
+          "callee": "sessionStorage.removeItem",
+          "lineNumber": 146
+        },
+        {
+          "caller": "hasRecentSilentReauthAttempt",
+          "callee": "sessionStorage.getItem",
+          "lineNumber": 164
+        },
+        {
+          "caller": "hasRecentSilentReauthAttempt",
+          "callee": "Date.now",
+          "lineNumber": 165
+        },
+        {
+          "caller": "hasRecentSilentReauthAttempt",
+          "callee": "Number",
+          "lineNumber": 165
+        },
+        {
+          "caller": "clearSilentReauthAttempt",
+          "callee": "sessionStorage.removeItem",
+          "lineNumber": 172
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "hasRecentSilentReauthAttempt",
+          "lineNumber": 182
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "sessionStorage.setItem",
+          "lineNumber": 183
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "String",
+          "lineNumber": 183
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "Date.now",
+          "lineNumber": 183
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "getSupabaseSession",
+          "lineNumber": 184
+        },
+        {
+          "caller": "trySilentGraphReauth",
+          "callee": "signInWithSupabaseAzure",
+          "lineNumber": 185
+        },
+        {
+          "caller": "getSupabaseSession",
+          "callee": "supabase.auth.getSession",
+          "lineNumber": 191
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "getSupabaseSession",
+          "lineNumber": 201
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "saveProviderRefreshToken",
+          "lineNumber": 202
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "clearSilentReauthAttempt",
+          "lineNumber": 206
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "getCachedGraphAccessToken",
+          "lineNumber": 213
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "refreshProviderTokenSilently",
+          "lineNumber": 216
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "clearSilentReauthAttempt",
+          "lineNumber": 218
+        },
+        {
+          "caller": "getSupabaseProviderToken",
+          "callee": "trySilentGraphReauth",
+          "lineNumber": 222
+        },
+        {
+          "caller": "signOutSupabase",
+          "callee": "supabase.auth.signOut",
+          "lineNumber": 235
+        },
+        {
+          "caller": "signOutSupabase",
+          "callee": "clearStoredProviderRefreshToken",
+          "lineNumber": 240
+        },
+        {
+          "caller": "signOutSupabase",
+          "callee": "clearGraphAccessTokenCache",
+          "lineNumber": 241
+        },
+        {
+          "caller": "getSupabaseEntraId",
+          "callee": "supabase.auth.getSession",
+          "lineNumber": 255
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 17,
+        "classCount": 0
+      }
+    }
+  ]
+}

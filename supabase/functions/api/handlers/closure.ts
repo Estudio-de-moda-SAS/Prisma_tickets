@@ -14,11 +14,11 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { SIGNED_URL_EXPIRES_IN } from '../lib/storage.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
-// @ts-ignore
-import { getRequestParticipants, maybeSendClientReviewEmail, planColumnTransition } from '../shared/requests.ts';
+import { getRequestParticipants, notifyClosure, planColumnTransition } from '../shared/requests.ts';
 // @ts-ignore
 import { logHistory } from '../lib/history.ts';
+// @ts-ignore
+import { dispatchEvent } from './notifyEvent.ts';
 
 /**
  * Mapa de handlers de cierre indexado por nombre de acción.
@@ -39,10 +39,9 @@ export const closureHandlers: Record<string, ActionHandler> = {
    * 4. Mueve la solicitud a la columna destino; si esa columna es de cierre,
    *    marca `Request_Finished_At` y pone el progreso en 100.
    * 5. Registra en el historial el movimiento de columna y, si aplica, el cierre.
-   * 6. Notifica a los participantes (resolutores + solicitante), excluyendo a
-   *    quien cerró.
-   * 7. Dispara el correo de revisión del cliente vía el mismo helper que
-   *    `moveToColumn` (best-effort, nunca lanza).
+   * 6. Despacha en segundo plano el evento de cierre (`notifyClosure`): in-app
+   *    y correo de cierre a los participantes sin quien cerró, más el correo de
+   *    revisión del cliente si el destino es cliente_review.
    *
    * @param payload - Datos del cierre: `requestId`, `closedBy`, `closureNote`,
    *                  `targetColumnId`, `evidenceMode?`, `reuseFromClosureId?`,
@@ -155,28 +154,17 @@ export const closureHandlers: Record<string, ActionHandler> = {
       await logHistory(supabase, entries);
     }
 
+    // ── Evento de cierre en segundo plano: in-app + correo de cierre y, si el
+    //    destino es revisión del cliente, el correo de revisión (ver notifyClosure).
     const { assigneeIds, requestedBy } = await getRequestParticipants(supabase, p.requestId);
-    const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
-      .filter((uid) => uid !== p.closedBy);
-    await insertNotifications(supabase, {
-      userIds:   recipientIds,
-      type:      'closure',
-      title:     `Ticket ${p.requestId} enviado a revisión`,
-      body:      `El ticket fue enviado a revisión con evidencia adjunta. Nota: ${p.closureNote.slice(0, 80)}${p.closureNote.length > 80 ? '…' : ''}`,
-      requestId: p.requestId,
-      actorId:   p.closedBy,
-    });
-
-    // ── Correo "listo para revisión del cliente" ──────────────────────────
-    // Mismo helper que moveToColumn: decide por slug de columna, departamento
-    // del solicitante y si es también resolutor. Nunca lanza.
-    await maybeSendClientReviewEmail(supabase, {
-      requestId:   p.requestId,
-      columnId:    Number(p.targetColumnId),
-      requestedBy,
+    dispatchEvent('closeRequest', notifyClosure(supabase, {
+      requestId:      p.requestId,
+      closedBy:       p.closedBy,
+      closureNote:    p.closureNote,
+      targetColumnId: Number(p.targetColumnId),
       assigneeIds,
-    });
-    // ── /Correo ───────────────────────────────────────────────────────────
+      requestedBy,
+    }));
 
     return closure;
   },

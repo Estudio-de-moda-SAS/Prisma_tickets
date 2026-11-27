@@ -1,0 +1,1514 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "type": "file",
+   "name": "CreateAutomationModal.tsx",
+   "filePath": "src/features/automations/components/CreateAutomationModal.tsx",
+   "summary": "Modal para crear reglas de automatización: elige disparador (solicitud creada, cambio de columna), acción (asignar resolutor/prioridad, notificar) y equipo, cargando equipos y usuarios desde la API.",
+   "tags": [
+    "component",
+    "automations",
+    "modal",
+    "form"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/automations/components/CreateAutomationModal.tsx:CreateAutomationModal",
+   "type": "function",
+   "name": "CreateAutomationModal",
+   "filePath": "src/features/automations/components/CreateAutomationModal.tsx",
+   "lineRange": [
+    21,
+    284
+   ],
+   "summary": "Modal con formulario completo para definir y guardar una regla de automatización.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "type": "file",
+   "name": "useAutomationRules.ts",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "summary": "Hooks de TanStack Query para listar, crear, activar/desactivar y eliminar reglas de automatización vía apiClient, mapeando filas de BD al tipo AutomationRule.",
+   "tags": [
+    "hook",
+    "automations",
+    "react-query",
+    "data-access"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/automations/hooks/useAutomationRules.ts:mapRow",
+   "type": "function",
+   "name": "mapRow",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "lineRange": [
+    9,
+    26
+   ],
+   "summary": "Mapea una fila cruda de BD a un objeto AutomationRule.",
+   "tags": [
+    "utility",
+    "funcion",
+    "helper"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/automations/hooks/useAutomationRules.ts:useAutomationRules",
+   "type": "function",
+   "name": "useAutomationRules",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "lineRange": [
+    30,
+    42
+   ],
+   "summary": "Query que obtiene las reglas de automatización.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/automations/hooks/useAutomationRules.ts:useCreateAutomationRule",
+   "type": "function",
+   "name": "useCreateAutomationRule",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "lineRange": [
+    54,
+    61
+   ],
+   "summary": "Mutación que crea una regla e invalida la lista.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/automations/hooks/useAutomationRules.ts:useToggleAutomationRule",
+   "type": "function",
+   "name": "useToggleAutomationRule",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "lineRange": [
+    63,
+    70
+   ],
+   "summary": "Mutación que activa o desactiva una regla.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/automations/hooks/useAutomationRules.ts:useDeleteAutomationRule",
+   "type": "function",
+   "name": "useDeleteAutomationRule",
+   "filePath": "src/features/automations/hooks/useAutomationRules.ts",
+   "lineRange": [
+    72,
+    79
+   ],
+   "summary": "Mutación que elimina una regla.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/automations/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/automations/types.ts",
+   "summary": "Tipos del dominio de automatizaciones (disparadores, acciones, reglas) y catálogos de etiquetas, columnas conocidas, prioridades y destinos de notificación.",
+   "tags": [
+    "type-definition",
+    "automations",
+    "constants",
+    "data-model"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/AssignBugModal.tsx",
+   "type": "file",
+   "name": "AssignBugModal.tsx",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx",
+   "summary": "Modal que convierte un reporte de bug en solicitud asignada: elige equipo, subequipo, resolutor, sprint y horas, mapea severidad a prioridad y crea criterios de aceptación.",
+   "tags": [
+    "component",
+    "modal",
+    "bugs",
+    "asignacion",
+    "form"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/AssignBugModal.tsx:AssignBugModal",
+   "type": "function",
+   "name": "AssignBugModal",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx",
+   "lineRange": [
+    25,
+    248
+   ],
+   "summary": "Modal que asigna un bug como solicitud con equipo, resolutor, sprint, horas y criterios.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/AssignBugModal.tsx:AutoTextarea",
+   "type": "function",
+   "name": "AutoTextarea",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx",
+   "lineRange": [
+    259,
+    268
+   ],
+   "summary": "Textarea que ajusta su altura al contenido.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/AssignBugModal.tsx:AcceptanceCriteriaEditor",
+   "type": "function",
+   "name": "AcceptanceCriteriaEditor",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx",
+   "lineRange": [
+    270,
+    311
+   ],
+   "summary": "Editor de la lista de criterios de aceptación (agregar, editar, quitar).",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/AssignBugModal.tsx:HorasInput",
+   "type": "function",
+   "name": "HorasInput",
+   "filePath": "src/features/requests/components/AssignBugModal.tsx",
+   "lineRange": [
+    313,
+    331
+   ],
+   "summary": "Input numérico para horas estimadas.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/BoardCustomization.tsx",
+   "type": "file",
+   "name": "BoardCustomization.tsx",
+   "filePath": "src/features/requests/components/BoardCustomization.tsx",
+   "summary": "Panel flotante (portal) y botón disparador para personalizar el tablero Kanban: columnas de horas, contadores y visibilidad de columnas, persistido en el store de personalización.",
+   "tags": [
+    "component",
+    "kanban",
+    "personalizacion",
+    "portal",
+    "ui"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationPanel",
+   "type": "function",
+   "name": "BoardCustomizationPanel",
+   "filePath": "src/features/requests/components/BoardCustomization.tsx",
+   "lineRange": [
+    15,
+    344
+   ],
+   "summary": "Panel con pestañas de horas, contadores y columnas para personalizar el tablero.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationTrigger",
+   "type": "function",
+   "name": "BoardCustomizationTrigger",
+   "filePath": "src/features/requests/components/BoardCustomization.tsx",
+   "lineRange": [
+    349,
+    389
+   ],
+   "summary": "Botón que abre/cierra el panel de personalización anclado a su posición.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "type": "file",
+   "name": "KanbanSkeleton.tsx",
+   "filePath": "src/features/requests/components/KanbanSkeleton.tsx",
+   "summary": "Skeleton de carga del tablero Kanban con columnas y tarjetas placeholder animadas.",
+   "tags": [
+    "component",
+    "skeleton",
+    "loading",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/KanbanSkeleton.tsx:SkCard",
+   "type": "function",
+   "name": "SkCard",
+   "filePath": "src/features/requests/components/KanbanSkeleton.tsx",
+   "lineRange": [
+    44,
+    73
+   ],
+   "summary": "Tarjeta placeholder del skeleton Kanban.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/KanbanSkeleton.tsx:KanbanSkeleton",
+   "type": "function",
+   "name": "KanbanSkeleton",
+   "filePath": "src/features/requests/components/KanbanSkeleton.tsx",
+   "lineRange": [
+    80,
+    106
+   ],
+   "summary": "Skeleton completo del tablero con varias columnas de tarjetas placeholder.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/RichTextEditor.tsx",
+   "type": "file",
+   "name": "RichTextEditor.tsx",
+   "filePath": "src/features/requests/components/RichTextEditor.tsx",
+   "summary": "Editor de texto enriquecido con barra de herramientas (negrita, listas, etc.) usado en formularios de solicitud.",
+   "tags": [
+    "component",
+    "editor",
+    "rich-text",
+    "form"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/RichTextEditor.tsx:ToolbarButton",
+   "type": "function",
+   "name": "ToolbarButton",
+   "filePath": "src/features/requests/components/RichTextEditor.tsx",
+   "lineRange": [
+    16,
+    39
+   ],
+   "summary": "Botón de la barra de formato con estado activo.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RichTextEditor.tsx:Toolbar",
+   "type": "function",
+   "name": "Toolbar",
+   "filePath": "src/features/requests/components/RichTextEditor.tsx",
+   "lineRange": [
+    41,
+    68
+   ],
+   "summary": "Barra de herramientas de formato del editor.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/RichTextEditor.tsx:RichTextEditor",
+   "type": "function",
+   "name": "RichTextEditor",
+   "filePath": "src/features/requests/components/RichTextEditor.tsx",
+   "lineRange": [
+    70,
+    122
+   ],
+   "summary": "Editor de texto enriquecido controlado con barra de herramientas.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "type": "file",
+   "name": "SolviRequestFormControls.tsx",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "summary": "Controles y estilos compartidos del formulario de solicitud SOLVI: etiquetas, errores, estilos de input/tarjeta, icono de adjunto y formateo de bytes.",
+   "tags": [
+    "component",
+    "solvi",
+    "form",
+    "utility",
+    "styles"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:fmtBytes",
+   "type": "function",
+   "name": "fmtBytes",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    7,
+    11
+   ],
+   "summary": "Formatea un tamaño en bytes a KB/MB legibles.",
+   "tags": [
+    "utility",
+    "funcion",
+    "helper"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:AttachmentIcon",
+   "type": "function",
+   "name": "AttachmentIcon",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    13,
+    17
+   ],
+   "summary": "Icono según el tipo de archivo adjunto.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldLabel",
+   "type": "function",
+   "name": "FieldLabel",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    19,
+    21
+   ],
+   "summary": "Etiqueta de campo del formulario.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:SectionLabel",
+   "type": "function",
+   "name": "SectionLabel",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    23,
+    30
+   ],
+   "summary": "Título de sección del formulario.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:inputStyle",
+   "type": "function",
+   "name": "inputStyle",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    32,
+    35
+   ],
+   "summary": "Devuelve el estilo de input, resaltando error.",
+   "tags": [
+    "utility",
+    "funcion",
+    "helper"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldError",
+   "type": "function",
+   "name": "FieldError",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    37,
+    45
+   ],
+   "summary": "Mensaje de error de validación de un campo.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestFormControls.tsx:cardStyle",
+   "type": "function",
+   "name": "cardStyle",
+   "filePath": "src/features/requests/components/SolviRequestFormControls.tsx",
+   "lineRange": [
+    47,
+    49
+   ],
+   "summary": "Estilo base de tarjeta del formulario.",
+   "tags": [
+    "utility",
+    "funcion",
+    "helper"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "type": "file",
+   "name": "SolviRequestPageComponents.tsx",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "summary": "Componentes de la página de solicitud SOLVI: pantallas de error y éxito, tarjetas de solicitud, categoría en cascada, descripción, adjuntos, badge de SLA y barra de envío.",
+   "tags": [
+    "component",
+    "solvi",
+    "form",
+    "sla",
+    "integracion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:UsuarioErrorScreen",
+   "type": "function",
+   "name": "UsuarioErrorScreen",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    29,
+    37
+   ],
+   "summary": "Pantalla de error cuando no se puede resolver el usuario.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudEnviadaScreen",
+   "type": "function",
+   "name": "SolicitudEnviadaScreen",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    46,
+    68
+   ],
+   "summary": "Pantalla de confirmación tras enviar la solicitud.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudCard",
+   "type": "function",
+   "name": "SolicitudCard",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    84,
+    116
+   ],
+   "summary": "Tarjeta con datos generales de la solicitud.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SlaBadge",
+   "type": "function",
+   "name": "SlaBadge",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    124,
+    148
+   ],
+   "summary": "Badge que muestra el SLA estimado según días hábiles.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:CategoriaCascadeCard",
+   "type": "function",
+   "name": "CategoriaCascadeCard",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    176,
+    255
+   ],
+   "summary": "Selectores en cascada de categoría, subcategoría y artículo SOLVI.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:DescripcionCard",
+   "type": "function",
+   "name": "DescripcionCard",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    263,
+    275
+   ],
+   "summary": "Tarjeta con el editor de descripción.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:AdjuntosCard",
+   "type": "function",
+   "name": "AdjuntosCard",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    288,
+    320
+   ],
+   "summary": "Tarjeta para adjuntar y listar archivos.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SubmitBar",
+   "type": "function",
+   "name": "SubmitBar",
+   "filePath": "src/features/requests/components/SolviRequestPageComponents.tsx",
+   "lineRange": [
+    330,
+    356
+   ],
+   "summary": "Barra con el botón de envío y estado.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/StatsSkeleton.tsx",
+   "type": "file",
+   "name": "StatsSkeleton.tsx",
+   "filePath": "src/features/requests/components/StatsSkeleton.tsx",
+   "summary": "Skeleton de carga de la página de estadísticas con KPIs y gráficos placeholder.",
+   "tags": [
+    "component",
+    "skeleton",
+    "loading",
+    "stats"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/StatsSkeleton.tsx:StatsSkeleton",
+   "type": "function",
+   "name": "StatsSkeleton",
+   "filePath": "src/features/requests/components/StatsSkeleton.tsx",
+   "lineRange": [
+    3,
+    109
+   ],
+   "summary": "Skeleton completo de la página de estadísticas.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "type": "file",
+   "name": "StatsTeamTabs.tsx",
+   "filePath": "src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "summary": "Pestañas para seleccionar el equipo en la vista de estadísticas usando los metadatos del tablero.",
+   "tags": [
+    "component",
+    "stats",
+    "tabs",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsTeamTabs.tsx:StatsTeamTabs",
+   "type": "function",
+   "name": "StatsTeamTabs",
+   "filePath": "src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "lineRange": [
+    5,
+    39
+   ],
+   "summary": "Pestañas de selección de equipo para estadísticas.",
+   "tags": [
+    "component",
+    "react",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useAttachments.ts",
+   "type": "file",
+   "name": "useAttachments.ts",
+   "filePath": "src/features/requests/hooks/useAttachments.ts",
+   "summary": "Hooks de TanStack Query para listar, subir (codificando a base64) y borrar adjuntos de una solicitud, invalidando la lista tras cada mutación.",
+   "tags": [
+    "hook",
+    "attachments",
+    "react-query",
+    "data-access"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAttachments.ts:useAttachments",
+   "type": "function",
+   "name": "useAttachments",
+   "filePath": "src/features/requests/hooks/useAttachments.ts",
+   "lineRange": [
+    47,
+    54
+   ],
+   "summary": "Query que lista los adjuntos de una solicitud.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAttachments.ts:useUploadAttachment",
+   "type": "function",
+   "name": "useUploadAttachment",
+   "filePath": "src/features/requests/hooks/useAttachments.ts",
+   "lineRange": [
+    67,
+    105
+   ],
+   "summary": "Mutación que sube un archivo codificado en base64.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useAttachments.ts:useDeleteAttachment",
+   "type": "function",
+   "name": "useDeleteAttachment",
+   "filePath": "src/features/requests/hooks/useAttachments.ts",
+   "lineRange": [
+    117,
+    130
+   ],
+   "summary": "Mutación que borra un adjunto.",
+   "tags": [
+    "hook",
+    "react",
+    "funcion"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "file:src/features/automations/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "file:src/store/automationStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "function:src/features/automations/components/CreateAutomationModal.tsx:CreateAutomationModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "function:src/features/automations/components/CreateAutomationModal.tsx:CreateAutomationModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "file:src/features/automations/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:mapRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useAutomationRules",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useAutomationRules",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useCreateAutomationRule",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useCreateAutomationRule",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useToggleAutomationRule",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useToggleAutomationRule",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useDeleteAutomationRule",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useDeleteAutomationRule",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/automations/types.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "function:src/features/requests/components/AssignBugModal.tsx:AssignBugModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "function:src/features/requests/components/AssignBugModal.tsx:AssignBugModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "function:src/features/requests/components/AssignBugModal.tsx:AutoTextarea",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "function:src/features/requests/components/AssignBugModal.tsx:AcceptanceCriteriaEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "function:src/features/requests/components/AssignBugModal.tsx:HorasInput",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardCustomization.tsx",
+   "target": "file:src/store/customizationStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/BoardCustomization.tsx",
+   "target": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardCustomization.tsx",
+   "target": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/BoardCustomization.tsx",
+   "target": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationTrigger",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardCustomization.tsx",
+   "target": "function:src/features/requests/components/BoardCustomization.tsx:BoardCustomizationTrigger",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "target": "file:src/styles/kanbanSkeleton.css",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "target": "function:src/features/requests/components/KanbanSkeleton.tsx:SkCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "target": "function:src/features/requests/components/KanbanSkeleton.tsx:KanbanSkeleton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "target": "function:src/features/requests/components/KanbanSkeleton.tsx:KanbanSkeleton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/RichTextEditor.tsx",
+   "target": "function:src/features/requests/components/RichTextEditor.tsx:ToolbarButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RichTextEditor.tsx",
+   "target": "function:src/features/requests/components/RichTextEditor.tsx:Toolbar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RichTextEditor.tsx",
+   "target": "function:src/features/requests/components/RichTextEditor.tsx:RichTextEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/RichTextEditor.tsx",
+   "target": "function:src/features/requests/components/RichTextEditor.tsx:RichTextEditor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:fmtBytes",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:fmtBytes",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:AttachmentIcon",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:AttachmentIcon",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:SectionLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:SectionLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:inputStyle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:inputStyle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldError",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:FieldError",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:cardStyle",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:cardStyle",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/components/RichTextEditor.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:UsuarioErrorScreen",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:UsuarioErrorScreen",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudEnviadaScreen",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudEnviadaScreen",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SolicitudCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SlaBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SlaBadge",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:CategoriaCascadeCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:CategoriaCascadeCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:DescripcionCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:DescripcionCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:AdjuntosCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:AdjuntosCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SubmitBar",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "target": "function:src/features/requests/components/SolviRequestPageComponents.tsx:SubmitBar",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/StatsSkeleton.tsx",
+   "target": "function:src/features/requests/components/StatsSkeleton.tsx:StatsSkeleton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/StatsSkeleton.tsx",
+   "target": "function:src/features/requests/components/StatsSkeleton.tsx:StatsSkeleton",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "target": "function:src/features/requests/components/stats/StatsTeamTabs.tsx:StatsTeamTabs",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "target": "function:src/features/requests/components/stats/StatsTeamTabs.tsx:StatsTeamTabs",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useAttachments",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useAttachments",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useUploadAttachment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useUploadAttachment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useDeleteAttachment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useAttachments.ts",
+   "target": "function:src/features/requests/hooks/useAttachments.ts:useDeleteAttachment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/AssignBugModal.tsx",
+   "target": "file:src/components/hooks/useMediaQuery.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "target": "file:src/features/automations/hooks/useAutomationRules.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "function:src/features/automations/components/CreateAutomationModal.tsx:CreateAutomationModal",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useCreateAutomationRule",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/automations/components/CreateAutomationModal.tsx:CreateAutomationModal",
+   "target": "function:src/features/automations/hooks/useAutomationRules.ts:useAutomationRules",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/AssignBugModal.tsx:AssignBugModal",
+   "target": "function:src/components/hooks/useMediaQuery.ts:useIsMobile",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/AssignBugModal.tsx:AssignBugModal",
+   "target": "function:src/components/hooks/useMediaQuery.ts:useMediaQuery",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/SolviRequestPageComponents.tsx:DescripcionCard",
+   "target": "function:src/features/requests/components/RichTextEditor.tsx:RichTextEditor",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/SolviRequestPageComponents.tsx:AdjuntosCard",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:fmtBytes",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/SolviRequestPageComponents.tsx:AdjuntosCard",
+   "target": "function:src/features/requests/components/SolviRequestFormControls.tsx:AttachmentIcon",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

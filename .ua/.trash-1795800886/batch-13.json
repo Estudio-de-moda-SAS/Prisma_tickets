@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    {
+      "id": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "type": "pipeline",
+      "name": "azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "filePath": ".github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "summary": "Workflow de GitHub Actions que, en cada push a main, instala dependencias con Node 22, compila el frontend con Vite inyectando secretos VITE_* (Supabase, Azure) y publica la carpeta dist en Azure Static Web Apps usando un ID token OIDC; incluye un job para cerrar entornos de pull request.",
+      "tags": [
+        "ci-cd",
+        "deployment",
+        "github-actions",
+        "azure-static-web-apps",
+        "oidc"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "El build se hace en el propio runner (skip_app_build: true) y la acción Azure/static-web-apps-deploy solo sube el artefacto dist ya compilado."
+    }
+  ],
+  "edges": [
+    {
+      "source": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "target": "config:package.json",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "target": "file:vite.config.ts",
+      "type": "triggers",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "target": "config:public/staticwebapp.config.json",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+      "target": "file:src/main.tsx",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

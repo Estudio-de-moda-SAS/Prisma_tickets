@@ -1,0 +1,1215 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/components/stats/BarChart.tsx",
+   "type": "file",
+   "name": "BarChart.tsx",
+   "filePath": "src/features/requests/components/stats/BarChart.tsx",
+   "summary": "Componente React que envuelve Chart.js para renderizar gráficos de barras con un color por barra y adaptación al tema claro/oscuro en el dashboard de estadísticas.",
+   "tags": [
+    "component",
+    "chart",
+    "visualizacion",
+    "estadisticas"
+   ],
+   "complexity": "simple",
+   "languageNotes": "Registra explícitamente los controladores de Chart.js (tree-shaking) y gestiona el ciclo de vida del Chart con useRef/useEffect."
+  },
+  {
+   "id": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "function",
+   "name": "BarChart",
+   "filePath": "src/features/requests/components/stats/BarChart.tsx",
+   "lineRange": [
+    18,
+    48
+   ],
+   "summary": "Crea y actualiza una instancia de Chart.js de barras sobre un canvas, con tooltips y colores según el tema.",
+   "tags": [
+    "component",
+    "chart",
+    "chartjs"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "type": "file",
+   "name": "FlowSection.tsx",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "summary": "Sección de métricas de flujo (lead time, aging, throughput, precisión de estimación y aging crítico) del dashboard de estadísticas de solicitudes.",
+   "tags": [
+    "component",
+    "estadisticas",
+    "metricas-flujo",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:LeadTimeKPIs",
+   "type": "function",
+   "name": "LeadTimeKPIs",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    8,
+    21
+   ],
+   "summary": "Muestra los KPIs de lead time en tarjetas.",
+   "tags": [
+    "component",
+    "kpi",
+    "lead-time"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:AgingPanels",
+   "type": "function",
+   "name": "AgingPanels",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    24,
+    37
+   ],
+   "summary": "Renderiza paneles de envejecimiento (aging) de las solicitudes abiertas.",
+   "tags": [
+    "component",
+    "aging",
+    "metricas-flujo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:ThroughputPanel",
+   "type": "function",
+   "name": "ThroughputPanel",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    39,
+    60
+   ],
+   "summary": "Panel de throughput con mini barras de solicitudes completadas por periodo.",
+   "tags": [
+    "component",
+    "throughput",
+    "metricas-flujo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:EstimationPanel",
+   "type": "function",
+   "name": "EstimationPanel",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    62,
+    90
+   ],
+   "summary": "Panel de precisión de estimación que compara tiempo estimado vs. real.",
+   "tags": [
+    "component",
+    "estimacion",
+    "metricas-flujo"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:CriticalAgingPanel",
+   "type": "function",
+   "name": "CriticalAgingPanel",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    92,
+    109
+   ],
+   "summary": "Lista las solicitudes críticas con mayor envejecimiento.",
+   "tags": [
+    "component",
+    "aging",
+    "prioridad-critica"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "type": "function",
+   "name": "FlowSection",
+   "filePath": "src/features/requests/components/stats/FlowSection.tsx",
+   "lineRange": [
+    112,
+    125
+   ],
+   "summary": "Componente exportado que compone todos los paneles de métricas de flujo a partir de FlowMetrics.",
+   "tags": [
+    "component",
+    "estadisticas",
+    "metricas-flujo"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "type": "file",
+   "name": "GlobalSection.tsx",
+   "filePath": "src/features/requests/components/stats/GlobalSection.tsx",
+   "summary": "Sección de vista global del dashboard que muestra KPIs generales del tablero y distribuciones por estado/prioridad mediante gráficos de barras.",
+   "tags": [
+    "component",
+    "estadisticas",
+    "dashboard",
+    "kpi"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "type": "function",
+   "name": "GlobalSection",
+   "filePath": "src/features/requests/components/stats/GlobalSection.tsx",
+   "lineRange": [
+    7,
+    57
+   ],
+   "summary": "Renderiza KPIs globales y gráficos de distribución del tablero completo.",
+   "tags": [
+    "component",
+    "dashboard",
+    "kpi"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "type": "file",
+   "name": "ResolutoresPanel.tsx",
+   "filePath": "src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "summary": "Panel expandible que lista los resolutores de un equipo con sus solicitudes atendidas, etiquetas y prioridad.",
+   "tags": [
+    "component",
+    "estadisticas",
+    "resolutores",
+    "panel"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:SolicitudRow",
+   "type": "function",
+   "name": "SolicitudRow",
+   "filePath": "src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "lineRange": [
+    8,
+    38
+   ],
+   "summary": "Fila de una solicitud resuelta con prioridad, etiquetas y fecha.",
+   "tags": [
+    "component",
+    "fila",
+    "solicitud"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutorDetail",
+   "type": "function",
+   "name": "ResolutorDetail",
+   "filePath": "src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "lineRange": [
+    41,
+    55
+   ],
+   "summary": "Detalle expandible de un resolutor con su lista de solicitudes.",
+   "tags": [
+    "component",
+    "resolutor",
+    "detalle"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutoresPanel",
+   "type": "function",
+   "name": "ResolutoresPanel",
+   "filePath": "src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "lineRange": [
+    58,
+    90
+   ],
+   "summary": "Panel exportado que lista resolutores y carga las etiquetas del tablero para mostrarlas por solicitud.",
+   "tags": [
+    "component",
+    "resolutores",
+    "panel"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "type": "file",
+   "name": "SprintSection.tsx",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "summary": "Sección del sprint activo con tarjetas de avance, detalle de otros sprints, panel de puntaje (con penalización por bloqueos) y tiempos promedio.",
+   "tags": [
+    "component",
+    "sprint",
+    "estadisticas",
+    "scoring"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:SprintCards",
+   "type": "function",
+   "name": "SprintCards",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    15,
+    55
+   ],
+   "summary": "Tarjetas resumen del sprint con aviso si el equipo no tiene configurada la categoría \"bloqueada\".",
+   "tags": [
+    "component",
+    "sprint",
+    "kpi"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:OtrosSprintsDetail",
+   "type": "function",
+   "name": "OtrosSprintsDetail",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    59,
+    78
+   ],
+   "summary": "Detalle de solicitudes pertenecientes a otros sprints.",
+   "tags": [
+    "component",
+    "sprint",
+    "detalle"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:RealizadosRow",
+   "type": "function",
+   "name": "RealizadosRow",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    83,
+    120
+   ],
+   "summary": "Fila con el desglose de solicitudes realizadas del sprint.",
+   "tags": [
+    "component",
+    "sprint",
+    "realizados"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:ScorePanel",
+   "type": "function",
+   "name": "ScorePanel",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    122,
+    155
+   ],
+   "summary": "Panel de puntaje del sprint con donut y penalización por bloqueos.",
+   "tags": [
+    "component",
+    "scoring",
+    "sprint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:AverageTimesPanel",
+   "type": "function",
+   "name": "AverageTimesPanel",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    159,
+    182
+   ],
+   "summary": "Panel con tiempos promedio de resolución formateados en horas.",
+   "tags": [
+    "component",
+    "tiempos",
+    "sprint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "type": "function",
+   "name": "SprintSection",
+   "filePath": "src/features/requests/components/stats/SprintSection.tsx",
+   "lineRange": [
+    187,
+    228
+   ],
+   "summary": "Componente exportado que compone la sección del sprint activo y detecta si el equipo tiene categoría bloqueada.",
+   "tags": [
+    "component",
+    "sprint",
+    "estadisticas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "type": "file",
+   "name": "SprintSelector.tsx",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx",
+   "summary": "Selector desplegable multi-selección de sprints con filtro por año, ordenamiento y cierre al hacer clic fuera.",
+   "tags": [
+    "component",
+    "sprint",
+    "selector",
+    "dropdown"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSelector.tsx:compareSprints",
+   "type": "function",
+   "name": "compareSprints",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx",
+   "lineRange": [
+    8,
+    22
+   ],
+   "summary": "Comparador para ordenar sprints por año y número de sprint.",
+   "tags": [
+    "utility",
+    "sorting",
+    "sprint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSelector.tsx:YearPicker",
+   "type": "function",
+   "name": "YearPicker",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx",
+   "lineRange": [
+    24,
+    45
+   ],
+   "summary": "Selector de año para filtrar la lista de sprints.",
+   "tags": [
+    "component",
+    "selector",
+    "anio"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintOption",
+   "type": "function",
+   "name": "SprintOption",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx",
+   "lineRange": [
+    47,
+    74
+   ],
+   "summary": "Opción de sprint con checkbox y rango de fechas.",
+   "tags": [
+    "component",
+    "opcion",
+    "sprint"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "type": "function",
+   "name": "SprintSelector",
+   "filePath": "src/features/requests/components/stats/SprintSelector.tsx",
+   "lineRange": [
+    77,
+    153
+   ],
+   "summary": "Dropdown exportado de selección múltiple de sprints filtrado por año.",
+   "tags": [
+    "component",
+    "dropdown",
+    "sprint"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "type": "file",
+   "name": "StatsAtoms.tsx",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "summary": "Biblioteca de componentes atómicos reutilizables del dashboard de estadísticas: tarjetas KPI, tarjetas de sprint, filas de barra, donut de puntaje, divisores y mini throughput.",
+   "tags": [
+    "component",
+    "ui-atoms",
+    "estadisticas",
+    "reutilizable"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "function",
+   "name": "KPICard",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    7,
+    22
+   ],
+   "summary": "Tarjeta KPI con valor, etiqueta y tendencia (sube/baja/igual).",
+   "tags": [
+    "component",
+    "kpi",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:SprintCard",
+   "type": "function",
+   "name": "SprintCard",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    24,
+    48
+   ],
+   "summary": "Tarjeta de métrica de sprint, opcionalmente clicable/expandible.",
+   "tags": [
+    "component",
+    "sprint",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:BarRow",
+   "type": "function",
+   "name": "BarRow",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    50,
+    59
+   ],
+   "summary": "Fila de barra horizontal proporcional con etiqueta y valor.",
+   "tags": [
+    "component",
+    "barra",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:ScoreDonut",
+   "type": "function",
+   "name": "ScoreDonut",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    61,
+    80
+   ],
+   "summary": "Donut SVG que representa un puntaje porcentual.",
+   "tags": [
+    "component",
+    "svg",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "function",
+   "name": "SectionDivider",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    82,
+    89
+   ],
+   "summary": "Divisor de sección con icono y etiqueta.",
+   "tags": [
+    "component",
+    "layout",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/stats/StatsAtoms.tsx:ThroughputMini",
+   "type": "function",
+   "name": "ThroughputMini",
+   "filePath": "src/features/requests/components/stats/StatsAtoms.tsx",
+   "lineRange": [
+    93,
+    110
+   ],
+   "summary": "Mini gráfico de barras de throughput por periodo.",
+   "tags": [
+    "component",
+    "throughput",
+    "ui-atom"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/components/stats/BarChart.tsx",
+   "target": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/BarChart.tsx",
+   "target": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "file:src/features/requests/components/stats/BarChart.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:LeadTimeKPIs",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:AgingPanels",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:ThroughputPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:EstimationPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:CriticalAgingPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/FlowSection.tsx",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "target": "file:src/features/requests/components/stats/BarChart.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "target": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "target": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "target": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:SolicitudRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutorDetail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutoresPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutoresPanel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/features/requests/hooks/useStatsData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:SprintCards",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:OtrosSprintsDetail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:RealizadosRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:ScorePanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:AverageTimesPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "file:src/features/requests/components/stats/statsFormat.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:compareSprints",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:YearPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintOption",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SprintCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SprintCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:BarRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:BarRow",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ScoreDonut",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ScoreDonut",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ThroughputMini",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ThroughputMini",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:LeadTimeKPIs",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:ThroughputPanel",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ThroughputMini",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:AgingPanels",
+   "target": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:LeadTimeKPIs",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDays",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:LeadTimeKPIs",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:AgingPanels",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:ThroughputPanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:EstimationPanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/FlowSection.tsx:FlowSection",
+   "target": "function:src/features/requests/components/stats/FlowSection.tsx:CriticalAgingPanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "target": "function:src/features/requests/components/stats/BarChart.tsx:BarChart",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:KPICard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:BarRow",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/GlobalSection.tsx:GlobalSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:SolicitudRow",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutorDetail",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:SolicitudRow",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutoresPanel",
+   "target": "function:src/features/requests/components/stats/ResolutoresPanel.tsx:ResolutorDetail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintCards",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SprintCard",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:ScorePanel",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:ScoreDonut",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:AverageTimesPanel",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtHoras",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "target": "function:src/features/requests/components/stats/StatsAtoms.tsx:SectionDivider",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:SprintCards",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:OtrosSprintsDetail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:ScorePanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSection.tsx:SprintSection",
+   "target": "function:src/features/requests/components/stats/SprintSection.tsx:AverageTimesPanel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:compareSprints",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintYear",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:compareSprints",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:getSprintNumber",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintOption",
+   "target": "function:src/features/requests/components/stats/statsFormat.ts:fmtDate",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "target": "function:src/features/requests/components/stats/useClickOutside.ts:useClickOutside",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:YearPicker",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintOption",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/stats/SprintSelector.tsx:SprintSelector",
+   "target": "function:src/features/requests/components/stats/SprintSelector.tsx:compareSprints",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "target": "file:src/features/requests/components/stats/useClickOutside.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "target": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/features/requests/components/stats/SprintSection.tsx",
+   "target": "file:src/features/requests/hooks/useLabels.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  }
+ ]
+}

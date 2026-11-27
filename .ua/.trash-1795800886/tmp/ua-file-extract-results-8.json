@@ -1,0 +1,2070 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 13,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 13,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 13,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/components/hooks/useVersionCheck.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 37,
+      "functions": [
+        {
+          "name": "useVersionCheck",
+          "startLine": 7,
+          "endLine": 47,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useVersionCheck",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useVersionCheck",
+          "callee": "useState",
+          "lineNumber": 8
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "useEffect",
+          "lineNumber": 10
+        },
+        {
+          "caller": "check",
+          "callee": "fetch",
+          "lineNumber": 15
+        },
+        {
+          "caller": "check",
+          "callee": "Date.now",
+          "lineNumber": 15
+        },
+        {
+          "caller": "check",
+          "callee": "res.json",
+          "lineNumber": 19
+        },
+        {
+          "caller": "check",
+          "callee": "setUpdateAvailable",
+          "lineNumber": 21
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "check",
+          "lineNumber": 29
+        },
+        {
+          "caller": "handleVisibility",
+          "callee": "check",
+          "lineNumber": 33
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "document.addEventListener",
+          "lineNumber": 35
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "setInterval",
+          "lineNumber": 38
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "document.removeEventListener",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useVersionCheck",
+          "callee": "clearInterval",
+          "lineNumber": 42
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/AnnouncementBanner.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 119,
+      "nonEmptyLines": 110,
+      "functions": [
+        {
+          "name": "AnnouncementBanner",
+          "startLine": 12,
+          "endLine": 69,
+          "params": []
+        },
+        {
+          "name": "HomeAnnouncementsSection",
+          "startLine": 72,
+          "endLine": 89,
+          "params": []
+        },
+        {
+          "name": "HomeAnnouncementCard",
+          "startLine": 91,
+          "endLine": 119,
+          "params": [
+            "{ a, onDismiss }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnnouncementBanner",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "HomeAnnouncementsSection",
+          "line": 72,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "useIsMobile",
+          "lineNumber": 13
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "useAnnouncements",
+          "lineNumber": 14
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "useState",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "getDismissed",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "list.filter",
+          "lineNumber": 17
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "dismissed.includes",
+          "lineNumber": 17
+        },
+        {
+          "caller": "handleDismiss",
+          "callee": "dismissAnnouncement",
+          "lineNumber": 21
+        },
+        {
+          "caller": "handleDismiss",
+          "callee": "setDismissed",
+          "lineNumber": 22
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "visible.map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "AnnouncementBanner",
+          "callee": "handleDismiss",
+          "lineNumber": 54
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "useAnnouncements",
+          "lineNumber": 73
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "useState",
+          "lineNumber": 74
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "getDismissed",
+          "lineNumber": 74
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "list.filter",
+          "lineNumber": 76
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "dismissed.includes",
+          "lineNumber": 76
+        },
+        {
+          "caller": "handleDismiss",
+          "callee": "dismissAnnouncement",
+          "lineNumber": 80
+        },
+        {
+          "caller": "handleDismiss",
+          "callee": "setDismissed",
+          "lineNumber": 81
+        },
+        {
+          "caller": "HomeAnnouncementsSection",
+          "callee": "visible.map",
+          "lineNumber": 86
+        },
+        {
+          "caller": "HomeAnnouncementCard",
+          "callee": "onDismiss",
+          "lineNumber": 107
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/AnnouncementModal.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 86,
+      "nonEmptyLines": 78,
+      "functions": [
+        {
+          "name": "AnnouncementModal",
+          "startLine": 9,
+          "endLine": 86,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnnouncementModal",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AnnouncementModal",
+          "callee": "useAnnouncements",
+          "lineNumber": 10
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "useState",
+          "lineNumber": 11
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "getConfirmed",
+          "lineNumber": 11
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "list.find",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "confirmed.includes",
+          "lineNumber": 15
+        },
+        {
+          "caller": "handleConfirm",
+          "callee": "confirmAnnouncement",
+          "lineNumber": 19
+        },
+        {
+          "caller": "handleConfirm",
+          "callee": "setConfirmed",
+          "lineNumber": 20
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "createPortal",
+          "lineNumber": 23
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "Object.assign",
+          "lineNumber": 77
+        },
+        {
+          "caller": "AnnouncementModal",
+          "callee": "Object.assign",
+          "lineNumber": 78
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/AppLayout.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 58,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "AppLayout",
+          "startLine": 24,
+          "endLine": 58,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AppLayout",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AppLayout",
+          "callee": "useBoardTheme",
+          "lineNumber": 25
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useLocation",
+          "lineNumber": 26
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useNavigate",
+          "lineNumber": 27
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "/^\\/tasks\\//.test",
+          "lineNumber": 30
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "/^\\/integracion\\/[^/]+\\/tickets/.test",
+          "lineNumber": 30
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useCurrentUser",
+          "lineNumber": 32
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "React.useEffect",
+          "lineNumber": 34
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "navigate",
+          "lineNumber": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/BugReportModal.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 132,
+      "nonEmptyLines": 120,
+      "functions": [
+        {
+          "name": "BugReportModal",
+          "startLine": 10,
+          "endLine": 132,
+          "params": [
+            "{ onClose }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BugReportModal",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "BugReportModal",
+          "callee": "useLocation",
+          "lineNumber": 11
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useCurrentUser",
+          "lineNumber": 12
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useState",
+          "lineNumber": 14
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useState",
+          "lineNumber": 15
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useState",
+          "lineNumber": 16
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useState",
+          "lineNumber": 17
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "useState",
+          "lineNumber": 18
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "title.trim",
+          "lineNumber": 21
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "description.trim",
+          "lineNumber": 21
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 22
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 26
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setLoading",
+          "lineNumber": 29
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 30
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "apiClient.call",
+          "lineNumber": 32
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "title.trim",
+          "lineNumber": 34
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "description.trim",
+          "lineNumber": 35
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setDone",
+          "lineNumber": 38
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 40
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setLoading",
+          "lineNumber": 42
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "onClose",
+          "lineNumber": 47
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "setTitle",
+          "lineNumber": 83
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "setDescription",
+          "lineNumber": 97
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "title.trim",
+          "lineNumber": 122
+        },
+        {
+          "caller": "BugReportModal",
+          "callee": "description.trim",
+          "lineNumber": 122
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/FloatingTimer.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 249,
+      "nonEmptyLines": 226,
+      "functions": [
+        {
+          "name": "loadPos",
+          "startLine": 15,
+          "endLine": 20,
+          "params": []
+        },
+        {
+          "name": "savePos",
+          "startLine": 21,
+          "endLine": 23,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "fmt",
+          "startLine": 25,
+          "endLine": 28,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "FloatingTimer",
+          "startLine": 30,
+          "endLine": 145,
+          "params": []
+        },
+        {
+          "name": "TimerWidgetInner",
+          "startLine": 147,
+          "endLine": 249,
+          "params": [
+            "{ entry }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "FloatingTimer",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadPos",
+          "callee": "localStorage.getItem",
+          "lineNumber": 17
+        },
+        {
+          "caller": "loadPos",
+          "callee": "JSON.parse",
+          "lineNumber": 18
+        },
+        {
+          "caller": "savePos",
+          "callee": "localStorage.setItem",
+          "lineNumber": 22
+        },
+        {
+          "caller": "savePos",
+          "callee": "JSON.stringify",
+          "lineNumber": 22
+        },
+        {
+          "caller": "fmt",
+          "callee": "[Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]\r\n    .map((v) => String(v).padStart(2, '0')).join",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fmt",
+          "callee": "[Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]\r\n    .map",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fmt",
+          "callee": "Math.floor",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fmt",
+          "callee": "Math.floor",
+          "lineNumber": 26
+        },
+        {
+          "caller": "fmt",
+          "callee": "String(v).padStart",
+          "lineNumber": 27
+        },
+        {
+          "caller": "fmt",
+          "callee": "String",
+          "lineNumber": 27
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useIsMobile",
+          "lineNumber": 31
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useTimerStore",
+          "lineNumber": 32
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useTimerStore",
+          "lineNumber": 33
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useTimerStore",
+          "lineNumber": 34
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useRef",
+          "lineNumber": 36
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useState",
+          "lineNumber": 37
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useRef",
+          "lineNumber": 38
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useRef",
+          "lineNumber": 39
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useState",
+          "lineNumber": 40
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useEffect",
+          "lineNumber": 43
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "setInterval",
+          "lineNumber": 45
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "checkpoint",
+          "lineNumber": 45
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "clearInterval",
+          "lineNumber": 46
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useCallback",
+          "lineNumber": 50
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.max",
+          "lineNumber": 54
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.max",
+          "lineNumber": 55
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.min",
+          "lineNumber": 57
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.max",
+          "lineNumber": 57
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.min",
+          "lineNumber": 58
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "Math.max",
+          "lineNumber": 58
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useCallback",
+          "lineNumber": 62
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "setPos",
+          "lineNumber": 64
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "useEffect",
+          "lineNumber": 68
+        },
+        {
+          "caller": "onResize",
+          "callee": "applyPos",
+          "lineNumber": 70
+        },
+        {
+          "caller": "onResize",
+          "callee": "clamp",
+          "lineNumber": 70
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "window.addEventListener",
+          "lineNumber": 72
+        },
+        {
+          "caller": "FloatingTimer",
+          "callee": "window.removeEventListener",
+          "lineNumber": 73
+        },
+        {
+          "caller": "onPointerDown",
+          "callee": "el.getBoundingClientRect",
+          "lineNumber": 81
+        },
+        {
+          "caller": "onPointerDown",
+          "callee": "applyPos",
+          "lineNumber": 84
+        },
+        {
+          "caller": "onPointerDown",
+          "callee": "e.currentTarget.setPointerCapture",
+          "lineNumber": 85
+        },
+        {
+          "caller": "onPointerDown",
+          "callee": "setDragging",
+          "lineNumber": 86
+        },
+        {
+          "caller": "onPointerDown",
+          "callee": "e.preventDefault",
+          "lineNumber": 87
+        },
+        {
+          "caller": "onPointerMove",
+          "callee": "applyPos",
+          "lineNumber": 91
+        },
+        {
+          "caller": "onPointerMove",
+          "callee": "clamp",
+          "lineNumber": 91
+        },
+        {
+          "caller": "onPointerUp",
+          "callee": "e.currentTarget.releasePointerCapture",
+          "lineNumber": 96
+        },
+        {
+          "caller": "onPointerUp",
+          "callee": "setDragging",
+          "lineNumber": 97
+        },
+        {
+          "caller": "onPointerUp",
+          "callee": "savePos",
+          "lineNumber": 98
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useNavigate",
+          "lineNumber": 148
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useLocation",
+          "lineNumber": 149
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useQueryClient",
+          "lineNumber": 150
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useTimerStore",
+          "lineNumber": 151
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useTimerStore",
+          "lineNumber": 152
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useTimerStore",
+          "lineNumber": 153
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useTimerStore",
+          "lineNumber": 154
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useCurrentUser",
+          "lineNumber": 155
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useUpdateRequest",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useState",
+          "lineNumber": 161
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "useEffect",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "setInterval",
+          "lineNumber": 164
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "force",
+          "lineNumber": 164
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "clearInterval",
+          "lineNumber": 165
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "Date.now",
+          "lineNumber": 168
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "Math.floor",
+          "lineNumber": 169
+        },
+        {
+          "caller": "handleToggle",
+          "callee": "pause",
+          "lineNumber": 173
+        },
+        {
+          "caller": "handleToggle",
+          "callee": "start",
+          "lineNumber": 174
+        },
+        {
+          "caller": "handleSave",
+          "callee": "parseFloat",
+          "lineNumber": 178
+        },
+        {
+          "caller": "handleSave",
+          "callee": "(seconds / 3600).toFixed",
+          "lineNumber": 178
+        },
+        {
+          "caller": "handleSave",
+          "callee": "reset",
+          "lineNumber": 179
+        },
+        {
+          "caller": "handleSave",
+          "callee": "qc.getQueryData",
+          "lineNumber": 180
+        },
+        {
+          "caller": "handleSave",
+          "callee": "update",
+          "lineNumber": 182
+        },
+        {
+          "caller": "handleSave",
+          "callee": "parseFloat",
+          "lineNumber": 182
+        },
+        {
+          "caller": "handleSave",
+          "callee": "(base + hrs).toFixed",
+          "lineNumber": 182
+        },
+        {
+          "caller": "handleSave",
+          "callee": "reset",
+          "lineNumber": 183
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "dismiss",
+          "lineNumber": 196
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "fmt",
+          "lineNumber": 207
+        },
+        {
+          "caller": "TimerWidgetInner",
+          "callee": "navigate",
+          "lineNumber": 238
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/NotificationBell.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 273,
+      "nonEmptyLines": 246,
+      "functions": [
+        {
+          "name": "NotificationBell",
+          "startLine": 41,
+          "endLine": 130,
+          "params": [
+            "{ userId }"
+          ]
+        },
+        {
+          "name": "NotificationItem",
+          "startLine": 234,
+          "endLine": 273,
+          "params": [
+            "{ notification: n, onClick, onMarkRead }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "NotificationBell",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "NotificationBell",
+          "callee": "useState",
+          "lineNumber": 42
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useRef",
+          "lineNumber": 43
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useRef",
+          "lineNumber": 44
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useState",
+          "lineNumber": 45
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useNavigate",
+          "lineNumber": 46
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useNotifications",
+          "lineNumber": 49
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useCallback",
+          "lineNumber": 52
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "markRead",
+          "lineNumber": 53
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "window.dispatchEvent",
+          "lineNumber": 55
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "navigate",
+          "lineNumber": 58
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useBrowserNotifications",
+          "lineNumber": 61
+        },
+        {
+          "caller": "handleOpen",
+          "callee": "bellRef.current.getBoundingClientRect",
+          "lineNumber": 68
+        },
+        {
+          "caller": "handleOpen",
+          "callee": "setCoords",
+          "lineNumber": 69
+        },
+        {
+          "caller": "handleOpen",
+          "callee": "setOpen",
+          "lineNumber": 74
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useEffect",
+          "lineNumber": 77
+        },
+        {
+          "caller": "handler",
+          "callee": "panelRef.current.contains",
+          "lineNumber": 81
+        },
+        {
+          "caller": "handler",
+          "callee": "bellRef.current.contains",
+          "lineNumber": 82
+        },
+        {
+          "caller": "handler",
+          "callee": "setOpen",
+          "lineNumber": 83
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "document.addEventListener",
+          "lineNumber": 85
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "document.removeEventListener",
+          "lineNumber": 86
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "useEffect",
+          "lineNumber": 89
+        },
+        {
+          "caller": "handler",
+          "callee": "setOpen",
+          "lineNumber": 91
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "document.addEventListener",
+          "lineNumber": 92
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "document.removeEventListener",
+          "lineNumber": 93
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "createPortal",
+          "lineNumber": 115
+        },
+        {
+          "caller": "NotificationBell",
+          "callee": "setOpen",
+          "lineNumber": 122
+        },
+        {
+          "caller": "handleClick",
+          "callee": "onMarkRead",
+          "lineNumber": 149
+        },
+        {
+          "caller": "handleClick",
+          "callee": "window.dispatchEvent",
+          "lineNumber": 153
+        },
+        {
+          "caller": "handleClick",
+          "callee": "onClose",
+          "lineNumber": 154
+        },
+        {
+          "caller": "handleClick",
+          "callee": "navigate",
+          "lineNumber": 159
+        },
+        {
+          "caller": "handleClick",
+          "callee": "onClose",
+          "lineNumber": 160
+        },
+        {
+          "caller": "NotificationItem",
+          "callee": "formatDistanceToNow",
+          "lineNumber": 237
+        },
+        {
+          "caller": "NotificationItem",
+          "callee": "onClick",
+          "lineNumber": 245
+        },
+        {
+          "caller": "NotificationItem",
+          "callee": "e.stopPropagation",
+          "lineNumber": 265
+        },
+        {
+          "caller": "NotificationItem",
+          "callee": "onMarkRead",
+          "lineNumber": 265
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/NotificationPermissionPrompt.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 50,
+      "functions": [
+        {
+          "name": "NotificationPermissionPrompt",
+          "startLine": 10,
+          "endLine": 59,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "NotificationPermissionPrompt",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "NotificationPermissionPrompt",
+          "callee": "useBrowserNotifications",
+          "lineNumber": 11
+        },
+        {
+          "caller": "NotificationPermissionPrompt",
+          "callee": "useNotifPromptStore",
+          "lineNumber": 14
+        },
+        {
+          "caller": "NotificationPermissionPrompt",
+          "callee": "useNotifPromptStore",
+          "lineNumber": 15
+        },
+        {
+          "caller": "NotificationPermissionPrompt",
+          "callee": "useState",
+          "lineNumber": 18
+        },
+        {
+          "caller": "handleEnable",
+          "callee": "requestPermission",
+          "lineNumber": 29
+        },
+        {
+          "caller": "handleEnable",
+          "callee": "setDismissedSession",
+          "lineNumber": 30
+        },
+        {
+          "caller": "NotificationPermissionPrompt",
+          "callee": "setDismissedSession",
+          "lineNumber": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/SatisfactionModal.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 142,
+      "nonEmptyLines": 129,
+      "functions": [
+        {
+          "name": "SatisfactionModal",
+          "startLine": 16,
+          "endLine": 142,
+          "params": [
+            "{ onClose }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SatisfactionModal",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useCurrentUser",
+          "lineNumber": 17
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 19
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 20
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 21
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 22
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 23
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "useState",
+          "lineNumber": 24
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 29
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 30
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setLoading",
+          "lineNumber": 31
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 32
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "apiClient.call",
+          "lineNumber": 34
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "comment.trim",
+          "lineNumber": 37
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setDone",
+          "lineNumber": 39
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setError",
+          "lineNumber": 41
+        },
+        {
+          "caller": "handleSubmit",
+          "callee": "setLoading",
+          "lineNumber": 43
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "onClose",
+          "lineNumber": 48
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "setHovered",
+          "lineNumber": 84
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "[1, 2, 3, 4, 5].map",
+          "lineNumber": 86
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "['feedback-modal__star', n <= displayScore ? 'is-active' : ''].join",
+          "lineNumber": 89
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "setScore",
+          "lineNumber": 90
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "setHovered",
+          "lineNumber": 91
+        },
+        {
+          "caller": "SatisfactionModal",
+          "callee": "setComment",
+          "lineNumber": 114
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/Sidebar.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 454,
+      "nonEmptyLines": 414,
+      "functions": [
+        {
+          "name": "Sidebar",
+          "startLine": 26,
+          "endLine": 454,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "Sidebar",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "Sidebar",
+          "callee": "useAuth",
+          "lineNumber": 27
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useRole",
+          "lineNumber": 28
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useBoardStore",
+          "lineNumber": 34
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMatch",
+          "lineNumber": 36
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMatch",
+          "lineNumber": 37
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMatch",
+          "lineNumber": 38
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useNavigate",
+          "lineNumber": 42
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useLocation",
+          "lineNumber": 43
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMobileNav",
+          "lineNumber": 44
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMobileNav",
+          "lineNumber": 45
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useEffect",
+          "lineNumber": 49
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "closeMobileNav",
+          "lineNumber": 50
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useState",
+          "lineNumber": 54
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useState",
+          "lineNumber": 55
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useState",
+          "lineNumber": 56
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "canSeeConfig",
+          "lineNumber": 61
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "canSeeAutomations",
+          "lineNumber": 62
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "account?.name\r\n      ?.split(' ')\r\n      .slice(0, 2)\r\n      .map((n) => n[0])\r\n      .join('')\r\n      .toUpperCase",
+          "lineNumber": 65
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "account?.name\r\n      ?.split(' ')\r\n      .slice(0, 2)\r\n      .map((n) => n[0])\r\n      .join",
+          "lineNumber": 65
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "account?.name\r\n      ?.split(' ')\r\n      .slice(0, 2)\r\n      .map",
+          "lineNumber": 65
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "account?.name\r\n      ?.split(' ')\r\n      .slice",
+          "lineNumber": 65
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "account?.name\r\n      ?.split",
+          "lineNumber": 65
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useCurrentUser",
+          "lineNumber": 73
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMyBoardTeams",
+          "lineNumber": 74
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "useMemo",
+          "lineNumber": 79
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "myBoardTeams\r\n      .filter((t) => t.Board_Team_Is_Active && (isAdmin || !t.Board_Team_Is_Admin_Only))\r\n      .sort",
+          "lineNumber": 80
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "myBoardTeams\r\n      .filter",
+          "lineNumber": 80
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "byDept.has",
+          "lineNumber": 88
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "byDept.set",
+          "lineNumber": 89
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "byDept.get(deptId)!.teams.push",
+          "lineNumber": 91
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "byDept.get",
+          "lineNumber": 91
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "[...byDept.values()].sort",
+          "lineNumber": 96
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "byDept.values",
+          "lineNumber": 96
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "canSeeStats",
+          "lineNumber": 106
+        },
+        {
+          "caller": "handleEquipo",
+          "callee": "setTeamSubOpen",
+          "lineNumber": 112
+        },
+        {
+          "caller": "handleEquipo",
+          "callee": "setEquipoActivo",
+          "lineNumber": 114
+        },
+        {
+          "caller": "handleEquipo",
+          "callee": "navigate",
+          "lineNumber": 116
+        },
+        {
+          "caller": "handleEquipo",
+          "callee": "setTeamSubOpen",
+          "lineNumber": 117
+        },
+        {
+          "caller": "NavLabel",
+          "callee": "['sidebar__nav-label', top ? 'sidebar__nav-label--top' : ''].join",
+          "lineNumber": 130
+        },
+        {
+          "caller": "NavLabel",
+          "callee": "['sidebar__nav-sep', top ? 'sidebar__nav-sep--top' : ''].join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "teamSidebarColors",
+          "lineNumber": 144
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "getTeamIcon",
+          "lineNumber": 148
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "window.open",
+          "lineNumber": 155
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "handleEquipo",
+          "lineNumber": 158
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 187
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 198
+        },
+        {
+          "caller": "renderTeam",
+          "callee": "['sidebar__nav-item sidebar__nav-item--sub', active ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 208
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__backdrop', mobileNavOpen ? 'sidebar__backdrop--visible' : ''].join",
+          "lineNumber": 223
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar', sidebarAbierto ? 'sidebar--open' : 'sidebar--collapsed', mobileNavOpen ? 'sidebar--mobile-open' : ''].join",
+          "lineNumber": 226
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 247
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 260
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 273
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 284
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "grupos.map",
+          "lineNumber": 295
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "grupo.teams.map",
+          "lineNumber": 300
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 313
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "window.open",
+          "lineNumber": 323
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "setAutomatizacionesOpen",
+          "lineNumber": 339
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__chevron', automatizacionesOpen ? 'sidebar__chevron--open' : ''].join",
+          "lineNumber": 344
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item sidebar__nav-item--sub', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 352
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 364
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "['sidebar__nav-item', isActive ? 'sidebar__nav-item--active' : ''].join",
+          "lineNumber": 383
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "setSatisfactionOpen",
+          "lineNumber": 399
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "setSatisfactionOpen",
+          "lineNumber": 418
+        },
+        {
+          "caller": "Sidebar",
+          "callee": "setSatisfactionOpen",
+          "lineNumber": 451
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/Topbar.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 118,
+      "functions": [
+        {
+          "name": "Topbar",
+          "startLine": 25,
+          "endLine": 134,
+          "params": [
+            "{ titulo }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "Topbar",
+          "line": 25,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "Topbar",
+          "callee": "useAuth",
+          "lineNumber": 26
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useBoardStore",
+          "lineNumber": 27
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useMobileNav",
+          "lineNumber": 28
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useLocation",
+          "lineNumber": 29
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useCurrentUser",
+          "lineNumber": 30
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useState",
+          "lineNumber": 32
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useInstallPrompt",
+          "lineNumber": 33
+        },
+        {
+          "caller": "Topbar",
+          "callee": "useBoardTeams",
+          "lineNumber": 35
+        },
+        {
+          "caller": "Topbar",
+          "callee": "boardTeams.find",
+          "lineNumber": 36
+        },
+        {
+          "caller": "Topbar",
+          "callee": "format",
+          "lineNumber": 37
+        },
+        {
+          "caller": "Topbar",
+          "callee": "account?.name\r\n    ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "Topbar",
+          "callee": "account?.name\r\n    ?.split(' ').slice(0, 2).map((n) => n[0]).join",
+          "lineNumber": 39
+        },
+        {
+          "caller": "Topbar",
+          "callee": "account?.name\r\n    ?.split(' ').slice(0, 2).map",
+          "lineNumber": 39
+        },
+        {
+          "caller": "Topbar",
+          "callee": "account?.name\r\n    ?.split(' ').slice",
+          "lineNumber": 39
+        },
+        {
+          "caller": "Topbar",
+          "callee": "account?.name\r\n    ?.split",
+          "lineNumber": 39
+        },
+        {
+          "caller": "Topbar",
+          "callee": "teamColors",
+          "lineNumber": 42
+        },
+        {
+          "caller": "Topbar",
+          "callee": "pathname.startsWith",
+          "lineNumber": 43
+        },
+        {
+          "caller": "Topbar",
+          "callee": "promptInstall",
+          "lineNumber": 96
+        },
+        {
+          "caller": "Topbar",
+          "callee": "setBugOpen",
+          "lineNumber": 110
+        },
+        {
+          "caller": "Topbar",
+          "callee": "setBugOpen",
+          "lineNumber": 131
+        }
+      ],
+      "metrics": {
+        "importCount": 10,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/VersionUpdateBanner.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 83,
+      "nonEmptyLines": 74,
+      "functions": [
+        {
+          "name": "VersionUpdateBanner",
+          "startLine": 25,
+          "endLine": 83,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "VersionUpdateBanner",
+          "line": 25,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "useVersionCheck",
+          "lineNumber": 26
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "React.useState",
+          "lineNumber": 27
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "React.useState",
+          "lineNumber": 28
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "React.useEffect",
+          "lineNumber": 32
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "swRegistration?.update().catch",
+          "lineNumber": 34
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "swRegistration?.update",
+          "lineNumber": 34
+        },
+        {
+          "caller": "handleReload",
+          "callee": "setReloading",
+          "lineNumber": 42
+        },
+        {
+          "caller": "handleReload",
+          "callee": "window.setTimeout",
+          "lineNumber": 45
+        },
+        {
+          "caller": "handleReload",
+          "callee": "window.location.reload",
+          "lineNumber": 45
+        },
+        {
+          "caller": "handleReload",
+          "callee": "updateSW(true).catch",
+          "lineNumber": 48
+        },
+        {
+          "caller": "handleReload",
+          "callee": "updateSW",
+          "lineNumber": 48
+        },
+        {
+          "caller": "handleReload",
+          "callee": "window.location.reload",
+          "lineNumber": 48
+        },
+        {
+          "caller": "handleReload",
+          "callee": "window.location.reload",
+          "lineNumber": 50
+        },
+        {
+          "caller": "VersionUpdateBanner",
+          "callee": "setDismissed",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/components/layout/siderbarConstants.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 28,
+      "functions": [
+        {
+          "name": "getTeamIcon",
+          "startLine": 22,
+          "endLine": 24,
+          "params": [
+            "iconName"
+          ]
+        },
+        {
+          "name": "teamColors",
+          "startLine": 26,
+          "endLine": 28,
+          "params": [
+            "hex"
+          ]
+        },
+        {
+          "name": "teamSidebarColors",
+          "startLine": 30,
+          "endLine": 32,
+          "params": [
+            "hex"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TEAM_ICON_MAP",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "getTeamIcon",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "teamColors",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "teamSidebarColors",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    }
+  ]
+}

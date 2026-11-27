@@ -1,0 +1,2898 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 9,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 9,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 9,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/features/exports/hooks/useCreateExportJob.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 15,
+      "nonEmptyLines": 14,
+      "functions": [
+        {
+          "name": "useCreateExportJob",
+          "startLine": 6,
+          "endLine": 15,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useCreateExportJob",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useCreateExportJob",
+          "callee": "useQueryClient",
+          "lineNumber": 7
+        },
+        {
+          "caller": "useCreateExportJob",
+          "callee": "useMutation",
+          "lineNumber": 8
+        },
+        {
+          "caller": "useCreateExportJob",
+          "callee": "apiClient.call",
+          "lineNumber": 9
+        },
+        {
+          "caller": "useCreateExportJob",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 12
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/hooks/useExportData.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "useExportData",
+          "startLine": 16,
+          "endLine": 25,
+          "params": [
+            "filters",
+            "enabled"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useExportData",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useExportData",
+          "callee": "useQuery",
+          "lineNumber": 17
+        },
+        {
+          "caller": "useExportData",
+          "callee": "apiClient.call",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/hooks/useExportHistory.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 26,
+      "functions": [
+        {
+          "name": "useExportHistory",
+          "startLine": 6,
+          "endLine": 13,
+          "params": [
+            "userId",
+            "limit"
+          ]
+        },
+        {
+          "name": "useDeleteExport",
+          "startLine": 15,
+          "endLine": 21,
+          "params": [
+            "userId"
+          ]
+        },
+        {
+          "name": "useRepeatExport",
+          "startLine": 23,
+          "endLine": 29,
+          "params": [
+            "userId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useExportHistory",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "useDeleteExport",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "useRepeatExport",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useExportHistory",
+          "callee": "useQuery",
+          "lineNumber": 7
+        },
+        {
+          "caller": "useExportHistory",
+          "callee": "apiClient.call",
+          "lineNumber": 9
+        },
+        {
+          "caller": "useDeleteExport",
+          "callee": "useQueryClient",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useDeleteExport",
+          "callee": "useMutation",
+          "lineNumber": 17
+        },
+        {
+          "caller": "useDeleteExport",
+          "callee": "apiClient.call",
+          "lineNumber": 18
+        },
+        {
+          "caller": "useDeleteExport",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 19
+        },
+        {
+          "caller": "useRepeatExport",
+          "callee": "useQueryClient",
+          "lineNumber": 24
+        },
+        {
+          "caller": "useRepeatExport",
+          "callee": "useMutation",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useRepeatExport",
+          "callee": "apiClient.call",
+          "lineNumber": 26
+        },
+        {
+          "caller": "useRepeatExport",
+          "callee": "qc.invalidateQueries",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/hooks/useExportJob.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "useExportJob",
+          "startLine": 11,
+          "endLine": 23,
+          "params": [
+            "jobId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useExportJob",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useExportJob",
+          "callee": "useQuery",
+          "lineNumber": 12
+        },
+        {
+          "caller": "useExportJob",
+          "callee": "apiClient.call",
+          "lineNumber": 14
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/services/buildCsv.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 192,
+      "nonEmptyLines": 169,
+      "functions": [
+        {
+          "name": "escapeCell",
+          "startLine": 20,
+          "endLine": 27,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "parseIsoUtc",
+          "startLine": 29,
+          "endLine": 34,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "formatCell",
+          "startLine": 36,
+          "endLine": 58,
+          "params": [
+            "col",
+            "t"
+          ]
+        },
+        {
+          "name": "ticketsToCsv",
+          "startLine": 60,
+          "endLine": 65,
+          "params": [
+            "tickets",
+            "cols"
+          ]
+        },
+        {
+          "name": "emptyTeamCsv",
+          "startLine": 67,
+          "endLine": 72,
+          "params": [
+            "cols"
+          ]
+        },
+        {
+          "name": "buildSummaryCsv",
+          "startLine": 74,
+          "endLine": 108,
+          "params": [
+            "dataset",
+            "config"
+          ]
+        },
+        {
+          "name": "safeFileName",
+          "startLine": 110,
+          "endLine": 112,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "pad",
+          "startLine": 114,
+          "endLine": 114,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "buildCsv",
+          "startLine": 124,
+          "endLine": 192,
+          "params": [
+            "params"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ticketsToCsv",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "buildSummaryCsv",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "buildCsv",
+          "line": 124,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "escapeCell",
+          "callee": "String",
+          "lineNumber": 22
+        },
+        {
+          "caller": "escapeCell",
+          "callee": "s.includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "escapeCell",
+          "callee": "s.includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "escapeCell",
+          "callee": "s.includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "escapeCell",
+          "callee": "s.includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "escapeCell",
+          "callee": "s.replace",
+          "lineNumber": 24
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "iso.endsWith",
+          "lineNumber": 31
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "/[+-]\\d{2}:?\\d{2}$/.test",
+          "lineNumber": 31
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "isNaN",
+          "lineNumber": 33
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "d.getTime",
+          "lineNumber": 33
+        },
+        {
+          "caller": "formatCell",
+          "callee": "col.accessor",
+          "lineNumber": 37
+        },
+        {
+          "caller": "formatCell",
+          "callee": "parseIsoUtc",
+          "lineNumber": 42
+        },
+        {
+          "caller": "formatCell",
+          "callee": "String",
+          "lineNumber": 42
+        },
+        {
+          "caller": "formatCell",
+          "callee": "d.toLocaleDateString",
+          "lineNumber": 43
+        },
+        {
+          "caller": "formatCell",
+          "callee": "parseIsoUtc",
+          "lineNumber": 46
+        },
+        {
+          "caller": "formatCell",
+          "callee": "String",
+          "lineNumber": 46
+        },
+        {
+          "caller": "formatCell",
+          "callee": "d.toLocaleString",
+          "lineNumber": 47
+        },
+        {
+          "caller": "formatCell",
+          "callee": "String",
+          "lineNumber": 52
+        },
+        {
+          "caller": "formatCell",
+          "callee": "String",
+          "lineNumber": 54
+        },
+        {
+          "caller": "formatCell",
+          "callee": "String",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "cols.map((c) => escapeCell(c.label)).join",
+          "lineNumber": 60
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "cols.map",
+          "lineNumber": 60
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "escapeCell",
+          "lineNumber": 60
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "tickets.map",
+          "lineNumber": 61
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "cols.map((c) => escapeCell(formatCell(c, t))).join",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "cols.map",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "escapeCell",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "formatCell",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ticketsToCsv",
+          "callee": "[header, ...rows].join",
+          "lineNumber": 64
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "cols.map((c) => escapeCell(c.label)).join",
+          "lineNumber": 68
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "cols.map",
+          "lineNumber": 68
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "escapeCell",
+          "lineNumber": 68
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "Array(cols.length - 1).fill('').join",
+          "lineNumber": 69
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "Array(cols.length - 1).fill",
+          "lineNumber": 69
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "Array",
+          "lineNumber": 69
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "escapeCell",
+          "lineNumber": 70
+        },
+        {
+          "caller": "emptyTeamCsv",
+          "callee": "[header, messageRow].join",
+          "lineNumber": 71
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 75
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 76
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Fecha de generación', new Date(dataset.meta.generatedAt).toLocaleString('es-CO', { timeZone: 'America/Bogota' })].map(escapeCell).join",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Fecha de generación', new Date(dataset.meta.generatedAt).toLocaleString('es-CO', { timeZone: 'America/Bogota' })].map",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "new Date(dataset.meta.generatedAt).toLocaleString",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 78
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Tickets exportados', dataset.meta.returned].map(escapeCell).join",
+          "lineNumber": 78
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Tickets exportados', dataset.meta.returned].map",
+          "lineNumber": 78
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Tickets que coinciden con filtros', dataset.meta.totalMatched].map(escapeCell).join",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Tickets que coinciden con filtros', dataset.meta.totalMatched].map",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 81
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Resultados truncados', `Se exportaron los ${dataset.meta.maxLimit} más recientes`].map(escapeCell).join",
+          "lineNumber": 81
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Resultados truncados', `Se exportaron los ${dataset.meta.maxLimit} más recientes`].map",
+          "lineNumber": 81
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 83
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 84
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "tplCount.set",
+          "lineNumber": 86
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "tplCount.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "tplCount.has",
+          "lineNumber": 88
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "[tpl.Request_Template_Name, tplCount.get(tpl.Request_Template_ID) ?? 0].map(escapeCell).join",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "[tpl.Request_Template_Name, tplCount.get(tpl.Request_Template_ID) ?? 0].map",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "tplCount.get",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 92
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Crítica', priorityCount.critica].map(escapeCell).join",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Crítica', priorityCount.critica].map",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Alta',    priorityCount.alta].map(escapeCell).join",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Alta',    priorityCount.alta].map",
+          "lineNumber": 100
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Media',   priorityCount.media].map(escapeCell).join",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Media',   priorityCount.media].map",
+          "lineNumber": 101
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.push",
+          "lineNumber": 102
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Baja',    priorityCount.baja].map(escapeCell).join",
+          "lineNumber": 102
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "['Baja',    priorityCount.baja].map",
+          "lineNumber": 102
+        },
+        {
+          "caller": "buildSummaryCsv",
+          "callee": "lines.join",
+          "lineNumber": 107
+        },
+        {
+          "caller": "safeFileName",
+          "callee": "name.replace(/[\\\\\\/\\?\\*\\[\\]:<>|\"]/g, '_').trim",
+          "lineNumber": 111
+        },
+        {
+          "caller": "safeFileName",
+          "callee": "name.replace",
+          "lineNumber": 111
+        },
+        {
+          "caller": "pad",
+          "callee": "String(n).padStart",
+          "lineNumber": 114
+        },
+        {
+          "caller": "pad",
+          "callee": "String",
+          "lineNumber": 114
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "zip.file",
+          "lineNumber": 128
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "buildSummaryCsv",
+          "lineNumber": 128
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.set",
+          "lineNumber": 134
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.set",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "(ticket.teams ?? [])\r\n        .map((t) => t.team?.Board_Team_Code)\r\n        .filter",
+          "lineNumber": 143
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "(ticket.teams ?? [])\r\n        .map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.get('__sin_equipo__')!.tickets.push",
+          "lineNumber": 147
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.get",
+          "lineNumber": 147
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.get",
+          "lineNumber": 150
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "bucket.tickets.push",
+          "lineNumber": 151
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "Array.isArray",
+          "lineNumber": 157
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "dataset.boardTeams\r\n            .filter((tm) => filteredTeamIds!.includes(tm.Board_Team_ID))\r\n            .map",
+          "lineNumber": 160
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "dataset.boardTeams\r\n            .filter",
+          "lineNumber": 160
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "filteredTeamIds!.includes",
+          "lineNumber": 161
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "Array.from(byTeam.entries())\r\n      .filter(([code, t]) => {\r\n        if (code === '__sin_equipo__') return t.tickets.length > 0;\r\n        if (allowedTeamCodes !== null)  return allowedTeamCodes.has(code);\r\n        return true;\r\n      })\r\n      .map(([, t]) => t)\r\n      .sort",
+          "lineNumber": 166
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "Array.from(byTeam.entries())\r\n      .filter(([code, t]) => {\r\n        if (code === '__sin_equipo__') return t.tickets.length > 0;\r\n        if (allowedTeamCodes !== null)  return allowedTeamCodes.has(code);\r\n        return true;\r\n      })\r\n      .map",
+          "lineNumber": 166
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "Array.from(byTeam.entries())\r\n      .filter",
+          "lineNumber": 166
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "Array.from",
+          "lineNumber": 166
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "byTeam.entries",
+          "lineNumber": 166
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "allowedTeamCodes.has",
+          "lineNumber": 169
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "emptyTeamCsv",
+          "lineNumber": 178
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "ticketsToCsv",
+          "lineNumber": 179
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "String(idx).padStart",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "String",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "safeFileName",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "zip.file",
+          "lineNumber": 181
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "zip.file",
+          "lineNumber": 185
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "ticketsToCsv",
+          "lineNumber": 185
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "zip.generateAsync",
+          "lineNumber": 188
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "now.getFullYear",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "pad",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "now.getMonth",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "pad",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "now.getDate",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "pad",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "now.getHours",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "pad",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "now.getMinutes",
+          "lineNumber": 190
+        },
+        {
+          "caller": "buildCsv",
+          "callee": "saveAs",
+          "lineNumber": 191
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/services/buildXlsx.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 424,
+      "nonEmptyLines": 372,
+      "functions": [
+        {
+          "name": "parseIsoUtc",
+          "startLine": 44,
+          "endLine": 49,
+          "params": [
+            "iso"
+          ]
+        },
+        {
+          "name": "pad",
+          "startLine": 51,
+          "endLine": 51,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "fileStamp",
+          "startLine": 53,
+          "endLine": 56,
+          "params": []
+        },
+        {
+          "name": "safeSheetName",
+          "startLine": 58,
+          "endLine": 60,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "buildCell",
+          "startLine": 64,
+          "endLine": 113,
+          "params": [
+            "col",
+            "ticket",
+            "rowIndex"
+          ]
+        },
+        {
+          "name": "buildHeaderRow",
+          "startLine": 115,
+          "endLine": 124,
+          "params": [
+            "cols"
+          ]
+        },
+        {
+          "name": "buildColumnWidths",
+          "startLine": 126,
+          "endLine": 128,
+          "params": [
+            "cols"
+          ]
+        },
+        {
+          "name": "buildSummarySheet",
+          "startLine": 132,
+          "endLine": 228,
+          "params": [
+            "dataset",
+            "config"
+          ]
+        },
+        {
+          "name": "namesByIds",
+          "startLine": 230,
+          "endLine": 234,
+          "params": [
+            "pairs",
+            "ids"
+          ]
+        },
+        {
+          "name": "priorityNames",
+          "startLine": 236,
+          "endLine": 242,
+          "params": [
+            "scores"
+          ]
+        },
+        {
+          "name": "buildTicketsSheet",
+          "startLine": 246,
+          "endLine": 252,
+          "params": [
+            "tickets",
+            "cols"
+          ]
+        },
+        {
+          "name": "buildEmptyTeamSheet",
+          "startLine": 254,
+          "endLine": 267,
+          "params": [
+            "cols"
+          ]
+        },
+        {
+          "name": "buildTicketSheets",
+          "startLine": 283,
+          "endLine": 359,
+          "params": [
+            "tickets",
+            "config",
+            "columns",
+            "dataset",
+            "opts"
+          ]
+        },
+        {
+          "name": "sheetsToBlob",
+          "startLine": 363,
+          "endLine": 376,
+          "params": [
+            "sheets"
+          ]
+        },
+        {
+          "name": "buildXlsx",
+          "startLine": 387,
+          "endLine": 397,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "buildXlsxSummaryBlob",
+          "startLine": 400,
+          "endLine": 404,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "buildXlsxTicketsBlob",
+          "startLine": 407,
+          "endLine": 424,
+          "params": [
+            "params"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildXlsx",
+          "line": 387,
+          "isDefault": false
+        },
+        {
+          "name": "buildXlsxSummaryBlob",
+          "line": 400,
+          "isDefault": false
+        },
+        {
+          "name": "buildXlsxTicketsBlob",
+          "line": 407,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parseIsoUtc",
+          "callee": "iso.endsWith",
+          "lineNumber": 46
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "/[+-]\\d{2}:?\\d{2}$/.test",
+          "lineNumber": 46
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "isNaN",
+          "lineNumber": 48
+        },
+        {
+          "caller": "parseIsoUtc",
+          "callee": "d.getTime",
+          "lineNumber": 48
+        },
+        {
+          "caller": "pad",
+          "callee": "String(n).padStart",
+          "lineNumber": 51
+        },
+        {
+          "caller": "pad",
+          "callee": "String",
+          "lineNumber": 51
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getFullYear",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getMonth",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getDate",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getHours",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getMinutes",
+          "lineNumber": 55
+        },
+        {
+          "caller": "safeSheetName",
+          "callee": "name.replace(/[\\\\\\/\\?\\*\\[\\]:]/g, '_').slice(0, 31).trim",
+          "lineNumber": 59
+        },
+        {
+          "caller": "safeSheetName",
+          "callee": "name.replace(/[\\\\\\/\\?\\*\\[\\]:]/g, '_').slice",
+          "lineNumber": 59
+        },
+        {
+          "caller": "safeSheetName",
+          "callee": "name.replace",
+          "lineNumber": 59
+        },
+        {
+          "caller": "buildCell",
+          "callee": "col.accessor",
+          "lineNumber": 65
+        },
+        {
+          "caller": "buildCell",
+          "callee": "Number",
+          "lineNumber": 70
+        },
+        {
+          "caller": "buildCell",
+          "callee": "Number.isFinite",
+          "lineNumber": 71
+        },
+        {
+          "caller": "buildCell",
+          "callee": "parseIsoUtc",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildCell",
+          "callee": "String",
+          "lineNumber": 77
+        },
+        {
+          "caller": "buildCell",
+          "callee": "parseIsoUtc",
+          "lineNumber": 83
+        },
+        {
+          "caller": "buildCell",
+          "callee": "String",
+          "lineNumber": 83
+        },
+        {
+          "caller": "buildCell",
+          "callee": "String",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildCell",
+          "callee": "String",
+          "lineNumber": 108
+        },
+        {
+          "caller": "buildHeaderRow",
+          "callee": "cols.map",
+          "lineNumber": 116
+        },
+        {
+          "caller": "buildColumnWidths",
+          "callee": "cols.map",
+          "lineNumber": 127
+        },
+        {
+          "caller": "kv",
+          "callee": "String",
+          "lineNumber": 145
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 150
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 154
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 156
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 156
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 157
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 157
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "new Date(meta.generatedAt).toLocaleString",
+          "lineNumber": 157
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 158
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 158
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "String",
+          "lineNumber": 158
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "String",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 161
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 161
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 163
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 165
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 165
+        },
+        {
+          "caller": "fmtIds",
+          "callee": "arr.join",
+          "lineNumber": 168
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 170
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 170
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "namesByIds",
+          "lineNumber": 170
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "boardTeams.map",
+          "lineNumber": 170
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 171
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 171
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "namesByIds",
+          "lineNumber": 171
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "boardColumns.map",
+          "lineNumber": 171
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 172
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 172
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "fmtIds",
+          "lineNumber": 172
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "namesByIds",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "templates.map",
+          "lineNumber": 173
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 174
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 174
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "priorityNames",
+          "lineNumber": 174
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 175
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 175
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 179
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 179
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 180
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 181
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 183
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 183
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "teamCount.set",
+          "lineNumber": 188
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "teamCount.get",
+          "lineNumber": 188
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 192
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 192
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "teamCount.get",
+          "lineNumber": 192
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 194
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 196
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 196
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "tplCount.set",
+          "lineNumber": 198
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "tplCount.get",
+          "lineNumber": 198
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "tplCount.has",
+          "lineNumber": 200
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 201
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 201
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "tplCount.get",
+          "lineNumber": 201
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 204
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 206
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 206
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 212
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 212
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 213
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 213
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 214
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 214
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 215
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 215
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 216
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 216
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 217
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 219
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "sectionHeader",
+          "lineNumber": 219
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "colCount.set",
+          "lineNumber": 223
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "colCount.get",
+          "lineNumber": 223
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "rows.push",
+          "lineNumber": 225
+        },
+        {
+          "caller": "buildSummarySheet",
+          "callee": "kv",
+          "lineNumber": 225
+        },
+        {
+          "caller": "namesByIds",
+          "callee": "ids.map((id) => map.get(id) ?? `#${id}`).join",
+          "lineNumber": 233
+        },
+        {
+          "caller": "namesByIds",
+          "callee": "ids.map",
+          "lineNumber": 233
+        },
+        {
+          "caller": "namesByIds",
+          "callee": "map.get",
+          "lineNumber": 233
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "scores\r\n    .map((s) => SCORE_TO_PRIORIDAD[s] ?? `score:${s}`)\r\n    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))\r\n    .join",
+          "lineNumber": 238
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "scores\r\n    .map((s) => SCORE_TO_PRIORIDAD[s] ?? `score:${s}`)\r\n    .map",
+          "lineNumber": 238
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "scores\r\n    .map",
+          "lineNumber": 238
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "p.charAt(0).toUpperCase",
+          "lineNumber": 240
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "p.charAt",
+          "lineNumber": 240
+        },
+        {
+          "caller": "priorityNames",
+          "callee": "p.slice",
+          "lineNumber": 240
+        },
+        {
+          "caller": "buildTicketsSheet",
+          "callee": "buildHeaderRow",
+          "lineNumber": 247
+        },
+        {
+          "caller": "buildTicketsSheet",
+          "callee": "tickets.forEach",
+          "lineNumber": 248
+        },
+        {
+          "caller": "buildTicketsSheet",
+          "callee": "rows.push",
+          "lineNumber": 249
+        },
+        {
+          "caller": "buildTicketsSheet",
+          "callee": "cols.map",
+          "lineNumber": 249
+        },
+        {
+          "caller": "buildTicketsSheet",
+          "callee": "buildCell",
+          "lineNumber": 249
+        },
+        {
+          "caller": "buildEmptyTeamSheet",
+          "callee": "buildHeaderRow",
+          "lineNumber": 255
+        },
+        {
+          "caller": "buildEmptyTeamSheet",
+          "callee": "Array(Math.max(0, cols.length - 1)).fill",
+          "lineNumber": 264
+        },
+        {
+          "caller": "buildEmptyTeamSheet",
+          "callee": "Array",
+          "lineNumber": 264
+        },
+        {
+          "caller": "buildEmptyTeamSheet",
+          "callee": "Math.max",
+          "lineNumber": 264
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "sheets.push",
+          "lineNumber": 294
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "buildTicketsSheet",
+          "lineNumber": 296
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "buildColumnWidths",
+          "lineNumber": 297
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.set",
+          "lineNumber": 305
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.set",
+          "lineNumber": 311
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "(ticket.teams ?? [])\r\n      .map((t) => t.team?.Board_Team_Code)\r\n      .filter",
+          "lineNumber": 314
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "(ticket.teams ?? [])\r\n      .map",
+          "lineNumber": 314
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.get('__sin_equipo__')!.tickets.push",
+          "lineNumber": 318
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.get",
+          "lineNumber": 318
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.get",
+          "lineNumber": 321
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "bucket.tickets.push",
+          "lineNumber": 322
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "Array.isArray",
+          "lineNumber": 328
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "dataset.boardTeams\r\n          .filter((tm) => filteredTeamIds!.includes(tm.Board_Team_ID))\r\n          .map",
+          "lineNumber": 331
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "dataset.boardTeams\r\n          .filter",
+          "lineNumber": 331
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "filteredTeamIds!.includes",
+          "lineNumber": 332
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "Array.from(byTeam.entries())\r\n    .filter(([code, t]) => {\r\n      if (code === '__sin_equipo__') return t.tickets.length > 0;\r\n      const allowed = allowedTeamCodes === null || allowedTeamCodes.has(code);\r\n      if (!allowed) return false;\r\n      return includeEmptyTeams || t.tickets.length > 0;\r\n    })\r\n    .map(([, t]) => t)\r\n    .sort",
+          "lineNumber": 337
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "Array.from(byTeam.entries())\r\n    .filter(([code, t]) => {\r\n      if (code === '__sin_equipo__') return t.tickets.length > 0;\r\n      const allowed = allowedTeamCodes === null || allowedTeamCodes.has(code);\r\n      if (!allowed) return false;\r\n      return includeEmptyTeams || t.tickets.length > 0;\r\n    })\r\n    .map",
+          "lineNumber": 337
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "Array.from(byTeam.entries())\r\n    .filter",
+          "lineNumber": 337
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "Array.from",
+          "lineNumber": 337
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "byTeam.entries",
+          "lineNumber": 337
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "allowedTeamCodes.has",
+          "lineNumber": 340
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "sheets.push",
+          "lineNumber": 348
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "safeSheetName",
+          "lineNumber": 349
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "buildEmptyTeamSheet",
+          "lineNumber": 351
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "buildTicketsSheet",
+          "lineNumber": 352
+        },
+        {
+          "caller": "buildTicketSheets",
+          "callee": "buildColumnWidths",
+          "lineNumber": 353
+        },
+        {
+          "caller": "sheetsToBlob",
+          "callee": "(writeXlsxFile as unknown as (\r\n    sheets: SheetSpec[],\r\n  ) => Promise<{ toBlob: () => Blob | Promise<Blob> }>)",
+          "lineNumber": 364
+        },
+        {
+          "caller": "sheetsToBlob",
+          "callee": "result.toBlob",
+          "lineNumber": 371
+        },
+        {
+          "caller": "buildXlsx",
+          "callee": "buildSummarySheet",
+          "lineNumber": 391
+        },
+        {
+          "caller": "buildXlsx",
+          "callee": "buildTicketSheets",
+          "lineNumber": 392
+        },
+        {
+          "caller": "buildXlsx",
+          "callee": "sheetsToBlob",
+          "lineNumber": 395
+        },
+        {
+          "caller": "buildXlsx",
+          "callee": "saveAs",
+          "lineNumber": 396
+        },
+        {
+          "caller": "buildXlsx",
+          "callee": "fileStamp",
+          "lineNumber": 396
+        },
+        {
+          "caller": "buildXlsxSummaryBlob",
+          "callee": "sheetsToBlob",
+          "lineNumber": 401
+        },
+        {
+          "caller": "buildXlsxSummaryBlob",
+          "callee": "buildSummarySheet",
+          "lineNumber": 402
+        },
+        {
+          "caller": "buildXlsxTicketsBlob",
+          "callee": "buildTicketSheets",
+          "lineNumber": 414
+        },
+        {
+          "caller": "buildXlsxTicketsBlob",
+          "callee": "buildTicketsSheet",
+          "lineNumber": 418
+        },
+        {
+          "caller": "buildXlsxTicketsBlob",
+          "callee": "buildColumnWidths",
+          "lineNumber": 419
+        },
+        {
+          "caller": "buildXlsxTicketsBlob",
+          "callee": "sheetsToBlob",
+          "lineNumber": 423
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 17,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/services/columnRegistry.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 403,
+      "nonEmptyLines": 363,
+      "functions": [
+        {
+          "name": "joinNames",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "items"
+          ]
+        },
+        {
+          "name": "getAssigneeNames",
+          "startLine": 22,
+          "endLine": 24,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getLabelNames",
+          "startLine": 26,
+          "endLine": 28,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getTeamCodes",
+          "startLine": 30,
+          "endLine": 32,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getSprintNames",
+          "startLine": 34,
+          "endLine": 36,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getSubTeamNames",
+          "startLine": 38,
+          "endLine": 40,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getLatestClosure",
+          "startLine": 43,
+          "endLine": 48,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getClosedAt",
+          "startLine": 50,
+          "endLine": 55,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getClosureNote",
+          "startLine": 57,
+          "endLine": 60,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getClosedBy",
+          "startLine": 62,
+          "endLine": 65,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "getPriorityLabel",
+          "startLine": 67,
+          "endLine": 71,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "collectSnapshotFields",
+          "startLine": 186,
+          "endLine": 258,
+          "params": [
+            "schema"
+          ]
+        },
+        {
+          "name": "mapFieldTypeToColumnType",
+          "startLine": 260,
+          "endLine": 269,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "dynamicAccessor",
+          "startLine": 271,
+          "endLine": 308,
+          "params": [
+            "key"
+          ]
+        },
+        {
+          "name": "detectDynamicColumnsByTemplate",
+          "startLine": 317,
+          "endLine": 361,
+          "params": [
+            "tickets",
+            "templates"
+          ]
+        },
+        {
+          "name": "buildAvailableColumns",
+          "startLine": 367,
+          "endLine": 375,
+          "params": [
+            "tickets",
+            "templates"
+          ]
+        },
+        {
+          "name": "resolveSelectedColumns",
+          "startLine": 378,
+          "endLine": 403,
+          "params": [
+            "selectedIds",
+            "available",
+            "templates"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "FIXED_COLUMNS",
+          "line": 75,
+          "isDefault": false
+        },
+        {
+          "name": "detectDynamicColumnsByTemplate",
+          "line": 317,
+          "isDefault": false
+        },
+        {
+          "name": "buildAvailableColumns",
+          "line": 367,
+          "isDefault": false
+        },
+        {
+          "name": "resolveSelectedColumns",
+          "line": 378,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "joinNames",
+          "callee": "items.filter(Boolean).join",
+          "lineNumber": 19
+        },
+        {
+          "caller": "joinNames",
+          "callee": "items.filter",
+          "lineNumber": 19
+        },
+        {
+          "caller": "getAssigneeNames",
+          "callee": "joinNames",
+          "lineNumber": 23
+        },
+        {
+          "caller": "getAssigneeNames",
+          "callee": "(t.assignments ?? []).map",
+          "lineNumber": 23
+        },
+        {
+          "caller": "getLabelNames",
+          "callee": "joinNames",
+          "lineNumber": 27
+        },
+        {
+          "caller": "getLabelNames",
+          "callee": "(t.labels ?? []).map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "getTeamCodes",
+          "callee": "joinNames",
+          "lineNumber": 31
+        },
+        {
+          "caller": "getTeamCodes",
+          "callee": "(t.teams ?? []).map",
+          "lineNumber": 31
+        },
+        {
+          "caller": "getSprintNames",
+          "callee": "joinNames",
+          "lineNumber": 35
+        },
+        {
+          "caller": "getSprintNames",
+          "callee": "(t.sprints ?? []).map",
+          "lineNumber": 35
+        },
+        {
+          "caller": "getSubTeamNames",
+          "callee": "joinNames",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getSubTeamNames",
+          "callee": "(t.sub_teams ?? []).map",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getLatestClosure",
+          "callee": "[...arr].sort",
+          "lineNumber": 46
+        },
+        {
+          "caller": "getLatestClosure",
+          "callee": "b.Closed_At.localeCompare",
+          "lineNumber": 46
+        },
+        {
+          "caller": "getClosedAt",
+          "callee": "getLatestClosure",
+          "lineNumber": 53
+        },
+        {
+          "caller": "getClosureNote",
+          "callee": "getLatestClosure",
+          "lineNumber": 58
+        },
+        {
+          "caller": "getClosedBy",
+          "callee": "getLatestClosure",
+          "lineNumber": 63
+        },
+        {
+          "caller": "getPriorityLabel",
+          "callee": "key.charAt(0).toUpperCase",
+          "lineNumber": 70
+        },
+        {
+          "caller": "getPriorityLabel",
+          "callee": "key.charAt",
+          "lineNumber": 70
+        },
+        {
+          "caller": "getPriorityLabel",
+          "callee": "key.slice",
+          "lineNumber": 70
+        },
+        {
+          "caller": "walk",
+          "callee": "walk",
+          "lineNumber": 217
+        },
+        {
+          "caller": "walk",
+          "callee": "walk",
+          "lineNumber": 218
+        },
+        {
+          "caller": "walk",
+          "callee": "Array.isArray",
+          "lineNumber": 223
+        },
+        {
+          "caller": "walk",
+          "callee": "walk",
+          "lineNumber": 223
+        },
+        {
+          "caller": "walk",
+          "callee": "Array.isArray",
+          "lineNumber": 224
+        },
+        {
+          "caller": "walk",
+          "callee": "walk",
+          "lineNumber": 224
+        },
+        {
+          "caller": "walk",
+          "callee": "NON_DATA_TYPES.has",
+          "lineNumber": 227
+        },
+        {
+          "caller": "walk",
+          "callee": "node.key.trim",
+          "lineNumber": 230
+        },
+        {
+          "caller": "walk",
+          "callee": "seen.has",
+          "lineNumber": 234
+        },
+        {
+          "caller": "walk",
+          "callee": "seen.add",
+          "lineNumber": 235
+        },
+        {
+          "caller": "walk",
+          "callee": "node.label.trim",
+          "lineNumber": 241
+        },
+        {
+          "caller": "walk",
+          "callee": "node.title.trim",
+          "lineNumber": 242
+        },
+        {
+          "caller": "walk",
+          "callee": "node.name.trim",
+          "lineNumber": 243
+        },
+        {
+          "caller": "walk",
+          "callee": "out.push",
+          "lineNumber": 248
+        },
+        {
+          "caller": "collectSnapshotFields",
+          "callee": "walk",
+          "lineNumber": 256
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Array.isArray",
+          "lineNumber": 278
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "v\r\n        .map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item)))\r\n        .filter((s) => s.length > 0)\r\n        .join",
+          "lineNumber": 279
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "v\r\n        .map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item)))\r\n        .filter",
+          "lineNumber": 279
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "v\r\n        .map",
+          "lineNumber": 279
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "JSON.stringify",
+          "lineNumber": 280
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "String",
+          "lineNumber": 280
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "v.trim",
+          "lineNumber": 286
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "trimmed.startsWith",
+          "lineNumber": 287
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "trimmed.startsWith",
+          "lineNumber": 287
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "JSON.parse",
+          "lineNumber": 289
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Array.isArray",
+          "lineNumber": 290
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "parsed.map(String).join",
+          "lineNumber": 290
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "parsed.map",
+          "lineNumber": 290
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries(parsed)\r\n              .map(([k, val]) => `${k}: ${val}`)\r\n              .join",
+          "lineNumber": 292
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries(parsed)\r\n              .map",
+          "lineNumber": 292
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries",
+          "lineNumber": 292
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries(v as Record<string, unknown>)\r\n        .map(([k, val]) => `${k}: ${val}`)\r\n        .join",
+          "lineNumber": 302
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries(v as Record<string, unknown>)\r\n        .map",
+          "lineNumber": 302
+        },
+        {
+          "caller": "dynamicAccessor",
+          "callee": "Object.entries",
+          "lineNumber": 302
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "keysByTemplate.has",
+          "lineNumber": 325
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "keysByTemplate.set",
+          "lineNumber": 325
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "collectSnapshotFields",
+          "lineNumber": 326
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "keysByTemplate.get(tid)!.add",
+          "lineNumber": 327
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "keysByTemplate.get",
+          "lineNumber": 327
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "templates.find",
+          "lineNumber": 333
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "collectSnapshotFields",
+          "lineNumber": 334
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "liveFields.map",
+          "lineNumber": 335
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "tickets.find",
+          "lineNumber": 338
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "collectSnapshotFields",
+          "lineNumber": 340
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "snapFields.map",
+          "lineNumber": 342
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "liveMap.get",
+          "lineNumber": 346
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "snapMap.get",
+          "lineNumber": 346
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "cols.push",
+          "lineNumber": 347
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "mapFieldTypeToColumnType",
+          "lineNumber": 350
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "dynamicAccessor",
+          "lineNumber": 354
+        },
+        {
+          "caller": "detectDynamicColumnsByTemplate",
+          "callee": "result.set",
+          "lineNumber": 357
+        },
+        {
+          "caller": "buildAvailableColumns",
+          "callee": "detectDynamicColumnsByTemplate",
+          "lineNumber": 373
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "available.dynamicByTemplate.values",
+          "lineNumber": 384
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "all.push",
+          "lineNumber": 384
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "all.map",
+          "lineNumber": 386
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "selectedIds\r\n    .map((id) => {\r\n      const col = byId.get(id);\r\n      if (!col) return null;\r\n      // Inyectar nombre de template en la columna template_name\r\n      if (col.id === 'template_name') {\r\n        return {\r\n          ...col,\r\n          accessor: (t: ExportTicket) =>\r\n            templates.find((x) => x.Request_Template_ID === t.Request_Template_ID)?.Request_Template_Name ?? '',\r\n        };\r\n      }\r\n      return col;\r\n    })\r\n    .filter",
+          "lineNumber": 388
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "selectedIds\r\n    .map",
+          "lineNumber": 388
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "byId.get",
+          "lineNumber": 390
+        },
+        {
+          "caller": "resolveSelectedColumns",
+          "callee": "templates.find",
+          "lineNumber": 397
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 4,
+        "functionCount": 17,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/services/processExportArtifact.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 167,
+      "nonEmptyLines": 141,
+      "functions": [
+        {
+          "name": "pad",
+          "startLine": 37,
+          "endLine": 37,
+          "params": [
+            "n"
+          ]
+        },
+        {
+          "name": "fileStamp",
+          "startLine": 39,
+          "endLine": 42,
+          "params": []
+        },
+        {
+          "name": "fetchJson",
+          "startLine": 44,
+          "endLine": 48,
+          "params": [
+            "url"
+          ]
+        },
+        {
+          "name": "downloadAllTickets",
+          "startLine": 51,
+          "endLine": 60,
+          "params": [
+            "chunkUrls"
+          ]
+        },
+        {
+          "name": "buildXlsxZipSplit",
+          "startLine": 63,
+          "endLine": 81,
+          "params": [
+            "dataset",
+            "config",
+            "columns"
+          ]
+        },
+        {
+          "name": "buildCsvZipSplit",
+          "startLine": 84,
+          "endLine": 98,
+          "params": [
+            "dataset",
+            "config",
+            "columns"
+          ]
+        },
+        {
+          "name": "processExportArtifact",
+          "startLine": 100,
+          "endLine": 167,
+          "params": [
+            "params"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "processExportArtifact",
+          "line": 100,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "pad",
+          "callee": "String(n).padStart",
+          "lineNumber": 37
+        },
+        {
+          "caller": "pad",
+          "callee": "String",
+          "lineNumber": 37
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getFullYear",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getMonth",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getDate",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getHours",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "pad",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fileStamp",
+          "callee": "now.getMinutes",
+          "lineNumber": 41
+        },
+        {
+          "caller": "fetchJson",
+          "callee": "fetch",
+          "lineNumber": 45
+        },
+        {
+          "caller": "fetchJson",
+          "callee": "res.json",
+          "lineNumber": 47
+        },
+        {
+          "caller": "downloadAllTickets",
+          "callee": "chunkUrls.slice",
+          "lineNumber": 54
+        },
+        {
+          "caller": "downloadAllTickets",
+          "callee": "Promise.all",
+          "lineNumber": 55
+        },
+        {
+          "caller": "downloadAllTickets",
+          "callee": "batch.map",
+          "lineNumber": 55
+        },
+        {
+          "caller": "downloadAllTickets",
+          "callee": "fetchJson",
+          "lineNumber": 55
+        },
+        {
+          "caller": "downloadAllTickets",
+          "callee": "all.push",
+          "lineNumber": 56
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "Math.ceil",
+          "lineNumber": 66
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "zip.file",
+          "lineNumber": 69
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "buildXlsxSummaryBlob",
+          "lineNumber": 69
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "dataset.tickets.splice",
+          "lineNumber": 73
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "buildXlsxTicketsBlob",
+          "lineNumber": 74
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "zip.file",
+          "lineNumber": 75
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "pad",
+          "lineNumber": 75
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "pad",
+          "lineNumber": 75
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "zip.generateAsync",
+          "lineNumber": 79
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "saveAs",
+          "lineNumber": 80
+        },
+        {
+          "caller": "buildXlsxZipSplit",
+          "callee": "fileStamp",
+          "lineNumber": 80
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "Math.ceil",
+          "lineNumber": 87
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "zip.file",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "buildSummaryCsv",
+          "lineNumber": 89
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "dataset.tickets.splice",
+          "lineNumber": 92
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "zip.file",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "pad",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "pad",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "ticketsToCsv",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "zip.generateAsync",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "saveAs",
+          "lineNumber": 97
+        },
+        {
+          "caller": "buildCsvZipSplit",
+          "callee": "fileStamp",
+          "lineNumber": 97
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "await apiClient.call",
+          "lineNumber": 104
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "await fetchJson",
+          "lineNumber": 110
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "downloadAllTickets",
+          "lineNumber": 117
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "buildAvailableColumns",
+          "lineNumber": 137
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "resolveSelectedColumns",
+          "lineNumber": 138
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "buildXlsxZipSplit",
+          "lineNumber": 158
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "buildXlsx",
+          "lineNumber": 159
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "buildCsvZipSplit",
+          "lineNumber": 161
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "buildCsv",
+          "lineNumber": 162
+        },
+        {
+          "caller": "processExportArtifact",
+          "callee": "apiClient.call",
+          "lineNumber": 166
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/exports/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 256,
+      "nonEmptyLines": 226,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

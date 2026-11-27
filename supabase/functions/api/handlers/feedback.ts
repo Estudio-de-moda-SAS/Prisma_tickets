@@ -11,9 +11,9 @@
  */
 import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { dispatchEvent } from './notifyEvent.ts';
 // @ts-ignore
-import { getRequestParticipants, maybeSendClientFeedbackEmail, planColumnTransition } from '../shared/requests.ts';
+import { getRequestParticipants, notifyClientFeedback, planColumnTransition } from '../shared/requests.ts';
 // @ts-ignore
 import { logHistory } from '../lib/history.ts';
 
@@ -147,34 +147,15 @@ export const feedbackHandlers: Record<string, ActionHandler> = {
     const recipientIds = [...new Set([...assigneeIds, ...(requestedBy ? [requestedBy] : [])])]
       .filter((uid) => uid !== p.submittedBy);
 
-    const isApproved  = p.decision === 'approved';
-    const notifTitle  = isApproved
-      ? `Ticket ${p.requestId} aprobado por el cliente ✓`
-      : `Ticket ${p.requestId} rechazado por el cliente ✗`;
-    const notifBody   = isApproved
-      ? `El cliente aprobó la solicitud. Pasa a Ready to Deploy.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`
-      : `El cliente rechazó la solicitud y solicita correcciones.${p.feedbackNote ? ` Nota: ${p.feedbackNote.slice(0, 60)}` : ''}`;
-
-    await insertNotifications(supabase, {
-      userIds:   recipientIds,
-      type:      isApproved ? 'client_approved' : 'client_rejected',
-      title:     notifTitle,
-      body:      notifBody,
-      requestId: p.requestId,
-      actorId:   p.submittedBy,
-    });
-
-    // ── Correo "el cliente respondió" ─────────────────────────────────────
-    // A los resolutores (recipientIds ya excluye al cliente que envía).
-    // Sin el texto de la nota si el ticket es confidencial. Nunca lanza.
-    await maybeSendClientFeedbackEmail(supabase, {
+    // ── Evento "el cliente respondió" en segundo plano: in-app + correo a los
+    //    participantes sin el cliente (ver notifyClientFeedback).
+    dispatchEvent('submitClientFeedback', notifyClientFeedback(supabase, {
       requestId:    p.requestId,
       recipientIds,
       clientId:     p.submittedBy,
       decision:     p.decision,
       feedbackNote: p.feedbackNote,
-    });
-    // ── /Correo ───────────────────────────────────────────────────────────
+    }));
 
     return feedback;
   },

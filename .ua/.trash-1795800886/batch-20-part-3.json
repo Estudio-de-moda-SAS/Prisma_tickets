@@ -1,0 +1,145 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/store/automationStore.ts",
+   "type": "file",
+   "name": "automationStore.ts",
+   "filePath": "src/store/automationStore.ts",
+   "summary": "Store Zustand de UI para automatizaciones: regla seleccionada y estado abierto/cerrado del modal.",
+   "tags": [
+    "zustand",
+    "store",
+    "state-management",
+    "automatizaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/boardStore.ts",
+   "type": "file",
+   "name": "boardStore.ts",
+   "filePath": "src/store/boardStore.ts",
+   "summary": "Store Zustand de UI del tablero: equipo activo, sidebar, zoom del Kanban acotado por ZOOM_MIN/ZOOM_MAX y señal efímera para enfocar una columna.",
+   "tags": [
+    "zustand",
+    "store",
+    "state-management",
+    "kanban"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/configStore.ts",
+   "type": "file",
+   "name": "configStore.ts",
+   "filePath": "src/store/configStore.ts",
+   "summary": "Store Zustand persistido (prisma-config-v4) para preferencias locales de UI genéricas por clave.",
+   "tags": [
+    "zustand",
+    "store",
+    "persist",
+    "configuration"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/customizationStore.ts",
+   "type": "file",
+   "name": "customizationStore.ts",
+   "filePath": "src/store/customizationStore.ts",
+   "summary": "Store Zustand persistido con la personalización por board: colores y defaults de columnas y prioridades, columnas de horas y colapsadas, tarjetas, temas, agrupación y ordenamiento.",
+   "tags": [
+    "zustand",
+    "store",
+    "persist",
+    "personalizacion",
+    "kanban"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa el middleware persist con la versión en el nombre de la clave (v5) para invalidar estados guardados antiguos."
+  },
+  {
+   "id": "function:src/store/customizationStore.ts:getColumnConfig",
+   "type": "function",
+   "name": "getColumnConfig",
+   "filePath": "src/store/customizationStore.ts",
+   "lineRange": [
+    247,
+    252
+   ],
+   "summary": "Obtiene la configuración visual de una columna combinando overrides del board y valores por defecto.",
+   "tags": [
+    "utility",
+    "personalizacion",
+    "kanban"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/filterStore.ts",
+   "type": "file",
+   "name": "filterStore.ts",
+   "filePath": "src/store/filterStore.ts",
+   "summary": "Store Zustand persistido de filtros avanzados por board (condiciones campo/operador/valor con conjunción AND/OR) más catálogos de etiquetas, iconos, operadores y opciones de cada campo.",
+   "tags": [
+    "zustand",
+    "store",
+    "filtros",
+    "persist",
+    "type-definition"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/store/intakeStore.ts",
+   "type": "file",
+   "name": "intakeStore.ts",
+   "filePath": "src/store/intakeStore.ts",
+   "summary": "Store Zustand persistido que recuerda, por board, qué tickets sin categorizar ya fueron vistos, para el indicador de entrada (intake).",
+   "tags": [
+    "zustand",
+    "store",
+    "persist",
+    "intake"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/mobileNavStore.ts",
+   "type": "file",
+   "name": "mobileNavStore.ts",
+   "filePath": "src/store/mobileNavStore.ts",
+   "summary": "Store Zustand del drawer de navegación móvil (≤768px), independiente del sidebar de escritorio de boardStore.",
+   "tags": [
+    "zustand",
+    "store",
+    "mobile",
+    "navegacion"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/store/customizationStore.ts",
+   "target": "function:src/store/customizationStore.ts:getColumnConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/customizationStore.ts",
+   "target": "function:src/store/customizationStore.ts:getColumnConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/customizationStore.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  }
+ ]
+}

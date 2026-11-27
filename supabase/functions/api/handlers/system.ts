@@ -15,7 +15,9 @@ import { RATING_RATE_LIMIT_DAYS } from '../config.ts';
 // @ts-ignore
 import { _kickoffJobChunk } from '../jobs/renameJob.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { dispatchEvent, notifyEvent } from './notifyEvent.ts';
+// @ts-ignore
+import { notifyAssignment } from '../shared/requests.ts';
 
 /**
  * Mapa de handlers de sistema indexado por nombre de acción.
@@ -82,14 +84,17 @@ export const systemHandlers: Record<string, ActionHandler> = {
         )].filter((uid) => uid !== p.userId);
 
         if (memberIds.length > 0) {
-          await insertNotifications(supabase, {
-            userIds:   memberIds,
-            type:      'bug_report',
-            title:     'Nuevo fallo reportado',
-            body:      p.title.trim(),
+          dispatchEvent('bugReport', notifyEvent(supabase, {
+            eventKey:  'bugReport',
             requestId: null,
             actorId:   p.userId,
-          });
+            inApp: {
+              userIds: memberIds,
+              type:    'bug_report',
+              title:   'Nuevo fallo reportado',
+              body:    p.title.trim(),
+            },
+          }));
         }
       }
     } catch (_notifyErr) {
@@ -256,16 +261,11 @@ export const systemHandlers: Record<string, ActionHandler> = {
     });
     if (asgErr) throw new Error(asgErr.message);
 
-    if (p.resolverId !== p.assignedBy) {
-      await insertNotifications(supabase, {
-        userIds:   [p.resolverId],
-        type:      'assignment',
-        title:     `Te asignaron el ticket ${newId}`,
-        body:      `Se te asignó un fallo reportado: "${(bug as any).Title}".`,
-        requestId: newId,
-        actorId:   p.assignedBy,
-      });
-    }
+    dispatchEvent('assignBug', notifyAssignment(supabase, {
+      requestId: newId,
+      userId:    p.resolverId,
+      actorId:   p.assignedBy,
+    }));
 
     // 8. Marcar el bug como asignado + link al ticket
     const { error: updErr } = await supabase

@@ -13,7 +13,7 @@ import type { ActionHandler } from '../shared/types.ts';
 // @ts-ignore
 import { mapCriteria } from '../shared/mappers.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { dispatchEvent, notifyEvent } from './notifyEvent.ts';
 // @ts-ignore
 import { getRequestParticipants } from '../shared/requests.ts';
 // @ts-ignore
@@ -137,14 +137,17 @@ export const criteriaHandlers: Record<string, ActionHandler> = {
       const { assigneeIds } = await getRequestParticipants(supabase, requestId);
       const recipientIds = assigneeIds.filter((uid) => uid !== reviewedBy);
       const statusLabel = status === 'accepted' ? 'aceptado ✓' : 'rechazado ✗';
-      await insertNotifications(supabase, {
-        userIds:   recipientIds,
-        type:      'criteria_reviewed',
-        title:     `Criterio ${statusLabel}`,
-        body:      `Un criterio de aceptación fue ${statusLabel} en el ticket ${requestId}.`,
-        requestId: requestId,
+      dispatchEvent('criteriaReviewed', notifyEvent(supabase, {
+        eventKey:  'updateAcceptanceCriteriaStatus',
+        requestId,
         actorId:   reviewedBy,
-      });
+        inApp: {
+          userIds: recipientIds,
+          type:    'criteria_reviewed',
+          title:   `Criterio ${statusLabel}`,
+          body:    `Un criterio de aceptación fue ${statusLabel} en el ticket ${requestId}.`,
+        },
+      }));
     }
 
     return mapCriteria(data as Record<string, unknown>);

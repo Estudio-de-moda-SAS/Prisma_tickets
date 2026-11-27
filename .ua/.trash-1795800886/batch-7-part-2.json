@@ -1,0 +1,1318 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "type": "file",
+   "name": "ExportsConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "summary": "Asistente de exportación de tickets a Excel/CSV en varios pasos (alcance y filtros, columnas, formato y vista previa) que crea trabajos de exportación y muestra su progreso e historial.",
+   "tags": [
+    "component",
+    "exportaciones",
+    "wizard",
+    "reportes",
+    "admin-panel"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:useBoardColumns",
+   "type": "function",
+   "name": "useBoardColumns",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    63,
+    73
+   ],
+   "summary": "Hook local que consulta vía apiClient las columnas del board para usarlas como filtro de exportación.",
+   "tags": [
+    "hook",
+    "react",
+    "data-fetching"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "type": "function",
+   "name": "ExportsConfig",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    79,
+    159
+   ],
+   "summary": "Componente exportado que alterna entre el asistente, la vista de progreso y el historial de exportaciones.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsWizard",
+   "type": "function",
+   "name": "ExportsWizard",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    178,
+    308
+   ],
+   "summary": "Asistente de exportación que mantiene el estado de filtros, columnas y formato y lanza useCreateExportJob.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportStepper",
+   "type": "function",
+   "name": "ExportStepper",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    321,
+    348
+   ],
+   "summary": "Indicador de pasos del asistente de exportación.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ScopeStep",
+   "type": "function",
+   "name": "ScopeStep",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    360,
+    412
+   ],
+   "summary": "Paso de alcance: selección de equipos, sprints, usuarios, estados y rango de fechas.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:MultiSelectFilter",
+   "type": "function",
+   "name": "MultiSelectFilter",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    423,
+    490
+   ],
+   "summary": "Filtro de selección múltiple reutilizable con búsqueda para el paso de alcance.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ColumnsStep",
+   "type": "function",
+   "name": "ColumnsStep",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    502,
+    612
+   ],
+   "summary": "Paso de selección y orden de columnas exportables basado en columnRegistry.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ColumnOption",
+   "type": "function",
+   "name": "ColumnOption",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    614,
+    624
+   ],
+   "summary": "Opción individual de columna con casilla de selección.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:FormatStep",
+   "type": "function",
+   "name": "FormatStep",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    640,
+    709
+   ],
+   "summary": "Paso de elección de formato (xlsx/csv) y opciones de salida.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:PreviewTable",
+   "type": "function",
+   "name": "PreviewTable",
+   "filePath": "src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "lineRange": [
+    711,
+    765
+   ],
+   "summary": "Tabla de vista previa con las primeras filas de datos a exportar.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "type": "file",
+   "name": "KanbansConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "summary": "Administración de los equipos Kanban del board: creación y edición de equipos (color, icono, departamento), y configuración de sus columnas, orden y reglas de evidencia.",
+   "tags": [
+    "component",
+    "kanban",
+    "configuracion",
+    "columnas",
+    "admin-panel"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanSection",
+   "type": "function",
+   "name": "KanbanSection",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    25,
+    203
+   ],
+   "summary": "Sección exportada que lista los equipos Kanban y gestiona su creación/edición con useKanbanAdmin.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamCard",
+   "type": "function",
+   "name": "KanbanTeamCard",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    206,
+    361
+   ],
+   "summary": "Tarjeta de un equipo Kanban con acciones y acceso a la configuración de columnas.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:IconPicker",
+   "type": "function",
+   "name": "IconPicker",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    362,
+    390
+   ],
+   "summary": "Selector de icono Lucide para el equipo a partir de TEAM_ICON_MAP.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamForm",
+   "type": "function",
+   "name": "KanbanTeamForm",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    392,
+    611
+   ],
+   "summary": "Formulario de creación/edición de equipo Kanban con nombre, código, color, icono y departamento.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnConfigPanel",
+   "type": "function",
+   "name": "ColumnConfigPanel",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    614,
+    708
+   ],
+   "summary": "Panel que lista y permite reordenar las columnas de un equipo Kanban.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnConfigRow",
+   "type": "function",
+   "name": "ColumnConfigRow",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    711,
+    896
+   ],
+   "summary": "Fila editable de columna con banderas de estado (final, evidencia requerida, etc.).",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnEditForm",
+   "type": "function",
+   "name": "ColumnEditForm",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    899,
+    965
+   ],
+   "summary": "Formulario de edición de nombre y propiedades de una columna.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnCreateForm",
+   "type": "function",
+   "name": "ColumnCreateForm",
+   "filePath": "src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "lineRange": [
+    968,
+    1022
+   ],
+   "summary": "Formulario para crear una nueva columna en el equipo Kanban.",
+   "tags": [
+    "component",
+    "react",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "type": "file",
+   "name": "LabelsConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "summary": "Lista sencilla de etiquetas del equipo seleccionado con creación, edición y borrado usando los primitivos del ConfigPanel.",
+   "tags": [
+    "component",
+    "etiquetas",
+    "configuracion",
+    "crud"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "type": "function",
+   "name": "LabelList",
+   "filePath": "src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "lineRange": [
+    5,
+    55
+   ],
+   "summary": "Componente exportado que muestra las etiquetas y alterna formularios LabelForm para crear o editar.",
+   "tags": [
+    "component",
+    "react",
+    "etiquetas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "type": "file",
+   "name": "OrgConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "summary": "Administración de la estructura organizacional: departamentos corporativos y sus equipos, con formularios de alta y edición.",
+   "tags": [
+    "component",
+    "organizacion",
+    "departamentos",
+    "equipos",
+    "admin-panel"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:OrgSection",
+   "type": "function",
+   "name": "OrgSection",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "lineRange": [
+    10,
+    91
+   ],
+   "summary": "Sección exportada que lista departamentos con useDepartments y permite crear nuevos.",
+   "tags": [
+    "component",
+    "react",
+    "organizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptCard",
+   "type": "function",
+   "name": "DeptCard",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "lineRange": [
+    94,
+    227
+   ],
+   "summary": "Tarjeta de departamento expandible con sus equipos (useTeams) y acciones de edición.",
+   "tags": [
+    "component",
+    "react",
+    "organizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptForm",
+   "type": "function",
+   "name": "DeptForm",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "lineRange": [
+    230,
+    290
+   ],
+   "summary": "Formulario de nombre/código de departamento.",
+   "tags": [
+    "component",
+    "react",
+    "organizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:TeamForm",
+   "type": "function",
+   "name": "TeamForm",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "lineRange": [
+    291,
+    322
+   ],
+   "summary": "Formulario de nombre de equipo dentro de un departamento.",
+   "tags": [
+    "component",
+    "react",
+    "organizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:TeamRow",
+   "type": "function",
+   "name": "TeamRow",
+   "filePath": "src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "lineRange": [
+    323,
+    356
+   ],
+   "summary": "Fila de equipo con edición en línea y eliminación.",
+   "tags": [
+    "component",
+    "react",
+    "organizacion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "type": "file",
+   "name": "RequestsTemplates.tsx",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "summary": "Diseñador de plantillas de solicitud: define los campos del formulario que ven los usuarios al crear tickets (tipos, opciones, ramas condicionales) y gestiona renombres con trabajos de migración en backend.",
+   "tags": [
+    "component",
+    "plantillas",
+    "form-builder",
+    "configuracion",
+    "admin-panel"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa esquemas JSON normalizados con ramas condicionales por campo y llamadas apiClient.call que lanzan y sondean jobs de renombrado."
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateList",
+   "type": "function",
+   "name": "TemplateList",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    50,
+    69
+   ],
+   "summary": "Lista exportada de plantillas de solicitud del equipo con acciones de crear y editar.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateRow",
+   "type": "function",
+   "name": "TemplateRow",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    71,
+    96
+   ],
+   "summary": "Fila de plantilla con icono, color y acciones.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:normalizeBranches",
+   "type": "function",
+   "name": "normalizeBranches",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    101,
+    122
+   ],
+   "summary": "Normaliza las ramas condicionales de un campo a una estructura consistente.",
+   "tags": [
+    "utility",
+    "helper",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateForm",
+   "type": "function",
+   "name": "TemplateForm",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    128,
+    416
+   ],
+   "summary": "Editor completo de plantilla: metadatos, campos y guardado con detección de impacto y jobs de renombrado.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:FieldEditor",
+   "type": "function",
+   "name": "FieldEditor",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    420,
+    762
+   ],
+   "summary": "Editor de un campo de plantilla: tipo, etiqueta, obligatoriedad, opciones y ramas condicionales.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:BranchEditor",
+   "type": "function",
+   "name": "BranchEditor",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    767,
+    794
+   ],
+   "summary": "Editor de subcampos condicionales que aparecen según la opción elegida.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:MultiOptionEditor",
+   "type": "function",
+   "name": "MultiOptionEditor",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    798,
+    856
+   ],
+   "summary": "Editor de la lista de opciones de campos select/multiselect.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:FormSection",
+   "type": "function",
+   "name": "FormSection",
+   "filePath": "src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "lineRange": [
+    858,
+    867
+   ],
+   "summary": "Contenedor visual de sección dentro del editor de plantillas.",
+   "tags": [
+    "component",
+    "react",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:useBoardColumns",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsWizard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportStepper",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ScopeStep",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:MultiSelectFilter",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ColumnsStep",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ColumnOption",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:FormatStep",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:PreviewTable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/hooks/useExportData.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/hooks/useExportData.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/services/columnRegistry.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useUsers.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:IconPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnConfigPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnConfigRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnEditForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:ColumnCreateForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/components/layout/siderbarConstants.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "target": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:OrgSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:OrgSection",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptCard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:TeamForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:TeamForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:TeamRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "file:src/features/requests/hooks/useTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "target": "file:src/features/requests/hooks/useTeams.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:normalizeBranches",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:FieldEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:BranchEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:MultiOptionEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:FormSection",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/templates/renameUtils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/features/requests/templates/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "target": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ExportProgressView",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamForm",
+   "target": "function:src/components/ConfigPanel.tsx:ColorPicker",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanTeamForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanSection",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "target": "function:src/components/ConfigPanel.tsx:LabelForm",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "target": "function:src/components/ConfigPanel.tsx:ItemRow",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:OrgSection",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:DeptForm",
+   "target": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateForm",
+   "target": "function:src/components/ConfigPanel.tsx:ColorPicker",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateList",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

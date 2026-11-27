@@ -1,0 +1,118 @@
+{
+ "nodes": [
+  {
+   "id": "document:prisma-migrations/README.md",
+   "type": "document",
+   "name": "README.md",
+   "filePath": "prisma-migrations/README.md",
+   "summary": "Guía del proyecto de migración de solicitudes históricas a PRISMA: filosofía, estructura, uso dry-run/commit, cómo editar el manifiesto de mapeo y runConfig, decisiones de mapeo, reglas de resolución, rollback y solución de problemas.",
+   "tags": [
+    "documentation",
+    "entry-point",
+    "migración",
+    "etl"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "config:prisma-migrations/package.json",
+   "type": "config",
+   "name": "package.json",
+   "filePath": "prisma-migrations/package.json",
+   "summary": "Manifiesto npm del proyecto prisma-migrations (ESM) con scripts dry y commit que ejecutan src/run.ts vía tsx, y dependencias dotenv y xlsx (SheetJS).",
+   "tags": [
+    "configuration",
+    "build-system",
+    "dependencias",
+    "etl"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "config:prisma-migrations/tsconfig.json",
+   "type": "config",
+   "name": "tsconfig.json",
+   "filePath": "prisma-migrations/tsconfig.json",
+   "summary": "Configuración TypeScript del proyecto de migración: ESNext/Bundler, ES2022, modo strict, sin emisión y con imports de extensión .ts permitidos para ejecución con tsx.",
+   "tags": [
+    "configuration",
+    "typescript",
+    "build-system"
+   ],
+   "complexity": "simple",
+   "languageNotes": "allowImportingTsExtensions junto con noEmit permite importar archivos .ts con extensión explícita, ya que tsx ejecuta el código directamente sin compilar."
+  }
+ ],
+ "edges": [
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/run.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/config/mapping.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/config/runConfig.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/phases/01-resolve.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/phases/02-validate.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/phases/03-load.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "document:prisma-migrations/README.md",
+   "target": "file:prisma-migrations/src/lib/transforms.ts",
+   "type": "documents",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "config:prisma-migrations/package.json",
+   "target": "file:prisma-migrations/src/run.ts",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "config:prisma-migrations/tsconfig.json",
+   "target": "file:prisma-migrations/src/run.ts",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "config:prisma-migrations/package.json",
+   "target": "config:prisma-migrations/tsconfig.json",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  }
+ ]
+}

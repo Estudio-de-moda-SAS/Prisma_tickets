@@ -1,0 +1,237 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 3,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 0,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  "results": [
+    {
+      "path": "prisma-migrations/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 261,
+      "nonEmptyLines": 185,
+      "sections": [
+        {
+          "heading": "PRISMA · Migración de solicitudes históricas",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. Qué hace y cómo piensa",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "2 Usuario para comentariso del sistema",
+          "level": 3,
+          "line": 26
+        },
+        {
+          "heading": "3. Estructura del proyecto",
+          "level": 2,
+          "line": 32
+        },
+        {
+          "heading": "4. Cómo usarlo",
+          "level": 2,
+          "line": 58
+        },
+        {
+          "heading": "Qué leer del reporte del dry-run",
+          "level": 3,
+          "line": 75
+        },
+        {
+          "heading": "Reejecutar",
+          "level": 3,
+          "line": 82
+        },
+        {
+          "heading": "5. Cómo cambiar el manifiesto (otro Excel)",
+          "level": 2,
+          "line": 88
+        },
+        {
+          "heading": "5.1 Cambiar a qué columna del Excel corresponde cada campo",
+          "level": 3,
+          "line": 92
+        },
+        {
+          "heading": "5.2 Columnas que se ignoran",
+          "level": 3,
+          "line": 115
+        },
+        {
+          "heading": "5.3 Enrutar por Status (cuando haga falta)",
+          "level": 3,
+          "line": 119
+        },
+        {
+          "heading": "5.4 Plantilla destino y \"Datos adicionales\"",
+          "level": 3,
+          "line": 132
+        },
+        {
+          "heading": "Volcar varias columnas del Excel al campo",
+          "level": 4,
+          "line": 141
+        },
+        {
+          "heading": "5.5 IDs de la corrida",
+          "level": 3,
+          "line": 165
+        },
+        {
+          "heading": "5.6 Mapa de prioridad",
+          "level": 3,
+          "line": 185
+        },
+        {
+          "heading": "5.7 Conversiones nuevas",
+          "level": 3,
+          "line": 198
+        },
+        {
+          "heading": "6. Decisiones de mapeo (referencia)",
+          "level": 2,
+          "line": 204
+        },
+        {
+          "heading": "7. Reglas de resolución",
+          "level": 2,
+          "line": 229
+        },
+        {
+          "heading": "8. Rollback",
+          "level": 2,
+          "line": 237
+        },
+        {
+          "heading": "9. Solución de problemas",
+          "level": 2,
+          "line": 245
+        },
+        {
+          "heading": "10. Mantenimiento",
+          "level": 2,
+          "line": 258
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 21
+      }
+    },
+    {
+      "path": "prisma-migrations/package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 25,
+      "nonEmptyLines": 24,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "description",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "main",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "keywords",
+          "level": 1,
+          "line": 12
+        },
+        {
+          "heading": "author",
+          "level": 1,
+          "line": 13
+        },
+        {
+          "heading": "license",
+          "level": 1,
+          "line": 14
+        },
+        {
+          "heading": "type",
+          "level": 1,
+          "line": 15
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 16
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    },
+    {
+      "path": "prisma-migrations/tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 21,
+      "nonEmptyLines": 18,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    }
+  ]
+}

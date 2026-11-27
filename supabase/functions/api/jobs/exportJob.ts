@@ -10,7 +10,7 @@ import { BASE_SELECT } from '../shared/selects.ts';
 // @ts-ignore
 import { attachCriteriaSummary } from '../shared/criteria.ts';
 // @ts-ignore
-import { insertNotifications } from '../shared/notifications.ts';
+import { notifyEvent } from '../handlers/notifyEvent.ts';
 
 /**
  * Pipeline de exportación de tickets (requests) por lotes.
@@ -423,13 +423,17 @@ async function _finalizeExportJob(
     Export_Completed_At:   completedAt,
   }).eq('Export_ID', exportId);
 
-  await insertNotifications(supabase, {
-    userIds:   [userId],
-    type:      'export_ready',
-    title:     'Tu exportación está lista',
-    body:      `Exportación de ${totalTickets} tickets en formato ${format.toUpperCase()} completada. Disponible para descarga por 7 días.`,
+  // Este job ya corre en segundo plano: se espera la notificación directamente.
+  await notifyEvent(supabase, {
+    eventKey:  'exportReady',
     requestId: null,
     actorId:   null,
+    inApp: {
+      userIds: [userId],
+      type:    'export_ready',
+      title:   'Tu exportación está lista',
+      body:    `Exportación de ${totalTickets} tickets en formato ${format.toUpperCase()} completada. Disponible para descarga por 7 días.`,
+    },
   });
 }
 

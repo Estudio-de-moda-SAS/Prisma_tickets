@@ -1,0 +1,1987 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 13,
+  "filesSkipped": [],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 13,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 13,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "src/features/requests/components/stats/BarChart.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 43,
+      "functions": [
+        {
+          "name": "BarChart",
+          "startLine": 18,
+          "endLine": 48,
+          "params": [
+            "{ id, data, height = 180 }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BarChart",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "BarChart",
+          "callee": "useRef",
+          "lineNumber": 19
+        },
+        {
+          "caller": "BarChart",
+          "callee": "useRef",
+          "lineNumber": 20
+        },
+        {
+          "caller": "BarChart",
+          "callee": "useEffect",
+          "lineNumber": 22
+        },
+        {
+          "caller": "BarChart",
+          "callee": "chartRef.current.destroy",
+          "lineNumber": 25
+        },
+        {
+          "caller": "BarChart",
+          "callee": "document.documentElement.getAttribute",
+          "lineNumber": 26
+        },
+        {
+          "caller": "BarChart",
+          "callee": "data.map",
+          "lineNumber": 32
+        },
+        {
+          "caller": "BarChart",
+          "callee": "data.map",
+          "lineNumber": 33
+        },
+        {
+          "caller": "BarChart",
+          "callee": "data.map",
+          "lineNumber": 33
+        },
+        {
+          "caller": "BarChart",
+          "callee": "data.map",
+          "lineNumber": 33
+        },
+        {
+          "caller": "BarChart",
+          "callee": "chartRef.current.destroy",
+          "lineNumber": 44
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/FlowSection.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 125,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "LeadTimeKPIs",
+          "startLine": 8,
+          "endLine": 21,
+          "params": [
+            "{ fl }"
+          ]
+        },
+        {
+          "name": "AgingPanels",
+          "startLine": 24,
+          "endLine": 37,
+          "params": [
+            "{ fl }"
+          ]
+        },
+        {
+          "name": "ThroughputPanel",
+          "startLine": 39,
+          "endLine": 60,
+          "params": [
+            "{ fl }"
+          ]
+        },
+        {
+          "name": "EstimationPanel",
+          "startLine": 62,
+          "endLine": 90,
+          "params": [
+            "{ fl }"
+          ]
+        },
+        {
+          "name": "CriticalAgingPanel",
+          "startLine": 92,
+          "endLine": 109,
+          "params": [
+            "{ items }"
+          ]
+        },
+        {
+          "name": "FlowSection",
+          "startLine": 112,
+          "endLine": 125,
+          "params": [
+            "{ fl, scope }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "FlowSection",
+          "line": 112,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "LeadTimeKPIs",
+          "callee": "fmtDays",
+          "lineNumber": 11
+        },
+        {
+          "caller": "LeadTimeKPIs",
+          "callee": "fmtDays",
+          "lineNumber": 13
+        },
+        {
+          "caller": "LeadTimeKPIs",
+          "callee": "fmtDays",
+          "lineNumber": 15
+        },
+        {
+          "caller": "EstimationPanel",
+          "callee": "est.avgRatio!.toFixed",
+          "lineNumber": 81
+        },
+        {
+          "caller": "CriticalAgingPanel",
+          "callee": "items.map",
+          "lineNumber": 99
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/GlobalSection.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 57,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "GlobalSection",
+          "startLine": 7,
+          "endLine": 57,
+          "params": [
+            "{ gn, boards, teamColorMap, teamNameMap }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GlobalSection",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GlobalSection",
+          "callee": "gn.porEquipo.map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf",
+          "lineNumber": 30
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "gn.porEquipo.map",
+          "lineNumber": 34
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf(e.equipo).split",
+          "lineNumber": 34
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf",
+          "lineNumber": 34
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "Object.entries(boards).map",
+          "lineNumber": 38
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "Object.entries",
+          "lineNumber": 38
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf(code).split",
+          "lineNumber": 39
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf",
+          "lineNumber": 39
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "gn.porEquipo.map",
+          "lineNumber": 44
+        },
+        {
+          "caller": "GlobalSection",
+          "callee": "nameOf",
+          "lineNumber": 46
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/ResolutoresPanel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 85,
+      "functions": [
+        {
+          "name": "SolicitudRow",
+          "startLine": 8,
+          "endLine": 38,
+          "params": [
+            "{ s, labelMap }"
+          ]
+        },
+        {
+          "name": "ResolutorDetail",
+          "startLine": 41,
+          "endLine": 55,
+          "params": [
+            "{ resolutor, labelMap }"
+          ]
+        },
+        {
+          "name": "ResolutoresPanel",
+          "startLine": 58,
+          "endLine": 90,
+          "params": [
+            "{ resolutores, teamName, userFilter }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ResolutoresPanel",
+          "line": 58,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SolicitudRow",
+          "callee": "s.labelIds\r\n    .map(id => labelMap.get(id))\r\n    .filter",
+          "lineNumber": 9
+        },
+        {
+          "caller": "SolicitudRow",
+          "callee": "s.labelIds\r\n    .map",
+          "lineNumber": 9
+        },
+        {
+          "caller": "SolicitudRow",
+          "callee": "labelMap.get",
+          "lineNumber": 10
+        },
+        {
+          "caller": "SolicitudRow",
+          "callee": "sLabels.map",
+          "lineNumber": 19
+        },
+        {
+          "caller": "SolicitudRow",
+          "callee": "fmtDate",
+          "lineNumber": 34
+        },
+        {
+          "caller": "ResolutorDetail",
+          "callee": "resolutor.solicitudes.map",
+          "lineNumber": 51
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "useState",
+          "lineNumber": 63
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "useLabelsByBoardId",
+          "lineNumber": 64
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "useMemo",
+          "lineNumber": 65
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "allBoardLabels.map",
+          "lineNumber": 65
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "resolutores.find",
+          "lineNumber": 66
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "resolutores.map",
+          "lineNumber": 75
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "['stats-resolutor', userFilter === r.userId ? 'stats-resolutor--active' : '', expanded === r.userId ? 'stats-resolutor--expanded' : ''].join",
+          "lineNumber": 77
+        },
+        {
+          "caller": "ResolutoresPanel",
+          "callee": "setExpanded",
+          "lineNumber": 78
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/SprintSection.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 228,
+      "nonEmptyLines": 209,
+      "functions": [
+        {
+          "name": "SprintCards",
+          "startLine": 15,
+          "endLine": 55,
+          "params": [
+            "{ sp, boardData, blockedNotConfigured, otrosOpen, onToggleOtros }"
+          ]
+        },
+        {
+          "name": "OtrosSprintsDetail",
+          "startLine": 59,
+          "endLine": 78,
+          "params": [
+            "{ boardData }"
+          ]
+        },
+        {
+          "name": "RealizadosRow",
+          "startLine": 83,
+          "endLine": 120,
+          "params": [
+            "{ sp }"
+          ]
+        },
+        {
+          "name": "ScorePanel",
+          "startLine": 122,
+          "endLine": 155,
+          "params": [
+            "{ sp }"
+          ]
+        },
+        {
+          "name": "AverageTimesPanel",
+          "startLine": 159,
+          "endLine": 182,
+          "params": [
+            "{ sp }"
+          ]
+        },
+        {
+          "name": "SprintSection",
+          "startLine": 187,
+          "endLine": 228,
+          "params": [
+            "{ sp, boardData, scope, boardTeamId, isSingleTeam }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SprintSection",
+          "line": 187,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SprintCards",
+          "callee": "React.useEffect",
+          "lineNumber": 23
+        },
+        {
+          "caller": "SprintCards",
+          "callee": "console.log",
+          "lineNumber": 24
+        },
+        {
+          "caller": "OtrosSprintsDetail",
+          "callee": "boardData.otrosSprintsDetalle.map",
+          "lineNumber": 69
+        },
+        {
+          "caller": "RealizadosRow",
+          "callee": "useState",
+          "lineNumber": 84
+        },
+        {
+          "caller": "toggle",
+          "callee": "setOpen",
+          "lineNumber": 87
+        },
+        {
+          "caller": "RealizadosRow",
+          "callee": "['score-detail-row', hayOtros ? 'score-detail-row--clickable' : ''].join",
+          "lineNumber": 91
+        },
+        {
+          "caller": "RealizadosRow",
+          "callee": "e.preventDefault",
+          "lineNumber": 95
+        },
+        {
+          "caller": "RealizadosRow",
+          "callee": "toggle",
+          "lineNumber": 95
+        },
+        {
+          "caller": "AverageTimesPanel",
+          "callee": "fmtHoras",
+          "lineNumber": 166
+        },
+        {
+          "caller": "AverageTimesPanel",
+          "callee": "fmtHoras",
+          "lineNumber": 174
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "useState",
+          "lineNumber": 197
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "useLabelsByTeamId",
+          "lineNumber": 200
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "useMemo",
+          "lineNumber": 201
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "teamLabels.some",
+          "lineNumber": 202
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "isBlockedLabelName",
+          "lineNumber": 202
+        },
+        {
+          "caller": "SprintSection",
+          "callee": "setOtrosOpen",
+          "lineNumber": 215
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/SprintSelector.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 153,
+      "nonEmptyLines": 142,
+      "functions": [
+        {
+          "name": "compareSprints",
+          "startLine": 8,
+          "endLine": 22,
+          "params": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "name": "YearPicker",
+          "startLine": 24,
+          "endLine": 45,
+          "params": [
+            "{ years, selected, onChange }"
+          ]
+        },
+        {
+          "name": "SprintOption",
+          "startLine": 47,
+          "endLine": 74,
+          "params": [
+            "{ sprint: s, isSelected, onToggle }"
+          ]
+        },
+        {
+          "name": "SprintSelector",
+          "startLine": 77,
+          "endLine": 153,
+          "params": [
+            "{ sprints, selectedIds, onChange, selectedYear, onYearChange, availableYears }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SprintSelector",
+          "line": 77,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "compareSprints",
+          "callee": "a.Sprint_Start_Date!.localeCompare",
+          "lineNumber": 15
+        },
+        {
+          "caller": "compareSprints",
+          "callee": "getSprintNumber",
+          "lineNumber": 18
+        },
+        {
+          "caller": "compareSprints",
+          "callee": "getSprintNumber",
+          "lineNumber": 19
+        },
+        {
+          "caller": "YearPicker",
+          "callee": "years.map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "YearPicker",
+          "callee": "onChange",
+          "lineNumber": 30
+        },
+        {
+          "caller": "SprintOption",
+          "callee": "['sprint-selector__item', isSelected ? 'sprint-selector__item--active' : ''].join",
+          "lineNumber": 51
+        },
+        {
+          "caller": "SprintOption",
+          "callee": "fmtDate",
+          "lineNumber": 68
+        },
+        {
+          "caller": "SprintOption",
+          "callee": "fmtDate",
+          "lineNumber": 68
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "useState",
+          "lineNumber": 85
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "useRef",
+          "lineNumber": 86
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "useClickOutside",
+          "lineNumber": 87
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "useCallback",
+          "lineNumber": 87
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "setOpen",
+          "lineNumber": 87
+        },
+        {
+          "caller": "toggle",
+          "callee": "onChange",
+          "lineNumber": 90
+        },
+        {
+          "caller": "toggle",
+          "callee": "selectedIds.includes",
+          "lineNumber": 90
+        },
+        {
+          "caller": "toggle",
+          "callee": "selectedIds.filter",
+          "lineNumber": 90
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "sprints.filter",
+          "lineNumber": 94
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "getSprintYear",
+          "lineNumber": 94
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "sprints.find",
+          "lineNumber": 100
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "setOpen",
+          "lineNumber": 105
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "e.stopPropagation",
+          "lineNumber": 114
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "onChange",
+          "lineNumber": 114
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "e.stopPropagation",
+          "lineNumber": 116
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "e.preventDefault",
+          "lineNumber": 116
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "onChange",
+          "lineNumber": 116
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "['sprint-selector__item', selectedIds.length === 0 ? 'sprint-selector__item--active' : ''].join",
+          "lineNumber": 132
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "onChange",
+          "lineNumber": 133
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "[...sprintsDelAnyo].sort(compareSprints).map",
+          "lineNumber": 140
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "[...sprintsDelAnyo].sort",
+          "lineNumber": 140
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "selectedIds.includes",
+          "lineNumber": 144
+        },
+        {
+          "caller": "SprintSelector",
+          "callee": "toggle",
+          "lineNumber": 145
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/StatsAtoms.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 110,
+      "nonEmptyLines": 103,
+      "functions": [
+        {
+          "name": "KPICard",
+          "startLine": 7,
+          "endLine": 22,
+          "params": [
+            "{ label, value, sub, trend, accent, trendGood = 'up' }"
+          ]
+        },
+        {
+          "name": "SprintCard",
+          "startLine": 24,
+          "endLine": 48,
+          "params": [
+            "{ label, value, sub, color, icon: Icon, pulse = false, onClick, expanded }"
+          ]
+        },
+        {
+          "name": "BarRow",
+          "startLine": 50,
+          "endLine": 59,
+          "params": [
+            "{ label, value, max, color }"
+          ]
+        },
+        {
+          "name": "ScoreDonut",
+          "startLine": 61,
+          "endLine": 80,
+          "params": [
+            "{ realizado, total, label = 'velocidad' }"
+          ]
+        },
+        {
+          "name": "SectionDivider",
+          "startLine": 82,
+          "endLine": 89,
+          "params": [
+            "{ icon: Icon, label }"
+          ]
+        },
+        {
+          "name": "ThroughputMini",
+          "startLine": 93,
+          "endLine": 110,
+          "params": [
+            "{ data }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "KPICard",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "SprintCard",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "BarRow",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "ScoreDonut",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "SectionDivider",
+          "line": 82,
+          "isDefault": false
+        },
+        {
+          "name": "ThroughputMini",
+          "line": 93,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SprintCard",
+          "callee": "['scard', clickable ? 'scard--clickable' : '', expanded ? 'scard--expanded' : ''].join",
+          "lineNumber": 31
+        },
+        {
+          "caller": "SprintCard",
+          "callee": "e.preventDefault",
+          "lineNumber": 36
+        },
+        {
+          "caller": "SprintCard",
+          "callee": "onClick!",
+          "lineNumber": 36
+        },
+        {
+          "caller": "BarRow",
+          "callee": "Math.round",
+          "lineNumber": 51
+        },
+        {
+          "caller": "ScoreDonut",
+          "callee": "Math.round",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ThroughputMini",
+          "callee": "Math.max",
+          "lineNumber": 94
+        },
+        {
+          "caller": "ThroughputMini",
+          "callee": "data.flatMap",
+          "lineNumber": 94
+        },
+        {
+          "caller": "ThroughputMini",
+          "callee": "data.map",
+          "lineNumber": 97
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/StatsControlBar.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 73,
+      "nonEmptyLines": 69,
+      "functions": [
+        {
+          "name": "useAvailableYears",
+          "startLine": 8,
+          "endLine": 18,
+          "params": [
+            "sprints"
+          ]
+        },
+        {
+          "name": "useSprintDatesBadge",
+          "startLine": 21,
+          "endLine": 30,
+          "params": [
+            "sprints",
+            "sprintIds"
+          ]
+        },
+        {
+          "name": "StatsControlBar",
+          "startLine": 33,
+          "endLine": 73,
+          "params": [
+            "{\r\n  sprints, sprintIds, onSprintIdsChange, selectedYear, onYearChange,\r\n  boardTeamId, boardTeamIds, userFilter, onUserFilterChange,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StatsControlBar",
+          "line": 33,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useAvailableYears",
+          "callee": "useMemo",
+          "lineNumber": 9
+        },
+        {
+          "caller": "useAvailableYears",
+          "callee": "getSprintYear",
+          "lineNumber": 12
+        },
+        {
+          "caller": "useAvailableYears",
+          "callee": "years.add",
+          "lineNumber": 13
+        },
+        {
+          "caller": "useAvailableYears",
+          "callee": "years.add",
+          "lineNumber": 15
+        },
+        {
+          "caller": "useAvailableYears",
+          "callee": "new Date().getFullYear",
+          "lineNumber": 15
+        },
+        {
+          "caller": "useAvailableYears",
+          "callee": "[...years].sort",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "useMemo",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "sprints.filter",
+          "lineNumber": 23
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "sprintIds.includes",
+          "lineNumber": 23
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "fmtDate",
+          "lineNumber": 26
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "fmtDate",
+          "lineNumber": 26
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "[...sel].sort",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "a.Sprint_Start_Date!.localeCompare",
+          "lineNumber": 27
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "fmtDate",
+          "lineNumber": 28
+        },
+        {
+          "caller": "useSprintDatesBadge",
+          "callee": "fmtDate",
+          "lineNumber": 28
+        },
+        {
+          "caller": "StatsControlBar",
+          "callee": "useAvailableYears",
+          "lineNumber": 47
+        },
+        {
+          "caller": "StatsControlBar",
+          "callee": "useSprintDatesBadge",
+          "lineNumber": 48
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/TeamDetailSection.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 86,
+      "functions": [
+        {
+          "name": "TeamKPIs",
+          "startLine": 9,
+          "endLine": 39,
+          "params": [
+            "{ boardData, boardPrev, teamColor }"
+          ]
+        },
+        {
+          "name": "DistributionPanels",
+          "startLine": 42,
+          "endLine": 66,
+          "params": [
+            "{ boardData, chartKey, teamName }"
+          ]
+        },
+        {
+          "name": "TeamDetailSection",
+          "startLine": 69,
+          "endLine": 90,
+          "params": [
+            "{ boardData, boardPrev, scope, isCombined, teamTab, teamName, teamColor, userFilter }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TeamDetailSection",
+          "line": 69,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TeamKPIs",
+          "callee": "calcDelta",
+          "lineNumber": 14
+        },
+        {
+          "caller": "TeamKPIs",
+          "callee": "calcDelta",
+          "lineNumber": 15
+        },
+        {
+          "caller": "TeamKPIs",
+          "callee": "calcDelta",
+          "lineNumber": 16
+        },
+        {
+          "caller": "TeamKPIs",
+          "callee": "calcDelta",
+          "lineNumber": 17
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "Math.max",
+          "lineNumber": 43
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "boardData.porPrioridad.map",
+          "lineNumber": 43
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "boardData.porColumna.filter(c => c.value > 0).map",
+          "lineNumber": 52
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "boardData.porColumna.filter",
+          "lineNumber": 52
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "c.color.replace",
+          "lineNumber": 54
+        },
+        {
+          "caller": "DistributionPanels",
+          "callee": "boardData.porPrioridad.map",
+          "lineNumber": 62
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/UserFilterDropdown.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 174,
+      "nonEmptyLines": 157,
+      "functions": [
+        {
+          "name": "UserOption",
+          "startLine": 12,
+          "endLine": 27,
+          "params": [
+            "{ user, active, onClick }"
+          ]
+        },
+        {
+          "name": "UserFilterDropdown",
+          "startLine": 30,
+          "endLine": 174,
+          "params": [
+            "{\r\n  boardTeamId, boardTeamIds, selectedUserId, onSelect,\r\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "UserFilterDropdown",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "UserOption",
+          "callee": "['user-filter__item', active ? 'user-filter__item--active' : ''].join",
+          "lineNumber": 15
+        },
+        {
+          "caller": "UserOption",
+          "callee": "avatarBg",
+          "lineNumber": 17
+        },
+        {
+          "caller": "UserOption",
+          "callee": "fmtInits",
+          "lineNumber": 18
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useState",
+          "lineNumber": 39
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useState",
+          "lineNumber": 40
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useRef",
+          "lineNumber": 41
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useCallback",
+          "lineNumber": 43
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "setOpen",
+          "lineNumber": 43
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "setSearch",
+          "lineNumber": 43
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useClickOutside",
+          "lineNumber": 44
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useSubTeamsMulti",
+          "lineNumber": 49
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useSubTeams",
+          "lineNumber": 50
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useMemo",
+          "lineNumber": 54
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "multiTeams.flatMap",
+          "lineNumber": 55
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useSubTeamMembersGrouped",
+          "lineNumber": 59
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useUsers",
+          "lineNumber": 60
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "useMemo",
+          "lineNumber": 64
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "groupedMembers.flatMap",
+          "lineNumber": 66
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "rawUsers.filter",
+          "lineNumber": 67
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "allFlat.find",
+          "lineNumber": 71
+        },
+        {
+          "caller": "matches",
+          "callee": "name.toLowerCase().includes",
+          "lineNumber": 75
+        },
+        {
+          "caller": "matches",
+          "callee": "name.toLowerCase",
+          "lineNumber": 75
+        },
+        {
+          "caller": "matches",
+          "callee": "search.toLowerCase",
+          "lineNumber": 75
+        },
+        {
+          "caller": "matches",
+          "callee": "email.toLowerCase().includes",
+          "lineNumber": 76
+        },
+        {
+          "caller": "matches",
+          "callee": "email.toLowerCase",
+          "lineNumber": 76
+        },
+        {
+          "caller": "matches",
+          "callee": "search.toLowerCase",
+          "lineNumber": 76
+        },
+        {
+          "caller": "pick",
+          "callee": "onSelect",
+          "lineNumber": 78
+        },
+        {
+          "caller": "pick",
+          "callee": "close",
+          "lineNumber": 78
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "setOpen",
+          "lineNumber": 82
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "avatarBg",
+          "lineNumber": 85
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "fmtInits",
+          "lineNumber": 86
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "selName.split(' ').slice(0, 2).join",
+          "lineNumber": 88
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "selName.split(' ').slice",
+          "lineNumber": 88
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "selName.split",
+          "lineNumber": 88
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "e.stopPropagation",
+          "lineNumber": 94
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "onSelect",
+          "lineNumber": 94
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "e.stopPropagation",
+          "lineNumber": 96
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "e.preventDefault",
+          "lineNumber": 96
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "onSelect",
+          "lineNumber": 96
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "setSearch",
+          "lineNumber": 111
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "pick",
+          "lineNumber": 115
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "groupedMembers.map",
+          "lineNumber": 132
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "members.filter",
+          "lineNumber": 133
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "matches",
+          "lineNumber": 133
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "filtered.map",
+          "lineNumber": 149
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "pick",
+          "lineNumber": 152
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "(() => {\r\n            const visible = rawUsers.filter(u => u.Is_Active !== false && matches(u.User_Name));\r\n            if (visible.length === 0) return <div className=\"user-filter__empty\">Sin resultados</div>;\r\n            return visible.map(user => (\r\n              <UserOption key={user.User_ID} user={user}\r\n                active={selectedUserId === user.User_ID}\r\n                onClick={() => pick(user.User_ID)} />\r\n            ));\r\n          })",
+          "lineNumber": 161
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "rawUsers.filter",
+          "lineNumber": 162
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "matches",
+          "lineNumber": 162
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "visible.map",
+          "lineNumber": 164
+        },
+        {
+          "caller": "UserFilterDropdown",
+          "callee": "pick",
+          "lineNumber": 167
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/statsFormat.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 84,
+      "nonEmptyLines": 76,
+      "functions": [
+        {
+          "name": "avatarBg",
+          "startLine": 15,
+          "endLine": 15,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "fmtInits",
+          "startLine": 16,
+          "endLine": 16,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "fmtDate",
+          "startLine": 17,
+          "endLine": 17,
+          "params": [
+            "d"
+          ]
+        },
+        {
+          "name": "fmtHoras",
+          "startLine": 27,
+          "endLine": 35,
+          "params": [
+            "h"
+          ]
+        },
+        {
+          "name": "fmtDays",
+          "startLine": 36,
+          "endLine": 36,
+          "params": [
+            "d"
+          ]
+        },
+        {
+          "name": "calcDelta",
+          "startLine": 42,
+          "endLine": 59,
+          "params": [
+            "actual",
+            "prev",
+            "mode"
+          ]
+        },
+        {
+          "name": "getSprintYear",
+          "startLine": 62,
+          "endLine": 71,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "getSprintNumber",
+          "startLine": 74,
+          "endLine": 77,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "scopeLabel",
+          "startLine": 80,
+          "endLine": 84,
+          "params": [
+            "isGlobal",
+            "isCombined",
+            "selectedTeams",
+            "teamTab",
+            "teamNameMap"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "avatarBg",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "fmtInits",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "fmtDate",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "PRI_COLOR",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "PRIORIDADES_LABEL",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "fmtHoras",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "fmtDays",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "calcDelta",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "getSprintYear",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "getSprintNumber",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "scopeLabel",
+          "line": 80,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fmtInits",
+          "callee": "name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join",
+          "lineNumber": 16
+        },
+        {
+          "caller": "fmtInits",
+          "callee": "name.split(' ').slice(0, 2).map",
+          "lineNumber": 16
+        },
+        {
+          "caller": "fmtInits",
+          "callee": "name.split(' ').slice",
+          "lineNumber": 16
+        },
+        {
+          "caller": "fmtInits",
+          "callee": "name.split",
+          "lineNumber": 16
+        },
+        {
+          "caller": "fmtInits",
+          "callee": "n[0]?.toUpperCase",
+          "lineNumber": 16
+        },
+        {
+          "caller": "fmtDate",
+          "callee": "new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format",
+          "lineNumber": 17
+        },
+        {
+          "caller": "fmtHoras",
+          "callee": "Math.round",
+          "lineNumber": 29
+        },
+        {
+          "caller": "fmtHoras",
+          "callee": "Math.floor",
+          "lineNumber": 30
+        },
+        {
+          "caller": "fmtDays",
+          "callee": "d.toFixed",
+          "lineNumber": 36
+        },
+        {
+          "caller": "calcDelta",
+          "callee": "Math.round",
+          "lineNumber": 56
+        },
+        {
+          "caller": "getSprintYear",
+          "callee": "Number",
+          "lineNumber": 64
+        },
+        {
+          "caller": "getSprintYear",
+          "callee": "s.Sprint_Start_Date.slice",
+          "lineNumber": 64
+        },
+        {
+          "caller": "getSprintYear",
+          "callee": "Number.isNaN",
+          "lineNumber": 65
+        },
+        {
+          "caller": "getSprintYear",
+          "callee": "s.Sprint_Text.match",
+          "lineNumber": 68
+        },
+        {
+          "caller": "getSprintYear",
+          "callee": "Number",
+          "lineNumber": 69
+        },
+        {
+          "caller": "getSprintNumber",
+          "callee": "s.Sprint_Text.match",
+          "lineNumber": 75
+        },
+        {
+          "caller": "getSprintNumber",
+          "callee": "Number",
+          "lineNumber": 76
+        },
+        {
+          "caller": "scopeLabel",
+          "callee": "selectedTeams.map(c => teamNameMap[c] ?? c).join",
+          "lineNumber": 82
+        },
+        {
+          "caller": "scopeLabel",
+          "callee": "selectedTeams.map",
+          "lineNumber": 82
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 11,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/useClickOutside.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 12,
+      "functions": [
+        {
+          "name": "useClickOutside",
+          "startLine": 4,
+          "endLine": 13,
+          "params": [
+            "ref",
+            "active",
+            "onOutside"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useClickOutside",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useClickOutside",
+          "callee": "useEffect",
+          "lineNumber": 5
+        },
+        {
+          "caller": "h",
+          "callee": "ref.current.contains",
+          "lineNumber": 8
+        },
+        {
+          "caller": "h",
+          "callee": "onOutside",
+          "lineNumber": 8
+        },
+        {
+          "caller": "useClickOutside",
+          "callee": "document.addEventListener",
+          "lineNumber": 10
+        },
+        {
+          "caller": "useClickOutside",
+          "callee": "document.removeEventListener",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "src/features/requests/components/stats/useStatsAutoSelection.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 75,
+      "nonEmptyLines": 67,
+      "functions": [
+        {
+          "name": "useAutoSelectSprint",
+          "startLine": 10,
+          "endLine": 33,
+          "params": [
+            "sprints"
+          ]
+        },
+        {
+          "name": "useValidTeamTab",
+          "startLine": 37,
+          "endLine": 54,
+          "params": [
+            "boardTeams"
+          ]
+        },
+        {
+          "name": "useResetUserOnTeamChange",
+          "startLine": 57,
+          "endLine": 68,
+          "params": []
+        },
+        {
+          "name": "useStatsAutoSelection",
+          "startLine": 71,
+          "endLine": 75,
+          "params": [
+            "sprints",
+            "boardTeams"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GLOBAL_KEY",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "useStatsAutoSelection",
+          "line": 71,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "useStatsUIStore",
+          "lineNumber": 11
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "useStatsUIStore",
+          "lineNumber": 12
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "useStatsUIStore",
+          "lineNumber": 13
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "useStatsUIStore",
+          "lineNumber": 14
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "useEffect",
+          "lineNumber": 16
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "markSprintPicked",
+          "lineNumber": 18
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "d.getFullYear",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "String(d.getMonth() + 1).padStart",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "String",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "d.getMonth",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "String(d.getDate()).padStart",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "String",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "d.getDate",
+          "lineNumber": 20
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "sprints.filter",
+          "lineNumber": 21
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "dated.find",
+          "lineNumber": 22
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "s.Sprint_Start_Date.slice",
+          "lineNumber": 23
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "s.Sprint_End_Date.slice",
+          "lineNumber": 23
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "[...dated].sort",
+          "lineNumber": 25
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "setSprintIds",
+          "lineNumber": 28
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "getSprintYear",
+          "lineNumber": 29
+        },
+        {
+          "caller": "useAutoSelectSprint",
+          "callee": "setSelectedYear",
+          "lineNumber": 30
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "useStatsUIStore",
+          "lineNumber": 38
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "useStatsUIStore",
+          "lineNumber": 39
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "useStatsUIStore",
+          "lineNumber": 40
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "useStatsUIStore",
+          "lineNumber": 41
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "useEffect",
+          "lineNumber": 43
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "boardTeams.map",
+          "lineNumber": 45
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "validCodes.includes",
+          "lineNumber": 48
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "setTeamTab",
+          "lineNumber": 50
+        },
+        {
+          "caller": "useValidTeamTab",
+          "callee": "markTeamPicked",
+          "lineNumber": 52
+        },
+        {
+          "caller": "useResetUserOnTeamChange",
+          "callee": "useStatsUIStore",
+          "lineNumber": 58
+        },
+        {
+          "caller": "useResetUserOnTeamChange",
+          "callee": "useStatsUIStore",
+          "lineNumber": 59
+        },
+        {
+          "caller": "useResetUserOnTeamChange",
+          "callee": "useRef",
+          "lineNumber": 60
+        },
+        {
+          "caller": "useResetUserOnTeamChange",
+          "callee": "useEffect",
+          "lineNumber": 62
+        },
+        {
+          "caller": "useResetUserOnTeamChange",
+          "callee": "setUserFilter",
+          "lineNumber": 65
+        },
+        {
+          "caller": "useStatsAutoSelection",
+          "callee": "useAutoSelectSprint",
+          "lineNumber": 72
+        },
+        {
+          "caller": "useStatsAutoSelection",
+          "callee": "useValidTeamTab",
+          "lineNumber": 73
+        },
+        {
+          "caller": "useStatsAutoSelection",
+          "callee": "useResetUserOnTeamChange",
+          "lineNumber": 74
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 2,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    }
+  ]
+}

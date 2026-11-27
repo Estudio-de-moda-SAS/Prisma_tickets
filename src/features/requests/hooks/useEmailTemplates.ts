@@ -144,19 +144,21 @@ export function useDeleteEmailTemplate(boardId: number) {
 }
 
 /**
- * Variables base por defecto para los 6 eventos del sistema.
+ * Variables base por defecto de los eventos que envían correo.
  *
  * @remarks
  * Sirven de respaldo cuando una plantilla no tiene variables definidas en la BD.
- * Indexado por `Email_Template_Event_Key`.
+ * Indexado por `Email_Template_Event_Key`; deben coincidir con las variables que
+ * arman los `notify*` de `supabase/functions/api/shared/requests.ts`.
  */
 export const EMAIL_EVENT_VARIABLES_FALLBACK: Record<string, string[]> = {
-  assignRequest:                  ['ticket_id', 'ticket_title', 'ticket_url', 'assignee_name', 'actor_name'],
-  createComment:                  ['ticket_id', 'ticket_title', 'ticket_url', 'actor_name', 'comment_preview'],
-  moveToColumn:                   ['ticket_id', 'ticket_title', 'ticket_url', 'column_name', 'actor_name'],
-  closeRequest:                   ['ticket_id', 'ticket_title', 'ticket_url', 'actor_name', 'closure_notes'],
-  updateAcceptanceCriteriaStatus: ['ticket_id', 'ticket_title', 'ticket_url', 'criteria_title', 'new_status', 'actor_name'],
-  submitClientFeedback:           ['ticket_id', 'ticket_title', 'ticket_url', 'feedback_status', 'actor_name'],
+  ticket_recibido:      ['ticket_id', 'ticket_title', 'ticket_url', 'requester_name', 'ticket_description', 'sprint_info', 'sprint_name'],
+  assignRequest:        ['ticket_id', 'ticket_title', 'ticket_url', 'assignee_name', 'actor_name'],
+  createComment:        ['ticket_id', 'ticket_title', 'ticket_url', 'recipient_name', 'actor_name', 'comment_preview', 'is_confidential'],
+  closeRequest:         ['ticket_id', 'ticket_title', 'ticket_url', 'recipient_name', 'actor_name', 'closure_notes'],
+  movido_client_review: ['ticket_id', 'ticket_title', 'ticket_url', 'requester_name'],
+  movido_en_progreso:   ['ticket_id', 'ticket_title', 'ticket_url', 'requester_name'],
+  submitClientFeedback: ['ticket_id', 'ticket_title', 'ticket_url', 'recipient_name', 'client_name', 'feedback_status_lower', 'status_message', 'next_step', 'feedback_block'],
 };
 
 /**

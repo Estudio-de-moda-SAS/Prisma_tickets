@@ -1,0 +1,1688 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/components/BoardFilters.tsx",
+   "type": "file",
+   "name": "BoardFilters.tsx",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "summary": "Barra de filtros avanzados del tablero Kanban: construye condiciones (campo, operador, valor) sobre campos nativos y de plantilla, con selectores de responsables por subequipo y de sprints, renderizados en un panel flotante vía portal.",
+   "tags": [
+    "component",
+    "filtros",
+    "kanban",
+    "zustand",
+    "portal"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa createPortal de react-dom para posicionar el panel fuera del flujo del DOM y evitar recortes por overflow."
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:decodeTemplateFieldValue",
+   "type": "function",
+   "name": "decodeTemplateFieldValue",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    119,
+    128
+   ],
+   "summary": "Decodifica el valor serializado de un filtro sobre campo de plantilla en su id de plantilla, clave y valor.",
+   "tags": [
+    "utility",
+    "serialization",
+    "filtros"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:getOptions",
+   "type": "function",
+   "name": "getOptions",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    130,
+    140
+   ],
+   "summary": "Obtiene las opciones seleccionables de un campo de filtro, ya sea nativo o de plantilla.",
+   "tags": [
+    "utility",
+    "filtros"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:ActiveChip",
+   "type": "function",
+   "name": "ActiveChip",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    164,
+    238
+   ],
+   "summary": "Chip que representa una condición de filtro activa con etiqueta legible y botón para quitarla.",
+   "tags": [
+    "component",
+    "filtros",
+    "chip"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:AssigneeGroupBlock",
+   "type": "function",
+   "name": "AssigneeGroupBlock",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    250,
+    291
+   ],
+   "summary": "Bloque colapsable de un subequipo con sus miembros seleccionables en el selector de responsables.",
+   "tags": [
+    "component",
+    "filtros",
+    "responsables"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:AssigneeFilterPicker",
+   "type": "function",
+   "name": "AssigneeFilterPicker",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    293,
+    444
+   ],
+   "summary": "Selector con búsqueda de responsables agrupados por subequipo para filtrar el tablero.",
+   "tags": [
+    "component",
+    "filtros",
+    "responsables",
+    "dropdown"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:ConditionRow",
+   "type": "function",
+   "name": "ConditionRow",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    448,
+    704
+   ],
+   "summary": "Fila editable de una condición de filtro: campo, operador y valor, adaptándose al tipo de campo.",
+   "tags": [
+    "component",
+    "filtros",
+    "formulario"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:SprintFilterPicker",
+   "type": "function",
+   "name": "SprintFilterPicker",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    708,
+    888
+   ],
+   "summary": "Selector de sprints con indicador de estado para filtrar solicitudes por sprint.",
+   "tags": [
+    "component",
+    "filtros",
+    "sprints"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelContent",
+   "type": "function",
+   "name": "FilterPanelContent",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    892,
+    959
+   ],
+   "summary": "Contenido del panel de filtros: lista de condiciones, conjunción AND/OR y acciones para agregar o limpiar.",
+   "tags": [
+    "component",
+    "filtros",
+    "panel"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelAbsolute",
+   "type": "function",
+   "name": "FilterPanelAbsolute",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    964,
+    991
+   ],
+   "summary": "Variante del panel de filtros posicionada en absoluto que se cierra con clic externo.",
+   "tags": [
+    "component",
+    "filtros",
+    "panel"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelPortal",
+   "type": "function",
+   "name": "FilterPanelPortal",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    996,
+    1052
+   ],
+   "summary": "Variante del panel de filtros renderizada mediante portal y posicionada respecto al botón ancla.",
+   "tags": [
+    "component",
+    "filtros",
+    "portal"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardFilters.tsx:BoardFilters",
+   "type": "function",
+   "name": "BoardFilters",
+   "filePath": "src/features/requests/components/BoardFilters.tsx",
+   "lineRange": [
+    1057,
+    1118
+   ],
+   "summary": "Componente exportado con el botón de filtros y contador de condiciones activas que abre el panel correspondiente.",
+   "tags": [
+    "component",
+    "filtros",
+    "entry-point"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/BoardSearch.tsx",
+   "type": "file",
+   "name": "BoardSearch.tsx",
+   "filePath": "src/features/requests/components/BoardSearch.tsx",
+   "summary": "Buscador global del tablero que consulta solicitudes con debounce, resalta coincidencias, guarda búsquedas recientes en localStorage y permite navegar resultados con teclado.",
+   "tags": [
+    "component",
+    "busqueda",
+    "kanban",
+    "localstorage"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardSearch.tsx:HighlightMatch",
+   "type": "function",
+   "name": "HighlightMatch",
+   "filePath": "src/features/requests/components/BoardSearch.tsx",
+   "lineRange": [
+    15,
+    36
+   ],
+   "summary": "Resalta en el texto las coincidencias del término de búsqueda ignorando acentos.",
+   "tags": [
+    "component",
+    "busqueda",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardSearch.tsx:BoardSearch",
+   "type": "function",
+   "name": "BoardSearch",
+   "filePath": "src/features/requests/components/BoardSearch.tsx",
+   "lineRange": [
+    64,
+    371
+   ],
+   "summary": "Caja de búsqueda con resultados desplegables, búsquedas recientes y navegación por teclado que abre la solicitud elegida.",
+   "tags": [
+    "component",
+    "busqueda",
+    "teclado"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/BoardSearch.tsx:ResultRow",
+   "type": "function",
+   "name": "ResultRow",
+   "filePath": "src/features/requests/components/BoardSearch.tsx",
+   "lineRange": [
+    376,
+    443
+   ],
+   "summary": "Fila de resultado de búsqueda con número, título resaltado, equipo y estado.",
+   "tags": [
+    "component",
+    "busqueda"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "type": "file",
+   "name": "ClientReviewBanner.tsx",
+   "filePath": "src/features/requests/components/ClientReviewBanner.tsx",
+   "summary": "Banner de revisión del cliente que muestra la evidencia de cierre de una solicitud y permite al solicitante aprobar o rechazar la resolución, con historial de retroalimentación.",
+   "tags": [
+    "component",
+    "revision-cliente",
+    "feedback",
+    "cierre"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/ClientReviewBanner.tsx:EvidenceBlock",
+   "type": "function",
+   "name": "EvidenceBlock",
+   "filePath": "src/features/requests/components/ClientReviewBanner.tsx",
+   "lineRange": [
+    33,
+    127
+   ],
+   "summary": "Bloque que muestra las notas y archivos de evidencia del cierre de la solicitud.",
+   "tags": [
+    "component",
+    "evidencia",
+    "adjuntos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/ClientReviewBanner.tsx:FeedbackHistory",
+   "type": "function",
+   "name": "FeedbackHistory",
+   "filePath": "src/features/requests/components/ClientReviewBanner.tsx",
+   "lineRange": [
+    132,
+    189
+   ],
+   "summary": "Historial de retroalimentaciones previas del cliente sobre la solicitud.",
+   "tags": [
+    "component",
+    "feedback",
+    "historial"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "type": "function",
+   "name": "ClientReviewBanner",
+   "filePath": "src/features/requests/components/ClientReviewBanner.tsx",
+   "lineRange": [
+    210,
+    540
+   ],
+   "summary": "Banner exportado que permite al cliente aprobar o rechazar la resolución, enviando el feedback con useSubmitClientFeedback.",
+   "tags": [
+    "component",
+    "revision-cliente",
+    "feedback"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/ClosureModal.tsx",
+   "type": "file",
+   "name": "ClosureModal.tsx",
+   "filePath": "src/features/requests/components/ClosureModal.tsx",
+   "summary": "Modal de cierre de solicitudes que exige criterios de aceptación cumplidos, recoge notas y evidencias adjuntas (comprimiendo imágenes en el cliente) y elige el modo de cierre.",
+   "tags": [
+    "component",
+    "modal",
+    "cierre",
+    "adjuntos",
+    "criterios-aceptacion"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Comprime imágenes con canvas y Promise antes de subirlas para reducir el tamaño de las evidencias."
+  },
+  {
+   "id": "function:src/features/requests/components/ClosureModal.tsx:maybeCompressImage",
+   "type": "function",
+   "name": "maybeCompressImage",
+   "filePath": "src/features/requests/components/ClosureModal.tsx",
+   "lineRange": [
+    41,
+    67
+   ],
+   "summary": "Comprime imágenes grandes en el navegador usando canvas antes de adjuntarlas como evidencia.",
+   "tags": [
+    "utility",
+    "imagenes",
+    "compresion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "type": "function",
+   "name": "ClosureModal",
+   "filePath": "src/features/requests/components/ClosureModal.tsx",
+   "lineRange": [
+    80,
+    449
+   ],
+   "summary": "Modal exportado de cierre que valida criterios de aceptación, recoge notas y archivos y confirma el cierre.",
+   "tags": [
+    "component",
+    "modal",
+    "cierre"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/ClosureModal.tsx:ModeButton",
+   "type": "function",
+   "name": "ModeButton",
+   "filePath": "src/features/requests/components/ClosureModal.tsx",
+   "lineRange": [
+    452,
+    475
+   ],
+   "summary": "Botón de selección del modo de cierre de la solicitud.",
+   "tags": [
+    "component",
+    "boton",
+    "cierre"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/ClosureModal.tsx:CriteriaGate",
+   "type": "function",
+   "name": "CriteriaGate",
+   "filePath": "src/features/requests/components/ClosureModal.tsx",
+   "lineRange": [
+    478,
+    545
+   ],
+   "summary": "Bloqueo visual que impide cerrar mientras haya criterios de aceptación pendientes.",
+   "tags": [
+    "component",
+    "criterios-aceptacion",
+    "validation"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "type": "file",
+   "name": "CreateRequestModal.tsx",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "summary": "Asistente multipaso para crear solicitudes: selección de equipo, plantilla, campos dinámicos de la plantilla con validación, responsables por subequipo, sprint, etiquetas, horas estimadas y criterios de aceptación.",
+   "tags": [
+    "component",
+    "modal",
+    "formulario",
+    "wizard",
+    "plantillas"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Define hooks locales (usePortalDropdown, useDropdown) para gestionar dropdowns posicionados con portal y cierre por clic externo."
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:normalizeBranch",
+   "type": "function",
+   "name": "normalizeBranch",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    31,
+    45
+   ],
+   "summary": "Normaliza una rama de esquema de plantilla para el renderizado condicional de campos.",
+   "tags": [
+    "utility",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:filterEnabled",
+   "type": "function",
+   "name": "filterEnabled",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    48,
+    60
+   ],
+   "summary": "Filtra los elementos habilitados de una lista de configuración.",
+   "tags": [
+    "utility",
+    "filtros"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:usePortalDropdown",
+   "type": "function",
+   "name": "usePortalDropdown",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    72,
+    98
+   ],
+   "summary": "Hook local que gestiona apertura, posición y cierre por clic externo de dropdowns renderizados en portal.",
+   "tags": [
+    "hook",
+    "dropdown",
+    "portal"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:PortalPanel",
+   "type": "function",
+   "name": "PortalPanel",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    100,
+    135
+   ],
+   "summary": "Panel flotante renderizado en portal para dropdowns del formulario.",
+   "tags": [
+    "component",
+    "portal",
+    "dropdown"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:StepIndicator",
+   "type": "function",
+   "name": "StepIndicator",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    137,
+    163
+   ],
+   "summary": "Indicador de progreso de los pasos del asistente de creación.",
+   "tags": [
+    "component",
+    "wizard"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:StepEquipo",
+   "type": "function",
+   "name": "StepEquipo",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    166,
+    245
+   ],
+   "summary": "Paso del asistente para elegir el equipo destino de la solicitud.",
+   "tags": [
+    "component",
+    "wizard",
+    "equipos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:StepTemplate",
+   "type": "function",
+   "name": "StepTemplate",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    248,
+    311
+   ],
+   "summary": "Paso del asistente para elegir la plantilla de solicitud del equipo.",
+   "tags": [
+    "component",
+    "wizard",
+    "plantillas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:SubTeamGroup",
+   "type": "function",
+   "name": "SubTeamGroup",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    324,
+    387
+   ],
+   "summary": "Grupo colapsable de miembros de un subequipo dentro del selector de responsables.",
+   "tags": [
+    "component",
+    "responsables"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:ExtraFieldRenderer",
+   "type": "function",
+   "name": "ExtraFieldRenderer",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    417,
+    650
+   ],
+   "summary": "Renderiza dinámicamente un campo extra de plantilla (texto, número, selección, fecha, etc.) según su tipo.",
+   "tags": [
+    "component",
+    "formulario",
+    "plantillas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:AutoTextarea",
+   "type": "function",
+   "name": "AutoTextarea",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    651,
+    672
+   ],
+   "summary": "Textarea que ajusta automáticamente su altura al contenido.",
+   "tags": [
+    "component",
+    "formulario"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:AcceptanceCriteriaEditor",
+   "type": "function",
+   "name": "AcceptanceCriteriaEditor",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    674,
+    728
+   ],
+   "summary": "Editor de la lista de criterios de aceptación de una nueva solicitud.",
+   "tags": [
+    "component",
+    "criterios-aceptacion",
+    "formulario"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:validateExtraFields",
+   "type": "function",
+   "name": "validateExtraFields",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    733,
+    762
+   ],
+   "summary": "Valida los campos obligatorios de la plantilla y devuelve los errores por campo.",
+   "tags": [
+    "validation",
+    "plantillas",
+    "utility"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:HorasInput",
+   "type": "function",
+   "name": "HorasInput",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    776,
+    795
+   ],
+   "summary": "Input de horas estimadas que normaliza valores numéricos al confirmar.",
+   "tags": [
+    "component",
+    "horas",
+    "formulario"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:useDropdown",
+   "type": "function",
+   "name": "useDropdown",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    796,
+    808
+   ],
+   "summary": "Hook local para estado abierto/cerrado de dropdowns con cierre por clic externo.",
+   "tags": [
+    "hook",
+    "dropdown"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "type": "function",
+   "name": "CreateRequestModal",
+   "filePath": "src/features/requests/components/CreateRequestModal.tsx",
+   "lineRange": [
+    812,
+    1379
+   ],
+   "summary": "Modal exportado que coordina el asistente de creación y envía la solicitud con useCreateRequest.",
+   "tags": [
+    "component",
+    "modal",
+    "wizard",
+    "formulario"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "type": "file",
+   "name": "HomeRequestModal.tsx",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "summary": "Vista de detalle de una solicitud desde la página de inicio del solicitante: muestra datos de plantilla, criterios, comentarios con menciones, adjuntos, participantes y banner de revisión/calificación del cliente.",
+   "tags": [
+    "component",
+    "modal",
+    "detalle-solicitud",
+    "comentarios",
+    "react-query"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:fmtRelative",
+   "type": "function",
+   "name": "fmtRelative",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    61,
+    72
+   ],
+   "summary": "Formatea una fecha como tiempo relativo legible (hace X minutos/horas/días).",
+   "tags": [
+    "utility",
+    "fechas",
+    "formatting"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:TemplateFormDataPanel",
+   "type": "function",
+   "name": "TemplateFormDataPanel",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    111,
+    265
+   ],
+   "summary": "Panel de solo lectura con los datos de plantilla diligenciados en la solicitud.",
+   "tags": [
+    "component",
+    "plantillas",
+    "solo-lectura"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:CriteriaReadonly",
+   "type": "function",
+   "name": "CriteriaReadonly",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    267,
+    303
+   ],
+   "summary": "Lista de criterios de aceptación en modo lectura.",
+   "tags": [
+    "component",
+    "criterios-aceptacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:CriteriaEditable",
+   "type": "function",
+   "name": "CriteriaEditable",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    306,
+    410
+   ],
+   "summary": "Lista de criterios de aceptación editable por el solicitante (crear, renombrar, eliminar).",
+   "tags": [
+    "component",
+    "criterios-aceptacion",
+    "edicion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "type": "function",
+   "name": "HomeRequestModal",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    420,
+    955
+   ],
+   "summary": "Modal exportado de detalle para el solicitante con comentarios, adjuntos, participantes, revisión y calificación.",
+   "tags": [
+    "component",
+    "modal",
+    "detalle-solicitud"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:CopyLinkButton",
+   "type": "function",
+   "name": "CopyLinkButton",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    957,
+    973
+   ],
+   "summary": "Botón que copia el enlace directo de la solicitud al portapapeles.",
+   "tags": [
+    "component",
+    "boton",
+    "portapapeles"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/HomeRequestModal.tsx:TeamChip",
+   "type": "function",
+   "name": "TeamChip",
+   "filePath": "src/features/requests/components/HomeRequestModal.tsx",
+   "lineRange": [
+    974,
+    986
+   ],
+   "summary": "Chip que muestra el equipo de la solicitud con su color.",
+   "tags": [
+    "component",
+    "chip",
+    "equipos"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/components/IntakeBadge.tsx",
+   "type": "file",
+   "name": "IntakeBadge.tsx",
+   "filePath": "src/features/requests/components/IntakeBadge.tsx",
+   "summary": "Insignia animada que indica cuántas solicitudes sin categorizar hay en la columna de entrada y permite filtrar el tablero hacia ellas.",
+   "tags": [
+    "component",
+    "badge",
+    "intake",
+    "zustand"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/components/IntakeBadge.tsx:timeAgo",
+   "type": "function",
+   "name": "timeAgo",
+   "filePath": "src/features/requests/components/IntakeBadge.tsx",
+   "lineRange": [
+    17,
+    28
+   ],
+   "summary": "Calcula un texto de tiempo transcurrido desde una fecha.",
+   "tags": [
+    "utility",
+    "fechas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/components/IntakeBadge.tsx:IntakeBadge",
+   "type": "function",
+   "name": "IntakeBadge",
+   "filePath": "src/features/requests/components/IntakeBadge.tsx",
+   "lineRange": [
+    36,
+    157
+   ],
+   "summary": "Insignia exportada con conteo de solicitudes sin categorizar que activa el filtro de entrada.",
+   "tags": [
+    "component",
+    "badge",
+    "intake"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/components/KanbanBoard.tsx",
+   "type": "file",
+   "name": "KanbanBoard.tsx",
+   "filePath": "src/features/requests/components/KanbanBoard.tsx",
+   "summary": "Componente principal del tablero Kanban: orquesta columnas, tarjetas y drag & drop con dnd-kit, abre los modales de creación, detalle y cierre, y gestiona notificaciones y selector de columnas en móvil.",
+   "tags": [
+    "component",
+    "kanban",
+    "drag-and-drop",
+    "entry-point",
+    "dnd-kit"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Usa los sensores de @dnd-kit (useSensors/useSensor) para habilitar arrastre con puntero y táctil."
+  },
+  {
+   "id": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "type": "function",
+   "name": "KanbanBoard",
+   "filePath": "src/features/requests/components/KanbanBoard.tsx",
+   "lineRange": [
+    67,
+    475
+   ],
+   "summary": "Componente exportado que renderiza el tablero, maneja eventos de drag & drop entre columnas y abre los modales de solicitud.",
+   "tags": [
+    "component",
+    "kanban",
+    "drag-and-drop"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/components/KanbanBoard.tsx:MobileColumnSelector",
+   "type": "function",
+   "name": "MobileColumnSelector",
+   "filePath": "src/features/requests/components/KanbanBoard.tsx",
+   "lineRange": [
+    480,
+    544
+   ],
+   "summary": "Selector horizontal de columnas para navegar el tablero en móvil.",
+   "tags": [
+    "component",
+    "mobile",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:decodeTemplateFieldValue",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:getOptions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:ActiveChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:AssigneeGroupBlock",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:AssigneeFilterPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:ConditionRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:SprintFilterPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelContent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelAbsolute",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:FilterPanelPortal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:BoardFilters",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardFilters.tsx",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:BoardFilters",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "function:src/features/requests/components/BoardSearch.tsx:HighlightMatch",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "function:src/features/requests/components/BoardSearch.tsx:BoardSearch",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "function:src/features/requests/components/BoardSearch.tsx:BoardSearch",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "function:src/features/requests/components/BoardSearch.tsx:ResultRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/BoardSearch.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:EvidenceBlock",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:FeedbackHistory",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "file:src/features/requests/hooks/useClientFeedback.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:maybeCompressImage",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:ModeButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:CriteriaGate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/ClosureModal.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:normalizeBranch",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:filterEnabled",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:usePortalDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:PortalPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:StepIndicator",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:StepEquipo",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:StepTemplate",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:SubTeamGroup",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:ExtraFieldRenderer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:AutoTextarea",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:AcceptanceCriteriaEditor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:validateExtraFields",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:HorasInput",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:useDropdown",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:fmtRelative",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:TemplateFormDataPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:CriteriaReadonly",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:CriteriaEditable",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:CopyLinkButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:TeamChip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/RequestModalComponents.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/CommentText.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/HomeRequestModal.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/IntakeBadge.tsx",
+   "target": "function:src/features/requests/components/IntakeBadge.tsx:timeAgo",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/IntakeBadge.tsx",
+   "target": "function:src/features/requests/components/IntakeBadge.tsx:IntakeBadge",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/IntakeBadge.tsx",
+   "target": "function:src/features/requests/components/IntakeBadge.tsx:IntakeBadge",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/IntakeBadge.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "function:src/features/requests/components/KanbanBoard.tsx:MobileColumnSelector",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/components/ClosureModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/components/CreateRequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/components/KanbanColumn.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/components/RequestCard.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/components/RequestModal.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useCloseRequest.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useDragScroll.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useNotifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/hooks/useRequests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/components/KanbanBoard.tsx",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/features/requests/components/BoardSearch.tsx:BoardSearch",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useSearchRequests",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "target": "function:src/features/requests/hooks/useClientFeedback.ts:useSubmitClientFeedback",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "target": "function:src/features/requests/hooks/useAcceptanceCriteria.ts:useAcceptanceCriteria",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useDragScroll.ts:useDragScroll",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useCustomizationStyles.ts:useBoardStyle",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useCurrentUser.ts:useCurrentUser",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useCloseRequest.ts:useCloseRequest",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useNotifications.ts:useNotifications",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/hooks/useRequests.ts:useHistorialCount",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/components/KanbanColumn.tsx:KanbanColumn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/components/RequestCard.tsx:RequestCard",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/components/RequestModal.tsx:RequestModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/KanbanBoard.tsx:KanbanBoard",
+   "target": "function:src/features/requests/components/ClosureModal.tsx:ClosureModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/ClientReviewBanner.tsx:ClientReviewBanner",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/ResolutionRatingModal.tsx:ResolutionRatingModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/mentions/CommentComposer.tsx:CommentComposer",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/mentions/CommentText.tsx:CommentText",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/mentions/ParticipantsPanel.tsx:ParticipantsPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "function:src/features/requests/components/BoardFilters.tsx:ActiveChip",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:getOptions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/BoardFilters.tsx:ConditionRow",
+   "target": "function:src/features/requests/components/BoardFilters.tsx:getOptions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:usePortalDropdown",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:filterEnabled",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:useDropdown",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/CreateRequestModal.tsx:CreateRequestModal",
+   "target": "function:src/features/requests/components/CreateRequestModal.tsx:validateExtraFields",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/HomeRequestModal.tsx:HomeRequestModal",
+   "target": "function:src/features/requests/components/HomeRequestModal.tsx:fmtRelative",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/components/IntakeBadge.tsx:IntakeBadge",
+   "target": "function:src/features/requests/components/IntakeBadge.tsx:timeAgo",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

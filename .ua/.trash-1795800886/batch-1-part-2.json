@@ -1,0 +1,929 @@
+{
+ "nodes": [
+  {
+   "id": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "type": "file",
+   "name": "exportJobs.ts",
+   "filePath": "supabase/functions/api/handlers/exportJobs.ts",
+   "summary": "Handlers de exportación de solicitudes: crea jobs en background por chunks con artefactos en Storage, gestiona historial, URLs de descarga y repetición, y ofrece una exportación directa síncrona con filtros.",
+   "tags": [
+    "api-handler",
+    "exportacion",
+    "background-job",
+    "storage",
+    "reportes"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/feedback.ts",
+   "type": "file",
+   "name": "feedback.ts",
+   "filePath": "supabase/functions/api/handlers/feedback.ts",
+   "summary": "Handlers de feedback del cliente sobre solicitudes en revisión: registra el veredicto, mueve el ticket de columna, notifica a los resolutores y envía el correo de respuesta.",
+   "tags": [
+    "api-handler",
+    "feedback",
+    "workflow",
+    "notificaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/history.ts",
+   "type": "file",
+   "name": "history.ts",
+   "filePath": "supabase/functions/api/handlers/history.ts",
+   "summary": "Handler de lectura del historial de auditoría de una solicitud, restringido a administradores o supervisores de sub-equipos asignados.",
+   "tags": [
+    "api-handler",
+    "historial",
+    "auditoria",
+    "autorizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/labels.ts",
+   "type": "file",
+   "name": "labels.ts",
+   "filePath": "supabase/functions/api/handlers/labels.ts",
+   "summary": "Handlers CRUD de etiquetas de tickets (`TBL_Labels`) por board y equipo, relacionadas con solicitudes vía `TBL_Request_Labels`.",
+   "tags": [
+    "api-handler",
+    "etiquetas",
+    "crud",
+    "kanban"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/migration.ts",
+   "type": "file",
+   "name": "migration.ts",
+   "filePath": "supabase/functions/api/handlers/migration.ts",
+   "summary": "Handlers atómicos de migración de solicitudes históricas desde Excel a PRISMA (una solicitud por llamada), invocados por el orquestador externo PRISMA Migrations, con upsert de etiquetas y sprints por nombre.",
+   "tags": [
+    "api-handler",
+    "migracion",
+    "etl",
+    "importacion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/notifications.ts",
+   "type": "file",
+   "name": "notifications.ts",
+   "filePath": "supabase/functions/api/handlers/notifications.ts",
+   "summary": "Handlers de notificaciones in-app (`TBL_Notifications`): lectura del feed del usuario y marcado individual o masivo como leídas.",
+   "tags": [
+    "api-handler",
+    "notificaciones",
+    "in-app",
+    "feed"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "type": "file",
+   "name": "notifyEvent.ts",
+   "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+   "summary": "Helper que combina la notificación in-app obligatoria con un correo condicional best-effort en una sola llamada para los handlers de dominio.",
+   "tags": [
+    "utility",
+    "notificaciones",
+    "email",
+    "facade"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/orgUnits.ts",
+   "type": "file",
+   "name": "orgUnits.ts",
+   "filePath": "supabase/functions/api/handlers/orgUnits.ts",
+   "summary": "Handlers CRUD de la estructura organizacional (departamentos y equipos de personas), usada en el onboarding y la clasificación de usuarios; distinta de los board teams del Kanban.",
+   "tags": [
+    "api-handler",
+    "organizacion",
+    "departamentos",
+    "crud"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/requests.ts",
+   "type": "file",
+   "name": "requests.ts",
+   "filePath": "supabase/functions/api/handlers/requests.ts",
+   "summary": "Módulo central de PRISMA con los handlers del ciclo de vida del ticket: lectura por múltiples criterios, creación, movimiento entre columnas, edición, borrado, búsqueda, filtrado y estadísticas, orquestando sprints, automatizaciones, notificaciones, correos e historial.",
+   "tags": [
+    "api-handler",
+    "solicitudes",
+    "nucleo",
+    "workflow",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "type": "file",
+   "name": "resolutionRatings.ts",
+   "filePath": "supabase/functions/api/handlers/resolutionRatings.ts",
+   "summary": "Handlers de calificaciones de resolución (puntajes de solución y atención de 1 a 5) que guardan un snapshot de los resolutores al momento de calificar.",
+   "tags": [
+    "api-handler",
+    "calificaciones",
+    "satisfaccion",
+    "snapshot"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/solvi.ts",
+   "type": "file",
+   "name": "solvi.ts",
+   "filePath": "supabase/functions/api/handlers/solvi.ts",
+   "summary": "Handlers de la integración SOLVI (ticketing externo): listado y detalle de tickets, comentarios, menciones, participantes y adjuntos leyendo las tablas `*_Solvi`.",
+   "tags": [
+    "api-handler",
+    "solvi",
+    "integracion",
+    "tickets"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:supabase/functions/api/handlers/sprints.ts",
+   "type": "file",
+   "name": "sprints.ts",
+   "filePath": "supabase/functions/api/handlers/sprints.ts",
+   "summary": "Handlers CRUD de sprints con capacidad externa por equipo y la automatización que mueve solicitudes al arrancar un sprint.",
+   "tags": [
+    "api-handler",
+    "sprints",
+    "planificacion",
+    "automatizacion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+   "type": "function",
+   "name": "notifyEvent",
+   "filePath": "supabase/functions/api/handlers/notifyEvent.ts",
+   "lineRange": [
+    38,
+    71
+   ],
+   "summary": "Inserta notificaciones in-app para los destinatarios y, si se indica un `eventKey`, envía además el correo del evento sin propagar errores.",
+   "tags": [
+    "utility",
+    "notificaciones",
+    "email"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+   "type": "function",
+   "name": "chunkedIn",
+   "filePath": "supabase/functions/api/handlers/requests.ts",
+   "lineRange": [
+    56,
+    68
+   ],
+   "summary": "Ejecuta consultas `.in()` por lotes de IDs para evitar límites de longitud de URL y concatena los resultados.",
+   "tags": [
+    "utility",
+    "paginacion",
+    "consultas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "type": "function",
+   "name": "exportJobHandlers",
+   "filePath": "supabase/functions/api/handlers/exportJobs.ts",
+   "lineRange": [
+    38,
+    591
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: createExportJob, fetchExportHistory, getExportArtifactUrls, repeatExport, confirmExportDownloaded, deleteExportHistoryEntry, exportRequests.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "type": "function",
+   "name": "feedbackHandlers",
+   "filePath": "supabase/functions/api/handlers/feedback.ts",
+   "lineRange": [
+    26,
+    181
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchClientFeedback, submitClientFeedback.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/history.ts:historyHandlers",
+   "type": "function",
+   "name": "historyHandlers",
+   "filePath": "supabase/functions/api/handlers/history.ts",
+   "lineRange": [
+    20,
+    76
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchRequestHistory.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/labels.ts:labelHandlers",
+   "type": "function",
+   "name": "labelHandlers",
+   "filePath": "supabase/functions/api/handlers/labels.ts",
+   "lineRange": [
+    19,
+    98
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchLabelsByBoardId, fetchLabelsByTeamId, createLabel, updateLabel, deleteLabel.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/migration.ts:migrationHandlers",
+   "type": "function",
+   "name": "migrationHandlers",
+   "filePath": "supabase/functions/api/handlers/migration.ts",
+   "lineRange": [
+    79,
+    337
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: migrateRequest, migrationFetchUsers, upsertLabelByName, upsertSprintByName.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/notifications.ts:notificationHandlers",
+   "type": "function",
+   "name": "notificationHandlers",
+   "filePath": "supabase/functions/api/handlers/notifications.ts",
+   "lineRange": [
+    20,
+    85
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: getNotifications, markNotificationRead, markAllNotificationsRead.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/orgUnits.ts:orgUnitHandlers",
+   "type": "function",
+   "name": "orgUnitHandlers",
+   "filePath": "supabase/functions/api/handlers/orgUnits.ts",
+   "lineRange": [
+    21,
+    209
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: getDepartments, getDepartmentsWithTeams, getTeamsByDepartment, create/update/deleteDepartment, create/update/deleteTeam.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "type": "function",
+   "name": "requestHandlers",
+   "filePath": "supabase/functions/api/handlers/requests.ts",
+   "lineRange": [
+    76,
+    1225
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchById, fetchAllByBoard, createRequest, moveToColumn, updateRequest, deleteRequest, searchRequests, filterRequests, fetchAllByBoardStats, fetchTeamHistorialPage, entre otras.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/resolutionRatings.ts:resolutionRatingHandlers",
+   "type": "function",
+   "name": "resolutionRatingHandlers",
+   "filePath": "supabase/functions/api/handlers/resolutionRatings.ts",
+   "lineRange": [
+    21,
+    119
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchResolutionRatings, submitResolutionRating.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/solvi.ts:solviHandlers",
+   "type": "function",
+   "name": "solviHandlers",
+   "filePath": "supabase/functions/api/handlers/solvi.ts",
+   "lineRange": [
+    84,
+    488
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchSolviTickets, fetchMySolviTickets, fetchSolviTicketDetail, fetchSolviComments, createSolviComment, deleteSolviComment, fetchMySolviMentions, fetchSolviParticipants, removeSolviParticipant, fetchTicketAttachments.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:supabase/functions/api/handlers/sprints.ts:sprintHandlers",
+   "type": "function",
+   "name": "sprintHandlers",
+   "filePath": "supabase/functions/api/handlers/sprints.ts",
+   "lineRange": [
+    19,
+    188
+   ],
+   "summary": "Registro exportado de acciones (`Record<string, ActionHandler>`) que el router despacha por nombre: fetchSprints, createSprint, updateSprint, deleteSprint, triggerSprintStartMoves.",
+   "tags": [
+    "api-handler",
+    "registro-de-acciones",
+    "dispatch"
+   ],
+   "complexity": "moderate"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "file:supabase/functions/api/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "file:supabase/functions/api/jobs/exportJob.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "file:supabase/functions/api/shared/selects.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "file:supabase/functions/api/lib/history.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "file:supabase/functions/api/shared/notifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "file:supabase/functions/api/shared/requests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/history.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/labels.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/migration.ts",
+   "target": "file:supabase/functions/api/shared/selects.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/migration.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifications.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "target": "file:supabase/functions/api/email/send.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "target": "file:supabase/functions/api/lib/supabase.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "target": "file:supabase/functions/api/shared/notifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/orgUnits.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/email/send.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/lib/history.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/shared/criteria.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/shared/notifications.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/shared/requests.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/shared/selects.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/solvi.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/sprints.ts",
+   "target": "file:supabase/functions/api/shared/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "target": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+   "target": "function:supabase/functions/api/shared/notifications.ts:insertNotifications",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/notifyEvent.ts:notifyEvent",
+   "target": "function:supabase/functions/api/email/send.ts:sendEventEmail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/exportJobs.ts",
+   "target": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveExportCandidateIds",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_countExportMatches",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_uploadExportArtifact",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_kickoffExportChunk",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_cleanupExportArtifacts",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/exportJobs.ts:exportJobHandlers",
+   "target": "function:supabase/functions/api/jobs/exportJob.ts:_resolveOrderedExportIds",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/feedback.ts",
+   "target": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "target": "function:supabase/functions/api/shared/notifications.ts:insertNotifications",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientFeedbackEmail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/feedback.ts:feedbackHandlers",
+   "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/history.ts",
+   "target": "function:supabase/functions/api/handlers/history.ts:historyHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/history.ts",
+   "target": "function:supabase/functions/api/handlers/history.ts:historyHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/labels.ts",
+   "target": "function:supabase/functions/api/handlers/labels.ts:labelHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/labels.ts",
+   "target": "function:supabase/functions/api/handlers/labels.ts:labelHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/migration.ts",
+   "target": "function:supabase/functions/api/handlers/migration.ts:migrationHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/migration.ts",
+   "target": "function:supabase/functions/api/handlers/migration.ts:migrationHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifications.ts",
+   "target": "function:supabase/functions/api/handlers/notifications.ts:notificationHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/notifications.ts",
+   "target": "function:supabase/functions/api/handlers/notifications.ts:notificationHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/orgUnits.ts",
+   "target": "function:supabase/functions/api/handlers/orgUnits.ts:orgUnitHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/orgUnits.ts",
+   "target": "function:supabase/functions/api/handlers/orgUnits.ts:orgUnitHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/requests.ts",
+   "target": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/criteria.ts:attachCriteriaSummary",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/notifications.ts:insertNotifications",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:getRequestParticipants",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:maybeSendClientReviewEmail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:maybeSendInProgressEmail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/shared/requests.ts:planColumnTransition",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/email/send.ts:sendEventEmail",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/lib/history.ts:logHistory",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/lib/history.ts:diffFields",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/lib/history.ts:diffFormData",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:supabase/functions/api/handlers/requests.ts:requestHandlers",
+   "target": "function:supabase/functions/api/handlers/requests.ts:chunkedIn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "target": "function:supabase/functions/api/handlers/resolutionRatings.ts:resolutionRatingHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "target": "function:supabase/functions/api/handlers/resolutionRatings.ts:resolutionRatingHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/solvi.ts",
+   "target": "function:supabase/functions/api/handlers/solvi.ts:solviHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/solvi.ts",
+   "target": "function:supabase/functions/api/handlers/solvi.ts:solviHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/sprints.ts",
+   "target": "function:supabase/functions/api/handlers/sprints.ts:sprintHandlers",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:supabase/functions/api/handlers/sprints.ts",
+   "target": "function:supabase/functions/api/handlers/sprints.ts:sprintHandlers",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

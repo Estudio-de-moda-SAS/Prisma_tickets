@@ -1,0 +1,571 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/store/notifPromptStore.ts",
+   "type": "file",
+   "name": "notifPromptStore.ts",
+   "filePath": "src/store/notifPromptStore.ts",
+   "summary": "Store Zustand persistido que recuerda si el usuario descartó para siempre el aviso para activar notificaciones push.",
+   "tags": [
+    "zustand",
+    "store",
+    "notificaciones",
+    "persistencia"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/notifPromptStore.ts:useNotifPromptStore",
+   "type": "function",
+   "name": "useNotifPromptStore",
+   "filePath": "src/store/notifPromptStore.ts",
+   "lineRange": [
+    10,
+    17
+   ],
+   "summary": "Hook de store con el flag dismissedForever y la acción dismissForever, persistido en localStorage.",
+   "tags": [
+    "zustand",
+    "store",
+    "hook"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/searchStore.ts",
+   "type": "file",
+   "name": "searchStore.ts",
+   "filePath": "src/store/searchStore.ts",
+   "summary": "Store Zustand con la consulta de búsqueda global del tablero y helpers de normalización (minúsculas, sin acentos) y coincidencia por id/título de solicitud.",
+   "tags": [
+    "zustand",
+    "store",
+    "busqueda",
+    "utility"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/searchStore.ts:normalizeSearch",
+   "type": "function",
+   "name": "normalizeSearch",
+   "filePath": "src/store/searchStore.ts",
+   "lineRange": [
+    7,
+    9
+   ],
+   "summary": "Normaliza texto a minúsculas y elimina diacríticos para búsquedas insensibles a acentos.",
+   "tags": [
+    "utility",
+    "normalizacion",
+    "busqueda"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/searchStore.ts:matchesSearchQuery",
+   "type": "function",
+   "name": "matchesSearchQuery",
+   "filePath": "src/store/searchStore.ts",
+   "lineRange": [
+    15,
+    24
+   ],
+   "summary": "Indica si una solicitud coincide con la consulta comparando id y título normalizados.",
+   "tags": [
+    "utility",
+    "busqueda",
+    "filtro"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/searchStore.ts:useSearchStore",
+   "type": "function",
+   "name": "useSearchStore",
+   "filePath": "src/store/searchStore.ts",
+   "lineRange": [
+    35,
+    38
+   ],
+   "summary": "Hook de store con la query global y las acciones setQuery/clear.",
+   "tags": [
+    "zustand",
+    "store",
+    "hook"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/statsStore.ts",
+   "type": "file",
+   "name": "statsStore.ts",
+   "filePath": "src/store/statsStore.ts",
+   "summary": "Store Zustand persistido con la selección de UI del dashboard de estadísticas: sprints, filtro de usuario, tab/multi-selección de equipos, año y flags de auto-selección.",
+   "tags": [
+    "zustand",
+    "store",
+    "estadisticas",
+    "persistencia"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Usa persist con partialize para guardar solo la selección de UI y nunca datos calculados."
+  },
+  {
+   "id": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "function",
+   "name": "useStatsUIStore",
+   "filePath": "src/store/statsStore.ts",
+   "lineRange": [
+    27,
+    72
+   ],
+   "summary": "Hook de store con la selección del dashboard de estadísticas y acciones como toggleTeam, setTeamTab y markSprintPicked.",
+   "tags": [
+    "zustand",
+    "store",
+    "estadisticas"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/store/timerStore.ts",
+   "type": "file",
+   "name": "timerStore.ts",
+   "filePath": "src/store/timerStore.ts",
+   "summary": "Store Zustand persistido de cronómetros por ticket: inicia, pausa, resetea y acumula tiempo garantizando un único temporizador activo a la vez.",
+   "tags": [
+    "zustand",
+    "store",
+    "timer",
+    "persistencia"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/store/timerStore.ts:useTimerStore",
+   "type": "function",
+   "name": "useTimerStore",
+   "filePath": "src/store/timerStore.ts",
+   "lineRange": [
+    28,
+    143
+   ],
+   "summary": "Hook de store con entradas de cronómetro por ticket y acciones start/pause/reset/dismiss/surface/checkpoint/elapsedMs.",
+   "tags": [
+    "zustand",
+    "store",
+    "timer"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/store/useBoardTheme.ts",
+   "type": "file",
+   "name": "useBoardTheme.ts",
+   "filePath": "src/store/useBoardTheme.ts",
+   "summary": "Hook que aplica las variables CSS del tema de tablero al :root, completas en modo oscuro y solo acentos/bordes en modo claro.",
+   "tags": [
+    "hook",
+    "theme",
+    "css-variables",
+    "ui"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/useBoardTheme.ts:useBoardTheme",
+   "type": "function",
+   "name": "useBoardTheme",
+   "filePath": "src/store/useBoardTheme.ts",
+   "lineRange": [
+    9,
+    35
+   ],
+   "summary": "Efecto que escribe o limpia variables CSS en documentElement según el tema de tablero y el modo claro/oscuro.",
+   "tags": [
+    "hook",
+    "theme",
+    "dom"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/store/useTheme.ts",
+   "type": "file",
+   "name": "useTheme.ts",
+   "filePath": "src/store/useTheme.ts",
+   "summary": "Store Zustand persistido del tema claro/oscuro (claro por defecto) que sincroniza el atributo data-theme del documento.",
+   "tags": [
+    "zustand",
+    "store",
+    "theme",
+    "persistencia"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/store/useTheme.ts:useTheme",
+   "type": "function",
+   "name": "useTheme",
+   "filePath": "src/store/useTheme.ts",
+   "lineRange": [
+    14,
+    35
+   ],
+   "summary": "Hook de store con el tema actual y acciones toggle/setTheme que actualizan data-theme.",
+   "tags": [
+    "zustand",
+    "store",
+    "theme"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/types/commons.ts",
+   "type": "file",
+   "name": "commons.ts",
+   "filePath": "src/types/commons.ts",
+   "summary": "Tipos compartidos del frontend: paginación, opciones de consulta, departamentos, equipos, perfiles de usuario, criterios de aceptación y notificaciones.",
+   "tags": [
+    "type-definition",
+    "data-model",
+    "tipos-compartidos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/types/supabase.types.ts",
+   "type": "file",
+   "name": "supabase.types.ts",
+   "filePath": "src/types/supabase.types.ts",
+   "summary": "Tipos TypeScript autogenerados del esquema PostgreSQL de Supabase (tablas TBL_Requests, TBL_Boards, TBL_Sprint, TBL_Users, etc.) con helpers Tables/TablesInsert/TablesUpdate.",
+   "tags": [
+    "type-definition",
+    "database",
+    "supabase",
+    "autogenerado",
+    "schema-definition"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Archivo generado por la CLI de Supabase; usa tipos condicionales y mapeados para derivar Row/Insert/Update por tabla."
+  },
+  {
+   "id": "file:src/vite-env.d.ts",
+   "type": "file",
+   "name": "vite-env.d.ts",
+   "filePath": "src/vite-env.d.ts",
+   "summary": "Declaraciones de referencia de tipos para el cliente de Vite y los módulos virtuales de vite-plugin-pwa.",
+   "tags": [
+    "type-definition",
+    "vite",
+    "pwa"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "config:supabase/config.toml",
+   "type": "config",
+   "name": "config.toml",
+   "filePath": "supabase/config.toml",
+   "summary": "Configuración de Supabase para la Edge Function api que desactiva verify_jwt porque el cliente envía JWT RS256 de Azure AD en lugar del secreto HS256 de Supabase.",
+   "tags": [
+    "configuration",
+    "supabase",
+    "security",
+    "edge-functions"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:supabase/functions/api/globals.d.ts",
+   "type": "file",
+   "name": "globals.d.ts",
+   "filePath": "supabase/functions/api/globals.d.ts",
+   "summary": "Declaraciones ambient de los globales del runtime Deno/Supabase Edge (Deno.env, Deno.serve, EdgeRuntime.waitUntil) para compilar sin los tipos completos del runtime.",
+   "tags": [
+    "type-definition",
+    "deno",
+    "edge-functions",
+    "ambient"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "config:supabase/functions/tsconfig.json",
+   "type": "config",
+   "name": "tsconfig.json",
+   "filePath": "supabase/functions/tsconfig.json",
+   "summary": "Configuración de TypeScript para las Edge Functions de Supabase: ESNext, resolución bundler, modo estricto y sin emisión.",
+   "tags": [
+    "configuration",
+    "typescript",
+    "edge-functions",
+    "build-system"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:tailwind.config.js",
+   "type": "file",
+   "name": "tailwind.config.js",
+   "filePath": "tailwind.config.js",
+   "summary": "Configuración de Tailwind CSS vacía (sin rutas de contenido ni extensiones), aparentemente residual.",
+   "tags": [
+    "config",
+    "tailwind",
+    "css",
+    "build-system"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:tsconfig.app.tsbuildinfo",
+   "type": "file",
+   "name": "tsconfig.app.tsbuildinfo",
+   "filePath": "tsconfig.app.tsbuildinfo",
+   "summary": "Artefacto generado por el compilador de TypeScript con información de compilación incremental del proyecto de la app; no es código fuente.",
+   "tags": [
+    "build-artifact",
+    "typescript",
+    "generado"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:vite.config.ts",
+   "type": "file",
+   "name": "vite.config.ts",
+   "filePath": "vite.config.ts",
+   "summary": "Configuración de Vite: plugin React, plugin propio que escribe public/version.json con el hash de git, VitePWA con Workbox (registro manual, precache, fallback SPA) y alias @ hacia src.",
+   "tags": [
+    "config",
+    "build-system",
+    "vite",
+    "pwa",
+    "entry-point"
+   ],
+   "complexity": "moderate",
+   "languageNotes": "Define __APP_VERSION__ en tiempo de build y excluye version.json del precache para que el chequeo de versión no quede cacheado."
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/store/notifPromptStore.ts",
+   "target": "function:src/store/notifPromptStore.ts:useNotifPromptStore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/notifPromptStore.ts",
+   "target": "function:src/store/notifPromptStore.ts:useNotifPromptStore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:normalizeSearch",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:normalizeSearch",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:matchesSearchQuery",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:matchesSearchQuery",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:useSearchStore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/searchStore.ts",
+   "target": "function:src/store/searchStore.ts:useSearchStore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/statsStore.ts",
+   "target": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/statsStore.ts",
+   "target": "function:src/store/statsStore.ts:useStatsUIStore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/timerStore.ts",
+   "target": "file:src/features/requests/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/store/timerStore.ts",
+   "target": "function:src/store/timerStore.ts:useTimerStore",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/timerStore.ts",
+   "target": "function:src/store/timerStore.ts:useTimerStore",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "file:src/store/customizationStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "file:src/store/useTheme.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "function:src/store/useBoardTheme.ts:useBoardTheme",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "function:src/store/useBoardTheme.ts:useBoardTheme",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/useTheme.ts",
+   "target": "function:src/store/useTheme.ts:useTheme",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/store/useTheme.ts",
+   "target": "function:src/store/useTheme.ts:useTheme",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/store/searchStore.ts:matchesSearchQuery",
+   "target": "function:src/store/searchStore.ts:normalizeSearch",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/store/useBoardTheme.ts:useBoardTheme",
+   "target": "function:src/store/useTheme.ts:useTheme",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "file:src/store/customizationStore.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/store/useBoardTheme.ts",
+   "target": "file:src/store/useTheme.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "config:supabase/config.toml",
+   "target": "file:supabase/functions/api/index.ts",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "config:supabase/functions/tsconfig.json",
+   "target": "file:supabase/functions/api/globals.d.ts",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "config:supabase/functions/tsconfig.json",
+   "target": "file:supabase/functions/api/index.ts",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:vite.config.ts",
+   "target": "file:src/main.tsx",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:vite.config.ts",
+   "target": "file:index.html",
+   "type": "configures",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:vite.config.ts",
+   "target": "file:public/sw-notifications.js",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/vite-env.d.ts",
+   "target": "file:vite.config.ts",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  },
+  {
+   "source": "file:supabase/functions/api/globals.d.ts",
+   "target": "file:supabase/functions/api/index.ts",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  }
+ ]
+}

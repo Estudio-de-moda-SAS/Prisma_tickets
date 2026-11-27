@@ -1,0 +1,2028 @@
+{
+ "scriptCompleted": true,
+ "directoryGroups": {
+  "supabase(root)": [
+   "file:supabase/functions/api/config.ts",
+   "file:supabase/functions/api/deps.ts",
+   "file:supabase/functions/api/index.ts",
+   "file:supabase/functions/api/router.ts",
+   "config:supabase/config.toml",
+   "file:supabase/functions/api/globals.d.ts",
+   "config:supabase/functions/tsconfig.json"
+  ],
+  "supabase/api/email": [
+   "file:supabase/functions/api/email/send.ts"
+  ],
+  "supabase/api/handlers": [
+   "file:supabase/functions/api/handlers/announcements.ts",
+   "file:supabase/functions/api/handlers/assignments.ts",
+   "file:supabase/functions/api/handlers/attachments.ts",
+   "file:supabase/functions/api/handlers/automationRules.ts",
+   "file:supabase/functions/api/handlers/boardTeams.ts",
+   "file:supabase/functions/api/handlers/closure.ts",
+   "file:supabase/functions/api/handlers/columns.ts",
+   "file:supabase/functions/api/handlers/comments.ts",
+   "file:supabase/functions/api/handlers/criteria.ts",
+   "file:supabase/functions/api/handlers/emailTemplates.ts",
+   "file:supabase/functions/api/handlers/exportJobs.ts",
+   "file:supabase/functions/api/handlers/feedback.ts",
+   "file:supabase/functions/api/handlers/history.ts",
+   "file:supabase/functions/api/handlers/labels.ts",
+   "file:supabase/functions/api/handlers/migration.ts",
+   "file:supabase/functions/api/handlers/notifications.ts",
+   "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "file:supabase/functions/api/handlers/orgUnits.ts",
+   "file:supabase/functions/api/handlers/requests.ts",
+   "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "file:supabase/functions/api/handlers/solvi.ts",
+   "file:supabase/functions/api/handlers/sprints.ts",
+   "file:supabase/functions/api/handlers/subteams.ts",
+   "file:supabase/functions/api/handlers/system.ts",
+   "file:supabase/functions/api/handlers/teamColumnConfig.ts",
+   "file:supabase/functions/api/handlers/templates.ts",
+   "file:supabase/functions/api/handlers/transfers.ts",
+   "file:supabase/functions/api/handlers/users.ts"
+  ],
+  "src/features/requests/components": [
+   "file:src/features/requests/components/BoardFilters.tsx",
+   "file:src/features/requests/components/BoardSearch.tsx",
+   "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "file:src/features/requests/components/ClosureModal.tsx",
+   "file:src/features/requests/components/CreateRequestModal.tsx",
+   "file:src/features/requests/components/HomeRequestModal.tsx",
+   "file:src/features/requests/components/IntakeBadge.tsx",
+   "file:src/features/requests/components/KanbanBoard.tsx",
+   "file:src/features/requests/components/KanbanColumn.tsx",
+   "file:src/features/requests/components/MemberHoursBar.tsx",
+   "file:src/features/requests/components/RequestCard.tsx",
+   "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "file:src/features/requests/components/RequestModal.tsx",
+   "file:src/features/requests/components/RequestModalComponents.tsx",
+   "file:src/features/requests/components/RequestTimelines.tsx",
+   "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "file:src/features/requests/components/SolviTicketModal.tsx",
+   "file:src/features/requests/components/TasksTable.tsx",
+   "file:src/features/requests/components/TransferTicketModal.tsx",
+   "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "file:src/features/requests/components/mentions/CommentText.tsx",
+   "file:src/features/requests/components/mentions/MentionList.tsx",
+   "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "file:src/features/requests/components/stats/BarChart.tsx",
+   "file:src/features/requests/components/stats/FlowSection.tsx",
+   "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "file:src/features/requests/components/stats/SprintSection.tsx",
+   "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "file:src/features/requests/components/stats/statsFormat.ts",
+   "file:src/features/requests/components/stats/useClickOutside.ts",
+   "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "file:src/features/requests/components/AssignBugModal.tsx",
+   "file:src/features/requests/components/BoardCustomization.tsx",
+   "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "file:src/features/requests/components/RichTextEditor.tsx",
+   "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "file:src/features/requests/components/StatsSkeleton.tsx",
+   "file:src/features/requests/components/stats/StatsTeamTabs.tsx"
+  ],
+  "src/features/requests/hooks": [
+   "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "file:src/features/requests/hooks/useAnnouncements.ts",
+   "file:src/features/requests/hooks/useClientFeedback.ts",
+   "file:src/features/requests/hooks/useCloseRequest.ts",
+   "file:src/features/requests/hooks/useColumnMap.ts",
+   "file:src/features/requests/hooks/useCreateRequest.ts",
+   "file:src/features/requests/hooks/useCurrentUser.ts",
+   "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "file:src/features/requests/hooks/useDragScroll.ts",
+   "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "file:src/features/requests/hooks/useMoveRequests.ts",
+   "file:src/features/requests/hooks/useNotifications.ts",
+   "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "file:src/features/requests/hooks/useRequests.ts",
+   "file:src/features/requests/hooks/useSubRequest.ts",
+   "file:src/features/requests/hooks/useTasksData.ts",
+   "file:src/features/requests/hooks/useTicketResolver.ts",
+   "file:src/features/requests/hooks/useTransferTicket.ts",
+   "file:src/features/requests/hooks/stats/constants.ts",
+   "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "file:src/features/requests/hooks/stats/lib/math.ts",
+   "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "file:src/features/requests/hooks/stats/types.ts",
+   "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "file:src/features/requests/hooks/useStatsData.ts",
+   "file:src/features/requests/hooks/useSolviActions.ts",
+   "file:src/features/requests/hooks/useSolviAns.ts",
+   "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "file:src/features/requests/hooks/useUsers.ts",
+   "file:src/features/requests/hooks/useAttachments.ts",
+   "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "file:src/features/requests/hooks/useComments.ts",
+   "file:src/features/requests/hooks/useDepartments.ts",
+   "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "file:src/features/requests/hooks/useLabels.ts",
+   "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "file:src/features/requests/hooks/useSolviComments.ts",
+   "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "file:src/features/requests/hooks/useSolviTickets.ts",
+   "file:src/features/requests/hooks/useSprints.ts",
+   "file:src/features/requests/hooks/useSubTeams.ts",
+   "file:src/features/requests/hooks/useTeams.ts"
+  ],
+  "src/features/requests/mock": [
+   "file:src/features/requests/mock/Mockboard.ts"
+  ],
+  "src/features/requests/services": [
+   "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "file:src/features/requests/services/HolidayService.service.ts",
+   "file:src/features/requests/services/SolviAttachments.service.ts",
+   "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "file:src/features/requests/services/SolviShifts.service.ts",
+   "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts"
+  ],
+  "src/features/requests/templates": [
+   "file:src/features/requests/templates/types.ts",
+   "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "file:src/features/requests/templates/renameUtils.ts"
+  ],
+  "src/features/requests/types.ts": [
+   "file:src/features/requests/types.ts"
+  ],
+  "supabase/api/jobs": [
+   "file:supabase/functions/api/jobs/exportJob.ts",
+   "file:supabase/functions/api/jobs/renameJob.ts"
+  ],
+  "supabase/api/lib": [
+   "file:supabase/functions/api/lib/auth.ts",
+   "file:supabase/functions/api/lib/history.ts",
+   "file:supabase/functions/api/lib/https.ts",
+   "file:supabase/functions/api/lib/storage.ts",
+   "file:supabase/functions/api/lib/supabase.ts"
+  ],
+  "supabase/api/shared": [
+   "file:supabase/functions/api/shared/boardAccess.ts",
+   "file:supabase/functions/api/shared/criteria.ts",
+   "file:supabase/functions/api/shared/email.ts",
+   "file:supabase/functions/api/shared/mappers.ts",
+   "file:supabase/functions/api/shared/notifications.ts",
+   "file:supabase/functions/api/shared/requests.ts",
+   "file:supabase/functions/api/shared/selects.ts",
+   "file:supabase/functions/api/shared/templateKeys.ts",
+   "file:supabase/functions/api/shared/types.ts"
+  ],
+  "src/features/requests/lib": [
+   "file:src/features/requests/lib/mentions.ts"
+  ],
+  "src/features/requests/types": [
+   "file:src/features/requests/types/SolviTicket.ts"
+  ],
+  "src/components": [
+   "file:src/components/ConfigPanel.tsx",
+   "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "file:src/components/hooks/useVersionCheck.ts",
+   "file:src/components/layout/AnnouncementBanner.tsx",
+   "file:src/components/layout/AnnouncementModal.tsx",
+   "file:src/components/layout/AppLayout.tsx",
+   "file:src/components/layout/BugReportModal.tsx",
+   "file:src/components/layout/FloatingTimer.tsx",
+   "file:src/components/layout/NotificationBell.tsx",
+   "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "file:src/components/layout/SatisfactionModal.tsx",
+   "file:src/components/layout/Sidebar.tsx",
+   "file:src/components/layout/Topbar.tsx",
+   "file:src/components/layout/VersionUpdateBanner.tsx",
+   "file:src/components/layout/siderbarConstants.ts",
+   "file:src/components/hooks/useMediaQuery.ts",
+   "file:src/components/layout/ThemeToggle.tsx"
+  ],
+  "prisma-migrations": [
+   "file:prisma-migrations/src/config/mapping.ts",
+   "file:prisma-migrations/src/config/runConfig.ts",
+   "file:prisma-migrations/src/lib/apiClient.ts",
+   "file:prisma-migrations/src/lib/buildPayload.ts",
+   "file:prisma-migrations/src/lib/excel.ts",
+   "file:prisma-migrations/src/lib/transforms.ts",
+   "file:prisma-migrations/src/lib/users.ts",
+   "file:prisma-migrations/src/phases/01-resolve.ts",
+   "file:prisma-migrations/src/phases/02-validate.ts",
+   "file:prisma-migrations/src/phases/03-load.ts",
+   "file:prisma-migrations/src/run.ts",
+   "document:prisma-migrations/README.md",
+   "config:prisma-migrations/package.json",
+   "config:prisma-migrations/tsconfig.json"
+  ],
+  "src/features/exports/hooks": [
+   "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "file:src/features/exports/hooks/useExportData.ts",
+   "file:src/features/exports/hooks/useExportHistory.ts",
+   "file:src/features/exports/hooks/useExportJob.ts"
+  ],
+  "src/features/exports/services": [
+   "file:src/features/exports/services/buildCsv.ts",
+   "file:src/features/exports/services/buildXlsx.ts",
+   "file:src/features/exports/services/columnRegistry.ts",
+   "file:src/features/exports/services/processExportArtifact.ts"
+  ],
+  "src/features/exports/types.ts": [
+   "file:src/features/exports/types.ts"
+  ],
+  "src/auth": [
+   "file:src/auth/AuthProvider.tsx",
+   "file:src/auth/msal.ts",
+   "file:src/auth/supabaseAuth.ts",
+   "file:src/auth/BaseSharePointListService.ts",
+   "file:src/auth/roles.ts",
+   "file:src/auth/useAuth.ts"
+  ],
+  ".github": [
+   "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml"
+  ],
+  "(root)": [
+   "document:README.md",
+   "file:index.html",
+   "config:package.json",
+   "config:tsconfig.app.json",
+   "config:tsconfig.json",
+   "config:tsconfig.node.json",
+   "config:typedoc.backend.json",
+   "config:typedoc.frontend.json",
+   "config:typedoc.json",
+   "file:eslint.config.js",
+   "file:postcss.config.js",
+   "file:tailwind.config.js",
+   "file:tsconfig.app.tsbuildinfo",
+   "file:vite.config.ts"
+  ],
+  "public": [
+   "config:public/manifest.json",
+   "config:public/staticwebapp.config.json",
+   "config:public/version.json",
+   "file:public/_redirects",
+   "file:public/sw-notifications.js"
+  ],
+  "src/styles": [
+   "file:src/styles/LoginPage.css",
+   "file:src/styles/automations.css",
+   "file:src/styles/clientRequests.css",
+   "file:src/styles/configPanel.css",
+   "file:src/styles/customization.css",
+   "file:src/styles/feedback.css",
+   "file:src/styles/filters.css",
+   "file:src/styles/globals.css",
+   "file:src/styles/kanban.css",
+   "file:src/styles/kanbanSkeleton.css",
+   "file:src/styles/layout.css",
+   "file:src/styles/mentions.css",
+   "file:src/styles/notifications.css",
+   "file:src/styles/onboarding.css",
+   "file:src/styles/requestCard.css",
+   "file:src/styles/solvi.css",
+   "file:src/styles/stats.css",
+   "file:src/styles/tasks.css",
+   "file:src/styles/themeLight.css",
+   "file:src/styles/variables.css"
+  ],
+  ".ua": [
+   "config:.ua/config.json"
+  ],
+  "src(root)": [
+   "file:src/App.tsx",
+   "file:src/config.ts",
+   "file:src/index.css",
+   "file:src/main.tsx",
+   "file:src/vite-env.d.ts"
+  ],
+  "src/api": [
+   "file:src/api/BaseSharePointListService.ts"
+  ],
+  "src/features/automations/components": [
+   "file:src/features/automations/components/CreateAutomationModal.tsx"
+  ],
+  "src/features/automations/hooks": [
+   "file:src/features/automations/hooks/useAutomationRules.ts"
+  ],
+  "src/features/automations/types.ts": [
+   "file:src/features/automations/types.ts"
+  ],
+  "src/features/stats/types.ts": [
+   "file:src/features/stats/types.ts"
+  ],
+  "src/graph": [
+   "file:src/graph/GraphRest.ts",
+   "file:src/graph/GraphServicesProvider.tsx",
+   "file:src/graph/useGraphServices.ts"
+  ],
+  "src/hooks": [
+   "file:src/hooks/useInstallPrompt.ts"
+  ],
+  "src/lib": [
+   "file:src/lib/apiClient.ts",
+   "file:src/lib/compressImage.ts",
+   "file:src/lib/supabaseClient.ts"
+  ],
+  "src/pages": [
+   "file:src/pages/AutomationsPage.tsx",
+   "file:src/pages/BoardPage.tsx",
+   "file:src/pages/ClientRequestsPage.tsx",
+   "file:src/pages/HomePage.tsx",
+   "file:src/pages/LoginPage.tsx",
+   "file:src/pages/MyMentionsPage.tsx",
+   "file:src/pages/MyRequestsPage.tsx",
+   "file:src/pages/NewRequestPage.tsx",
+   "file:src/pages/OnBoardingPage.tsx",
+   "file:src/pages/PrismaAdminPage.tsx",
+   "file:src/pages/RequestsPage.tsx",
+   "file:src/pages/StatsPage.tsx",
+   "file:src/pages/TasksPage.tsx",
+   "file:src/pages/TeamRequestsPage.tsx",
+   "file:src/pages/TicketPage.tsx",
+   "file:src/pages/integrations/SolviRequestPage.tsx",
+   "file:src/pages/integrations/SolviTicketsPage.tsx"
+  ],
+  "src/store": [
+   "file:src/store/automationStore.ts",
+   "file:src/store/boardStore.ts",
+   "file:src/store/configStore.ts",
+   "file:src/store/customizationStore.ts",
+   "file:src/store/filterStore.ts",
+   "file:src/store/intakeStore.ts",
+   "file:src/store/mobileNavStore.ts",
+   "file:src/store/notifPromptStore.ts",
+   "file:src/store/searchStore.ts",
+   "file:src/store/statsStore.ts",
+   "file:src/store/timerStore.ts",
+   "file:src/store/useBoardTheme.ts",
+   "file:src/store/useTheme.ts"
+  ],
+  "src/types": [
+   "file:src/types/commons.ts",
+   "file:src/types/supabase.types.ts"
+  ]
+ },
+ "nodeTypeGroups": {
+  "file": [
+   "file:supabase/functions/api/config.ts",
+   "file:supabase/functions/api/deps.ts",
+   "file:supabase/functions/api/email/send.ts",
+   "file:supabase/functions/api/handlers/announcements.ts",
+   "file:supabase/functions/api/handlers/assignments.ts",
+   "file:supabase/functions/api/handlers/attachments.ts",
+   "file:supabase/functions/api/handlers/automationRules.ts",
+   "file:supabase/functions/api/handlers/boardTeams.ts",
+   "file:supabase/functions/api/handlers/closure.ts",
+   "file:supabase/functions/api/handlers/columns.ts",
+   "file:supabase/functions/api/handlers/comments.ts",
+   "file:supabase/functions/api/handlers/criteria.ts",
+   "file:supabase/functions/api/handlers/emailTemplates.ts",
+   "file:supabase/functions/api/handlers/exportJobs.ts",
+   "file:supabase/functions/api/handlers/feedback.ts",
+   "file:supabase/functions/api/handlers/history.ts",
+   "file:supabase/functions/api/handlers/labels.ts",
+   "file:supabase/functions/api/handlers/migration.ts",
+   "file:supabase/functions/api/handlers/notifications.ts",
+   "file:supabase/functions/api/handlers/notifyEvent.ts",
+   "file:supabase/functions/api/handlers/orgUnits.ts",
+   "file:supabase/functions/api/handlers/requests.ts",
+   "file:supabase/functions/api/handlers/resolutionRatings.ts",
+   "file:supabase/functions/api/handlers/solvi.ts",
+   "file:supabase/functions/api/handlers/sprints.ts",
+   "file:src/features/requests/components/BoardFilters.tsx",
+   "file:src/features/requests/components/BoardSearch.tsx",
+   "file:src/features/requests/components/ClientReviewBanner.tsx",
+   "file:src/features/requests/components/ClosureModal.tsx",
+   "file:src/features/requests/components/CreateRequestModal.tsx",
+   "file:src/features/requests/components/HomeRequestModal.tsx",
+   "file:src/features/requests/components/IntakeBadge.tsx",
+   "file:src/features/requests/components/KanbanBoard.tsx",
+   "file:src/features/requests/components/KanbanColumn.tsx",
+   "file:src/features/requests/components/MemberHoursBar.tsx",
+   "file:src/features/requests/components/RequestCard.tsx",
+   "file:src/features/requests/components/RequestHistoryModal.tsx",
+   "file:src/features/requests/components/RequestModal.tsx",
+   "file:src/features/requests/components/RequestModalComponents.tsx",
+   "file:src/features/requests/components/RequestTimelines.tsx",
+   "file:src/features/requests/components/ResolutionRatingModal.tsx",
+   "file:src/features/requests/components/SolviTicketModal.tsx",
+   "file:src/features/requests/components/TasksTable.tsx",
+   "file:src/features/requests/components/TransferTicketModal.tsx",
+   "file:src/features/requests/components/mentions/CommentComposer.tsx",
+   "file:src/features/requests/components/mentions/CommentText.tsx",
+   "file:src/features/requests/components/mentions/MentionList.tsx",
+   "file:src/features/requests/components/mentions/ParticipantsPanel.tsx",
+   "file:src/features/requests/components/mentions/mentionSuggestion.ts",
+   "file:src/features/requests/hooks/UseUpdateRequest.tsx",
+   "file:src/features/requests/hooks/useAcceptanceCriteria.ts",
+   "file:src/features/requests/hooks/useAnnouncements.ts",
+   "file:src/features/requests/hooks/useClientFeedback.ts",
+   "file:src/features/requests/hooks/useCloseRequest.ts",
+   "file:src/features/requests/hooks/useColumnMap.ts",
+   "file:src/features/requests/hooks/useCreateRequest.ts",
+   "file:src/features/requests/hooks/useCurrentUser.ts",
+   "file:src/features/requests/hooks/useCustomizationStyles.ts",
+   "file:src/features/requests/hooks/useDragScroll.ts",
+   "file:src/features/requests/hooks/useFilteredBoard.ts",
+   "file:src/features/requests/hooks/useKanbanAdmin.ts",
+   "file:src/features/requests/hooks/useMoveRequests.ts",
+   "file:src/features/requests/hooks/useNotifications.ts",
+   "file:src/features/requests/hooks/useRequestHistory.tsx",
+   "file:src/features/requests/hooks/useRequests.ts",
+   "file:src/features/requests/hooks/useSubRequest.ts",
+   "file:src/features/requests/hooks/useTasksData.ts",
+   "file:src/features/requests/hooks/useTicketResolver.ts",
+   "file:src/features/requests/hooks/useTransferTicket.ts",
+   "file:src/features/requests/mock/Mockboard.ts",
+   "file:src/features/requests/services/SupabaseRequestsService.ts",
+   "file:src/features/requests/templates/types.ts",
+   "file:src/features/requests/types.ts",
+   "file:supabase/functions/api/handlers/subteams.ts",
+   "file:supabase/functions/api/handlers/system.ts",
+   "file:supabase/functions/api/handlers/teamColumnConfig.ts",
+   "file:supabase/functions/api/handlers/templates.ts",
+   "file:supabase/functions/api/handlers/transfers.ts",
+   "file:supabase/functions/api/handlers/users.ts",
+   "file:supabase/functions/api/index.ts",
+   "file:supabase/functions/api/jobs/exportJob.ts",
+   "file:supabase/functions/api/jobs/renameJob.ts",
+   "file:supabase/functions/api/lib/auth.ts",
+   "file:supabase/functions/api/lib/history.ts",
+   "file:supabase/functions/api/lib/https.ts",
+   "file:supabase/functions/api/lib/storage.ts",
+   "file:supabase/functions/api/lib/supabase.ts",
+   "file:supabase/functions/api/router.ts",
+   "file:supabase/functions/api/shared/boardAccess.ts",
+   "file:supabase/functions/api/shared/criteria.ts",
+   "file:supabase/functions/api/shared/email.ts",
+   "file:supabase/functions/api/shared/mappers.ts",
+   "file:supabase/functions/api/shared/notifications.ts",
+   "file:supabase/functions/api/shared/requests.ts",
+   "file:supabase/functions/api/shared/selects.ts",
+   "file:supabase/functions/api/shared/templateKeys.ts",
+   "file:supabase/functions/api/shared/types.ts",
+   "file:src/features/requests/hooks/stats/constants.ts",
+   "file:src/features/requests/hooks/stats/lib/buildPrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/lib/calcBoard.ts",
+   "file:src/features/requests/hooks/stats/lib/calcFlowMetrics.ts",
+   "file:src/features/requests/hooks/stats/lib/calcGeneral.ts",
+   "file:src/features/requests/hooks/stats/lib/calcSprint.ts",
+   "file:src/features/requests/hooks/stats/lib/math.ts",
+   "file:src/features/requests/hooks/stats/lib/predicates.ts",
+   "file:src/features/requests/hooks/stats/lib/scoring.ts",
+   "file:src/features/requests/hooks/stats/lib/sprints.ts",
+   "file:src/features/requests/hooks/stats/types.ts",
+   "file:src/features/requests/hooks/stats/useBoardStats.ts",
+   "file:src/features/requests/hooks/stats/useFlowStats.ts",
+   "file:src/features/requests/hooks/stats/useGeneralStats.ts",
+   "file:src/features/requests/hooks/stats/usePrimaryTeamMap.ts",
+   "file:src/features/requests/hooks/stats/useSelectedSprints.ts",
+   "file:src/features/requests/hooks/stats/useSprintStats.ts",
+   "file:src/features/requests/hooks/stats/useStatsScope.ts",
+   "file:src/features/requests/hooks/stats/useStatsSource.ts",
+   "file:src/features/requests/hooks/useStatsData.ts",
+   "file:src/features/requests/hooks/useSolviActions.ts",
+   "file:src/features/requests/hooks/useSolviAns.ts",
+   "file:src/features/requests/hooks/useSolviArticulos.ts",
+   "file:src/features/requests/hooks/useSolviCategorias.ts",
+   "file:src/features/requests/hooks/useSolviSubcategorias.ts",
+   "file:src/features/requests/hooks/useSubTeamMembers.ts",
+   "file:src/features/requests/hooks/useUsers.ts",
+   "file:src/features/requests/lib/mentions.ts",
+   "file:src/features/requests/services/AnsSharepointSolvi.service.ts",
+   "file:src/features/requests/services/ArticulosSharepointSolvi.service.ts",
+   "file:src/features/requests/services/CategoriasSharepointSolvi.service.ts",
+   "file:src/features/requests/services/HolidayService.service.ts",
+   "file:src/features/requests/services/SolviAttachments.service.ts",
+   "file:src/features/requests/services/SolviBusinessDate.service.ts",
+   "file:src/features/requests/services/SolviShifts.service.ts",
+   "file:src/features/requests/services/SolviTicketAssignment.service.ts",
+   "file:src/features/requests/services/SolviTicketNotifications.service.ts",
+   "file:src/features/requests/services/SubcategoriasSharepointSolvi.service.ts",
+   "file:src/features/requests/services/TecnicosSharepointSolvi.service.ts",
+   "file:src/features/requests/types/SolviTicket.ts",
+   "file:src/components/ConfigPanel.tsx",
+   "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "file:src/components/hooks/useVersionCheck.ts",
+   "file:src/components/layout/AnnouncementBanner.tsx",
+   "file:src/components/layout/AnnouncementModal.tsx",
+   "file:src/components/layout/AppLayout.tsx",
+   "file:src/components/layout/BugReportModal.tsx",
+   "file:src/components/layout/FloatingTimer.tsx",
+   "file:src/components/layout/NotificationBell.tsx",
+   "file:src/components/layout/NotificationPermissionPrompt.tsx",
+   "file:src/components/layout/SatisfactionModal.tsx",
+   "file:src/components/layout/Sidebar.tsx",
+   "file:src/components/layout/Topbar.tsx",
+   "file:src/components/layout/VersionUpdateBanner.tsx",
+   "file:src/components/layout/siderbarConstants.ts",
+   "file:src/features/requests/components/stats/BarChart.tsx",
+   "file:src/features/requests/components/stats/FlowSection.tsx",
+   "file:src/features/requests/components/stats/GlobalSection.tsx",
+   "file:src/features/requests/components/stats/ResolutoresPanel.tsx",
+   "file:src/features/requests/components/stats/SprintSection.tsx",
+   "file:src/features/requests/components/stats/SprintSelector.tsx",
+   "file:src/features/requests/components/stats/StatsAtoms.tsx",
+   "file:src/features/requests/components/stats/StatsControlBar.tsx",
+   "file:src/features/requests/components/stats/TeamDetailSection.tsx",
+   "file:src/features/requests/components/stats/UserFilterDropdown.tsx",
+   "file:src/features/requests/components/stats/statsFormat.ts",
+   "file:src/features/requests/components/stats/useClickOutside.ts",
+   "file:src/features/requests/components/stats/useStatsAutoSelection.ts",
+   "file:prisma-migrations/src/config/mapping.ts",
+   "file:prisma-migrations/src/config/runConfig.ts",
+   "file:prisma-migrations/src/lib/apiClient.ts",
+   "file:prisma-migrations/src/lib/buildPayload.ts",
+   "file:prisma-migrations/src/lib/excel.ts",
+   "file:prisma-migrations/src/lib/transforms.ts",
+   "file:prisma-migrations/src/lib/users.ts",
+   "file:prisma-migrations/src/phases/01-resolve.ts",
+   "file:prisma-migrations/src/phases/02-validate.ts",
+   "file:prisma-migrations/src/phases/03-load.ts",
+   "file:prisma-migrations/src/run.ts",
+   "file:src/features/exports/hooks/useCreateExportJob.ts",
+   "file:src/features/exports/hooks/useExportData.ts",
+   "file:src/features/exports/hooks/useExportHistory.ts",
+   "file:src/features/exports/hooks/useExportJob.ts",
+   "file:src/features/exports/services/buildCsv.ts",
+   "file:src/features/exports/services/buildXlsx.ts",
+   "file:src/features/exports/services/columnRegistry.ts",
+   "file:src/features/exports/services/processExportArtifact.ts",
+   "file:src/features/exports/types.ts",
+   "file:src/auth/AuthProvider.tsx",
+   "file:src/auth/msal.ts",
+   "file:src/auth/supabaseAuth.ts",
+   "file:index.html",
+   "file:src/styles/LoginPage.css",
+   "file:src/styles/automations.css",
+   "file:src/styles/clientRequests.css",
+   "file:src/styles/configPanel.css",
+   "file:src/styles/customization.css",
+   "file:src/styles/feedback.css",
+   "file:src/styles/filters.css",
+   "file:src/styles/globals.css",
+   "file:src/styles/kanban.css",
+   "file:src/styles/kanbanSkeleton.css",
+   "file:src/styles/layout.css",
+   "file:src/styles/mentions.css",
+   "file:src/styles/notifications.css",
+   "file:src/styles/onboarding.css",
+   "file:src/styles/requestCard.css",
+   "file:src/styles/solvi.css",
+   "file:src/styles/stats.css",
+   "file:src/styles/tasks.css",
+   "file:src/styles/themeLight.css",
+   "file:src/styles/variables.css",
+   "file:eslint.config.js",
+   "file:postcss.config.js",
+   "file:public/_redirects",
+   "file:public/sw-notifications.js",
+   "file:src/App.tsx",
+   "file:src/api/BaseSharePointListService.ts",
+   "file:src/auth/BaseSharePointListService.ts",
+   "file:src/auth/roles.ts",
+   "file:src/auth/useAuth.ts",
+   "file:src/components/hooks/useMediaQuery.ts",
+   "file:src/components/layout/ThemeToggle.tsx",
+   "file:src/config.ts",
+   "file:src/features/automations/components/CreateAutomationModal.tsx",
+   "file:src/features/automations/hooks/useAutomationRules.ts",
+   "file:src/features/automations/types.ts",
+   "file:src/features/requests/components/AssignBugModal.tsx",
+   "file:src/features/requests/components/BoardCustomization.tsx",
+   "file:src/features/requests/components/KanbanSkeleton.tsx",
+   "file:src/features/requests/components/RichTextEditor.tsx",
+   "file:src/features/requests/components/SolviRequestFormControls.tsx",
+   "file:src/features/requests/components/SolviRequestPageComponents.tsx",
+   "file:src/features/requests/components/StatsSkeleton.tsx",
+   "file:src/features/requests/components/stats/StatsTeamTabs.tsx",
+   "file:src/features/requests/hooks/useAttachments.ts",
+   "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "file:src/features/requests/hooks/useBrowserNotifications.ts",
+   "file:src/features/requests/hooks/useComments.ts",
+   "file:src/features/requests/hooks/useDepartments.ts",
+   "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "file:src/features/requests/hooks/useLabels.ts",
+   "file:src/features/requests/hooks/useMySolviTickets.ts",
+   "file:src/features/requests/hooks/useRequestParticipants.ts",
+   "file:src/features/requests/hooks/useSolviComments.ts",
+   "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "file:src/features/requests/hooks/useSolviTickets.ts",
+   "file:src/features/requests/hooks/useSprints.ts",
+   "file:src/features/requests/hooks/useSubTeams.ts",
+   "file:src/features/requests/hooks/useTeams.ts",
+   "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "file:src/features/requests/templates/renameUtils.ts",
+   "file:src/features/stats/types.ts",
+   "file:src/graph/GraphRest.ts",
+   "file:src/graph/GraphServicesProvider.tsx",
+   "file:src/graph/useGraphServices.ts",
+   "file:src/hooks/useInstallPrompt.ts",
+   "file:src/index.css",
+   "file:src/lib/apiClient.ts",
+   "file:src/lib/compressImage.ts",
+   "file:src/lib/supabaseClient.ts",
+   "file:src/main.tsx",
+   "file:src/pages/AutomationsPage.tsx",
+   "file:src/pages/BoardPage.tsx",
+   "file:src/pages/ClientRequestsPage.tsx",
+   "file:src/pages/HomePage.tsx",
+   "file:src/pages/LoginPage.tsx",
+   "file:src/pages/MyMentionsPage.tsx",
+   "file:src/pages/MyRequestsPage.tsx",
+   "file:src/pages/NewRequestPage.tsx",
+   "file:src/pages/OnBoardingPage.tsx",
+   "file:src/pages/PrismaAdminPage.tsx",
+   "file:src/pages/RequestsPage.tsx",
+   "file:src/pages/StatsPage.tsx",
+   "file:src/pages/TasksPage.tsx",
+   "file:src/pages/TeamRequestsPage.tsx",
+   "file:src/pages/TicketPage.tsx",
+   "file:src/pages/integrations/SolviRequestPage.tsx",
+   "file:src/pages/integrations/SolviTicketsPage.tsx",
+   "file:src/store/automationStore.ts",
+   "file:src/store/boardStore.ts",
+   "file:src/store/configStore.ts",
+   "file:src/store/customizationStore.ts",
+   "file:src/store/filterStore.ts",
+   "file:src/store/intakeStore.ts",
+   "file:src/store/mobileNavStore.ts",
+   "file:src/store/notifPromptStore.ts",
+   "file:src/store/searchStore.ts",
+   "file:src/store/statsStore.ts",
+   "file:src/store/timerStore.ts",
+   "file:src/store/useBoardTheme.ts",
+   "file:src/store/useTheme.ts",
+   "file:src/types/commons.ts",
+   "file:src/types/supabase.types.ts",
+   "file:src/vite-env.d.ts",
+   "file:supabase/functions/api/globals.d.ts",
+   "file:tailwind.config.js",
+   "file:tsconfig.app.tsbuildinfo",
+   "file:vite.config.ts"
+  ],
+  "pipeline": [
+   "pipeline:.github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml"
+  ],
+  "document": [
+   "document:README.md",
+   "document:prisma-migrations/README.md"
+  ],
+  "config": [
+   "config:package.json",
+   "config:tsconfig.app.json",
+   "config:tsconfig.json",
+   "config:tsconfig.node.json",
+   "config:typedoc.backend.json",
+   "config:typedoc.frontend.json",
+   "config:typedoc.json",
+   "config:prisma-migrations/package.json",
+   "config:prisma-migrations/tsconfig.json",
+   "config:public/manifest.json",
+   "config:public/staticwebapp.config.json",
+   "config:public/version.json",
+   "config:.ua/config.json",
+   "config:supabase/config.toml",
+   "config:supabase/functions/tsconfig.json"
+  ]
+ },
+ "crossCategoryEdges": [
+  {
+   "fromType": "pipeline",
+   "toType": "config",
+   "edgeType": "depends_on",
+   "count": 1
+  },
+  {
+   "fromType": "pipeline",
+   "toType": "file",
+   "edgeType": "triggers",
+   "count": 1
+  },
+  {
+   "fromType": "pipeline",
+   "toType": "config",
+   "edgeType": "deploys",
+   "count": 1
+  },
+  {
+   "fromType": "pipeline",
+   "toType": "file",
+   "edgeType": "deploys",
+   "count": 1
+  },
+  {
+   "fromType": "document",
+   "toType": "file",
+   "edgeType": "documents",
+   "count": 9
+  },
+  {
+   "fromType": "document",
+   "toType": "config",
+   "edgeType": "documents",
+   "count": 2
+  },
+  {
+   "fromType": "document",
+   "toType": "config",
+   "edgeType": "related",
+   "count": 1
+  },
+  {
+   "fromType": "file",
+   "toType": "config",
+   "edgeType": "depends_on",
+   "count": 1
+  },
+  {
+   "fromType": "config",
+   "toType": "file",
+   "edgeType": "configures",
+   "count": 11
+  },
+  {
+   "fromType": "config",
+   "toType": "config",
+   "edgeType": "related",
+   "count": 3
+  },
+  {
+   "fromType": "config",
+   "toType": "config",
+   "edgeType": "depends_on",
+   "count": 6
+  },
+  {
+   "fromType": "config",
+   "toType": "document",
+   "edgeType": "related",
+   "count": 1
+  },
+  {
+   "fromType": "config",
+   "toType": "file",
+   "edgeType": "routes",
+   "count": 1
+  },
+  {
+   "fromType": "config",
+   "toType": "config",
+   "edgeType": "configures",
+   "count": 2
+  },
+  {
+   "fromType": "config",
+   "toType": "file",
+   "edgeType": "related",
+   "count": 2
+  }
+ ],
+ "interGroupImports": [
+  {
+   "from": "src/features/requests/components",
+   "to": "src/features/requests/hooks",
+   "count": 99
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/requests/hooks",
+   "count": 58
+  },
+  {
+   "from": "supabase/api/handlers",
+   "to": "supabase/api/shared",
+   "count": 48
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/requests/hooks",
+   "count": 40
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/features/requests/types.ts",
+   "count": 31
+  },
+  {
+   "from": "supabase(root)",
+   "to": "supabase/api/handlers",
+   "count": 28
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/lib",
+   "count": 28
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/requests/components",
+   "count": 25
+  },
+  {
+   "from": "src(root)",
+   "to": "src/pages",
+   "count": 17
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/features/requests/types.ts",
+   "count": 15
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/store",
+   "count": 15
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src(root)",
+   "count": 15
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/graph",
+   "count": 14
+  },
+  {
+   "from": "src/pages",
+   "to": "src/components",
+   "count": 12
+  },
+  {
+   "from": "src/pages",
+   "to": "src(root)",
+   "count": 12
+  },
+  {
+   "from": "supabase/api/handlers",
+   "to": "supabase/api/lib",
+   "count": 10
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/features/requests/services",
+   "count": 10
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src(root)",
+   "count": 10
+  },
+  {
+   "from": "src/components",
+   "to": "src/store",
+   "count": 9
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/components",
+   "count": 9
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/requests/types.ts",
+   "count": 9
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/auth",
+   "count": 8
+  },
+  {
+   "from": "supabase/api/shared",
+   "to": "supabase/api/lib",
+   "count": 7
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/types",
+   "count": 7
+  },
+  {
+   "from": "src/pages",
+   "to": "src/store",
+   "count": 7
+  },
+  {
+   "from": "src/pages",
+   "to": "src/graph",
+   "count": 7
+  },
+  {
+   "from": "src/pages",
+   "to": "src/auth",
+   "count": 7
+  },
+  {
+   "from": "src/components",
+   "to": "src/lib",
+   "count": 6
+  },
+  {
+   "from": "src/pages",
+   "to": "src/styles",
+   "count": 6
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src/graph",
+   "count": 6
+  },
+  {
+   "from": "supabase/api/jobs",
+   "to": "supabase/api/shared",
+   "count": 5
+  },
+  {
+   "from": "src/components",
+   "to": "src(root)",
+   "count": 5
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/types",
+   "count": 5
+  },
+  {
+   "from": "src/pages",
+   "to": "src/lib",
+   "count": 5
+  },
+  {
+   "from": "supabase(root)",
+   "to": "supabase/api/lib",
+   "count": 4
+  },
+  {
+   "from": "supabase/api/lib",
+   "to": "supabase(root)",
+   "count": 4
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/exports/hooks",
+   "count": 4
+  },
+  {
+   "from": "src/components",
+   "to": "src/auth",
+   "count": 4
+  },
+  {
+   "from": "src/features/exports/hooks",
+   "to": "src/features/exports/types.ts",
+   "count": 4
+  },
+  {
+   "from": "src/features/exports/hooks",
+   "to": "src/lib",
+   "count": 4
+  },
+  {
+   "from": "src/features/exports/services",
+   "to": "src/features/exports/types.ts",
+   "count": 4
+  },
+  {
+   "from": "src(root)",
+   "to": "src/auth",
+   "count": 4
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/features/requests/lib",
+   "count": 4
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src/lib",
+   "count": 4
+  },
+  {
+   "from": "supabase/api/handlers",
+   "to": "supabase/api/email",
+   "count": 3
+  },
+  {
+   "from": "supabase/api/handlers",
+   "to": "supabase/api/jobs",
+   "count": 3
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/exports/services",
+   "count": 3
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/exports/types.ts",
+   "count": 3
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/requests/templates",
+   "count": 3
+  },
+  {
+   "from": "src/features/exports/services",
+   "to": "src/features/requests/types.ts",
+   "count": 3
+  },
+  {
+   "from": "src/auth",
+   "to": "src/lib",
+   "count": 3
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/requests/templates",
+   "count": 3
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/requests/mock",
+   "count": 3
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/features/requests/templates",
+   "count": 3
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/graph",
+   "count": 3
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/store",
+   "count": 3
+  },
+  {
+   "from": "supabase/api/handlers",
+   "to": "supabase(root)",
+   "count": 2
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/features/requests/templates",
+   "count": 2
+  },
+  {
+   "from": "supabase(root)",
+   "to": "supabase/api/jobs",
+   "count": 2
+  },
+  {
+   "from": "supabase/api/jobs",
+   "to": "supabase(root)",
+   "count": 2
+  },
+  {
+   "from": "supabase/api/jobs",
+   "to": "supabase/api/lib",
+   "count": 2
+  },
+  {
+   "from": "src/components",
+   "to": "src/features/requests/types.ts",
+   "count": 2
+  },
+  {
+   "from": "src/components",
+   "to": "src/types",
+   "count": 2
+  },
+  {
+   "from": "src/auth",
+   "to": "src/types",
+   "count": 2
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/lib",
+   "count": 2
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/styles",
+   "count": 2
+  },
+  {
+   "from": "src/store",
+   "to": "src/features/requests/types.ts",
+   "count": 2
+  },
+  {
+   "from": "supabase/api/email",
+   "to": "supabase/api/lib",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/features/requests/mock",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/mock",
+   "to": "src/features/requests/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src/features/requests/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/templates",
+   "to": "src/features/requests/types.ts",
+   "count": 1
+  },
+  {
+   "from": "supabase(root)",
+   "to": "supabase/api/shared",
+   "count": 1
+  },
+  {
+   "from": "supabase/api/shared",
+   "to": "supabase/api/email",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/hooks",
+   "to": "src/features/requests/types",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/lib",
+   "to": "src/features/requests/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src/features/requests/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src/features/requests/types",
+   "count": 1
+  },
+  {
+   "from": "src/components",
+   "to": "src/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/features/exports/services",
+   "to": "src/lib",
+   "count": 1
+  },
+  {
+   "from": "src/auth",
+   "to": "src(root)",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/components",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/features/requests/components",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/features/requests/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/api",
+   "to": "src/graph",
+   "count": 1
+  },
+  {
+   "from": "src/api",
+   "to": "src/types",
+   "count": 1
+  },
+  {
+   "from": "src/auth",
+   "to": "src/graph",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/components",
+   "to": "src/features/automations/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/components",
+   "to": "src/features/automations/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/components",
+   "to": "src/lib",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/components",
+   "to": "src/store",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/hooks",
+   "to": "src/features/automations/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/hooks",
+   "to": "src/lib",
+   "count": 1
+  },
+  {
+   "from": "src/features/automations/types.ts",
+   "to": "src/features/requests/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/features/requests/services",
+   "count": 1
+  },
+  {
+   "from": "src/graph",
+   "to": "src/auth",
+   "count": 1
+  },
+  {
+   "from": "src/graph",
+   "to": "src(root)",
+   "count": 1
+  },
+  {
+   "from": "src/graph",
+   "to": "src/features/requests/services",
+   "count": 1
+  },
+  {
+   "from": "src/lib",
+   "to": "src/auth",
+   "count": 1
+  },
+  {
+   "from": "src/lib",
+   "to": "src(root)",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/graph",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/lib",
+   "count": 1
+  },
+  {
+   "from": "src(root)",
+   "to": "src/styles",
+   "count": 1
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/automations/components",
+   "count": 1
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/automations/hooks",
+   "count": 1
+  },
+  {
+   "from": "src/pages",
+   "to": "src/features/automations/types.ts",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/components",
+   "to": "src/auth",
+   "count": 1
+  },
+  {
+   "from": "src/features/requests/services",
+   "to": "src(root)",
+   "count": 1
+  }
+ ],
+ "intraGroupDensity": {
+  "supabase/api/email": {
+   "internalEdges": 0,
+   "totalEdges": 5,
+   "density": 0
+  },
+  "supabase/api/lib": {
+   "internalEdges": 0,
+   "totalEdges": 28,
+   "density": 0
+  },
+  "supabase/api/handlers": {
+   "internalEdges": 0,
+   "totalEdges": 94,
+   "density": 0
+  },
+  "supabase/api/shared": {
+   "internalEdges": 0,
+   "totalEdges": 62,
+   "density": 0
+  },
+  "supabase(root)": {
+   "internalEdges": 2,
+   "totalEdges": 45,
+   "density": 0.04
+  },
+  "supabase/api/jobs": {
+   "internalEdges": 0,
+   "totalEdges": 14,
+   "density": 0
+  },
+  "src/features/requests/components": {
+   "internalEdges": 54,
+   "totalEdges": 249,
+   "density": 0.22
+  },
+  "src/features/requests/hooks": {
+   "internalEdges": 72,
+   "totalEdges": 392,
+   "density": 0.18
+  },
+  "src/features/requests/types.ts": {
+   "internalEdges": 0,
+   "totalEdges": 66,
+   "density": 0
+  },
+  "src/features/requests/templates": {
+   "internalEdges": 2,
+   "totalEdges": 14,
+   "density": 0.14
+  },
+  "src/features/requests/mock": {
+   "internalEdges": 0,
+   "totalEdges": 5,
+   "density": 0
+  },
+  "src/features/requests/services": {
+   "internalEdges": 7,
+   "totalEdges": 33,
+   "density": 0.21
+  },
+  "src/features/requests/types": {
+   "internalEdges": 0,
+   "totalEdges": 2,
+   "density": 0
+  },
+  "src/features/requests/lib": {
+   "internalEdges": 0,
+   "totalEdges": 5,
+   "density": 0
+  },
+  "src/components": {
+   "internalEdges": 38,
+   "totalEdges": 142,
+   "density": 0.27
+  },
+  "src(root)": {
+   "internalEdges": 1,
+   "totalEdges": 74,
+   "density": 0.01
+  },
+  "src/store": {
+   "internalEdges": 2,
+   "totalEdges": 39,
+   "density": 0.05
+  },
+  "src/features/exports/hooks": {
+   "internalEdges": 0,
+   "totalEdges": 12,
+   "density": 0
+  },
+  "src/features/exports/services": {
+   "internalEdges": 3,
+   "totalEdges": 14,
+   "density": 0.21
+  },
+  "src/features/exports/types.ts": {
+   "internalEdges": 0,
+   "totalEdges": 11,
+   "density": 0
+  },
+  "src/lib": {
+   "internalEdges": 1,
+   "totalEdges": 59,
+   "density": 0.02
+  },
+  "src/auth": {
+   "internalEdges": 3,
+   "totalEdges": 36,
+   "density": 0.08
+  },
+  "src/types": {
+   "internalEdges": 0,
+   "totalEdges": 17,
+   "density": 0
+  },
+  "src/hooks": {
+   "internalEdges": 0,
+   "totalEdges": 1,
+   "density": 0
+  },
+  "prisma-migrations": {
+   "internalEdges": 31,
+   "totalEdges": 31,
+   "density": 1
+  },
+  "src/pages": {
+   "internalEdges": 0,
+   "totalEdges": 174,
+   "density": 0
+  },
+  "src/api": {
+   "internalEdges": 0,
+   "totalEdges": 2,
+   "density": 0
+  },
+  "src/graph": {
+   "internalEdges": 3,
+   "totalEdges": 39,
+   "density": 0.08
+  },
+  "src/features/automations/components": {
+   "internalEdges": 0,
+   "totalEdges": 5,
+   "density": 0
+  },
+  "src/features/automations/hooks": {
+   "internalEdges": 0,
+   "totalEdges": 4,
+   "density": 0
+  },
+  "src/features/automations/types.ts": {
+   "internalEdges": 0,
+   "totalEdges": 4,
+   "density": 0
+  },
+  "src/styles": {
+   "internalEdges": 0,
+   "totalEdges": 9,
+   "density": 0
+  }
+ },
+ "deploymentTopology": {
+  "hasDockerfile": false,
+  "hasCompose": false,
+  "hasK8s": false,
+  "hasTerraform": false,
+  "hasCI": true,
+  "infraFiles": [
+   ".github/workflows/azure-static-web-apps-white-coast-0bebe6a0f.yml",
+   "public/staticwebapp.config.json",
+   "public/_redirects",
+   "supabase/config.toml"
+  ]
+ },
+ "dependencyDirection": [
+  {
+   "dependent": "supabase/api/email",
+   "dependsOn": "supabase/api/lib"
+  },
+  {
+   "dependent": "supabase/api/handlers",
+   "dependsOn": "supabase/api/lib"
+  },
+  {
+   "dependent": "supabase/api/handlers",
+   "dependsOn": "supabase/api/shared"
+  },
+  {
+   "dependent": "supabase/api/handlers",
+   "dependsOn": "supabase/api/email"
+  },
+  {
+   "dependent": "supabase(root)",
+   "dependsOn": "supabase/api/handlers"
+  },
+  {
+   "dependent": "supabase/api/handlers",
+   "dependsOn": "supabase/api/jobs"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/features/requests/hooks"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/features/requests/templates"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/features/requests/mock"
+  },
+  {
+   "dependent": "src/features/requests/mock",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/services",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/templates",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "supabase(root)",
+   "dependsOn": "supabase/api/jobs"
+  },
+  {
+   "dependent": "supabase(root)",
+   "dependsOn": "supabase/api/lib"
+  },
+  {
+   "dependent": "supabase/api/jobs",
+   "dependsOn": "supabase/api/lib"
+  },
+  {
+   "dependent": "supabase/api/jobs",
+   "dependsOn": "supabase/api/shared"
+  },
+  {
+   "dependent": "supabase(root)",
+   "dependsOn": "supabase/api/shared"
+  },
+  {
+   "dependent": "supabase/api/shared",
+   "dependsOn": "supabase/api/lib"
+  },
+  {
+   "dependent": "supabase/api/shared",
+   "dependsOn": "supabase/api/email"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/features/requests/services"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/features/requests/types"
+  },
+  {
+   "dependent": "src/features/requests/lib",
+   "dependsOn": "src/features/requests/hooks"
+  },
+  {
+   "dependent": "src/features/requests/services",
+   "dependsOn": "src/features/requests/types"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src(root)"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/requests/hooks"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/store"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/exports/hooks"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/exports/services"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/exports/types.ts"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/features/requests/templates"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/auth"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/types"
+  },
+  {
+   "dependent": "src/components",
+   "dependsOn": "src/hooks"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src(root)"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/store"
+  },
+  {
+   "dependent": "src/features/exports/hooks",
+   "dependsOn": "src/features/exports/types.ts"
+  },
+  {
+   "dependent": "src/features/exports/hooks",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/exports/services",
+   "dependsOn": "src/features/exports/types.ts"
+  },
+  {
+   "dependent": "src/features/exports/services",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/exports/services",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src(root)",
+   "dependsOn": "src/auth"
+  },
+  {
+   "dependent": "src/auth",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/auth",
+   "dependsOn": "src/types"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src(root)"
+  },
+  {
+   "dependent": "src(root)",
+   "dependsOn": "src/pages"
+  },
+  {
+   "dependent": "src/api",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/api",
+   "dependsOn": "src/types"
+  },
+  {
+   "dependent": "src/auth",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/features/automations/components",
+   "dependsOn": "src/features/automations/hooks"
+  },
+  {
+   "dependent": "src/features/automations/components",
+   "dependsOn": "src/features/automations/types.ts"
+  },
+  {
+   "dependent": "src/features/automations/components",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/automations/components",
+   "dependsOn": "src/store"
+  },
+  {
+   "dependent": "src/features/automations/hooks",
+   "dependsOn": "src/features/automations/types.ts"
+  },
+  {
+   "dependent": "src/features/automations/hooks",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/automations/types.ts",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/components"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/styles"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/features/requests/services"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/types"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/types"
+  },
+  {
+   "dependent": "src/graph",
+   "dependsOn": "src(root)"
+  },
+  {
+   "dependent": "src/features/requests/services",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/lib",
+   "dependsOn": "src(root)"
+  },
+  {
+   "dependent": "src(root)",
+   "dependsOn": "src/styles"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/automations/components"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/automations/hooks"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/automations/types.ts"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/store"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/styles"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/components"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/requests/components"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/requests/hooks"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/requests/templates"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/auth"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/features/requests/mock"
+  },
+  {
+   "dependent": "src/pages",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/store",
+   "dependsOn": "src/features/requests/types.ts"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/auth"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/features/requests/templates"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/features/requests/components",
+   "dependsOn": "src/features/requests/lib"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/graph"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/auth"
+  },
+  {
+   "dependent": "src/features/requests/hooks",
+   "dependsOn": "src/store"
+  },
+  {
+   "dependent": "src/features/requests/services",
+   "dependsOn": "src/lib"
+  },
+  {
+   "dependent": "src/features/requests/services",
+   "dependsOn": "src(root)"
+  }
+ ],
+ "fileStats": {
+  "totalFileNodes": 325,
+  "filesPerGroup": {
+   "supabase(root)": 7,
+   "supabase/api/email": 1,
+   "supabase/api/handlers": 28,
+   "src/features/requests/components": 45,
+   "src/features/requests/hooks": 62,
+   "src/features/requests/mock": 1,
+   "src/features/requests/services": 12,
+   "src/features/requests/templates": 3,
+   "src/features/requests/types.ts": 1,
+   "supabase/api/jobs": 2,
+   "supabase/api/lib": 5,
+   "supabase/api/shared": 9,
+   "src/features/requests/lib": 1,
+   "src/features/requests/types": 1,
+   "src/components": 28,
+   "prisma-migrations": 14,
+   "src/features/exports/hooks": 4,
+   "src/features/exports/services": 4,
+   "src/features/exports/types.ts": 1,
+   "src/auth": 6,
+   ".github": 1,
+   "(root)": 14,
+   "public": 5,
+   "src/styles": 20,
+   ".ua": 1,
+   "src(root)": 5,
+   "src/api": 1,
+   "src/features/automations/components": 1,
+   "src/features/automations/hooks": 1,
+   "src/features/automations/types.ts": 1,
+   "src/features/stats/types.ts": 1,
+   "src/graph": 3,
+   "src/hooks": 1,
+   "src/lib": 3,
+   "src/pages": 17,
+   "src/store": 13,
+   "src/types": 2
+  },
+  "nodeTypeCounts": {
+   "file": 307,
+   "pipeline": 1,
+   "document": 2,
+   "config": 15
+  }
+ },
+ "fileFanIn": {
+  "file:src/features/requests/types.ts": 66,
+  "file:src/config.ts": 46,
+  "file:src/lib/apiClient.ts": 45,
+  "file:src/features/requests/hooks/useBoardMetadata.ts": 31,
+  "file:supabase/functions/api/shared/types.ts": 29,
+  "file:src/features/requests/hooks/useCurrentUser.ts": 26,
+  "file:src/features/requests/hooks/useSprints.ts": 24,
+  "file:src/graph/GraphServicesProvider.tsx": 21,
+  "file:src/features/requests/hooks/useUsers.ts": 18,
+  "file:src/components/hooks/useMediaQuery.ts": 18,
+  "file:src/types/commons.ts": 17,
+  "file:src/auth/AuthProvider.tsx": 16,
+  "file:supabase/functions/api/lib/supabase.ts": 15,
+  "file:src/graph/GraphRest.ts": 14,
+  "file:src/features/requests/hooks/useRequests.ts": 13,
+  "file:src/features/requests/hooks/stats/types.ts": 12,
+  "file:src/features/exports/types.ts": 11,
+  "file:src/features/requests/templates/types.ts": 10,
+  "file:src/features/requests/hooks/useSubTeams.ts": 10,
+  "file:src/store/boardStore.ts": 10,
+  "file:src/components/ConfigPanel.tsx": 10,
+  "file:src/features/requests/hooks/useSubTeamMembers.ts": 10,
+  "file:supabase/functions/api/shared/notifications.ts": 9,
+  "file:src/features/requests/components/stats/statsFormat.ts": 9,
+  "file:src/lib/supabaseClient.ts": 9
+ },
+ "fileFanOut": {
+  "file:src/features/requests/components/RequestModal.tsx": 34,
+  "file:supabase/functions/api/router.ts": 29,
+  "file:src/pages/BoardPage.tsx": 26,
+  "file:src/App.tsx": 23,
+  "file:src/features/requests/components/HomeRequestModal.tsx": 21,
+  "file:src/features/requests/components/KanbanBoard.tsx": 19,
+  "file:src/pages/HomePage.tsx": 19,
+  "file:src/pages/StatsPage.tsx": 17,
+  "file:src/components/ConfigPanel.tsx": 16,
+  "file:src/features/requests/components/CreateRequestModal.tsx": 14,
+  "file:src/features/requests/components/TasksTable.tsx": 13,
+  "file:src/components/ConfigPanelComponents/ExportsConfig.tsx": 13,
+  "file:src/pages/NewRequestPage.tsx": 13,
+  "file:src/pages/TeamRequestsPage.tsx": 13,
+  "file:src/features/requests/components/SolviTicketModal.tsx": 11,
+  "file:src/features/requests/hooks/useSolviActions.ts": 11,
+  "file:src/pages/integrations/SolviRequestPage.tsx": 11,
+  "file:src/features/requests/hooks/useStatsData.ts": 10,
+  "file:src/components/layout/Topbar.tsx": 10,
+  "file:src/pages/TicketPage.tsx": 10,
+  "file:src/components/layout/AppLayout.tsx": 9,
+  "file:src/components/layout/Sidebar.tsx": 9,
+  "file:src/features/requests/components/RequestCard.tsx": 8,
+  "file:supabase/functions/api/index.ts": 8,
+  "file:src/features/requests/hooks/stats/lib/calcSprint.ts": 8
+ }
+}

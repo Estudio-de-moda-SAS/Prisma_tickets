@@ -1,0 +1,51 @@
+Downloading cpython-3.12.13-windows-x86_64-none (download) (20.9MiB)
+ Downloaded cpython-3.12.13-windows-x86_64-none (download)
+Found 36 batch files (21 logical batches, 11 multi-part):
+  batch-1-part-1.json: 26 nodes, 71 edges
+  batch-1-part-2.json: 25 nodes, 76 edges
+  batch-2-part-1.json: 55 nodes, 110 edges
+  batch-2-part-2.json: 52 nodes, 131 edges
+  batch-2-part-3.json: 29 nodes, 55 edges
+  batch-3-part-1.json: 59 nodes, 119 edges
+  batch-3-part-2.json: 45 nodes, 85 edges
+  batch-4-part-1.json: 39 nodes, 111 edges
+  batch-4-part-2.json: 34 nodes, 90 edges
+  batch-5-part-1.json: 43 nodes, 125 edges
+  batch-5-part-2.json: 19 nodes, 62 edges
+  batch-6-part-1.json: 39 nodes, 84 edges
+  batch-6-part-2.json: 35 nodes, 62 edges
+  batch-7-part-1.json: 38 nodes, 98 edges
+  batch-7-part-2.json: 37 nodes, 99 edges
+  batch-7-part-3.json: 16 nodes, 43 edges
+  batch-8.json: 32 nodes, 117 edges
+  batch-9-part-1.json: 34 nodes, 93 edges
+  batch-9-part-2.json: 28 nodes, 83 edges
+  batch-10.json: 34 nodes, 97 edges
+  batch-11.json: 37 nodes, 83 edges
+  batch-12.json: 28 nodes, 78 edges
+  batch-13.json: 1 nodes, 4 edges
+  batch-14.json: 9 nodes, 22 edges
+  batch-15.json: 3 nodes, 10 edges
+  batch-16.json: 3 nodes, 5 edges
+  batch-17.json: 20 nodes, 11 edges
+  batch-18-part-1.json: 29 nodes, 64 edges
+  batch-18-part-2.json: 49 nodes, 101 edges
+  batch-19-part-1.json: 50 nodes, 98 edges
+  batch-19-part-2.json: 41 nodes, 79 edges
+  batch-19-part-3.json: 13 nodes, 21 edges
+  batch-20-part-1.json: 52 nodes, 142 edges
+  batch-20-part-2.json: 42 nodes, 113 edges
+  batch-20-part-3.json: 8 nodes, 3 edges
+  batch-21.json: 23 nodes, 31 edges
+
+Input: 1127 nodes, 2676 edges
+
+Could not fix (1 issues — needs agent review):
+  - Edge function:src/features/requests/components/SolviTicketModal.tsx:SolviTicketModal \u2192 function:src/features/requests/hooks/useSolviActions.ts:notifySolviCommentActivity (calls): dropped, missing target 'function:src/features/requests/hooks/useSolviActions.ts:notifySolviCommentActivity'
+
+Output: 1127 nodes, 2675 edges
+
+Imports edge recovery:
+  Recovered 200 `imports` edges from importMap (325 entries scanned)
+
+Written to C:\Dev\Prisma_tickets\.ua\intermediate\assembled-graph.json (1269 KB)

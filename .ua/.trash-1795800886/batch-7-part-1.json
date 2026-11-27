@@ -1,0 +1,1327 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/components/ConfigPanel.tsx",
+   "type": "file",
+   "name": "ConfigPanel.tsx",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "summary": "Panel modal de configuración de PRISMA renderizado vía portal: navegación lateral por secciones (etiquetas, sub-equipos, sprints, kanbans, plantillas, usuarios, correos, avisos, exportaciones, organización) con selector de equipo, y además exporta los primitivos de UI compartidos (botones, selectores de color/emoji, formularios) que usan todas las subsecciones.",
+   "tags": [
+    "component",
+    "configuracion",
+    "admin-panel",
+    "ui-primitives",
+    "portal"
+   ],
+   "complexity": "complex",
+   "languageNotes": "Archivo que combina un contenedor principal con múltiples componentes pequeños exportados (AddBtn, SmBtn, FieldLabel...) reutilizados por los módulos hijos, generando una importación circular controlada con ConfigPanelComponents."
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:NavTeamSwitcher",
+   "type": "function",
+   "name": "NavTeamSwitcher",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    82,
+    157
+   ],
+   "summary": "Selector desplegable del equipo del board activo dentro de la navegación del panel de configuración.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:ConfigPanelTrigger",
+   "type": "function",
+   "name": "ConfigPanelTrigger",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    162,
+    203
+   ],
+   "summary": "Botón que abre el panel de configuración en un portal; se monta desde el Sidebar para usuarios con permisos.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "type": "function",
+   "name": "ConfigPanel",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    208,
+    471
+   ],
+   "summary": "Componente principal del panel: gestiona la sección activa, el equipo seleccionado y carga los hooks de etiquetas, plantillas, sprints, sub-equipos y correos para renderizar la subsección correspondiente.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:LabelForm",
+   "type": "function",
+   "name": "LabelForm",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    487,
+    503
+   ],
+   "summary": "Formulario reutilizable para crear o editar una etiqueta con nombre y color.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:ExternalTeamNotice",
+   "type": "function",
+   "name": "ExternalTeamNotice",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    504,
+    578
+   ],
+   "summary": "Aviso que se muestra cuando el equipo seleccionado no pertenece al usuario, limitando la edición.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:SimpleColorForm",
+   "type": "function",
+   "name": "SimpleColorForm",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    580,
+    594
+   ],
+   "summary": "Formulario genérico de nombre + color usado por sub-equipos y otras entidades simples.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:ItemRow",
+   "type": "function",
+   "name": "ItemRow",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    600,
+    613
+   ],
+   "summary": "Fila de lista genérica con indicador de color y acciones de editar/eliminar.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:EmojiPicker",
+   "type": "function",
+   "name": "EmojiPicker",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    615,
+    625
+   ],
+   "summary": "Cuadrícula de emojis seleccionables para iconos de plantillas.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:ColorPicker",
+   "type": "function",
+   "name": "ColorPicker",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    627,
+    637
+   ],
+   "summary": "Paleta de colores predefinida seleccionable compartida por los formularios de configuración.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "function",
+   "name": "FormActions",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    639,
+    646
+   ],
+   "summary": "Par de botones Guardar/Cancelar estándar para los formularios del panel.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "function",
+   "name": "AddBtn",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    648,
+    655
+   ],
+   "summary": "Botón estilizado para agregar un nuevo elemento en una lista de configuración.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:SmBtn",
+   "type": "function",
+   "name": "SmBtn",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    657,
+    665
+   ],
+   "summary": "Botón pequeño de acción secundaria con variantes visuales.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "function",
+   "name": "FieldLabel",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    667,
+    669
+   ],
+   "summary": "Etiqueta de campo de formulario con estilo uniforme.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:NavTooltip",
+   "type": "function",
+   "name": "NavTooltip",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    673,
+    697
+   ],
+   "summary": "Tooltip que muestra la descripción de cada sección de la navegación del panel.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanel.tsx:NavButton",
+   "type": "function",
+   "name": "NavButton",
+   "filePath": "src/components/ConfigPanel.tsx",
+   "lineRange": [
+    702,
+    733
+   ],
+   "summary": "Botón de navegación lateral que activa una sección del panel con icono y tooltip.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "type": "file",
+   "name": "AnnouncementsConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "summary": "Sección de administración de avisos (anuncios) de la plataforma: listado, creación y edición con audiencia por rol/departamento, vigencia y prioridad.",
+   "tags": [
+    "component",
+    "configuracion",
+    "anuncios",
+    "formulario",
+    "admin-panel"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:computeTargetRole",
+   "type": "function",
+   "name": "computeTargetRole",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    31,
+    40
+   ],
+   "summary": "Calcula el valor de rol destino serializado a partir de la audiencia seleccionada en el formulario.",
+   "tags": [
+    "utility",
+    "helper",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:parseTargetRole",
+   "type": "function",
+   "name": "parseTargetRole",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    42,
+    57
+   ],
+   "summary": "Interpreta el rol destino almacenado de un aviso y lo descompone en tipo de audiencia y departamento.",
+   "tags": [
+    "utility",
+    "helper",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:resolveAudienceLabel",
+   "type": "function",
+   "name": "resolveAudienceLabel",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    59,
+    73
+   ],
+   "summary": "Genera la etiqueta legible de la audiencia de un aviso usando la lista de departamentos.",
+   "tags": [
+    "utility",
+    "helper",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:HelpDot",
+   "type": "function",
+   "name": "HelpDot",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    114,
+    150
+   ],
+   "summary": "Indicador de ayuda con tooltip explicativo para campos del formulario de avisos.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementForm",
+   "type": "function",
+   "name": "AnnouncementForm",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    153,
+    353
+   ],
+   "summary": "Formulario de creación/edición de un aviso con título, mensaje, audiencia, fechas de vigencia y modo de visualización.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementRow",
+   "type": "function",
+   "name": "AnnouncementRow",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    356,
+    421
+   ],
+   "summary": "Fila de la lista de avisos con estado, audiencia y acciones de editar, activar o eliminar.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementsConfig",
+   "type": "function",
+   "name": "AnnouncementsConfig",
+   "filePath": "src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "lineRange": [
+    424,
+    506
+   ],
+   "summary": "Componente exportado de la sección de avisos que orquesta la lista y los formularios usando useAnnouncements.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "type": "file",
+   "name": "EmailsTemplatesConfig.tsx",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "summary": "Gestión de plantillas de correo HTML enviadas por eventos del sistema: listado, activación, creación, edición de metadatos y edición del cuerpo con vista previa.",
+   "tags": [
+    "component",
+    "configuracion",
+    "email-templates",
+    "formulario",
+    "admin-panel"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateList",
+   "type": "function",
+   "name": "EmailTemplateList",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "lineRange": [
+    7,
+    46
+   ],
+   "summary": "Lista exportada de plantillas de correo con acciones para crear, editar, activar/desactivar y eliminar.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateRow",
+   "type": "function",
+   "name": "EmailTemplateRow",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "lineRange": [
+    47,
+    85
+   ],
+   "summary": "Fila de una plantilla de correo con su evento asociado y estado activo.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateNewForm",
+   "type": "function",
+   "name": "EmailTemplateNewForm",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "lineRange": [
+    87,
+    134
+   ],
+   "summary": "Formulario para crear una nueva plantilla de correo con clave de evento y asunto.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateMetaForm",
+   "type": "function",
+   "name": "EmailTemplateMetaForm",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "lineRange": [
+    136,
+    173
+   ],
+   "summary": "Formulario para editar los metadatos (nombre, descripción, evento) de una plantilla de correo.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateForm",
+   "type": "function",
+   "name": "EmailTemplateForm",
+   "filePath": "src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "lineRange": [
+    221,
+    272
+   ],
+   "summary": "Editor del asunto y cuerpo HTML de la plantilla con vista previa renderizada.",
+   "tags": [
+    "component",
+    "react",
+    "configuracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "type": "file",
+   "name": "ExportHistoryList.tsx",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "summary": "Historial de exportaciones de tickets del usuario, con estado de cada trabajo, filtros aplicados y descarga del artefacto generado.",
+   "tags": [
+    "component",
+    "exportaciones",
+    "historial",
+    "descarga"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryList",
+   "type": "function",
+   "name": "ExportHistoryList",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "lineRange": [
+    17,
+    96
+   ],
+   "summary": "Lista exportada del historial de trabajos de exportación obtenida con useExportHistory.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryRow",
+   "type": "function",
+   "name": "ExportHistoryRow",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "lineRange": [
+    100,
+    195
+   ],
+   "summary": "Fila de un trabajo de exportación con formato, estado, resumen de filtros y botón de descarga vía processExportArtifact.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:relativeTime",
+   "type": "function",
+   "name": "relativeTime",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "lineRange": [
+    206,
+    217
+   ],
+   "summary": "Formatea una fecha como tiempo relativo legible (hace X minutos/horas/días).",
+   "tags": [
+    "utility",
+    "helper",
+    "exportaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:summarizeFilters",
+   "type": "function",
+   "name": "summarizeFilters",
+   "filePath": "src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "lineRange": [
+    219,
+    230
+   ],
+   "summary": "Resume en texto los filtros aplicados a un trabajo de exportación.",
+   "tags": [
+    "utility",
+    "helper",
+    "exportaciones"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "type": "file",
+   "name": "ExportProgressView.tsx",
+   "filePath": "src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "summary": "Vista de progreso de un trabajo de exportación en curso: sondea el estado con useExportJob, muestra avance y permite descargar el resultado al completarse.",
+   "tags": [
+    "component",
+    "exportaciones",
+    "progreso",
+    "polling"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ExportProgressView",
+   "type": "function",
+   "name": "ExportProgressView",
+   "filePath": "src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "lineRange": [
+    23,
+    135
+   ],
+   "summary": "Componente exportado que muestra el progreso, errores y descarga final de un trabajo de exportación.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ProgressHeader",
+   "type": "function",
+   "name": "ProgressHeader",
+   "filePath": "src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "lineRange": [
+    137,
+    149
+   ],
+   "summary": "Encabezado con icono y título según el estado del trabajo de exportación.",
+   "tags": [
+    "component",
+    "react",
+    "exportaciones"
+   ],
+   "complexity": "simple"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:NavTeamSwitcher",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ConfigPanelTrigger",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ConfigPanelTrigger",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:LabelForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:LabelForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ExternalTeamNotice",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:SimpleColorForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:SimpleColorForm",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ItemRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ItemRow",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:EmojiPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ColorPicker",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:ColorPicker",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:SmBtn",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:SmBtn",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:NavTooltip",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "function:src/components/ConfigPanel.tsx:NavButton",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/ExportsConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/KanbansConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/LabelsConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/OrgConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/RequestsTemplates.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/SprintsConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/SubTeamConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/components/ConfigPanelComponents/UsersConfig.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useBoardMetadata.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanel.tsx",
+   "target": "file:src/store/boardStore.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:computeTargetRole",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:parseTargetRole",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:resolveAudienceLabel",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:HelpDot",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementsConfig",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementsConfig",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useAnnouncements.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useCurrentUser.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateNewForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateMetaForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateForm",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "file:src/components/ConfigPanel.tsx",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx",
+   "target": "file:src/features/requests/hooks/useEmailTemplates.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryList",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryList",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:ExportHistoryRow",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:relativeTime",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportHistoryList.tsx:summarizeFilters",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "file:src/features/exports/hooks/useExportHistory.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "file:src/features/exports/hooks/useExportHistory.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "file:src/features/exports/services/processExportArtifact.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportHistoryList.tsx",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ExportProgressView",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ExportProgressView",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "function:src/components/ConfigPanelComponents/ExportProgressView.tsx:ProgressHeader",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "file:src/features/exports/hooks/useExportJob.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "file:src/features/exports/hooks/useExportJob.ts",
+   "type": "depends_on",
+   "direction": "forward",
+   "weight": 0.6
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "file:src/features/exports/services/processExportArtifact.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/components/ConfigPanelComponents/ExportProgressView.tsx",
+   "target": "file:src/features/exports/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/OrgConfig.tsx:OrgSection",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/UsersConfig.tsx:UserList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/LabelsConfig.tsx:LabelList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/SubTeamConfig.tsx:SubTeamList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/SprintsConfig.tsx:SprintList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/KanbansConfig.tsx:KanbanSection",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/RequestsTemplates.tsx:TemplateList",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementsConfig",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanel.tsx:ConfigPanel",
+   "target": "function:src/components/ConfigPanelComponents/ExportsConfig.tsx:ExportsConfig",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementForm",
+   "target": "function:src/components/ConfigPanel.tsx:FieldLabel",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementForm",
+   "target": "function:src/components/ConfigPanel.tsx:FormActions",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/AnnouncementsConfig.tsx:AnnouncementsConfig",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/components/ConfigPanelComponents/EmailsTemplatesConfig.tsx:EmailTemplateList",
+   "target": "function:src/components/ConfigPanel.tsx:AddBtn",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  }
+ ]
+}

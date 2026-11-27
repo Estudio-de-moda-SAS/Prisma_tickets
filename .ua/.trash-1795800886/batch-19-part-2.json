@@ -1,0 +1,1249 @@
+{
+ "nodes": [
+  {
+   "id": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "type": "file",
+   "name": "useSolviParticipants.ts",
+   "filePath": "src/features/requests/hooks/useSolviParticipants.ts",
+   "summary": "Hooks para listar y remover participantes de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "solvi",
+    "participantes"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviParticipants.ts:useSolviParticipants",
+   "type": "function",
+   "name": "useSolviParticipants",
+   "filePath": "src/features/requests/hooks/useSolviParticipants.ts",
+   "lineRange": [
+    31,
+    37
+   ],
+   "summary": "Consulta los participantes de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviParticipants.ts:useRemoveSolviParticipant",
+   "type": "function",
+   "name": "useRemoveSolviParticipant",
+   "filePath": "src/features/requests/hooks/useSolviParticipants.ts",
+   "lineRange": [
+    47,
+    54
+   ],
+   "summary": "Remueve un participante de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "type": "file",
+   "name": "useSolviTickets.ts",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "summary": "Hooks de la integración SOLVI: listado paginado y vista previa de tickets, detalle de ticket y subida de adjuntos comprimidos; además una función que lee adjuntos directamente desde Supabase.",
+   "tags": [
+    "hook",
+    "react-query",
+    "solvi",
+    "adjuntos",
+    "integracion"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTickets",
+   "type": "function",
+   "name": "useSolviTickets",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "lineRange": [
+    52,
+    65
+   ],
+   "summary": "Consulta paginada de tickets SOLVI con filtros.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketsPreview",
+   "type": "function",
+   "name": "useSolviTicketsPreview",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "lineRange": [
+    76,
+    85
+   ],
+   "summary": "Consulta una vista previa reducida de tickets SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketDetail",
+   "type": "function",
+   "name": "useSolviTicketDetail",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "lineRange": [
+    136,
+    143
+   ],
+   "summary": "Consulta el detalle de un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviTickets.ts:useUploadSolviAttachment",
+   "type": "function",
+   "name": "useUploadSolviAttachment",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "lineRange": [
+    155,
+    186
+   ],
+   "summary": "Comprime y sube un adjunto a un ticket SOLVI.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "adjuntos"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSolviTickets.ts:fetchTicketAttachments",
+   "type": "function",
+   "name": "fetchTicketAttachments",
+   "filePath": "src/features/requests/hooks/useSolviTickets.ts",
+   "lineRange": [
+    200,
+    211
+   ],
+   "summary": "Lee los adjuntos de un ticket directamente desde la tabla TBL_Ticket_Attachments_Solvi en Supabase.",
+   "tags": [
+    "supabase",
+    "adjuntos",
+    "solvi"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSprints.ts",
+   "type": "file",
+   "name": "useSprints.ts",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "summary": "Hooks para gestionar sprints del tablero (listar, crear, actualizar, eliminar) con actualizaciones optimistas, y un helper que deriva el año del sprint.",
+   "tags": [
+    "hook",
+    "react-query",
+    "sprints",
+    "optimistic-update",
+    "kanban"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSprints.ts:useSprints",
+   "type": "function",
+   "name": "useSprints",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "lineRange": [
+    75,
+    84
+   ],
+   "summary": "Consulta los sprints del tablero.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSprints.ts:useCreateSprint",
+   "type": "function",
+   "name": "useCreateSprint",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "lineRange": [
+    97,
+    135
+   ],
+   "summary": "Crea un sprint con inserción optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSprints.ts:useUpdateSprint",
+   "type": "function",
+   "name": "useUpdateSprint",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "lineRange": [
+    149,
+    195
+   ],
+   "summary": "Actualiza un sprint de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSprints.ts:useDeleteSprint",
+   "type": "function",
+   "name": "useDeleteSprint",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "lineRange": [
+    206,
+    228
+   ],
+   "summary": "Elimina un sprint de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSprints.ts:sprintYear",
+   "type": "function",
+   "name": "sprintYear",
+   "filePath": "src/features/requests/hooks/useSprints.ts",
+   "lineRange": [
+    240,
+    247
+   ],
+   "summary": "Deriva el año de un sprint desde su fecha de inicio o un patrón (YYYY) en el nombre.",
+   "tags": [
+    "utility",
+    "sprints",
+    "fechas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useSubTeams.ts",
+   "type": "file",
+   "name": "useSubTeams.ts",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "summary": "Hooks para subequipos y sus supervisores: consultas por uno o varios equipos, CRUD optimista y alta/baja de supervisores.",
+   "tags": [
+    "hook",
+    "react-query",
+    "subequipos",
+    "supervisores",
+    "admin"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeams",
+   "type": "function",
+   "name": "useSubTeams",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    32,
+    40
+   ],
+   "summary": "Consulta los subequipos de un equipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamsMulti",
+   "type": "function",
+   "name": "useSubTeamsMulti",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    53,
+    67
+   ],
+   "summary": "Consulta y combina subequipos de varios equipos.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useCreateSubTeam",
+   "type": "function",
+   "name": "useCreateSubTeam",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    79,
+    109
+   ],
+   "summary": "Crea un subequipo con inserción optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useUpdateSubTeam",
+   "type": "function",
+   "name": "useUpdateSubTeam",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    121,
+    151
+   ],
+   "summary": "Actualiza un subequipo de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useDeleteSubTeam",
+   "type": "function",
+   "name": "useDeleteSubTeam",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    163,
+    189
+   ],
+   "summary": "Elimina un subequipo de forma optimista.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamSupervisors",
+   "type": "function",
+   "name": "useSubTeamSupervisors",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    200,
+    207
+   ],
+   "summary": "Consulta los IDs de supervisores de un subequipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useAddSubTeamSupervisor",
+   "type": "function",
+   "name": "useAddSubTeamSupervisor",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    218,
+    227
+   ],
+   "summary": "Asigna un supervisor a un subequipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useSubTeams.ts:useRemoveSubTeamSupervisor",
+   "type": "function",
+   "name": "useRemoveSubTeamSupervisor",
+   "filePath": "src/features/requests/hooks/useSubTeams.ts",
+   "lineRange": [
+    238,
+    247
+   ],
+   "summary": "Quita un supervisor de un subequipo.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/requests/hooks/useTeams.ts",
+   "type": "file",
+   "name": "useTeams.ts",
+   "filePath": "src/features/requests/hooks/useTeams.ts",
+   "summary": "Hooks CRUD de equipos por departamento que además sincronizan la caché anidada departments-with-teams compartida con useDepartments.",
+   "tags": [
+    "hook",
+    "react-query",
+    "equipos",
+    "optimistic-update",
+    "admin"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTeams.ts:useTeams",
+   "type": "function",
+   "name": "useTeams",
+   "filePath": "src/features/requests/hooks/useTeams.ts",
+   "lineRange": [
+    43,
+    52
+   ],
+   "summary": "Consulta los equipos de un departamento.",
+   "tags": [
+    "hook",
+    "react-query",
+    "query"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTeams.ts:useCreateTeam",
+   "type": "function",
+   "name": "useCreateTeam",
+   "filePath": "src/features/requests/hooks/useTeams.ts",
+   "lineRange": [
+    67,
+    99
+   ],
+   "summary": "Crea un equipo y lo inserta en la caché departments-with-teams.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTeams.ts:useUpdateTeam",
+   "type": "function",
+   "name": "useUpdateTeam",
+   "filePath": "src/features/requests/hooks/useTeams.ts",
+   "lineRange": [
+    111,
+    140
+   ],
+   "summary": "Actualiza un equipo sincronizando la caché anidada.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/hooks/useTeams.ts:useDeleteTeam",
+   "type": "function",
+   "name": "useDeleteTeam",
+   "filePath": "src/features/requests/hooks/useTeams.ts",
+   "lineRange": [
+    152,
+    177
+   ],
+   "summary": "Elimina un equipo sincronizando la caché anidada.",
+   "tags": [
+    "hook",
+    "react-query",
+    "mutation",
+    "optimistic-update"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "type": "file",
+   "name": "TemplateRenameModal.tsx",
+   "filePath": "src/features/requests/templates/TemplateRenameModal.tsx",
+   "summary": "Modal que confirma y muestra el progreso de renombrar claves de campos de una plantilla, propagando el cambio a las solicitudes existentes por fases (confirm, processing, done, error).",
+   "tags": [
+    "component",
+    "modal",
+    "plantillas",
+    "ui",
+    "progreso"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/templates/TemplateRenameModal.tsx:TemplateRenameModal",
+   "type": "function",
+   "name": "TemplateRenameModal",
+   "filePath": "src/features/requests/templates/TemplateRenameModal.tsx",
+   "lineRange": [
+    13,
+    163
+   ],
+   "summary": "Componente modal que lista los renombres de campos, pide confirmación y muestra progreso con mensajes rotativos.",
+   "tags": [
+    "component",
+    "modal",
+    "plantillas"
+   ],
+   "complexity": "complex"
+  },
+  {
+   "id": "file:src/features/requests/templates/renameUtils.ts",
+   "type": "file",
+   "name": "renameUtils.ts",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "summary": "Utilidades para detectar renombres de claves en el schema de campos de una plantilla, anotando cada nodo con un __editId efímero y comparando el schema inicial contra el actual.",
+   "tags": [
+    "utility",
+    "plantillas",
+    "schema",
+    "diff"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:annotateWithEditIds",
+   "type": "function",
+   "name": "annotateWithEditIds",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    14,
+    16
+   ],
+   "summary": "Añade un __editId efímero a cada campo del schema.",
+   "tags": [
+    "utility",
+    "schema",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:annotateField",
+   "type": "function",
+   "name": "annotateField",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    18,
+    37
+   ],
+   "summary": "Anota recursivamente un campo, incluidos los subcampos condicionales.",
+   "tags": [
+    "utility",
+    "schema",
+    "recursion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:stripEditIds",
+   "type": "function",
+   "name": "stripEditIds",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    40,
+    42
+   ],
+   "summary": "Elimina los __editId del schema antes de persistirlo.",
+   "tags": [
+    "utility",
+    "schema",
+    "serialization"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:stripField",
+   "type": "function",
+   "name": "stripField",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    44,
+    63
+   ],
+   "summary": "Quita recursivamente el __editId de un campo y sus subcampos.",
+   "tags": [
+    "utility",
+    "schema",
+    "recursion"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:flattenWithEditIds",
+   "type": "function",
+   "name": "flattenWithEditIds",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    65,
+    83
+   ],
+   "summary": "Aplana el schema anotado en pares (__editId, key).",
+   "tags": [
+    "utility",
+    "schema"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "function:src/features/requests/templates/renameUtils.ts:diffRenames",
+   "type": "function",
+   "name": "diffRenames",
+   "filePath": "src/features/requests/templates/renameUtils.ts",
+   "lineRange": [
+    86,
+    96
+   ],
+   "summary": "Compara el schema inicial y el actual por __editId y devuelve los renombres detectados.",
+   "tags": [
+    "utility",
+    "diff",
+    "plantillas"
+   ],
+   "complexity": "simple"
+  },
+  {
+   "id": "file:src/features/stats/types.ts",
+   "type": "file",
+   "name": "types.ts",
+   "filePath": "src/features/stats/types.ts",
+   "summary": "Tipos y constantes de dominio para estadísticas: equipos, columnas Kanban, columnas de cierre y mapeos entre prioridad y score.",
+   "tags": [
+    "type-definition",
+    "constantes",
+    "kanban",
+    "estadisticas",
+    "prioridad"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "file:src/graph/GraphRest.ts",
+   "type": "file",
+   "name": "GraphRest.ts",
+   "filePath": "src/graph/GraphRest.ts",
+   "summary": "Cliente REST mínimo para Microsoft Graph API con token Bearer inyectado, soporte de GET/POST/PATCH/DELETE, descargas binarias y subidas, y mensajes de error detallados.",
+   "tags": [
+    "service",
+    "microsoft-graph",
+    "http-client",
+    "api-client"
+   ],
+   "complexity": "moderate"
+  },
+  {
+   "id": "class:src/graph/GraphRest.ts:GraphRest",
+   "type": "class",
+   "name": "GraphRest",
+   "filePath": "src/graph/GraphRest.ts",
+   "lineRange": [
+    20,
+    183
+   ],
+   "summary": "Clase cliente de Microsoft Graph con métodos get/post/patch/delete, getAbsolute, getBlob y putBinary sobre un método call privado.",
+   "tags": [
+    "service",
+    "microsoft-graph",
+    "http-client"
+   ],
+   "complexity": "complex"
+  }
+ ],
+ "edges": [
+  {
+   "source": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "target": "function:src/features/requests/hooks/useSolviParticipants.ts:useSolviParticipants",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "target": "function:src/features/requests/hooks/useSolviParticipants.ts:useSolviParticipants",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "target": "function:src/features/requests/hooks/useSolviParticipants.ts:useRemoveSolviParticipant",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "target": "function:src/features/requests/hooks/useSolviParticipants.ts:useRemoveSolviParticipant",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviParticipants.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTickets",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTickets",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketsPreview",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketsPreview",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketDetail",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useSolviTicketDetail",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useUploadSolviAttachment",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:useUploadSolviAttachment",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:fetchTicketAttachments",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "function:src/features/requests/hooks/useSolviTickets.ts:fetchTicketAttachments",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "file:src/lib/compressImage.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSolviTickets.ts",
+   "target": "file:src/lib/supabaseClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useSprints",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useSprints",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useCreateSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useCreateSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useUpdateSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useUpdateSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useDeleteSprint",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:useDeleteSprint",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:sprintYear",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "function:src/features/requests/hooks/useSprints.ts:sprintYear",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSprints.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeams",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamsMulti",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamsMulti",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useCreateSubTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useCreateSubTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useUpdateSubTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useUpdateSubTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useDeleteSubTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useDeleteSubTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamSupervisors",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useSubTeamSupervisors",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useAddSubTeamSupervisor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useAddSubTeamSupervisor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useRemoveSubTeamSupervisor",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "function:src/features/requests/hooks/useSubTeams.ts:useRemoveSubTeamSupervisor",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useSubTeams.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useTeams",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useTeams",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useCreateTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useCreateTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useUpdateTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useUpdateTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useDeleteTeam",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "function:src/features/requests/hooks/useTeams.ts:useDeleteTeam",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "file:src/config.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "file:src/features/requests/hooks/useDepartments.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "file:src/lib/apiClient.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/hooks/useTeams.ts",
+   "target": "file:src/types/commons.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "target": "function:src/features/requests/templates/TemplateRenameModal.tsx:TemplateRenameModal",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "target": "function:src/features/requests/templates/TemplateRenameModal.tsx:TemplateRenameModal",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "target": "file:src/features/requests/templates/renameUtils.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:annotateWithEditIds",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:annotateWithEditIds",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:annotateField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:stripEditIds",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:stripEditIds",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:stripField",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:flattenWithEditIds",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:diffRenames",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "function:src/features/requests/templates/renameUtils.ts:diffRenames",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/renameUtils.ts",
+   "target": "file:src/features/requests/templates/types.ts",
+   "type": "imports",
+   "direction": "forward",
+   "weight": 0.7
+  },
+  {
+   "source": "file:src/graph/GraphRest.ts",
+   "target": "class:src/graph/GraphRest.ts:GraphRest",
+   "type": "contains",
+   "direction": "forward",
+   "weight": 1
+  },
+  {
+   "source": "file:src/graph/GraphRest.ts",
+   "target": "class:src/graph/GraphRest.ts:GraphRest",
+   "type": "exports",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/renameUtils.ts:annotateWithEditIds",
+   "target": "function:src/features/requests/templates/renameUtils.ts:annotateField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/renameUtils.ts:stripEditIds",
+   "target": "function:src/features/requests/templates/renameUtils.ts:stripField",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/templates/renameUtils.ts:diffRenames",
+   "target": "function:src/features/requests/templates/renameUtils.ts:flattenWithEditIds",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "function:src/features/requests/hooks/useSolviTickets.ts:useUploadSolviAttachment",
+   "target": "function:src/lib/compressImage.ts:compressImage",
+   "type": "calls",
+   "direction": "forward",
+   "weight": 0.8
+  },
+  {
+   "source": "file:src/features/requests/templates/TemplateRenameModal.tsx",
+   "target": "file:src/features/requests/templates/renameUtils.ts",
+   "type": "related",
+   "direction": "forward",
+   "weight": 0.5
+  }
+ ]
+}
